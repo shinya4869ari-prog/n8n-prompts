@@ -8,6 +8,13 @@
 両国のデータを必ず検索ツールで取得すること。学習データからの補完は両国ともに厳禁。
 現職の国家元首・内閣総理大臣・各種統計は鮮度が最重要のため、必ず検索で確認すること。
 
+## 【自律検索のルール】
+- 対象国・日本ともに英語クエリも積極的に使用すること
+- 検索例（対象国）：「{{ $json.country }} UNODC homicide rate」「{{ $json.country }} Global Peace Index 2025」「{{ $json.country }} current president prime minister {{ $now.toFormat('yyyy') }}」
+- 検索例（日本）：「Japan current prime minister {{ $now.toFormat('yyyy') }}」「Japan GDP {{ $now.toFormat('yyyy') }}」「Japan homicide rate UNODC」
+- 欠測項目が出た場合はキーワードを変えて再検索すること
+- データが見つからない場合は「欠測/未確認」と記載し、推測で補わないこと
+
 ## 【必須データリスト】
 対象国・日本の両方について以下を収集すること。（１～９）
 
@@ -92,13 +99,6 @@
 - 最新6ヶ月の政治・経済・社会の動向
 - 読者が驚く統計や習慣
 - 両国の関連性・波及
-
-## 【自律検索のルール】
-- 対象国・日本ともに英語クエリも積極的に使用すること
-- 検索例（対象国）：「{{ $json.country }} UNODC homicide rate」「{{ $json.country }} Global Peace Index 2025」「{{ $json.country }} current president prime minister {{ $now.toFormat('yyyy') }}」
-- 検索例（日本）：「Japan current prime minister {{ $now.toFormat('yyyy') }}」「Japan GDP {{ $now.toFormat('yyyy') }}」「Japan homicide rate UNODC」
-- 欠測項目が出た場合はキーワードを変えて再検索すること
-- データが見つからない場合は「欠測/未確認」と記載し、推測で補わないこと
 
 ### ⑨ 映像作品（ドキュメンタリー・映画）
 対象国を題材にしたドキュメンタリー・映画・ドラマについて以下を収集すること。
