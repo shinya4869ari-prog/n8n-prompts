@@ -1,0 +1,120 @@
+const d = $input.first().json;
+const target = d?.data?.対象国データ ?? {};
+const japan = d?.data?.日本データ ?? {};
+const countryName = d?.data?.対象国 ?? "対象国";
+
+const th = target?.健康・医療指標 ?? {};
+const jh = japan?.健康・医療指標 ?? {};
+
+function val(v) {
+  return (v === null || v === undefined || v === "" || v === "欠測" || v === "未確認") 
+    ? null : v;
+}
+
+function bar(targetVal, japanVal, unit = "", reverse = false) {
+  const t = parseFloat(targetVal);
+  const j = parseFloat(japanVal);
+  if (isNaN(t) || isNaN(j)) return "";
+  const max = Math.max(t, j);
+  const tPct = reverse ? Math.round((j / t) * 100) : Math.round((t / max) * 100);
+  const jPct = reverse ? 100 : Math.round((j / max) * 100);
+  return `
+    <div class="bar-row">
+      <span class="bar-country">${countryName}</span>
+      <div class="bar-track"><div class="bar-fill target" style="width:${Math.min(tPct,100)}%"></div></div>
+      <span class="bar-value">${targetVal} ${unit}</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-country">日本</span>
+      <div class="bar-track"><div class="bar-fill japan" style="width:${Math.min(jPct,100)}%"></div></div>
+      <span class="bar-value">${japanVal} ${unit}</span>
+    </div>`;
+}
+
+function dataRow(label, source, barHtml, deepdive = "") {
+  if (!barHtml) return "";
+  return `
+    <div class="data-row">
+      <div class="data-row-header">
+        <span class="data-label">${label}</span>
+        <span class="data-source">${source}</span>
+      </div>
+      <div class="bar-group">${barHtml}</div>
+      ${deepdive ? `<div class="deepdive-hint">↳ ${deepdive}</div>` : ""}
+    </div>`;
+}
+
+// 5大死因
+function deathCauses() {
+  const td = th?.["5大死因"] ?? [];
+  const jd = jh?.["5大死因"] ?? [];
+  if (!td.length && !jd.length) return "";
+  const rows = [1,2,3,4,5].map(i => `
+    <div class="text-data-item">
+      <span class="rank-badge">0${i}.</span>${td[i-1] ?? "欠測"}
+    </div>`).join("");
+  const jrows = [1,2,3,4,5].map(i => `
+    <div class="text-data-item">
+      <span class="rank-badge">0${i}.</span>${jd[i-1] ?? "欠測"}
+    </div>`).join("");
+  return `
+    <div class="data-row">
+      <div class="data-row-header">
+        <span class="data-label">5大死因</span>
+        <span class="data-source">WHO</span>
+      </div>
+      <div class="text-data-grid">
+        <div class="text-data-col">
+          <div class="text-data-col-header">${countryName}</div>${rows}
+        </div>
+        <div class="text-data-col">
+          <div class="text-data-col-header">日本</div>${jrows}
+        </div>
+      </div>
+      <div class="deepdive-hint">↳ 感染症 vs 生活習慣病 → 深掘り記事へ</div>
+    </div>`;
+}
+
+const healthTab = [
+  dataRow("平均寿命", "WHO", bar(val(th?.平均寿命), val(jh?.平均寿命), "歳"), "なぜ差があるか？→ 深掘り記事へ"),
+  dataRow("健康寿命", "WHO", bar(val(th?.健康寿命), val(jh?.健康寿命), "歳")),
+  dataRow("乳児死亡率（出生1,000人あたり）", "WHO", bar(val(th?.乳児死亡率), val(jh?.乳児死亡率), "", true)),
+  dataRow("自殺率（10万人あたり）", "WHO", bar(val(th?.自殺率), val(jh?.自殺率)), "なぜ日本の自殺率は高いのか？→ 深掘り記事へ"),
+  dataRow("肥満率（成人 %）", "WHO", bar(val(th?.肥満率), val(jh?.肥満率), "%")),
+  deathCauses(),
+  dataRow("胃がん5年生存率", "各国統計", bar(val(th?.胃がん5年生存率), val(jh?.胃がん5年生存率), "%"), "医療レベルの差はどこから来るか → 深掘り記事へ"),
+].filter(Boolean).join("");
+
+const html = `<div class="tenbin-block">
+  <div class="block-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.toggle-icon').classList.toggle('open')">
+    <span class="block-icon">⚖</span>
+    <div>
+      <div class="block-title">データで見る｜${countryName} × 日本</div>
+      <div class="block-subtitle">健康・医療指標 · WHO DATA</div>
+    </div>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="block-body open">
+    <div class="tab-nav">
+      <button class="tab-btn active">健康・医療</button>
+    </div>
+    <div class="tab-content active">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot target"></div>${countryName}</div>
+        <div class="legend-item"><div class="legend-dot japan"></div>日本</div>
+      </div>
+      ${healthTab || '<p style="color:#666;font-size:0.8rem;">データが取得できませんでした</p>'}
+    </div>
+    <div class="block-footer">
+      <span>データは各年の最新値。</span>
+      <span>国家の天秤 v0.9</span>
+    </div>
+  </div>
+</div>`;
+
+return [{
+  json: {
+    ...d,
+    health_html: html
+  }
+}];
