@@ -1,32 +1,52 @@
 const item = $input.first().json;
+
 let article = item.article ?? '';
 
+// タイトル取得（先頭の Markdown 見出しを使用）
+const titleMatch = article.match(/^#\s+(.+)$/m);
+const title = titleMatch ? titleMatch[1].trim() : '';
+
+// 国名取得
 const researcherNode = $("AI Agent: Researcher").first();
-const country = item.target_country 
-  ?? researcherNode.json.target_country 
-  ?? researcherNode.json.output?.対象国
-  ?? researcherNode.json.output?.target_country
+const country =
+  item.target_country
+  ?? researcherNode?.json?.target_country
+  ?? researcherNode?.json?.output?.対象国
+  ?? researcherNode?.json?.output?.target_country
   ?? '不明';
 
-article = article.replace(/^#+.*$/m, '').trim();
+// 先頭タイトル行を本文から除去
+article = article.replace(/^#\s+.+$/m, '').trim();
 
-// MarkdownリンクをHTMLに変換
-article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+// Markdownリンク → HTMLリンク
+article = article.replace(
+  /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+  '<a href="$2" target="_blank">$1</a>'
+);
 
-// ツタヤ・YouTubeリンクを各映画タイトルの後に追加
-article = article.replace(/(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g, (match, s, warn, num, jpTitle, enTitle, e) => {
-  const searchTitle = jpTitle.trim();
-  const enSearchTitle = enTitle.trim();
-  const tsutayaUrl = `https://www.google.com/search?q=site:movie-tsutaya.tsite.jp+${encodeURIComponent(searchTitle)}`;
-  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(enSearchTitle + ' trailer')}`;
-  
-  return `${match} <a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">📀 TSUTAYA</a>`
-    + `<a href="${youtubeSearchUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">▶ 予告編</a>`;
-});
+// 映画タイトルの後ろに TSUTAYA / YouTube リンクを追加
+article = article.replace(
+  /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
+  (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
+    const jp = jpTitle.trim();
+    const en = enTitle.trim();
+
+    const tsutayaUrl =
+      `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
+
+    const youtubeUrl =
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
+
+    return `${match} ` +
+      `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
+      `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
+  }
+);
 
 return [{
   json: {
-    article: article,
-    target_country: country
+    article,
+    target_country: country,
+    title: title || country
   }
 }];
