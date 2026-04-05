@@ -1,41 +1,33 @@
 /**
- * 1. プロンプトデータの取得 (GitHubから)
- * $node["名前"].first().json を使い、確実に「1番目」のデータを取って固定します。
- */
-const promptData = $("Code Last_node").first();
-const promptText = promptData?.json?.prompt ?? "";
-
-/**
- * 2. 入力アイテムの全件処理
- * 前のノードから1件でも10件でも、すべてに対応できるように .map() を使います。
+ * 1. 入力データの整理
+ * 設定（Expression）で読み込んだプロンプトと、前のノードからの記事を取得します。
  */
 return $input.all().map(item => {
   try {
+    // Expressionで設定した 'prompt' を取得
+    const promptText = item.json.prompt ?? "";
+    
+    // 前のノードから来た記事本文
     let article = item.json.article ?? "";
     const inputData = item.json;
 
     /**
-     * 3. タイトルと国名の特定
+     * 2. タイトルと国名の特定
      */
     const titleMatch = article.match(/^#\s+(.+)$/m);
     const title = titleMatch ? titleMatch[1].trim() : (inputData.title || "分析レポート");
     
-    // researcherノードからも安全に国名を探す
-    const researcherNode = $("researcher").first();
-    const country = 
-      inputData.target_country ?? 
-      researcherNode?.json?.target_country ?? 
-      "不明";
-
-    // 本文からタイトル行（# タイトル）を削除
+    // 見出しの重複削除
     article = article.replace(/^#\s+.+$/m, '').trim();
 
     /**
-     * 4. リンクのHTML化 (TSUTAYA/YouTube)
-     * こだわりの置換ロジックを適用します。
+     * 3. リンクのHTML整形 (Markdown -> HTML)
+     * TSUTAYAやYouTubeへの特殊リンク付与ロジック。
      */
+    // 一般的なMarkdownリンク
     article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
+    // 映画タイトル（<strong>）の直後にボタンを挿入
     article = article.replace(
       /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
       (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
@@ -43,6 +35,7 @@ return $input.all().map(item => {
         const en = enTitle.trim();
         const tsutayaUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
         const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
+        
         return `${match} ` +
           `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
           `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
@@ -50,23 +43,24 @@ return $input.all().map(item => {
     );
 
     /**
-     * 5. アイテムの返却形式を構築
+     * 4. 最終的な結合と返却
+     * 読み込んだプロンプトを先頭に、整形済み記事を結合します。
      */
     return {
       json: {
         article: promptText ? `${promptText}\n\n${article}` : article,
         title: title,
-        target_country: country,
+        target_country: inputData.target_country ?? "不明",
         processed: true
       }
     };
 
   } catch (error) {
-    // 1つのアイテムでエラーが出ても全体を止めないための安全策
+    // エラー時は元のデータを維持して返す
     return {
       json: {
         error: error.message,
-        article: item.json.article // エラー時は元のまま返す
+        article: item.json.article
       }
     };
   }
