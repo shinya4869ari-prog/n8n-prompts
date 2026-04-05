@@ -8,7 +8,7 @@
 
 ## 【自律検索のルール】
 - 対象国・日本ともに英語クエリも積極的に使用すること
-- 検索例（対象国）：「{{ $json.country }} UNODC homicide rate」「{{ $json.country }} Global Peace Index 2025」「{{ $json.country }} current president prime minister {{ $now.toFormat('yyyy') }}」
+- 検索例（対象国）：「{{ country }} UNODC homicide rate」「{{ country }} Global Peace Index 2025」「{{ $json.country }} current president prime minister {{ $now.toFormat('yyyy') }}」
 - 検索例（日本）：「Japan current prime minister {{ $now.toFormat('yyyy') }}」「Japan GDP {{ $now.toFormat('yyyy') }}」「Japan homicide rate UNODC」
 - 欠測項目が出た場合はキーワードを変えて再検索すること
 - データが見つからない場合は「欠測/未確認」と記載し、推測で補わないこと
