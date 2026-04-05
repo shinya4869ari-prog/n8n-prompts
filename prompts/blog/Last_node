@@ -1,25 +1,29 @@
 /**
- * 1. 外部ノードデータの安全な取得
- * 実行順序によって「未実行」エラーが出るのを防ぐため、try-catchで囲みます。
+ * 1. プロンプトデータの安全な取得
+ * 実行順序や接続の有無に関わらず、エラーで止まらないように処理します。
  */
 let promptText = "";
 try {
-  // $node["名前"].data ではなく、より確実な static 参照を試みます
-  promptText = $("Code Last_node").first().json.prompt ?? "";
+  // 線がつながっていないノードを参照する場合の安全な取得方法
+  const promptNode = $("Code Last_node").first();
+  if (promptNode && promptNode.json && promptNode.json.prompt) {
+    promptText = promptNode.json.prompt;
+  }
 } catch (e) {
-  // もし読み込めない場合は空文字にするか、デフォルトの文言を入れます
-  promptText = "";
+  // ノードが未実行の場合でもワークフローを止めない
+  promptText = ""; 
 }
 
 /**
- * 2. 入力アイテムの取得
- * 前のノード（リンク挿入など）から渡されたメインコンテンツを取得します。
+ * 2. メイン入力データの取得
+ * 直前のノード（リンク挿入など）から渡された記事データを取得します。
  */
 const inputItem = $input.first()?.json ?? {};
 let article = inputItem.article ?? '';
 
 /**
  * 3. タイトルと国名の特定
+ * 記事内の見出しや、リサーチ結果から情報を抽出・補完します。
  */
 const titleMatch = article.match(/^#\s+(.+)$/m);
 const title = titleMatch ? titleMatch[1].trim() : (inputItem.title || '無題のレポート');
@@ -30,11 +34,12 @@ const country =
   researcherNode?.json?.target_country ?? 
   '不明';
 
-// 先頭の見出し行を本文から除去
+// 重複を避けるため、記事冒頭の見出し行（# タイトル）を削除
 article = article.replace(/^#\s+.+$/m, '').trim();
 
 /**
- * 4. リンクのHTML化と特殊リンク付与
+ * 4. リンクのHTML整形（Markdown → HTML）
+ * 映画情報への特殊リンク（TSUTAYA/YouTube）もここで生成します。
  */
 article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
@@ -52,13 +57,18 @@ article = article.replace(
 );
 
 /**
- * 5. 最終出力の構築
- * プロンプトと記事を結合します。
+ * 5. 最終的なアイテムの返却
+ * GitHubのプロンプトと整形済み記事を結合して、配列形式で返します。
  */
+if (!article) {
+  // 万が一記事が空だった場合でも、空のアイテムを返してエラーを防ぐ
+  return [{ json: { error: "記事内容が空です", title: title } }];
+}
+
 return [{
   json: {
-    article: `${promptText}\n\n${article}`,
+    article: promptText ? `${promptText}\n\n${article}` : article,
     target_country: country,
-    title: title || country
+    title: title
   }
 }];
