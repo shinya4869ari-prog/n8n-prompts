@@ -6,7 +6,7 @@ const titleMatch = article.match(/^#\s+(.+)$/m);
 const title = titleMatch ? titleMatch[1].trim() : '';
 
 // 国名取得
-const researcherNode = $("AI Agent: Researcher").first();
+const researcherNode = $("researcher").first();
 const country =
   item.target_country
   ?? researcherNode?.json?.target_country
@@ -46,7 +46,7 @@ const japan = raw?.data?.日本データ ?? {};
 const countryName = raw?.data?.対象国 ?? country;
 
 // Google Sheetsから対象国の健康データ取得
-const sheetData = $("Google Sheets").first().json;
+const sheetData = $("coutry_data").first().json;
 
 const th = {
   平均寿命: String(sheetData?.平均寿命 ?? ""),
