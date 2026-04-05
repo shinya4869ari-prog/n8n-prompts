@@ -1,37 +1,19 @@
-/**
- * 1. 外部データの取得 (GitHubプロンプト & 実行時刻)
- * 設定（Expression）側の Arguments 等で 'externalPrompt' として 
- * {{ $('Code Last_node').first().json.prompt }} を割り当てている前提です。
- */
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
-// 現在の実行時刻を「秒」まで正確に取得（検索の鮮度を証明するため）
-const now = new Date();
-const timeStr = `${now.getFullYear()}年${(now.getMonth()+1).toString().padStart(2, '0')}月${now.getDate().toString().padStart(2, '0')}日 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-
-/**
- * 2. アイテムの全件処理
- * mapを使って、入ってきた記事データをWordPress用へ整形します。
- */
 return $input.all().map(item => {
   try {
-    let article = item.json.article ?? "";
+    let article = item.json?.article 
+      ?? item.json?.content?.parts?.[0]?.text 
+      ?? "";
     const inputData = item.json;
 
-    // タイトルの抽出（Markdownの# 見出しから取得）
     const titleMatch = article.match(/^#\s+(.+)$/m);
     const title = titleMatch ? titleMatch[1].trim() : (inputData.title || "分析レポート");
     
-    // タイトル行を本文から削除（重複防止）
     article = article.replace(/^#\s+.+$/m, '').trim();
 
-    /**
-     * 3. リンクのHTML整形 (Markdown -> HTML & 特殊リンク付与)
-     */
-    // 一般的なMarkdownリンク [テキスト](URL) を <a href> に変換
     article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
-    // 映画タイトルの後ろに TSUTAYA / YouTube 予告編 リンクを追加
     article = article.replace(
       /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
       (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
@@ -46,29 +28,19 @@ return $input.all().map(item => {
       }
     );
 
-    /**
-     * 4. データの統合と返却
-     * プロンプト、システム時刻、整形済み記事をセットにして返します。
-     */
     return {
       json: {
-        // GitHubプロンプトを先頭に、その後に記事を結合
         article: promptBody ? `${promptBody}\n\n${article}` : article,
         title: title,
         target_country: inputData.target_country || "不明",
-        // プロンプト内で {{ $json.execution_time }} として呼び出せるようにする
-        execution_time: timeStr 
       }
     };
-
   } catch (err) {
-    // エラー時はログを出しつつ、最低限のデータを返して停止を防ぐ
     console.error("最終整形プロセスでエラーが発生しました:", err);
     return { 
       json: { 
-        article: item.json.article, 
-        error: err.message,
-        execution_time: timeStr 
+        article: item.json?.content?.parts?.[0]?.text ?? item.json.article, 
+        error: err.message
       } 
     };
   }
