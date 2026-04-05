@@ -1,21 +1,25 @@
 /**
- * 1. 入力データの安全な取得
- * n8nのバージョンに依存せず、前のノード（リンク挿入など）の結果を取得します。
+ * 1. 外部ノードデータの安全な取得
+ * 実行順序によって「未実行」エラーが出るのを防ぐため、try-catchで囲みます。
+ */
+let promptText = "";
+try {
+  // $node["名前"].data ではなく、より確実な static 参照を試みます
+  promptText = $("Code Last_node").first().json.prompt ?? "";
+} catch (e) {
+  // もし読み込めない場合は空文字にするか、デフォルトの文言を入れます
+  promptText = "";
+}
+
+/**
+ * 2. 入力アイテムの取得
+ * 前のノード（リンク挿入など）から渡されたメインコンテンツを取得します。
  */
 const inputItem = $input.first()?.json ?? {};
 let article = inputItem.article ?? '';
 
 /**
- * 2. GitHubからのプロンプト取得
- * 左上の「Code Last_node」からプロンプトを引用します。
- * ここでエラーが出る場合は、ノード名が正確に一致しているか確認してください。
- */
-const promptNode = $("Code Last_node").first();
-const promptText = promptNode?.json?.prompt ?? ""; 
-
-/**
  * 3. タイトルと国名の特定
- * 記事の見出しや、リサーチ結果（researcherノード）から情報を補完します。
  */
 const titleMatch = article.match(/^#\s+(.+)$/m);
 const title = titleMatch ? titleMatch[1].trim() : (inputItem.title || '無題のレポート');
@@ -24,20 +28,15 @@ const researcherNode = $("researcher").first();
 const country = 
   inputItem.target_country ?? 
   researcherNode?.json?.target_country ?? 
-  researcherNode?.json?.output?.target_country ?? 
   '不明';
 
-// 重複を防ぐため、先頭の見出し行を本文から除去
+// 先頭の見出し行を本文から除去
 article = article.replace(/^#\s+.+$/m, '').trim();
 
 /**
- * 4. リンクのHTML化と特殊リンク（TSUTAYA/YouTube）の付与
- * Markdown形式をWordPress用のHTMLに変換し、映画情報などを拡張します。
+ * 4. リンクのHTML化と特殊リンク付与
  */
-article = article.replace(
-  /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
-  '<a href="$2" target="_blank">$1</a>'
-);
+article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
 article = article.replace(
   /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
@@ -53,50 +52,12 @@ article = article.replace(
 );
 
 /**
- * 5. 健康・医療データブロックの生成
- * 「整形ノード１」と「coutry_data」から数値を比較し、バーチャート風HTMLを作成します。
- */
-const raw = $("整形ノード１").first()?.json ?? {};
-const sheetData = $("coutry_data").first()?.json ?? {};
-const countryName = raw?.data?.対象国 ?? country;
-
-// ヘルパー関数：欠測値や未確認をnullとして扱う
-function val(v) {
-  if (v === null || v === undefined || v === "" || v === "欠測" || v === "未確認") return null;
-  return v;
-}
-
-// バー生成ロジック
-function bar(tV, jV, unit = "", reverse = false) {
-  const t = parseFloat(tV);
-  const j = parseFloat(jV);
-  if (isNaN(t) && isNaN(j)) return "";
-  const max = isNaN(j) ? t : isNaN(t) ? j : Math.max(t, j);
-  const tP = isNaN(t) ? 0 : (reverse ? Math.round((j/t)*100) : Math.round((t/max)*100));
-  const jP = isNaN(j) ? 0 : (reverse ? 100 : Math.round((j/max)*100));
-  const tLabel = isNaN(t) ? "欠測" : `${tV} ${unit}`;
-  const jLabel = isNaN(j) ? "欠測" : `${jV} ${unit}`;
-  return `<div class="bar-row"><span class="bar-country">${countryName}</span><div class="bar-track"><div class="bar-fill target" style="width:${Math.min(tP,100)}%"></div></div><span class="bar-value">${tLabel}</span></div>` +
-         `<div class="bar-row"><span class="bar-country">日本</span><div class="bar-track"><div class="bar-fill japan" style="width:${Math.min(jP,100)}%"></div></div><span class="bar-value">${jLabel}</span></div>`;
-}
-
-// データの組み立て（平均寿命・健康寿命・自殺率など）
-const healthHtmlContent = [
-  {label: "平均寿命", v: val(sheetData?.平均寿命), jv: 84.3, u: "歳"},
-  {label: "健康寿命", v: val(sheetData?.健康寿命), jv: 74.1, u: "歳"},
-  {label: "自殺率", v: val(sheetData?.自殺率), jv: 15.3, u: ""},
-].map(d => `<div class="data-row"><div class="data-row-header"><span class="data-label">${d.label}</span></div><div class="bar-group">${bar(d.v, d.jv, d.u)}</div></div>`).join("");
-
-const healthHtml = `<div class="tenbin-block"><div class="block-body open">${healthHtmlContent}</div></div>`;
-
-/**
- * 6. 最終出力の構築
- * GitHubのプロンプトと生成された記事、データブロックを結合して返します。
+ * 5. 最終出力の構築
+ * プロンプトと記事を結合します。
  */
 return [{
   json: {
-    // プロンプトを冒頭に入れ、その後に本文とデータを結合
-    article: `${promptText}\n\n${article}\n\n${healthHtml}`,
+    article: `${promptText}\n\n${article}`,
     target_country: country,
     title: title || country
   }
