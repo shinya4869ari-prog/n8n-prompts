@@ -1,61 +1,73 @@
 /**
- * 1. プロンプトと記事データの取得
- * ノードが実行されていない場合でもエラーで止まらないように記述します。
+ * 1. プロンプトデータの取得 (GitHubから)
+ * $node["名前"].first().json を使い、確実に「1番目」のデータを取って固定します。
  */
-const input = $input.first()?.json ?? {};
-let article = input.article ?? "";
-
-// GitHubから読み込んだプロンプトを取得
-// 物理的に線が繋がっていればここが確実に動きます
-let promptText = "";
-try {
-  promptText = $("Code Last_node").first().json.prompt ?? "";
-} catch (e) {
-  // 取れない場合はデバッグ用にエラーメッセージを埋め込む（停止はさせない）
-  promptText = "";
-}
+const promptData = $("Code Last_node").first();
+const promptText = promptData?.json?.prompt ?? "";
 
 /**
- * 2. タイトルと国名の特定
+ * 2. 入力アイテムの全件処理
+ * 前のノードから1件でも10件でも、すべてに対応できるように .map() を使います。
  */
-const titleMatch = article.match(/^#\s+(.+)$/m);
-const title = titleMatch ? titleMatch[1].trim() : (input.title || "分析レポート");
-const country = input.target_country || $("researcher").first()?.json?.target_country || "不明";
+return $input.all().map(item => {
+  try {
+    let article = item.json.article ?? "";
+    const inputData = item.json;
 
-// 重複を防ぐため、冒頭の見出し（# タイトル）を削除
-article = article.replace(/^#\s+.+$/m, '').trim();
+    /**
+     * 3. タイトルと国名の特定
+     */
+    const titleMatch = article.match(/^#\s+(.+)$/m);
+    const title = titleMatch ? titleMatch[1].trim() : (inputData.title || "分析レポート");
+    
+    // researcherノードからも安全に国名を探す
+    const researcherNode = $("researcher").first();
+    const country = 
+      inputData.target_country ?? 
+      researcherNode?.json?.target_country ?? 
+      "不明";
 
-/**
- * 3. リンクのHTML整形 (TSUTAYA/YouTube)
- */
-// Markdownリンクの変換
-article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // 本文からタイトル行（# タイトル）を削除
+    article = article.replace(/^#\s+.+$/m, '').trim();
 
-// 映画特殊リンクの付与
-article = article.replace(
-  /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
-  (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
-    const jp = jpTitle.trim();
-    const en = enTitle.trim();
-    const tsutayaUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
-    return `${match} ` +
-      `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
-      `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
+    /**
+     * 4. リンクのHTML化 (TSUTAYA/YouTube)
+     * こだわりの置換ロジックを適用します。
+     */
+    article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    article = article.replace(
+      /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
+      (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
+        const jp = jpTitle.trim();
+        const en = enTitle.trim();
+        const tsutayaUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
+        const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
+        return `${match} ` +
+          `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
+          `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
+      }
+    );
+
+    /**
+     * 5. アイテムの返却形式を構築
+     */
+    return {
+      json: {
+        article: promptText ? `${promptText}\n\n${article}` : article,
+        title: title,
+        target_country: country,
+        processed: true
+      }
+    };
+
+  } catch (error) {
+    // 1つのアイテムでエラーが出ても全体を止めないための安全策
+    return {
+      json: {
+        error: error.message,
+        article: item.json.article // エラー時は元のまま返す
+      }
+    };
   }
-);
-
-/**
- * 4. 最終アイテムの構築と返却
- * n8nが「Items returned properly」と認識するように、確実に配列を返します。
- */
-const finalResult = {
-  json: {
-    article: promptText ? `${promptText}\n\n${article}` : article,
-    title: title,
-    target_country: country,
-    debug: "Process Completed"
-  }
-};
-
-return [finalResult];
+});
