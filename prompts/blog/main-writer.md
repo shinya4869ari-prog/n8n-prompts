@@ -45,6 +45,47 @@
 
 ---
 
+{
+  "instruction": "以下のデータ構造に従い、指定された国の情報を比較表（Markdown形式）として出力してください。比較対象は日本とし、判定欄には日本との差異や比率を記述すること。",
+  "global_config": {
+    "output_format": "Markdown Table",
+    "language": "Japanese"
+  },
+  "prompt_template": [
+    {
+      "section_no": "①",
+      "title": "制度の9つの皿",
+      "table_format": "| 【項目名】 | Fact【対象国】 | Fact【日本】 | Compare |\n| :--- | :--- | :--- | :--- |\n| 国家の形と統治機構 | {governance_target} | 立憲君主制（象徴天皇制） | {compare_1} |\n| 行政トップ | {leader_target} | 内閣総理大臣（議院内閣制） | {compare_2} |\n| 立法と選挙制度 | {legislative_target} | 二院制（衆参）、並立制 | {compare_3} |\n| 司法と法制度 | {judicial_target} | 大陸法、最高裁終審制 | {compare_4} |\n| 社会保障・医療・年金 | {social_security_target} | 国民皆保険、国民年金 | {compare_5} |\n| 教育制度 | {education_target} | 6-3-3-4制 | {compare_6} |\n| 徴税・財政制度 | {tax_target} | 消費税(10%) | {compare_7} |\n| 安全保障と兵役 | {military_target} | 自衛隊（志願制） | {compare_8} |\n| 基本権と価値観 | {values_target} | 憲法保障、和の尊重 | {compare_9} |"
+    },
+    {
+      "section_no": "②",
+      "title": "地理と経済の衡量",
+      "table_format": "| 項目名 | 対象国価格 | 日本価格 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 位置・面積 | {area_target} | 約377,900 km² | {area_ratio} |\n| 言語 | {lang_target} | 日本語 | - |\n| 日本からの距離 | {dist_target} | (基準) | 東京〜大阪の約{dist_factor}倍 |\n| 名目GDP比較 | {gdp_target} | 約4.21兆ドル | 日本の約{gdp_ratio}倍 |\n| 人口比較 | {pop_target} | 約1億2,300万人 | 日本の約{pop_ratio}% |\n| 中央値年齢比較 | {age_target} | 49.8歳 | 日本との差は{age_diff}歳 |"
+    },
+    {
+      "section_no": "③",
+      "title": "治安と平和の衡量",
+      "table_format": "| 項目名 | 対象国価格 | 日本価格 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 殺人率 | {homicide_target} | 0.23人 | 日本の約{h_ratio}倍 |\n| 交通事故死亡率 | {traffic_target} | 2.1人 | 日本の約{t_ratio}倍 |\n| GPI スコア比較 | {gpi_target} | 1.44 (12位) | {gpi_judgment} |"
+    },
+    {
+      "section_no": "④",
+      "title": "貿易の衡量",
+      "table_format": "| 項目名 | 対象国価格 | 日本価格 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 📤 主要輸出品 | {exports_top5} | 自動車、半導体等 | {trade_judgment_1} |\n| 📥 主要輸入品 | {imports_top5} | 原油、LNG等 | {trade_judgment_2} |\n| 🌍 主要貿易相手国 | {partners_top3} | 中国、アメリカ等 | {trade_judgment_3} |\n| 🇯🇵 日本との関係 | {japan_rel} | - | {trade_judgment_4} |"
+    },
+    {
+      "section_no": "⑤",
+      "title": "生活・価値の衡量",
+      "note": "（🍺🚬💧🍔💍⚖️を一つの表に。価格は現地通貨と日本円を併記）",
+      "metadata": "※算出レート：1 [通貨名] = [数値] JPY ({{ $now.toFormat('yyyy年M月d日') }}現在) 物価指数[日本=100]：[数値]",
+      "table_format": "| 項目名 | 対象国価格 | 日本価格 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 🍺 ビール (0.5L) | {beer_local} ({beer_jpy}) | 約450円 | {j1} |\n| 🚬 タバコ (1箱) | {cigar_local} ({cigar_jpy}) | 約600円 | {j2} |\n| 💧 水 (1.5L) | {water_local} ({water_jpy}) | 約120円 | {j3} |\n| 🍔 ハンバーガー | {burger_local} ({burger_jpy}) | 約750円 | {j4} |\n| 💍 指輪 (ブランド品) | {ring_local} ({ring_jpy}) | 約310,000円 | {j5} |\n| ⚖️ 裁判費用 (印紙代) | {court_local} ({court_jpy}) | 約10,000円 | {j6} |"
+    },
+    {
+      "section_no": "5大死因比較",
+      "table_format": "| 順位 | 対象国 | 日本 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 1位 | {death_1_target} | 悪性新生物 | {dj1} |\n| 2位 | {death_2_target} | 心疾患 | {dj2} |\n| 3位 | {death_3_target} | 老衰 | {dj3} |\n| 4位 | {death_4_target} | 脳血管疾患 | {dj4} |\n| 5位 | {death_5_target} | 肺炎 | {dj5} |"
+    }
+  ]
+}
+
 ### ① 制度の9つの皿
 各項目について以下の形式で出力：
 **【項目名】**
