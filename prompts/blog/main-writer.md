@@ -65,7 +65,7 @@
     {
       "section_no": "③",
       "title": "治安と平和の衡量",
-      "table_format": "| 項目名 | 対象国価格 | 日本価格 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 殺人率 | {homicide_target} | 0.23人 | 日本の約{h_ratio}倍 |\n| 交通事故死亡率 | {traffic_target} | 2.1人 | 日本の約{t_ratio}倍 |\n| GPI スコア比較 | {gpi_target} | 1.44 (12位) | {gpi_judgment} |"
+      "table_format": "| 項目名 | 対象国 | 日本 | 判定 |\n| :--- | :--- | :--- | :--- |\n| 殺人率 | {homicide_target} | 0.23人 | 日本の約{h_ratio}倍 |\n| 交通事故死亡率 | {traffic_target} | 2.1人 | 日本の約{t_ratio}倍 |\n| GPI スコア比較 | {gpi_target} | 1.44 (12位) | {gpi_judgment} |"
     },
     {
       "section_no": "④",
