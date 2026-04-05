@@ -1,33 +1,29 @@
 /**
- * 1. 入力データの整理
- * 設定（Expression）で読み込んだプロンプトと、前のノードからの記事を取得します。
+ * 1. プロンプトの受け取り
+ * 設定（Expression）で定義した 'externalPrompt' を取得します。
+ * $input.first().json 経由ではなく、直接 $vars や引数から取るのが最も安全です。
+ */
+const promptBody = $input.first()?.json?.externalPrompt ?? "";
+
+/**
+ * 2. アイテムの全件処理
+ * mapを使って、入ってきたデータをすべてWordPress用へ変換します。
  */
 return $input.all().map(item => {
   try {
-    // Expressionで設定した 'prompt' を取得
-    const promptText = item.json.prompt ?? "";
-    
-    // 前のノードから来た記事本文
     let article = item.json.article ?? "";
-    const inputData = item.json;
-
-    /**
-     * 2. タイトルと国名の特定
-     */
     const titleMatch = article.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : (inputData.title || "分析レポート");
+    const title = titleMatch ? titleMatch[1].trim() : (item.json.title || "分析レポート");
     
-    // 見出しの重複削除
+    // タイトル行を本文から削除
     article = article.replace(/^#\s+.+$/m, '').trim();
 
     /**
-     * 3. リンクのHTML整形 (Markdown -> HTML)
-     * TSUTAYAやYouTubeへの特殊リンク付与ロジック。
+     * 3. リンクのHTML整形 (TSUTAYA/YouTube)
+     * あなたが作り込んだリンク生成ロジックをここで実行します。
      */
-    // 一般的なMarkdownリンク
     article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
-    // 映画タイトル（<strong>）の直後にボタンを挿入
     article = article.replace(
       /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
       (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
@@ -43,25 +39,20 @@ return $input.all().map(item => {
     );
 
     /**
-     * 4. 最終的な結合と返却
-     * 読み込んだプロンプトを先頭に、整形済み記事を結合します。
+     * 4. データの統合と返却
+     * プロンプトを先頭に結合し、n8nが認識できる正式な形式で return します。
      */
     return {
       json: {
-        article: promptText ? `${promptText}\n\n${article}` : article,
+        article: promptBody ? `${promptBody}\n\n${article}` : article,
         title: title,
-        target_country: inputData.target_country ?? "不明",
-        processed: true
+        target_country: item.json.target_country || "不明"
       }
     };
 
-  } catch (error) {
-    // エラー時は元のデータを維持して返す
-    return {
-      json: {
-        error: error.message,
-        article: item.json.article
-      }
-    };
+  } catch (err) {
+    // エラー時はログを出しつつ、最低限のデータを返して「Items not properly returned」を防ぐ
+    console.error("整形エラー:", err);
+    return { json: { article: item.json.article, error: err.message } };
   }
 });
