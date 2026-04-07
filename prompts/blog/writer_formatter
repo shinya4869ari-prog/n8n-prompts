@@ -1,113 +1,80 @@
-const item = $input.first().json;
+const r1 = $input.first().json;
 
-// ライターからの記事本文を取得
-const raw = item?.content?.[0]?.text
-         ?? item?.content?.parts?.[0]?.text
-         ?? item?.output
-         ?? "";
-
-let cleaned = raw
-  .replace(/【Layer \d の文章】\s*/g, '')
-  .split('\\n').join('\n')
-  .split('\\t').join('\t')
-  .trim();
-
-// ★★★ 不要な⑧セクションをかなり広く強力に削除 ★★★
-// ⑧特別枠で「不明映画」「不明」「データが見つかりませんでした」が含まれる部分をすべて削除
-cleaned = cleaned.replace(/⑧[ 　]*特別枠[：: 　]*.*?不明[映画|映画|国|映画][\s\S]*?(?=⑧特別枠|Deep Dive|次のセクション|<\/p>|$)/gi, '');
-cleaned = cleaned.replace(/⑧[ 　]*特別枠[：: 　]*.*?ランキング[\s\S]*?(不明|データが見つかりませんでした|補足：東アフリカ地域)[\s\S]*?(?=⑧特別枠|Deep Dive|$)/gi, '');
-cleaned = cleaned.replace(/⑧[ 　]*映像で知る.*?不明[\s\S]*?(?=⑧特別枠|Deep Dive|$)/gi, '');
-
-// さらに安全策：⑧特別枠が2つ以上ある場合、2つ目以降をすべて削除
-const sections = cleaned.split(/(⑧特別枠[：: 　]*)/);
-if (sections.length > 3) {
-  cleaned = sections[0] + sections[1] + sections[2];  // 最初の⑧特別枠までだけ残す
-}
-
-// MarkdownをHTMLに変換
-function markdownToHtml(md) {
-  let html = md
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^---$/gm, '<hr>')
-    .replace(/^—$/gm, '<hr>')
-    .replace(/(\|.*\|\n?)+/g, (match) => {
-      const rows = match.trim().split('\n').filter(r => r.trim());
-      if (rows.length === 0) return '';
-      let tableHtml = '<table style="border-collapse:collapse; width:100%; margin:20px 0; font-size:14px;">';
-      rows.forEach((row, i) => {
-        const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
-        if (cells.length === 0) return;
-        const isHeader = (i === 0) || cells.some(c => c.includes('**') || c === '順位');
-        const tag = isHeader ? 'th' : 'td';
-        const style = isHeader 
-          ? 'style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left; font-weight:bold;"' 
-          : 'style="border:1px solid #ddd; padding:10px; text-align:left; vertical-align:top;"';
-        tableHtml += `<tr>${cells.map(c => `<${tag} ${style}>${c}</${tag}>`).join('')}</tr>`;
-      });
-      tableHtml += '</table>';
-      return tableHtml;
-    })
-    .replace(/^> (.+)$/gm, '<blockquote style="margin:15px 0; padding:10px 20px; border-left:4px solid #20B2AA; background:#f9f9f9;">$1</blockquote>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^(?!<[h|b|t|u|o|p|hr|table|div|blockquote])(.+)$/gm, '<p>$1</p>');
-
-  return html;
-}
-
-const html = markdownToHtml(cleaned);
-
-// JSONからデータ取得
-let rankingData = [];
-let country = "不明";
-try {
-  const rawOutput = item?.output ?? item?.json?.output ?? '{}';
-  const cleanedRaw = rawOutput.replace(/```json/g, '').replace(/```/g, '').trim();
-  const parsed = JSON.parse(cleanedRaw);
-  rankingData = parsed.興行収入ランキング || [];
-  country = parsed.対象国 || item?.data?.target_country || country;
-} catch(e) {
-  console.error("JSON解析エラー:", e);
-}
-
-// 残して欲しい一番上のテーブルだけを追加
-let rankingSectionHTML = `
-<h2>⑧特別枠：${country}映画 歴代興行収入ランキング TOP10</h2>
-
-<table style="border-collapse:collapse; width:100%; margin:20px 0; font-size:14px;">
-<tr>
-  <th style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left;">順位</th>
-  <th style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left;">タイトル</th>
-  <th style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left;">公開年</th>
-  <th style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left;">観客動員数 / 興行収入</th>
-  <th style="border:1px solid #ddd; padding:10px; background:#f8f8f8; text-align:left;">リンク</th>
-</tr>
-`;
-
-if (rankingData.length > 0) {
-  rankingData.forEach((r, index) => {
-    const title = r.タイトル_日本語 || r.原題 || '不明';
-    const year = r.公開年 || '—';
-    const revenue = r.観客動員数 || r.興行収入 || 'データなし';
-    const wiki = r.wikipedia_url ? `<a href="${r.wikipedia_url}" target="_blank" style="color:#20B2AA;">Wikipedia</a>` : '—';
-    const imdb = r.imdb_url ? `<a href="${r.imdb_url}" target="_blank" style="color:#20B2AA;">IMDb</a>` : '—';
-    rankingSectionHTML += `<tr><td style="border:1px solid #ddd; padding:10px;">${index + 1}</td><td style="border:1px solid #ddd; padding:10px;">${title}</td><td style="border:1px solid #ddd; padding:10px;">${year}</td><td style="border:1px solid #ddd; padding:10px;">${revenue}</td><td style="border:1px solid #ddd; padding:10px;">${wiki} ／ ${imdb}</td></tr>`;
-  });
-} else {
-  rankingSectionHTML += `<tr><td style="border:1px solid #ddd; padding:10px;" colspan="5">データが見つかりませんでした</td></tr>`;
-}
-
-rankingSectionHTML += `</table>`;
-
-// 最終記事
-const finalArticle = html + '\n\n' + rankingSectionHTML;
+// 日本固定データ
+const japanFixed = {
+  制度の9つの皿: {
+    国家の形と統治機構: "立憲君主制（象徴天皇制）・議院内閣制・単一国家",
+    行政トップ: "内閣総理大臣：高市早苗（2025年10月就任）",
+    立法と選挙制度: "二院制（衆議院・参議院）・小選挙区比例代表並立制",
+    司法と法制度: "最高裁判所を頂点とする三審制・大陸法基調",
+    社会保障医療年金: "国民皆保険・国民年金（自己負担原則3割・受給開始65歳）",
+    教育制度: "6-3-3-4制・義務教育9年・大学進学率約57%",
+    徴税財政制度: "消費税10%（軽減税率8%）・所得税最高45%・相続税最高55%",
+    安全保障と兵役: "自衛隊（志願制）・兵役義務なし・日米安保基軸",
+    基本権と価値観: "死刑制度維持（絞首刑・執行継続）・同性婚未承認"
+  },
+  治安と地理: {
+    殺人率: "0.23人",
+    殺人率出典: "UNODC 2022年",
+    交通事故死亡率: "2.1人",
+    自殺率: "16.3人",
+    投獄率: "36人",
+    警察官数: "約214人",
+    強盗発生率: "1.11件",
+    GPI_スコア: "1.44",
+    GPI_順位: "12位",
+    GPI_年: "2024年",
+    死因トップ10: [
+      "悪性新生物（がん）",
+      "心疾患",
+      "老衰",
+      "脳血管疾患",
+      "肺炎",
+      "誤嚥性肺炎",
+      "不慮の事故",
+      "新型コロナウイルス感染症",
+      "腎不全",
+      "アルツハイマー病"
+    ]
+  },
+  物価: {
+    通貨: "JPY",
+    ビール: "305円",
+    タバコ: "620円",
+    水: "118円",
+    ビッグマック: "800円",
+    ガソリン: "174円",
+    外食: "1,000円",
+    光熱費: "24,639円",
+    家賃: "86,816円",
+    月収: "307,013円",
+    Netflix: "1,590円",
+    出典: "Numbeo 2026年3月 / Netflix公式 2026年3月"
+  },
+  貿易: {
+    輸出トップ10: ["自動車","半導体等製造装置","半導体等電子部品","自動車部品","鉄鋼","原動機","科学光学機器","プラスチック","有機化合物","船舶"],
+    輸入トップ10: ["原油及び粗油","液化天然ガス（LNG）","医薬品","半導体等電子部品","通信機","衣類及び同付属品","石炭","非鉄金属","鉄鋼","肉類"],
+    貿易相手国トップ10: [
+      {順位:1, 国名:"中国", シェア:"20.2%"},
+      {順位:2, 国名:"アメリカ", シェア:"13.9%"},
+      {順位:3, 国名:"オーストラリア", シェア:"6.4%"},
+      {順位:4, 国名:"台湾", シェア:"5.5%"},
+      {順位:5, 国名:"韓国", シェア:"5.3%"},
+      {順位:6, 国名:"タイ", シェア:"3.6%"},
+      {順位:7, 国名:"アラブ首長国連邦", シェア:"3.3%"},
+      {順位:8, 国名:"サウジアラビア", シェア:"2.9%"},
+      {順位:9, 国名:"ベトナム", シェア:"2.7%"},
+      {順位:10, 国名:"インドネシア", シェア:"2.7%"}
+    ],
+    出典: "財務省貿易統計 2024年（確定値）"
+  }
+};
 
 return [{
   json: {
-    article: finalArticle,
-    target_country: country
+    対象国: r1.対象国,
+    world_bank_code: r1.world_bank_code,
+    対象国データ: r1,
+    日本データ: japanFixed
   }
 }];
