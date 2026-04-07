@@ -65,23 +65,54 @@
 ## 【② 治安と地理の衡量】（対象国のみ）
 
 ### 治安データ
+
+交通事故死亡率に検索クエリを追加（原則で国際機関優先のため、WHOを標準に）。 
+すべての検索クエリに「latest」を追加 → 最新年次を自動的に優先しやすくなる。 
+原則の「国際機関優先」「5年遡る」「年度と出典を明記」を反映してクエリを強化。 「
+死因トップ10」は以前の死因表のやり取りを踏まえ、公式統計が出やすいクエリに微調整（一般国対応のまま）。 
+出力原則（「文章・説明・コメント一切不要」「数値・固有名詞のみ」）とのバランスを取るため、各項目の末尾に出力例を小さく追記（実際にデータを返すときはこれを守る形に）。 推測・補完禁止、学習データ禁止は原則のまま適用。
+
 - 殺人率（10万人あたり）：UNODCデータ必須
-  - 検索クエリ：「{{ $json.country }} UNODC homicide rate」
+  - 検索クエリ：「{{ $json.country }} UNODC homicide rate per 100000 latest」
+  （出力例：2023年 UNODC: 0.5）
+
 - 交通事故死亡率（10万人あたり）
+  - 検索クエリ：「{{ $json.country }} road traffic death rate per 100000 WHO latest」
+  （出力例：2023年 WHO: 4.2）
+
 - 自殺率（10万人あたり）
-  - 検索クエリ：「{{ $json.country }} suicide rate per 100000 WHO」
+  - 検索クエリ：「{{ $json.country }} suicide rate per 100000 WHO latest」
+  （出力例：2023年 WHO: 11.8）
+
 - 投獄率（10万人あたり）
-  - 検索クエリ：「{{ $json.country }} incarceration rate per 100000 World Prison Brief」
+  - 検索クエリ：「{{ $json.country }} incarceration rate per 100000 World Prison Brief latest」
+  （出力例：2024年 World Prison Brief: 108）
+
 - 警察官数（10万人あたり）
-  - 検索クエリ：「{{ $json.country }} police officers per 100000 population」
+  - 検索クエリ：「{{ $json.country }} police officers per 100000 population UNODC or national statistics latest」
+  （出力例：2023年 UNODC: 220）
+
 - 強盗発生率（10万人あたり）
-  - 検索クエリ：「{{ $json.country }} robbery rate per 100000 UNODC」
+  - 検索クエリ：「{{ $json.country }} robbery rate per 100000 UNODC latest」
+  （出力例：2022年 UNODC: 25.3）
+
 - GPI（世界平和度指数）：最新スコアと順位
-  - 検索クエリ：「{{ $json.country }} Global Peace Index {{ $now.toFormat('yyyy') }}」
+  - 検索クエリ：「{{ $json.country }} Global Peace Index {{ $now.toFormat('yyyy') }} IEP」
+  （出力例：2025年 IEP: 1.512（順位 8位））
+
 - 外務省危険情報レベル（0〜4）
-  - 検索クエリ：「外務省 {{ $json.country }} 危険情報 危険レベル」
+  - 検索クエリ：「外務省 {{ $json.country }} 危険情報 危険レベル 最新」
+  （出力例：2026年4月 レベル 1）
+
 - 死因トップ10（順位と死因名のみ）
-  - 検索クエリ：「{{ $json.country }} leading causes of death {{ $now.toFormat('yyyy') }}」
+  - 検索クエリ：「{{ $json.country }} leading causes of death top 10 {{ $now.toFormat('yyyy') }} official statistics」
+  （出力例：
+    1位 Ischemic heart disease
+    2位 Stroke
+    3位 Chronic obstructive pulmonary disease
+  ）
+ 
+
 
 ### 地理データ
 - 位置・面積（km²）
