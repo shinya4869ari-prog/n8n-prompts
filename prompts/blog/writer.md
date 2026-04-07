@@ -150,112 +150,97 @@
 
 ---
 
-### ④ 貿易の衡量
+### ⑤ 歴史的背景（近代100年）
 
-**主要輸出品（トップ10）：**
+JSONの `対象国データ_記事.歴史的背景` をもとに以下のHTML表を出力すること：
 
+<h3>⑤ 歴史的背景（近代100年）</h3>
 <table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
   <thead>
     <tr>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:15%;">順位</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:42%;">{{ $json.対象国 }}</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:43%;">日本</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">年</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:25%;">事象名</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:65%;">概要</th>
     </tr>
   </thead>
   <tbody>
-    【JSONの輸出トップ10を1〜10位で出力】
-    日本側は固定値：
-    1位：自動車
-    2位：半導体等製造装置
-    3位：半導体等電子部品
-    4位：自動車部品
-    5位：鉄鋼
-    6位：原動機
-    7位：科学光学機器
-    8位：プラスチック
-    9位：有機化合物
-    10位：船舶
+    【JSONの歴史的背景を1行ずつ出力。深刻な事象（虐殺・紛争・クーデター等）の行はbackground:#fff3f3を付ける】
   </tbody>
 </table>
 
-出典：【JSONの貿易出典】 / 日本：財務省貿易統計 2024年（確定値）
+---
 
-**主要輸入品（トップ10）：**
+### ⑥ 直近の動向
 
-同様の形式で出力。日本側固定値：
-1位：原油及び粗油 / 2位：液化天然ガス（LNG） / 3位：医薬品 / 4位：半導体等電子部品 / 5位：通信機 / 6位：衣類及び同付属品 / 7位：石炭 / 8位：非鉄金属 / 9位：鉄鋼 / 10位：肉類
+JSONの `対象国データ_記事.直近の動向` をもとに以下を出力すること：
 
-出典：財務省貿易統計 2024年（確定値）
+<h3>⑥ 直近の動向</h3>
+<p>【政治経済社会の内容】</p>
+<p>🔍 <strong>驚きの統計・習慣：</strong>【驚く統計や習慣の内容】</p>
+<p>🇯🇵 <strong>日本との関連：</strong>【日本との関連の内容】</p>
+【エラー猫の一言を最後に付ける】
 
-**主要貿易相手国（トップ10）：**
+---
 
-同様の形式で出力。日本側固定値：
-1位：中国（20.2%） / 2位：アメリカ（13.9%） / 3位：オーストラリア（6.4%） / 4位：台湾（5.5%） / 5位：韓国（5.3%） / 6位：タイ（3.6%） / 7位：アラブ首長国連邦（3.3%） / 8位：サウジアラビア（2.9%） / 9位：ベトナム（2.7%） / 10位：インドネシア（2.7%）
+### ⑦ 映像で知る対象国
 
-出典：財務省貿易統計 2024年（確定値）
+JSONの `対象国データ_記事.映像作品` にデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
 
-表の下に以下を出力：
-- 対象国の貿易概況（JSONの情報をもとに200文字程度）
-- 対象国と日本の二国間貿易の特徴（JSONの対日貿易情報をもとに200文字程度）
+<h3>⑦ 映像で知る{{ $json.対象国 }}</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+  <thead>
+    <tr>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:5%;">#</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">タイトル</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:12%;">種別</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">公開年</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:28%;">概要</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:15%;">リンク</th>
+    </tr>
+  </thead>
+  <tbody>
+    【JSONの映像作品を1行ずつ出力。
+    - is_seriousがtrueの行はbackground:#fff3f3を付け、#列に⚠️を表示
+    - wikipedia_urlが欠測でない場合はWikipediaリンクボタンを出力
+    - imdb_urlが欠測でない場合はIMDbリンクボタンを出力
+    - タイトル_日本語と原題が同じ場合は原題のみ表示】
+  </tbody>
+</table>
+【深刻な作品が3件以上の場合はエラー猫コメントなし。3件未満の場合はエラー猫の一言を付ける】
 
-⑤ 歴史的背景
-主要事象10個（年号付き・1事象2〜3文）
+---
 
-⑥ 直近の動向
-最新6ヶ月の動向（1000文字）
-🔍 驚きの検索結果（記事未登場のものを紹介　1000文字）
-エラー猫の一言
+### ⑧ 特別枠：対象国映画 歴代興行収入ランキング TOP10
 
-⑦ 映像で知る[対象国]（ドキュメンタリー・映画リスト）
-【必須：出力前に必ず検索ツールを使うこと】 以下の検索を必ず実行し、JSONの映像作品リストを補完すること：
+JSONの `対象国データ_記事.興行収入ランキング` にデータが存在する場合のみ出力。存在しない・空・全て欠測の場合はこのセクションごと出力しない。
 
-「[対象国名] documentary film imdb」
-「[対象国名] 映画 実話 Wikipedia」
-「[対象国名] war genocide film」（紛争・虐殺がある国のみ）
-検索結果から追加できる作品があればJSONのリストに加えること。 厳守事項：
+<h3>⑧ 特別枠：{{ $json.対象国 }}映画 歴代興行収入ランキング TOP10</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+  <thead>
+    <tr>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:8%;">順位</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">タイトル</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">公開年</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:22%;">観客動員数 / 興行収入</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">リンク</th>
+    </tr>
+  </thead>
+  <tbody>
+    【JSONの興行収入ランキングを1行ずつ出力。
+    - is_seriousがtrueの行はbackground:#fff3f3を付ける
+    - wikipedia_urlが欠測でない場合はWikipediaリンクボタンを出力
+    - imdb_urlが欠測でない場合はIMDbリンクボタンを出力
+    - 原題でYouTube予告編リンクボタンを出力】
+  </tbody>
+</table>
+<p>出典：【JSONの出典】</p>
+【深刻な作品が3件以上の場合はエラー猫コメントなし。3件未満の場合はエラー猫の一言を付ける】
 
-実在が確認できた作品のみ追加
-wikipedia_url・imdb_urlは検索で取得したURLのみ使用
-推測・補完禁止
-追加作品がなければJSONのデータのみで出力
-最大20作品まで
-JSONの「映像作品」キーにデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
-
-各作品を以下の形式で出力：
-
-[番号]. [タイトル_日本語]（[原題]）
-
-タイトル_日本語と原題が同じ場合は（）内を省略して [番号]. [タイトル_日本語] とすること
-種別：
-公開年：
-概要：
-リンク：Wikipedia ／ IMDb
-imdb_urlが欠測の場合はIMDbリンクを出力しない
-
-⑧特別枠：[対象国]映画 歴代興行収入ランキング TOP10
-JSONの「興行収入ランキング」キーにデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
-
-順位	タイトル	公開年	観客動員数 / 興行収入	リンク
-タイトルはタイトル_日本語を使用。原題と同じ場合はそのまま表示
-
-リンク列：Wikipedia ／ IMDb ／ [▶ 予告編](https://www.youtube.com/results?search_query=[原題をURLエンコード] trailer)
-
-wikipedia_urlが欠測の場合はWikipediaリンクを出力しない
-
-imdb_urlが欠測の場合はIMDbリンクを出力しない
-
-推測・補完禁止。JSONに存在するデータのみ使用
-
-出典を1行で明記すること（例：出典：KOBIS / 映画振興委員会 2026年4月時点）
-
-深刻な題材（虐殺・紛争・人権侵害等）を扱う作品には番号の前に ⚠️ を付ける。
-
-深刻な作品が3件以上含まれる場合、エラー猫の一言は出力しない。それ以外はエラー猫の一言を最後に付ける。
+---
 
 🔍 リアルタイム検索・実行ログ
 
 最終データ更新: {{ $now.toFormat('yyyy年MM月dd日 HH:mm:ss') }} (JST)
 為替レート取得: 1 [現地通貨] = [実測値] JPY（直近1時間以内のデータ）
-最新ニュース照合: [対象国] に関する直近6ヶ月以内の主要ニュース3件を確認済
-映像ソース確認: Wikipedia(日/英)およびIMDbデータベースを最新状態でスキャン完了⑧ 特別枠：[対象国]映画 歴代興行収入ランキング TOP10
-JSONの「興行収入ランキング」キーにデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
+最新ニュース照合: {{ $json.対象国 }} に関する直近6ヶ月以内の主要ニュース3件を確認済
+映像ソース確認: Wikipedia(日/英)およびIMDbデータベースを最新状態でスキャン完了
