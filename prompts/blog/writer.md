@@ -76,13 +76,11 @@
     </tr>
   </thead>
   <tbody>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">殺人率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">0.23人（UNODC 2022年）</td></tr>
-    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">交通事故死亡率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">2.1人（WHO）</td></tr>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">自殺率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">16.3人（厚生労働省 2024年）</td></tr>
-    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">投獄率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">36人（World Prison Brief 2021年）</td></tr>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">警察官数（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">約214人（警察庁 2023年）</td></tr>
-    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">強盗発生率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">1.11件（警察庁 2024年）</td></tr>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">GPI（世界平和度指数）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">1.44（12位）</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">殺人率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">0.23人（UNODC 2023年）</td></tr>
+    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">交通事故死亡率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">2.6人（OECD/ITF 2022年）</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">自殺率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">16.3人（警察庁・厚生労働省 2024年）</td></tr>
+    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">刑務所収容率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">33人（World Prison Brief 2024年12月）</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">GPI（世界平和度指数）</td><td style="border:1px solid #ddd;padding:10px;">【JSONの値】</td><td style="border:1px solid #ddd;padding:10px;">1.44（12位・IEP 2025年）</td></tr>
   </tbody>
 </table>
 
@@ -93,6 +91,103 @@
 - レベル2：「⚠️ 外務省から「不要不急の渡航自粛」が出てるニャ。よほどの理由がない限り行かない方がいいニャ。」
 - レベル3：「🚨 外務省から「渡航中止勧告」が出てるニャ！！絶対に行っちゃダメニャ！！」
 - レベル4：「🚨 外務省から「退避勧告」が出てるニャ！！既に滞在している人はすぐ逃げてほしいニャ！！」
+
+**刑務所収容者数の推移グラフ：**
+
+治安指標表の直下に以下のグラフを出力すること。
+対象国（青）と日本（赤）を同じグラフに表示する。
+日本のデータは以下の固定値を使用すること：
+
+<canvas id="prisonChart" style="max-width:100%;margin:20px 0;"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+  var targetData = {{ JSON.stringify($json.治安と地理.刑務所収容推移) }};
+  var japanData = [
+    {"年":"2000","総収容者数":61242,"収容率":48},
+    {"年":"2002","総収容者数":69502,"収容率":55},
+    {"年":"2004","総収容者数":76413,"収容率":60},
+    {"年":"2006","総収容者数":81255,"収容率":64},
+    {"年":"2008","総収容者数":76881,"収容率":60},
+    {"年":"2010","総収容者数":72975,"収容率":57},
+    {"年":"2012","総収容者数":67008,"収容率":53},
+    {"年":"2014","総収容者数":60486,"収容率":48},
+    {"年":"2016","総収容者数":55967,"収容率":44},
+    {"年":"2018","総収容者数":50578,"収容率":40},
+    {"年":"2020","総収容者数":46524,"収容率":37},
+    {"年":"2022","総収容者数":41541,"収容率":33},
+    {"年":"2024","総収容者数":40544,"収容率":33}
+  ];
+
+  var labels = japanData.map(function(d){ return d.年; });
+  var targetCounts = targetData.map(function(d){ return Number(String(d.総収容者数).replace(/,/g,'')); });
+  var japanCounts  = japanData.map(function(d){ return d.総収容者数; });
+  var targetRates  = targetData.map(function(d){ return Number(d.収容率); });
+  var japanRates   = japanData.map(function(d){ return d.収容率; });
+
+  var ctx = document.getElementById('prisonChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '{{ $json.対象国 }}：総収容者数',
+          data: targetCounts,
+          backgroundColor: 'rgba(70,130,180,0.7)',
+          yAxisID: 'y1'
+        },
+        {
+          label: '日本：総収容者数',
+          data: japanCounts,
+          backgroundColor: 'rgba(220,80,80,0.5)',
+          yAxisID: 'y1'
+        },
+        {
+          label: '{{ $json.対象国 }}：収容率',
+          data: targetRates,
+          type: 'line',
+          borderColor: 'rgba(30,100,200,1)',
+          backgroundColor: 'transparent',
+          yAxisID: 'y2',
+          tension: 0.3,
+          pointRadius: 4
+        },
+        {
+          label: '日本：収容率',
+          data: japanRates,
+          type: 'line',
+          borderColor: 'rgba(200,50,50,1)',
+          backgroundColor: 'transparent',
+          yAxisID: 'y2',
+          tension: 0.3,
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        y1: {
+          type: 'linear',
+          position: 'left',
+          title: { display: true, text: '総収容者数（人）' }
+        },
+        y2: {
+          type: 'linear',
+          position: 'right',
+          title: { display: true, text: '収容率（10万人あたり）' },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+})();
+</script>
+<p style="font-size:12px;color:#888;">出典：World Prison Brief（prisonstudies.org）</p>
 
 **死因比較表：**
 
