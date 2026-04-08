@@ -1,0 +1,30 @@
+const r1 = $('Researcher 1').first().json;
+const r2 = $('Researcher 2').first().json;
+
+const targetFixed = {
+  治安指標: $('②治安指標').all().map(i => i.json),
+  刑務所推移: $('②刑務所推移').all().map(i => i.json),
+  死因トップ10: $('②死因トップ10').all().map(i => i.json),
+  物価: $('③物価').all().map(i => i.json),
+  貿易: $('④貿易').all().map(i => i.json)
+};
+
+const japanFixed = {
+  制度の9つの皿: $('Japan_①制度').all().map(i => i.json),
+  治安指標: $('Japan_②治安指標').all().map(i => i.json),
+  刑務所推移: $('Japan_②刑務所推移').all().map(i => i.json),
+  死因トップ10: $('Japan_②死因トップ10').all().map(i => i.json),
+  物価: $('Japan_③物価').all().map(i => i.json),
+  貿易: $('Japan_④貿易').all().map(i => i.json)
+};
+
+return [{
+  json: {
+    対象国: r1.対象国,
+    world_bank_code: r1.world_bank_code,
+    対象国データ: r1,
+    対象国データ_記事: r2,
+    固定データ: targetFixed,
+    日本固定データ: japanFixed
+  }
+}];
