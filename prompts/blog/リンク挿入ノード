@@ -64,7 +64,7 @@ function getSearchVariants(name, type) {
   return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
-// ⑥ 候補統合（ここを大幅修正）
+// ⑥ 候補統合
 const flatPatterns = [];
 const allEntities = [
   ...people.map(p => ({type: 'people', ...p})),
@@ -74,7 +74,7 @@ const allEntities = [
 
 for (const entity of allEntities) {
   if (!entity.name || !entity.info) continue;
-  if (/語$/.test(entity.name)) continue;   // 「〜語」は除外
+  if (/語$/.test(entity.name)) continue;
 
   const variants = getSearchVariants(entity.name, entity.type);
   for (const pattern of variants) {
@@ -85,7 +85,7 @@ for (const entity of allEntities) {
   }
 }
 
-// 重複パターンを除去（同じ文字列で複数エンティティがある場合は最初のもの優先）
+// 重複パターンを除去
 const uniquePatterns = [];
 const seen = new Set();
 for (const cand of flatPatterns) {
@@ -106,8 +106,15 @@ const linkedEntities = new Set();
 for (const cand of uniquePatterns) {
   if (linkedEntities.has(cand.entity.name)) continue;
 
-const mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
-const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+  // ★ typeによってURLを切り替え
+  let mapUrl;
+  if (cand.entity.type === 'keywords') {
+    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
+  } else {
+    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
+  }
+
+  const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
 
   const n = enc(cand.entity.name);
   const i = enc(cand.entity.info + linkHTML);
