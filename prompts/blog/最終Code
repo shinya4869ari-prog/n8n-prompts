@@ -42,8 +42,8 @@ article = article.replace(
     // ⑧興行収入テーブルの判定
     const isRankingTable = tableHtml.includes('観客動員数') || tableHtml.includes('興行収入');
 
-    if (!isFilmTable && !isRankingTable) return tableHtml;
-if (isRankingTable) return tableHtml;
+    if (isRankingTable) return tableHtml;
+if (!isFilmTable && !isRankingTable) return tableHtml;
 
     // 行を抽出
     const rows = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
