@@ -35,6 +35,91 @@ article = article.replace(/(\*\*[^*]+\*\*)\s*\n\s*\1/g, '$1');
 
   // --- 4. リンクのHTML化 ---
   article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+// --- 4.4 刑務所収容推移テーブルをグラフに変換 ---
+article = article.replace(
+  /(<h[23][^>]*>[^<]*刑務所収容推移[^<]*<\/h[23]>)([\s\S]*?)(<\/table>)/i,
+  (match, heading, middle, closing) => {
+    const tableHtml = match;
+    const rows = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].slice(1);
+    const years = [], targetData = [], japanData = [];
+
+    rows.forEach(r => {
+      const cells = [...r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)]
+        .map(c => c[1].replace(/<[^>]+>/g, '').trim());
+      if (!cells[0] || cells[0] === '年') return;
+      const toNum = v => (v === 'データなし' || !v) ? null : parseInt(v.replace(/,/g, '')) || null;
+      years.push(cells[0]);
+      targetData.push(toNum(cells[1]));
+      japanData.push(toNum(cells[3]));
+    });
+
+    const countryName = article.match(/対象国名[：:]\s*([^\s<]+)/) || ['', '対象国'];
+    const id = 'prison' + Math.random().toString(36).slice(2, 8);
+
+    return `
+<h3>② 刑務所収容者数の推移</h3>
+<div style="display:flex;gap:16px;margin-bottom:8px;font-size:13px;color:var(--color-text-secondary);">
+  <span style="display:flex;align-items:center;gap:6px;"><span style="width:24px;height:2px;background:#E24B4A;display:inline-block;"></span>対象国</span>
+  <span style="display:flex;align-items:center;gap:6px;"><span style="width:24px;height:2px;background:#1D9E75;border-top:2px dashed #1D9E75;display:inline-block;"></span>日本</span>
+</div>
+<div style="position:relative;width:100%;height:300px;">
+  <canvas id="${id}" role="img" aria-label="刑務所収容者数推移グラフ"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
+<script>
+(function(){
+  var ctx = document.getElementById('${id}');
+  if(!ctx) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ${JSON.stringify(years)},
+      datasets: [
+        {
+          label: '対象国',
+          data: ${JSON.stringify(targetData)},
+          borderColor: '#E24B4A',
+          backgroundColor: 'rgba(226,75,74,0.08)',
+          borderWidth: 2,
+          pointRadius: 4,
+          tension: 0.3,
+          spanGaps: true
+        },
+        {
+          label: '日本',
+          data: ${JSON.stringify(japanData)},
+          borderColor: '#1D9E75',
+          backgroundColor: 'rgba(29,158,117,0.08)',
+          borderWidth: 2,
+          pointRadius: 4,
+          tension: 0.3,
+          borderDash: [6,3],
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: { callback: function(v){ return v.toLocaleString() + '人'; } }
+        },
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45 }
+        }
+      }
+    }
+  });
+})();
+<\/script>
+<p style="font-size:12px;color:#888;margin-top:4px;">出典：World Prison Brief</p>`;
+  }
+);
+
 // --- 4.5 ⑦⑧テーブルをカード型に変換 ---
 article = article.replace(
   /<table[^>]*>[\s\S]*?<\/table>/gi,
