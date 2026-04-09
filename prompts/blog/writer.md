@@ -53,6 +53,7 @@
 以下のHTML表を出力すること。
 対象国の値は `対象国データ.制度の9つの皿` から取得すること。
 日本の値は `日本固定データ.制度の9つの皿` から取得すること。
+各項目の間には <p style="margin-bottom:16px;"> タグで段落を分けること。
 
 <table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
   <thead>
