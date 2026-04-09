@@ -106,7 +106,7 @@
     <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">刑務所収容率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.刑務所収容率.値】（【固定データ.治安指標.刑務所収容率.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.刑務所収容率.値】（【日本固定データ.治安指標.刑務所収容率.出典】）</td></tr>
     <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">GPI（世界平和度指数）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.GPI スコア.値】（【固定データ.治安指標.GPI 順位.値】・【固定データ.治安指標.GPI スコア.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.GPI スコア.値】（【日本固定データ.治安指標.GPI 順位.値】・【日本固定データ.治安指標.GPI スコア.出典】）</td></tr>
   </tbody>
-</table>
+</table><p style="font-size:12px;color:#888;margin-top:4px;">出典：各値の（）内に記載</p>
 
 ※外務省危険情報レベルが1以上の場合のみ以下を出力：
 <p>⚠️ <strong>外務省危険情報：レベル【対象国データ.地理.外務省危険レベル】</strong>【対象国データ.地理.外務省危険情報詳細】</p>
