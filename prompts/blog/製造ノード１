@@ -23,9 +23,8 @@ const japanFixed = {
   貿易: $('Japan_④貿易').all().map(i => i.json)
 };
 
-return items.map(item => ({
+return [{
   json: {
-    ...item.json,
     対象国: r1.対象国,
     world_bank_code: r1.world_bank_code,
     data: {
@@ -35,4 +34,4 @@ return items.map(item => ({
       日本固定データ: japanFixed
     }
   }
-}));
+}];
