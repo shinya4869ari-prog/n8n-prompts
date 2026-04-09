@@ -1,0 +1,109 @@
+const promptBody = $input.first()?.json?.externalPrompt ?? "";
+
+return $input.all().map(item => {
+  // --- 1. 入力データの整理 ---
+  let raw = item.json?.article ?? "";
+  const inputData = item.json;
+
+  let article = raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed[0]?.html) {
+      article = parsed[0].html;
+    } else if (parsed?.html) {
+      article = parsed.html;
+    }
+  } catch(e) {}
+
+  // --- 2. タイトルの決定（ここを修正） ---
+  const countryName =
+    inputData.target_country ||
+    inputData.targetCountry ||
+    inputData.country ||
+    inputData["対象国"] ||
+    "対象国";
+
+  const title = countryName;
+
+  // --- 3. HTMLタグの調整 ---
+  article = article.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>');
+article = article.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+article = article.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+article = article.replace(/^#\s+(.+)$/gm, '<h2>$1</h2>');
+
+  // --- 4. リンクのHTML化 ---
+  article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+// --- 4.5 ⑦⑧テーブルをカード型に変換 ---
+article = article.replace(
+  /<table[^>]*>[\s\S]*?<\/table>/gi,
+  (tableHtml) => {
+    // ⑦映像作品テーブルの判定（#列・タイトル・種別・公開年・概要・リンクの6列）
+    const isFilmTable = tableHtml.includes('種別') && tableHtml.includes('公開年') && tableHtml.includes('概要');
+    // ⑧興行収入テーブルの判定
+    const isRankingTable = tableHtml.includes('観客動員数') || tableHtml.includes('興行収入');
+
+    if (!isFilmTable && !isRankingTable) return tableHtml;
+
+    // 行を抽出
+    const rows = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
+    if (rows.length < 2) return tableHtml;
+
+    // ヘッダー行をスキップして各行をカードに変換
+    const cards = rows.slice(1).map(row => {
+      const cells = [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m => m[1].trim());
+      if (!cells.length) return '';
+
+      const isSeriousRow = row.includes('fff3f3') || cells[0].includes('⚠️');
+      const bgColor = isSeriousRow ? '#fff3f3' : '#ffffff';
+
+      if (isRankingTable) {
+        const [rank, title, year, revenue, links] = cells;
+        return `
+<div style="background:${bgColor};border:1px solid #ddd;border-radius:10px;padding:14px;margin:10px 0;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <span style="background:#20B2AA;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;flex-shrink:0;">${rank || ''}</span>
+    <span style="font-weight:bold;font-size:15px;">${title || ''}</span>
+  </div>
+  <div style="font-size:13px;color:#666;margin-bottom:8px;">📅 ${year || ''} &nbsp;|&nbsp; 👥 ${revenue || ''}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">${links || ''}</div>
+</div>`;
+      } else {
+        const warn = cells[0].includes('⚠️') ? '⚠️ ' : '';
+        const [, title, type, year, summary, links] = cells;
+        return `
+<div style="background:${bgColor};border:1px solid #ddd;border-radius:10px;padding:14px;margin:10px 0;">
+  <div style="font-weight:bold;font-size:15px;margin-bottom:6px;">${warn}${title || ''}</div>
+  <div style="font-size:12px;color:#888;margin-bottom:8px;">${type || ''} | ${year || ''}</div>
+  <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:10px;">${summary || ''}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">${links || ''}</div>
+</div>`;
+      }
+    }).join('');
+
+    return `<div style="margin:20px 0;">${cards}</div>`;
+  }
+);
+  // --- 5. 外部サービスリンクの付与 ---
+  article = article.replace(
+    /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
+    (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
+      const jp = jpTitle.trim();
+      const en = enTitle.trim();
+      const tsutayaUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
+      const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
+      return `${match} ` +
+        `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
+        `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
+    }
+  );
+
+  // --- 6. 最終データの出力 ---
+  return {
+    json: {
+      article: promptBody ? `${promptBody}\n\n${article}` : article,
+      title: title,
+      target_country: countryName,
+      processedAt: new Date().toISOString()
+    }
+  };
+});
