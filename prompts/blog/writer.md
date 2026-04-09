@@ -81,6 +81,12 @@
 
 ### ② 治安と地理の衡量
 
+**地理情報：**
+以下を1文ずつ出力（`対象国データ.地理` から取得）：
+- 位置・面積
+- 公用語
+- 日本からの飛行距離・時間（東京〜大阪の何倍か）
+
 **治安指標表：**
 対象国の値は `固定データ.治安指標` から取得すること。
 日本の値は `日本固定データ.治安指標` から取得すること。
@@ -110,6 +116,26 @@
 - レベル3：「🚨 外務省から「渡航中止勧告」が出てるニャ！！絶対に行っちゃダメニャ！！」
 - レベル4：「🚨 外務省から「退避勧告」が出てるニャ！！既に滞在している人はすぐ逃げてほしいニャ！！」
 
+**刑務所収容推移：**
+`固定データ.刑務所推移` と `日本固定データ.刑務所推移` をもとに以下のHTML表を出力すること。
+
+<h3>② 刑務所収容推移</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+  <thead>
+    <tr>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:15%;">年</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:21%;">{{ $json.対象国 }} 総収容者数</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:22%;">{{ $json.対象国 }} 収容率（10万人）</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:21%;">日本 総収容者数</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:21%;">日本 収容率（10万人）</th>
+    </tr>
+  </thead>
+  <tbody>
+    【固定データ.刑務所推移と日本固定データ.刑務所推移を年ごとに1行ずつ出力。年が一致する行を横並びにすること】
+  </tbody>
+</table>
+出典：World Prison Brief
+
 **死因比較表：**
 対象国の値は `固定データ.死因トップ10` から取得すること。
 日本の値は `日本固定データ.死因トップ10` から取得すること。
@@ -130,12 +156,6 @@
 出典：
 - {{ $json.対象国 }}：【固定データ.死因トップ10の出典】
 - 日本：厚生労働省 2025年人口動態統計
-
-**地理情報：**
-以下を1文ずつ出力（`対象国データ.地理` から取得）：
-- 位置・面積
-- 公用語
-- 日本からの飛行距離・時間（東京〜大阪の何倍か）
 
 ---
 
@@ -168,6 +188,28 @@
 
 ※算出レート：1 【固定データ.物価.通貨コード】 = 【固定データ.物価.為替レート】 JPY（【固定データ.物価.為替取得日】現在）
 出典：Numbeo, Cost of Living in {{ $json.対象国 }}, {{ $now.toFormat('yyyy年') }}更新 / 日本：Numbeo, Cost of Living in Japan, 2026年3月更新 / Netflix公式サイト
+
+---
+
+### ④ 貿易の衡量
+
+対象国の値は `固定データ.貿易` から、日本の値は `日本固定データ.貿易` から取得すること。
+
+<h3>④ 貿易の衡量</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+  <thead>
+    <tr>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">区分</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:45%;">{{ $json.対象国 }}</th>
+      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:45%;">日本</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">輸出トップ10</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.貿易.輸出トップ10を1位〜10位まで縦に列挙】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.貿易.輸出トップ10を1位〜10位まで縦に列挙】</td></tr>
+    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">輸入トップ10</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.貿易.輸入トップ10を1位〜10位まで縦に列挙】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.貿易.輸入トップ10を1位〜10位まで縦に列挙】</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">主要貿易相手国</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.貿易.貿易相手国トップ10を1位〜10位まで縦に列挙】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.貿易.貿易相手国トップ10を1位〜10位まで縦に列挙】</td></tr>
+  </tbody>
+</table>
 
 ---
 
