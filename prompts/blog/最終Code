@@ -30,6 +30,8 @@ return $input.all().map(item => {
 article = article.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
 article = article.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
 article = article.replace(/^#\s+(.+)$/gm, '<h2>$1</h2>');
+article = article.replace(/(<h[23][^>]*>)(.*?)<\/h[23]>\s*\*\*\1\2\*\*/gi, '$1$2</h$3>');
+article = article.replace(/(\*\*[^*]+\*\*)\s*\n\s*\1/g, '$1');
 
   // --- 4. リンクのHTML化 ---
   article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
