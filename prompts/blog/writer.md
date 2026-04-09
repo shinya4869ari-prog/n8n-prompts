@@ -91,6 +91,7 @@
 **治安指標表：**
 対象国の値は `固定データ.治安指標` から取得すること。
 日本の値は `日本固定データ.治安指標` から取得すること。
+値のみ表示し出典はセル内に含めないこと。
 
 <table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
   <thead>
@@ -101,13 +102,14 @@
     </tr>
   </thead>
   <tbody>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">殺人率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.殺人率.値】（【固定データ.治安指標.殺人率.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.殺人率.値】（【日本固定データ.治安指標.殺人率.出典】）</td></tr>
-    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">交通事故死亡率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.交通事故死亡率.値】（【固定データ.治安指標.交通事故死亡率.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.交通事故死亡率.値】（【日本固定データ.治安指標.交通事故死亡率.出典】）</td></tr>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">自殺率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.自殺率.値】（【固定データ.治安指標.自殺率.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.自殺率.値】（【日本固定データ.治安指標.自殺率.出典】）</td></tr>
-    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">刑務所収容率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.刑務所収容率.値】（【固定データ.治安指標.刑務所収容率.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.刑務所収容率.値】（【日本固定データ.治安指標.刑務所収容率.出典】）</td></tr>
-    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">GPI（世界平和度指数）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.GPI スコア.値】（【固定データ.治安指標.GPI 順位.値】・【固定データ.治安指標.GPI スコア.出典】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.GPI スコア.値】（【日本固定データ.治安指標.GPI 順位.値】・【日本固定データ.治安指標.GPI スコア.出典】）</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">殺人率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.殺人率（10万人あたり）.値】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.殺人率（10万人あたり）.値】</td></tr>
+    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">交通事故死亡率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.交通事故死亡率（10万人あたり）.値】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.交通事故死亡率（10万人あたり）.値】</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">自殺率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.自殺率（10万人あたり）.値】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.自殺率（10万人あたり）.値】</td></tr>
+    <tr style="background:#fafafa;"><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">刑務所収容率（10万人あたり）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.刑務所収容率（10万人あたり）.値】</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.刑務所収容率（10万人あたり）.値】</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:10px;font-weight:bold;">GPI（世界平和度指数）</td><td style="border:1px solid #ddd;padding:10px;">【固定データ.治安指標.GPI スコア.値】（【固定データ.治安指標.GPI 順位.値】）</td><td style="border:1px solid #ddd;padding:10px;">【日本固定データ.治安指標.GPI スコア.値】（【日本固定データ.治安指標.GPI 順位.値】）</td></tr>
   </tbody>
-</table><p style="font-size:12px;color:#888;margin-top:4px;">出典：各値の（）内に記載</p>
+</table>
+<p style="font-size:12px;color:#888;margin-top:4px;">出典：殺人率＝【固定データ.治安指標.殺人率（10万人あたり）.出典・年】、交通事故死亡率＝【固定データ.治安指標.交通事故死亡率（10万人あたり）.出典・年】、自殺率＝【固定データ.治安指標.自殺率（10万人あたり）.出典・年】、刑務所収容率＝【固定データ.治安指標.刑務所収容率（10万人あたり）.出典・年】、GPI＝【固定データ.治安指標.GPI スコア.出典・年】</p>
 
 ※外務省危険情報レベルが1以上の場合のみ以下を出力：
 <p>⚠️ <strong>外務省危険情報：レベル【対象国データ.地理.外務省危険レベル】</strong>【対象国データ.地理.外務省危険情報詳細】</p>
