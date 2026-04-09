@@ -1,47 +1,49 @@
-const promptBody = $input.first()?.json?.externalPrompt ?? "";
-
+const promptBody = $input.first()?.json?.externalPrompt ?? “”;
 return $input.all().map(item => {
-  try {
-    let article = item.json?.article 
-      ?? item.json?.content?.parts?.[0]?.text 
-      ?? "";
-    const inputData = item.json;
-
-    const titleMatch = article.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : (inputData.title || "分析レポート");
-    
-    article = article.replace(/^#\s+.+$/m, '').trim();
-
-    article = article.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-
-    article = article.replace(
-      /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
-      (match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
-        const jp = jpTitle.trim();
-        const en = enTitle.trim();
-        const tsutayaUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:movie-tsutaya.tsite.jp ${jp}`)}`;
-        const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${en} trailer`)}`;
-        
-        return `${match} ` +
-          `<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a>` +
-          `<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>`;
-      }
-    );
-
-    return {
-      json: {
-        article: promptBody ? `${promptBody}\n\n${article}` : article,
-        title: title,
-        target_country: inputData.target_country || "不明",
-      }
-    };
-  } catch (err) {
-    console.error("最終整形プロセスでエラーが発生しました:", err);
-    return { 
-      json: { 
-        article: item.json?.content?.parts?.[0]?.text ?? item.json.article, 
-        error: err.message
-      } 
-    };
-  }
+// — 1. 入力データの整理 —
+let raw = item.json?.article ?? “”;
+const inputData = item.json;
+let article = raw;
+try {
+const parsed = JSON.parse(raw);
+if (Array.isArray(parsed) && parsed[0]?.html) {
+article = parsed[0].html;
+} else if (parsed?.html) {
+article = parsed.html;
+}
+} catch(e) {}
+// — 2. タイトルの決定（ここを修正） —
+const countryName =
+inputData.target_country ||
+inputData.targetCountry ||
+inputData.country ||
+inputData[“対象国”] ||
+“対象国”;
+const title = countryName;
+// — 3. HTMLタグの調整 —
+article = article.replace(/<h1([^>])>([\s\S]?)</h1>/gi, ‘<h2$1>$2</h2>’);
+// — 4. リンクのHTML化 —
+article = article.replace(/[([^]]+)]((https?://[^)]+))/g, ‘<a href="$2" target="_blank">$1</a>’);
+// — 5. 外部サービスリンクの付与 —
+article = article.replace(
+/(<strong>)(⚠️\s*)?(\d+.\s)([^（<]+)（([^）]+)）(</strong>)/g,
+(match, openTag, warn, num, jpTitle, enTitle, closeTag) => {
+const jp = jpTitle.trim();
+const en = enTitle.trim();
+const tsutayaUrl = https://www.google.com/search?q=${encodeURIComponent(site:movie-tsutaya.tsite.jp ${jp})};
+const youtubeUrl = https://www.youtube.com/results?search_query=${encodeURIComponent(${en} trailer)};
+return ${match}  +
+<a href="${tsutayaUrl}" target="_blank" style="font-size:12px;color:#e60012;border:1px solid #e60012;padding:2px 8px;border-radius:10px;text-decoration:none;margin-right:4px;">TSUTAYA</a> +
+<a href="${youtubeUrl}" target="_blank" style="font-size:12px;color:#ff0000;border:1px solid #ff0000;padding:2px 8px;border-radius:10px;text-decoration:none;">予告編</a>;
+}
+);
+// — 6. 最終データの出力 —
+return {
+json: {
+article: promptBody ? ${promptBody}\n\n${article} : article,
+title: title,
+target_country: countryName,
+processedAt: new Date().toISOString()
+}
+};
 });
