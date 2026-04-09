@@ -1,21 +1,33 @@
-const r1 = $('Researcher 1').first().json;
-const r2 = $('Researcher 2').first().json;
+const grouped = {};
+
+for (const item of items) {
+  const sourceNode = item.pairedItem?.source?.node;
+
+  if (!grouped[sourceNode]) {
+    grouped[sourceNode] = [];
+  }
+
+  grouped[sourceNode].push(item.json);
+}
+
+const r1 = grouped["Researcher 1"]?.[0] ?? {};
+const r2 = grouped["Researcher 2"]?.[0] ?? {};
 
 const targetFixed = {
-  治安指標: $('②治安指標').all().map(i => i.json),
-  刑務所推移: $('②刑務所推移').all().map(i => i.json),
-  死因トップ10: $('②死因トップ10').all().map(i => i.json),
-  物価: $('③物価').all().map(i => i.json),
-  貿易: $('④貿易').all().map(i => i.json)
+  治安指標: grouped["②治安指標"] ?? [],
+  刑務所推移: grouped["②刑務所推移"] ?? [],
+  死因トップ10: grouped["②死因トップ10"] ?? [],
+  物価: grouped["③物価"] ?? [],
+  貿易: grouped["④貿易"] ?? []
 };
 
 const japanFixed = {
-  制度の9つの皿: $('Japan_①制度').all().map(i => i.json),
-  治安指標: $('Japan_②治安指標').all().map(i => i.json),
-  刑務所推移: $('Japan_②刑務所推移').all().map(i => i.json),
-  死因トップ10: $('Japan_②死因トップ10').all().map(i => i.json),
-  物価: $('Japan_③物価').all().map(i => i.json),
-  貿易: $('Japan_④貿易').all().map(i => i.json)
+  制度の9つの皿: grouped["Japan_①制度"] ?? [],
+  治安指標: grouped["Japan_②治安指標"] ?? [],
+  刑務所推移: grouped["Japan_②刑務所推移"] ?? [],
+  死因トップ10: grouped["Japan_②死因トップ10"] ?? [],
+  物価: grouped["Japan_③物価"] ?? [],
+  貿易: grouped["Japan_④貿易"] ?? []
 };
 
 return [{
