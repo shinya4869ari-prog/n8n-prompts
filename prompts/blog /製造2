@@ -1,0 +1,34 @@
+const input = $input.first().json;
+
+// ① Writerのtext取得
+let raw = input?.content?.parts?.[0]?.text ?? "";
+
+// ② JSONとしてパース
+let article = raw;
+
+try {
+  const parsed = JSON.parse(raw);
+
+  // 配列形式 [{"html": "..."}]
+  if (Array.isArray(parsed) && parsed[0]?.html) {
+    article = parsed[0].html;
+  }
+  // 単体 {html:"..."}
+  else if (parsed?.html) {
+    article = parsed.html;
+  }
+
+} catch (e) {}
+
+// ③ エスケープ解除
+article = article
+  .replace(/\\n/g, '\n')
+  .replace(/\\t/g, '\t')
+  .replace(/\\"/g, '"')
+  .trim();
+
+return [{
+  json: {
+    article: article
+  }
+}];
