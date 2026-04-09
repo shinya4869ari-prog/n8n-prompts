@@ -1,25 +1,45 @@
-const r1Node = $('researcher1').first();
-const r2Node = $('researcher2').first();
-if (!r1Node || !r2Node) {
-  throw new Error('Researcherノードの出力がありません');
-}
-const r1 = r1Node.json;
-const r2 = r2Node.json;
+const r1Raw = $('researcher1').first().json;
+const r2Raw = $('researcher2').first().json;
+
+const parseOutput = (node) => {
+  try {
+    const raw = node.output ?? node.json ?? '{}';
+    return JSON.parse(raw.replace(/```json|```/g, '').trim());
+  } catch(e) { return node; }
+};
+
+const r1 = parseOutput(r1Raw);
+const r2 = parseOutput(r2Raw);
+
+const toObj = (rows, keyCol, valCols) => {
+  const obj = {};
+  rows.forEach(r => {
+    if (r[keyCol]) obj[r[keyCol]] = {};
+    valCols.forEach(v => { if (r[keyCol]) obj[r[keyCol]][v] = r[v]; });
+  });
+  return obj;
+};
+
+const chiAn = $('②治安指標').all().map(i => i.json);
+const bukka = $('③物価').all().map(i => i.json);
+const jBukka = $('Japan_③物価').all().map(i => i.json);
+const jSeido = $('Japan_①制度').all().map(i => i.json);
+const jChiAn = $('Japan_②治安指標').all().map(i => i.json);
 
 const targetFixed = {
-  治安指標: $('②治安指標').all().map(i => i.json),
+  治安指標: toObj(chiAn, '項目', ['値', '出典・年']),
   刑務所推移: $('②刑務所推移').all().map(i => i.json),
   死因トップ10: $('②死因トップ10').all().map(i => i.json),
-  物価: $('③物価').all().map(i => i.json),
+  物価: toObj(bukka, '項目', ['値（KRW）', '円換算（1KRW=0.106JPY）', '出典']),
   貿易: $('④貿易').all().map(i => i.json)
 };
 
 const japanFixed = {
-  制度の9つの皿: $('Japan_①制度').all().map(i => i.json),
-  治安指標: $('Japan_②治安指標').all().map(i => i.json),
+  制度の9つの皿: toObj(jSeido, '項目', ['値', '出典']),
+  治安指標: toObj(jChiAn, '項目', ['値', '出典・年']),
   刑務所推移: $('Japan_②刑務所推移').all().map(i => i.json),
   死因トップ10: $('Japan_②死因トップ10').all().map(i => i.json),
-  物価: $('Japan_③物価').all().map(i => i.json),
+  物価: toObj(jBukka, '項目', ['値（円）', '出典']),
   貿易: $('Japan_④貿易').all().map(i => i.json)
 };
 
