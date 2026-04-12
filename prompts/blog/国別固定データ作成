@@ -10,6 +10,9 @@
 - 挨拶・説明・マークダウン記号・JSON以外の文字を一切出力しないこと
 - 最後の } の後は何も出力しないこと
 
+## 出典の優先順位（必ずこの順で探すこと）
+各項目ごとに以下の公式出典を優先すること。見つからない場合のみ次の出典へ移ること。非公式サイト（Macrotrends・Trading Economics・Volza・Statista等）は最終手段とし、使用した場合は出典名を必ず明記すること。
+
 現在の年月：{{ $now.toFormat('yyyy年MM月dd日') }}
 
 ---
@@ -17,105 +20,123 @@
 ## 【② 治安指標】
 
 ### 殺人率（10万人あたり）
-以下の順で検索し、最初に見つかったデータを使うこと：
-1. 「{{ $json.country }} UNODC homicide rate per 100000 2023 2024」
-2. 「{{ $json.country }} WHO homicide rate per 100000 latest」
-3. 「{{ $json.country }} World Bank intentional homicides per 100000」
+優先出典：World Bank → UNODC → WHO
+1. 「{{ $json.country }} intentional homicides per 100000 site:data.worldbank.org」
+2. 「{{ $json.country }} UNODC homicide rate per 100000 2023 2024」
+3. 「{{ $json.country }} WHO homicide rate per 100000 latest」
 
 ### 交通事故死亡率（10万人あたり）
-1. 「{{ $json.country }} WHO road traffic deaths per 100000 2023 2024」
-2. 「{{ $json.country }} road traffic fatality rate per 100000 latest」
+優先出典：OECD/ITF → WHO
+1. 「{{ $json.country }} road traffic deaths per 100000 OECD ITF 2023 2024」
+2. 「{{ $json.country }} WHO road traffic mortality rate per 100000 latest」
 
 ### 自殺率（10万人あたり）
-1. 「{{ $json.country }} WHO suicide rate per 100000 2023 2024」
-2. 「{{ $json.country }} suicide mortality rate per 100000 latest」
+優先出典：WHO → 各国公式統計局
+1. 「{{ $json.country }} suicide mortality rate per 100000 site:who.int 2023 2024」
+2. 「{{ $json.country }} WHO suicide rate per 100000 latest」
+3. 「{{ $json.country }} official statistics suicide rate per 100000 2023 2024」
 
 ### 刑務所収容率・総収容者数
+優先出典：World Prison Brief（prisonstudies.org）
 1. 「{{ $json.country }} prison population rate per 100000 site:prisonstudies.org」
-2. 「{{ $json.country }} World Prison Brief prison population 2024」
+2. 「{{ $json.country }} World Prison Brief prison population latest 2024」
 
 ### 刑務所収容推移（直近10年・2年おき）
+優先出典：World Prison Brief（prisonstudies.org）
 1. 「{{ $json.country }} prison population trend history site:prisonstudies.org」
-2. 「{{ $json.country }} prison population 2014 2016 2018 2020 2022 2024」
+2. 「{{ $json.country }} World Prison Brief prison population 2014 2016 2018 2020 2022 2024」
 
 ### GPI（世界平和度指数）
-1. 「{{ $json.country }} Global Peace Index 2024 score rank IEP」
-2. 「Global Peace Index 2024 {{ $json.country }}」
+優先出典：IEP（visionofhumanity.org）
+1. 「{{ $json.country }} Global Peace Index 2025 score rank site:visionofhumanity.org」
+2. 「Global Peace Index 2025 {{ $json.country }} IEP score rank」
 
 ### 外務省危険情報レベル
-1. 「外務省 {{ $json.country }} 危険情報 レベル {{ $now.toFormat('yyyy') }}」
+優先出典：外務省海外安全ホームページ
+1. 「外務省 {{ $json.country }} 危険情報 危険レベル {{ $now.toFormat('yyyy') }}」
+※ レベルは必ず数字（0〜4）で出力すること。例：「レベル2」
 
 ### 死因トップ10
-1. 「{{ $json.country }} leading causes of death 2023 2024 WHO」
-2. 「{{ $json.country }} top 10 causes of death WHO GHE」
+優先出典：WHO GHE → 各国公式統計局
+1. 「{{ $json.country }} leading causes of death site:who.int GHE 2023 2024」
+2. 「{{ $json.country }} top 10 causes of death WHO Global Health Estimates」
+※「非感染性疾患」のような大括りは不可。「悪性新生物（がん）」「心疾患」レベルの具体的な病名で10個返すこと。
 
 ---
 
 ## 【③ 物価】
 
-以下の各項目を個別に検索すること。Numbeoが見つからない場合は他のソースも使うこと。
+以下の各項目を個別に検索すること。
 ※ 首都名は自分で特定して検索に使うこと。
+優先出典：Numbeo → 各国公式統計・現地メディア
 
 ### ビール（市販500ml）
 1. 「Numbeo beer price {{ $json.country }} 2025 2026」
-2. 「beer price {{ $json.country }} capital 2025」
+2. 「beer price {{ $json.country }} capital city 2025」
 
 ### タバコ（マルボロ1箱）
 1. 「Numbeo cigarettes Marlboro price {{ $json.country }} 2025 2026」
-2. 「cigarette price {{ $json.country }} capital 2025」
+2. 「Marlboro cigarette price {{ $json.country }} 2025」
 
 ### ミネラルウォーター（500ml）
-1. 「Numbeo water bottle price {{ $json.country }} 2025」
-2. 「water price {{ $json.country }} capital 2025」
+1. 「Numbeo water bottle price {{ $json.country }} 2025 2026」
+2. 「mineral water price {{ $json.country }} capital 2025」
 
 ### ビッグマック
 1. 「Big Mac price {{ $json.country }} 2025 2026」
-2. 「McDonald's price {{ $json.country }} capital」
+2. 「McDonald's Big Mac price {{ $json.country }} local currency 2025」
 
 ### ガソリン（1L）
+優先出典：Numbeo → GlobalPetrolPrices.com
 1. 「Numbeo gasoline price {{ $json.country }} 2025 2026」
-2. 「fuel petrol price {{ $json.country }} 2025 per liter」
+2. 「{{ $json.country }} petrol price per liter 2025 site:globalpetrolprices.com」
 
 ### 外食（安めの店・1食）
-1. 「Numbeo inexpensive restaurant meal price {{ $json.country }} 2025」
+1. 「Numbeo inexpensive restaurant meal price {{ $json.country }} 2025 2026」
 2. 「cheap meal price {{ $json.country }} capital 2025」
 
-### 電気・水道・ガス（月額）
-1. 「Numbeo utilities monthly cost {{ $json.country }} 2025」
-2. 「electricity water gas monthly cost {{ $json.country }} capital 2025」
+### 電気・水道・ガス（月額・85㎡）
+1. 「Numbeo utilities monthly cost {{ $json.country }} 2025 2026」
+2. 「electricity water gas monthly bill {{ $json.country }} capital 2025」
 
 ### 家賃（1LDK・市内）
-1. 「Numbeo apartment rent 1 bedroom city centre {{ $json.country }} 2025」
+1. 「Numbeo apartment rent 1 bedroom city centre {{ $json.country }} 2025 2026」
 2. 「1 bedroom apartment rent {{ $json.country }} capital city centre 2025」
 
 ### 平均月収（手取り）
-1. 「Numbeo average monthly net salary {{ $json.country }} 2025」
-2. 「average salary {{ $json.country }} 2025 monthly take home」
+1. 「Numbeo average monthly net salary {{ $json.country }} 2025 2026」
+2. 「average monthly take home salary {{ $json.country }} 2025 official」
 
 ### Netflix（スタンダード）
-1. 「Netflix standard plan price {{ $json.country }} 2025 2026」
-2. 「Netflix subscription price {{ $json.country }}」
+優先出典：Netflix公式 → JustWatch → Netflixindex.com
+1. 「Netflix standard plan price {{ $json.country }} 2025 2026 official」
+2. 「Netflix subscription price {{ $json.country }} local currency 2026」
 
 ### 為替レート（対円）
-1. 「{{ $json.country }} currency JPY exchange rate today 2026」
-2. 「{{ $json.country }} yen exchange rate today」
+優先出典：xe.com → 三菱UFJリサーチ
+1. 「{{ $json.country }} currency JPY exchange rate today 2026 site:xe.com」
+2. 「{{ $json.country }} yen exchange rate today 2026」
 
 ---
 
 ## 【④ 貿易データ】
 
+優先出典：OEC World（oec.world）→ UN Comtrade → 各国税関・貿易統計
+
 ### 輸出トップ10
-1. 「{{ $json.country }} top 10 export products 2023 2024 official」
-2. 「{{ $json.country }} exports by product 2024 OEC MIT」
-3. 「{{ $json.country }} export commodities 2024 site:oec.world」
+1. 「{{ $json.country }} top export products 2023 2024 site:oec.world」
+2. 「{{ $json.country }} exports by product 2024 UN Comtrade」
+3. 「{{ $json.country }} top 10 export commodities 2024 official」
 
 ### 輸入トップ10
-1. 「{{ $json.country }} top 10 import products 2023 2024 official」
-2. 「{{ $json.country }} imports by product 2024 OEC」
+1. 「{{ $json.country }} top import products 2023 2024 site:oec.world」
+2. 「{{ $json.country }} imports by product 2024 UN Comtrade」
+3. 「{{ $json.country }} top 10 import commodities 2024 official」
 
-### 主要貿易相手国トップ10
-1. 「{{ $json.country }} top trading partners 2023 2024 share percentage」
-2. 「{{ $json.country }} trade partners export import 2024 site:oec.world」
+### 主要貿易相手国トップ10（シェア%付き）
+1. 「{{ $json.country }} top trading partners share percentage 2023 2024 site:oec.world」
+2. 「{{ $json.country }} trade partners export import share 2024 UN Comtrade」
+※ シェア（%）を必ず取得すること。数値が見つからない場合は追加検索すること。
 
 ---
 
