@@ -137,6 +137,7 @@
 1. 「{{ $json.country }} top trading partners share percentage 2023 2024 site:oec.world」
 2. 「{{ $json.country }} trade partners export import share 2024 UN Comtrade」
 ※ シェア（%）を必ず取得すること。数値が見つからない場合は追加検索すること。
+※ 貿易相手国は輸出・輸入を区別せず、総貿易額ベースのトップ10を返すこと。国名に（輸出）（輸入）などの括弧は付けないこと。
 
 ---
 
