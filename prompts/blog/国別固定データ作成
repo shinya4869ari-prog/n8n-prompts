@@ -2,7 +2,6 @@
 対象国「{{ $json.country }}」について、以下の項目を検索ツールで必ず収集し、JSONで返してください。
 
 ## 絶対ルール
-- 国名が日本語の場合は英語に変換して検索すること
 - 検索ツールを必ず使うこと。学習データ使用禁止
 - 推測・補完禁止
 - データが見つからない場合のみ「欠測」と記載
@@ -19,103 +18,104 @@
 
 ### 殺人率（10万人あたり）
 以下の順で検索し、最初に見つかったデータを使うこと：
-1. 「Rwanda UNODC homicide rate per 100000 2023 2024」
-2. 「Rwanda WHO homicide rate per 100000 latest」
-3. 「Rwanda World Bank intentional homicides per 100000」
+1. 「{{ $json.country }} UNODC homicide rate per 100000 2023 2024」
+2. 「{{ $json.country }} WHO homicide rate per 100000 latest」
+3. 「{{ $json.country }} World Bank intentional homicides per 100000」
 
 ### 交通事故死亡率（10万人あたり）
-1. 「Rwanda WHO road traffic deaths per 100000 2023 2024」
-2. 「Rwanda road traffic fatality rate per 100000 latest」
+1. 「{{ $json.country }} WHO road traffic deaths per 100000 2023 2024」
+2. 「{{ $json.country }} road traffic fatality rate per 100000 latest」
 
 ### 自殺率（10万人あたり）
-1. 「Rwanda WHO suicide rate per 100000 2023 2024」
-2. 「Rwanda suicide mortality rate per 100000 latest」
+1. 「{{ $json.country }} WHO suicide rate per 100000 2023 2024」
+2. 「{{ $json.country }} suicide mortality rate per 100000 latest」
 
 ### 刑務所収容率・総収容者数
-1. 「Rwanda prison population rate per 100000 site:prisonstudies.org」
-2. 「Rwanda World Prison Brief prison population 2024」
+1. 「{{ $json.country }} prison population rate per 100000 site:prisonstudies.org」
+2. 「{{ $json.country }} World Prison Brief prison population 2024」
 
 ### 刑務所収容推移（直近10年・2年おき）
-1. 「Rwanda prison population trend history site:prisonstudies.org」
-2. 「Rwanda prison population 2014 2016 2018 2020 2022 2024」
+1. 「{{ $json.country }} prison population trend history site:prisonstudies.org」
+2. 「{{ $json.country }} prison population 2014 2016 2018 2020 2022 2024」
 
 ### GPI（世界平和度指数）
-1. 「Rwanda Global Peace Index 2024 score rank IEP」
-2. 「Global Peace Index 2024 Rwanda」
+1. 「{{ $json.country }} Global Peace Index 2024 score rank IEP」
+2. 「Global Peace Index 2024 {{ $json.country }}」
 
 ### 外務省危険情報レベル
-1. 「外務省 ルワンダ 危険情報 レベル 2025 2026」
+1. 「外務省 {{ $json.country }} 危険情報 レベル {{ $now.toFormat('yyyy') }}」
 
 ### 死因トップ10
-1. 「Rwanda leading causes of death 2023 2024 WHO」
-2. 「Rwanda top 10 causes of death WHO GHE」
+1. 「{{ $json.country }} leading causes of death 2023 2024 WHO」
+2. 「{{ $json.country }} top 10 causes of death WHO GHE」
 
 ---
 
 ## 【③ 物価】
 
 以下の各項目を個別に検索すること。Numbeoが見つからない場合は他のソースも使うこと。
+※ 首都名は自分で特定して検索に使うこと。
 
 ### ビール（市販500ml）
-1. 「Numbeo beer price Rwanda Kigali 2025 2026」
-2. 「beer price Kigali Rwanda 2025」
+1. 「Numbeo beer price {{ $json.country }} 2025 2026」
+2. 「beer price {{ $json.country }} capital 2025」
 
 ### タバコ（マルボロ1箱）
-1. 「Numbeo cigarettes Marlboro price Rwanda 2025 2026」
-2. 「cigarette price Kigali Rwanda 2025」
+1. 「Numbeo cigarettes Marlboro price {{ $json.country }} 2025 2026」
+2. 「cigarette price {{ $json.country }} capital 2025」
 
 ### ミネラルウォーター（500ml）
-1. 「Numbeo water bottle price Rwanda Kigali 2025」
-2. 「water price Kigali Rwanda 2025」
+1. 「Numbeo water bottle price {{ $json.country }} 2025」
+2. 「water price {{ $json.country }} capital 2025」
 
 ### ビッグマック
-1. 「Big Mac price Rwanda 2025 2026」
-2. 「McDonald's price Kigali Rwanda」
+1. 「Big Mac price {{ $json.country }} 2025 2026」
+2. 「McDonald's price {{ $json.country }} capital」
 
 ### ガソリン（1L）
-1. 「Numbeo gasoline price Rwanda 2025 2026」
-2. 「fuel petrol price Rwanda 2025 per liter」
+1. 「Numbeo gasoline price {{ $json.country }} 2025 2026」
+2. 「fuel petrol price {{ $json.country }} 2025 per liter」
 
 ### 外食（安めの店・1食）
-1. 「Numbeo inexpensive restaurant meal price Rwanda Kigali 2025」
-2. 「cheap meal price Kigali Rwanda 2025」
+1. 「Numbeo inexpensive restaurant meal price {{ $json.country }} 2025」
+2. 「cheap meal price {{ $json.country }} capital 2025」
 
 ### 電気・水道・ガス（月額）
-1. 「Numbeo utilities monthly cost Rwanda Kigali 2025」
-2. 「electricity water gas monthly cost Kigali Rwanda 2025」
+1. 「Numbeo utilities monthly cost {{ $json.country }} 2025」
+2. 「electricity water gas monthly cost {{ $json.country }} capital 2025」
 
 ### 家賃（1LDK・市内）
-1. 「Numbeo apartment rent 1 bedroom city centre Kigali Rwanda 2025」
-2. 「1 bedroom apartment rent Kigali city centre 2025」
+1. 「Numbeo apartment rent 1 bedroom city centre {{ $json.country }} 2025」
+2. 「1 bedroom apartment rent {{ $json.country }} capital city centre 2025」
 
 ### 平均月収（手取り）
-1. 「Numbeo average monthly net salary Rwanda Kigali 2025」
-2. 「average salary Rwanda 2025 monthly take home」
+1. 「Numbeo average monthly net salary {{ $json.country }} 2025」
+2. 「average salary {{ $json.country }} 2025 monthly take home」
 
 ### Netflix（スタンダード）
-1. 「Netflix standard plan price Rwanda 2025 2026」
-2. 「Netflix subscription price Rwanda」
+1. 「Netflix standard plan price {{ $json.country }} 2025 2026」
+2. 「Netflix subscription price {{ $json.country }}」
 
-### 為替レート
-1. 「RWF JPY exchange rate today 2026」
-2. 「Rwanda franc Japanese yen rate today」
+### 為替レート（対円）
+1. 「{{ $json.country }} currency JPY exchange rate today 2026」
+2. 「{{ $json.country }} yen exchange rate today」
 
 ---
 
 ## 【④ 貿易データ】
 
 ### 輸出トップ10
-1. 「Rwanda top 10 export products 2023 2024 official」
-2. 「Rwanda exports by product 2024 OEC MIT」
-3. 「Rwanda export commodities 2024 site:oec.world」
+1. 「{{ $json.country }} top 10 export products 2023 2024 official」
+2. 「{{ $json.country }} exports by product 2024 OEC MIT」
+3. 「{{ $json.country }} export commodities 2024 site:oec.world」
 
 ### 輸入トップ10
-1. 「Rwanda top 10 import products 2023 2024 official」
-2. 「Rwanda imports by product 2024 OEC」
+1. 「{{ $json.country }} top 10 import products 2023 2024 official」
+2. 「{{ $json.country }} imports by product 2024 OEC」
 
 ### 主要貿易相手国トップ10
-1. 「Rwanda top trading partners 2023 2024 share percentage」
-2. 「Rwanda trade partners export import 2024 site:oec.world」
+1. 「{{ $json.country }} top trading partners 2023 2024 share percentage」
+2. 「{{ $json.country }} trade partners export import 2024 site:oec.world」
 
 ---
 
@@ -125,11 +125,11 @@
 {
   "対象国": "{{ $json.country }}",
   "治安指標": {
-    "殺人率": {"値": "", "出典": ""},
-    "交通事故死亡率": {"値": "", "出典": ""},
-    "自殺率": {"値": "", "出典": ""},
-    "刑務所収容率": {"値": "", "出典": ""},
-    "刑務所総収容者数": {"値": "", "出典": ""},
+    "殺人率": {"値": "", "年": "", "出典": ""},
+    "交通事故死亡率": {"値": "", "年": "", "出典": ""},
+    "自殺率": {"値": "", "年": "", "出典": ""},
+    "刑務所収容率": {"値": "", "年": "", "出典": ""},
+    "刑務所総収容者数": {"値": "", "年": "", "出典": ""},
     "刑務所収容推移": [
       {"年": "", "総収容者数": "", "収容率": ""},
       {"年": "", "総収容者数": "", "収容率": ""},
@@ -195,4 +195,3 @@
     ]
   }
 }
-
