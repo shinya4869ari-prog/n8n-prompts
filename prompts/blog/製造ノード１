@@ -1,5 +1,6 @@
 const r1Raw = $('researcher1').first().json;
 const r2Raw = $('researcher2').first().json;
+const r3Raw = $('researcher3').first().json;
 
 const parseOutput = (node) => {
   try {
@@ -10,37 +11,129 @@ const parseOutput = (node) => {
 
 const r1 = parseOutput(r1Raw);
 const r2 = parseOutput(r2Raw);
+const r3 = parseOutput(r3Raw);
 
-const toObj = (rows, keyCol, valCols) => {
-  const obj = {};
-  rows.forEach(r => {
-    if (r[keyCol]) obj[r[keyCol]] = {};
-    valCols.forEach(v => { if (r[keyCol]) obj[r[keyCol]][v] = r[v]; });
-  });
-  return obj;
-};
+// Googleシートから読み込んだ固定データ
+const chiAn = $('②治安指標').first().json;
+const bukka = $('③物価').first().json;
+const boeki = $('④貿易').first().json;
 
-const chiAn = $('②治安指標').all().map(i => i.json);
-const bukka = $('③物価').all().map(i => i.json);
-const jBukka = $('Japan_③物価').all().map(i => i.json);
-const jSeido = $('Japan_①制度').all().map(i => i.json);
-const jChiAn = $('Japan_②治安指標').all().map(i => i.json);
+// 日本固定データ（Googleシート）
+const jChiAn = $('Japan_②治安指標').first().json;
+const jBukka = $('Japan_③物価').first().json;
+const jBoeki = $('Japan_④貿易').first().json;
+const jSeido = $('Japan_①制度').first().json;
 
 const targetFixed = {
-  治安指標: toObj(chiAn, '項目', ['値', '出典・年']),
-  刑務所推移: $('②刑務所推移').all().map(i => i.json),
-  死因トップ10: $('②死因トップ10').all().map(i => i.json),
-  物価: toObj(bukka, '項目', ['値（KRW）', '円換算（1KRW=0.106JPY）', '出典']),
-  貿易: $('④貿易').all().map(i => i.json)
+  治安指標: {
+    殺人率: { 値: chiAn['殺人率'], 年: chiAn['殺人率_年'], 出典: chiAn['殺人率_出典'] },
+    交通事故死亡率: { 値: chiAn['交通事故死亡率'], 年: chiAn['交通事故死亡率_年'], 出典: chiAn['交通事故死亡率_出典'] },
+    自殺率: { 値: chiAn['自殺率'], 年: chiAn['自殺率_年'], 出典: chiAn['自殺率_出典'] },
+    刑務所収容率: { 値: chiAn['刑務所収容率'], 年: chiAn['刑務所収容率_年'], 出典: chiAn['刑務所収容率_出典'] },
+    刑務所総収容者数: { 値: chiAn['刑務所総収容者数'], 年: chiAn['刑務所総収容者数_年'], 出典: chiAn['刑務所総収容者数_出典'] },
+    GPI: { スコア: chiAn['GPIスコア'], 順位: chiAn['GPI順位'], 年: chiAn['GPI年'], 出典: chiAn['GPI出典'] },
+    外務省危険レベル: { レベル: chiAn['外務省危険レベル'], 出典: chiAn['外務省危険レベル_出典'] }
+  },
+  刑務所推移: [
+    { 年: chiAn['収容推移1_年'], 総収容者数: chiAn['収容推移1_総収容者数'], 収容率: chiAn['収容推移1_収容率'] },
+    { 年: chiAn['収容推移2_年'], 総収容者数: chiAn['収容推移2_総収容者数'], 収容率: chiAn['収容推移2_収容率'] },
+    { 年: chiAn['収容推移3_年'], 総収容者数: chiAn['収容推移3_総収容者数'], 収容率: chiAn['収容推移3_収容率'] },
+    { 年: chiAn['収容推移4_年'], 総収容者数: chiAn['収容推移4_総収容者数'], 収容率: chiAn['収容推移4_収容率'] },
+    { 年: chiAn['収容推移5_年'], 総収容者数: chiAn['収容推移5_総収容者数'], 収容率: chiAn['収容推移5_収容率'] }
+  ],
+  死因トップ10: [
+    chiAn['死因1位'], chiAn['死因2位'], chiAn['死因3位'], chiAn['死因4位'], chiAn['死因5位'],
+    chiAn['死因6位'], chiAn['死因7位'], chiAn['死因8位'], chiAn['死因9位'], chiAn['死因10位']
+  ],
+  物価: {
+    通貨コード: bukka['通貨コード'],
+    為替レート: bukka['為替レート'],
+    為替取得日: bukka['為替取得日'],
+    ビール: { 現地通貨: bukka['ビール_現地通貨'], 円換算: bukka['ビール_円換算'], 出典: bukka['ビール_出典'] },
+    タバコ: { 現地通貨: bukka['タバコ_現地通貨'], 円換算: bukka['タバコ_円換算'], 出典: bukka['タバコ_出典'] },
+    水: { 現地通貨: bukka['水_現地通貨'], 円換算: bukka['水_円換算'], 出典: bukka['水_出典'] },
+    ビッグマック: { 現地通貨: bukka['ビッグマック_現地通貨'], 円換算: bukka['ビッグマック_円換算'], 出典: bukka['ビッグマック_出典'] },
+    ガソリン: { 現地通貨: bukka['ガソリン_現地通貨'], 円換算: bukka['ガソリン_円換算'], 出典: bukka['ガソリン_出典'] },
+    外食: { 現地通貨: bukka['外食_現地通貨'], 円換算: bukka['外食_円換算'], 出典: bukka['外食_出典'] },
+    光熱費: { 現地通貨: bukka['光熱費_現地通貨'], 円換算: bukka['光熱費_円換算'], 出典: bukka['光熱費_出典'] },
+    家賃: { 現地通貨: bukka['家賃_現地通貨'], 円換算: bukka['家賃_円換算'], 出典: bukka['家賃_出典'] },
+    月収: { 現地通貨: bukka['月収_現地通貨'], 円換算: bukka['月収_円換算'], 出典: bukka['月収_出典'] },
+    Netflix: { 現地通貨: bukka['Netflix_現地通貨'], 円換算: bukka['Netflix_円換算'], 出典: bukka['Netflix_出典'] }
+  },
+  貿易: {
+    輸出: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: boeki[`輸出${i+1}位_品目`],
+      シェア: boeki[`輸出${i+1}位_シェア%`],
+      出典: boeki[`輸出${i+1}位_出典`]
+    })),
+    輸入: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: boeki[`輸入${i+1}位_品目`],
+      シェア: boeki[`輸入${i+1}位_シェア%`],
+      出典: boeki[`輸入${i+1}位_出典`]
+    })),
+    貿易相手国: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      国名: boeki[`貿易相手${i+1}位_国名`],
+      シェア: boeki[`貿易相手${i+1}位_シェア%`],
+      出典: boeki[`貿易相手${i+1}位_出典`]
+    }))
+  }
 };
 
 const japanFixed = {
-  制度の9つの皿: toObj(jSeido, '項目', ['値', '出典']),
-  治安指標: toObj(jChiAn, '項目', ['値', '出典・年']),
-  刑務所推移: $('Japan_②刑務所推移').all().map(i => i.json),
-  死因トップ10: $('Japan_②死因トップ10').all().map(i => i.json),
-  物価: toObj(jBukka, '項目', ['値（円）', '出典']),
-  貿易: $('Japan_④貿易').all().map(i => i.json)
+  制度の9つの皿: jSeido,
+  治安指標: {
+    殺人率: { 値: jChiAn['殺人率'], 年: jChiAn['殺人率_年'], 出典: jChiAn['殺人率_出典'] },
+    交通事故死亡率: { 値: jChiAn['交通事故死亡率'], 年: jChiAn['交通事故死亡率_年'], 出典: jChiAn['交通事故死亡率_出典'] },
+    自殺率: { 値: jChiAn['自殺率'], 年: jChiAn['自殺率_年'], 出典: jChiAn['自殺率_出典'] },
+    刑務所収容率: { 値: jChiAn['刑務所収容率'], 年: jChiAn['刑務所収容率_年'], 出典: jChiAn['刑務所収容率_出典'] },
+    GPI: { スコア: jChiAn['GPIスコア'], 順位: jChiAn['GPI順位'], 年: jChiAn['GPI年'], 出典: jChiAn['GPI出典'] }
+  },
+  刑務所推移: [
+    { 年: jChiAn['収容推移1_年'], 総収容者数: jChiAn['収容推移1_総収容者数'], 収容率: jChiAn['収容推移1_収容率'] },
+    { 年: jChiAn['収容推移2_年'], 総収容者数: jChiAn['収容推移2_総収容者数'], 収容率: jChiAn['収容推移2_収容率'] },
+    { 年: jChiAn['収容推移3_年'], 総収容者数: jChiAn['収容推移3_総収容者数'], 収容率: jChiAn['収容推移3_収容率'] },
+    { 年: jChiAn['収容推移4_年'], 総収容者数: jChiAn['収容推移4_総収容者数'], 収容率: jChiAn['収容推移4_収容率'] },
+    { 年: jChiAn['収容推移5_年'], 総収容者数: jChiAn['収容推移5_総収容者数'], 収容率: jChiAn['収容推移5_収容率'] }
+  ],
+  死因トップ10: [
+    jChiAn['死因1位'], jChiAn['死因2位'], jChiAn['死因3位'], jChiAn['死因4位'], jChiAn['死因5位'],
+    jChiAn['死因6位'], jChiAn['死因7位'], jChiAn['死因8位'], jChiAn['死因9位'], jChiAn['死因10位']
+  ],
+  物価: {
+    通貨コード: jBukka['通貨コード'],
+    為替レート: jBukka['為替レート'],
+    ビール: { 現地通貨: jBukka['ビール_現地通貨'], 円換算: jBukka['ビール_円換算'], 出典: jBukka['ビール_出典'] },
+    タバコ: { 現地通貨: jBukka['タバコ_現地通貨'], 円換算: jBukka['タバコ_円換算'], 出典: jBukka['タバコ_出典'] },
+    水: { 現地通貨: jBukka['水_現地通貨'], 円換算: jBukka['水_円換算'], 出典: jBukka['水_出典'] },
+    ビッグマック: { 現地通貨: jBukka['ビッグマック_現地通貨'], 円換算: jBukka['ビッグマック_円換算'], 出典: jBukka['ビッグマック_出典'] },
+    ガソリン: { 現地通貨: jBukka['ガソリン_現地通貨'], 円換算: jBukka['ガソリン_円換算'], 出典: jBukka['ガソリン_出典'] },
+    外食: { 現地通貨: jBukka['外食_現地通貨'], 円換算: jBukka['外食_円換算'], 出典: jBukka['外食_出典'] },
+    光熱費: { 現地通貨: jBukka['光熱費_現地通貨'], 円換算: jBukka['光熱費_円換算'], 出典: jBukka['光熱費_出典'] },
+    家賃: { 現地通貨: jBukka['家賃_現地通貨'], 円換算: jBukka['家賃_円換算'], 出典: jBukka['家賃_出典'] },
+    月収: { 現地通貨: jBukka['月収_現地通貨'], 円換算: jBukka['月収_円換算'], 出典: jBukka['月収_出典'] },
+    Netflix: { 現地通貨: jBukka['Netflix_現地通貨'], 円換算: jBukka['Netflix_円換算'], 出典: jBukka['Netflix_出典'] }
+  },
+  貿易: {
+    輸出: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: jBoeki[`輸出${i+1}位_品目`],
+      出典: jBoeki[`輸出${i+1}位_出典`]
+    })),
+    輸入: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: jBoeki[`輸入${i+1}位_品目`],
+      出典: jBoeki[`輸入${i+1}位_出典`]
+    })),
+    貿易相手国: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      国名: jBoeki[`貿易相手${i+1}位_国名`],
+      シェア: jBoeki[`貿易相手${i+1}位_シェア%`],
+      出典: jBoeki[`貿易相手${i+1}位_出典`]
+    }))
+  }
 };
 
 return [{
@@ -50,6 +143,7 @@ return [{
     data: {
       対象国データ: r1,
       対象国データ_記事: r2,
+      対象国データ_経済: r3.経済データ,
       固定データ: targetFixed,
       日本固定データ: japanFixed
     }
