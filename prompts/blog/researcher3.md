@@ -45,15 +45,38 @@
 ### 経常収支（GDP比）
 1. 「{{ $('国名変換Code').first().json.countryEn }} current account balance GDP World Bank 2023 2024」
 
+## 【日本の経済データ（比較用）】
+
+### 日本GDP・成長率
+1. 「Japan GDP current USD World Bank 2024」
+2. 「Japan GDP growth rate World Bank latest」
+
+### 日本一人当たりGDP
+1. 「Japan GDP per capita USD World Bank 2024」
+
+### 日本インフレ率
+1. 「Japan inflation rate consumer price World Bank 2024」
+
+### 日本失業率
+1. 「Japan unemployment rate World Bank ILO 2024」
+
+### 日本貧困率
+1. 「Japan poverty rate World Bank latest」
+
+### 日本ジニ係数
+1. 「Japan gini index World Bank latest」
+
+### 日本政府債務残高（GDP比）
+1. 「Japan government debt GDP ratio IMF latest」
+
+### 日本経常収支（GDP比）
+1. 「Japan current account balance GDP World Bank 2024」
+
 ### 直近の経済トレンド
 1. 「{{ $('国名変換Code').first().json.countryEn }} economy outlook trend World Bank 2024 2025」
 2. 「{{ $('国名変換Code').first().json.countryEn }} economic challenges growth forecast 2025」
 
 ---
-
-## 【出力形式】
-挨拶・説明・マークダウン記号（```json等）は一切含まず、純粋なJSONのみ出力すること。
-
 {
   "対象国": "{{ $('国名変換Code').first().json.country }}",
   "経済データ": {
@@ -66,7 +89,17 @@
     "ジニ係数": {"値": "", "年": "", "出典": ""},
     "政府債務残高_GDP比": {"値": "", "年": "", "出典": ""},
     "経常収支_GDP比": {"値": "", "年": "", "出典": ""},
+    "日本経済データ": {
+      "GDP_USD": {"値": "", "年": "", "出典": ""},
+      "GDP成長率": {"値": "", "年": "", "出典": ""},
+      "一人当たりGDP_USD": {"値": "", "年": "", "出典": ""},
+      "インフレ率": {"値": "", "年": "", "出典": ""},
+      "失業率": {"値": "", "年": "", "出典": ""},
+      "貧困率": {"値": "", "年": "", "出典": ""},
+      "ジニ係数": {"値": "", "年": "", "出典": ""},
+      "政府債務残高_GDP比": {"値": "", "年": "", "出典": ""},
+      "経常収支_GDP比": {"値": "", "年": "", "出典": ""}
+    },
     "経済トレンド要約": ""
   }
 }
-```
