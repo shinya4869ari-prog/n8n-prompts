@@ -8,22 +8,20 @@
 - データが見つからない場合は「欠測」と記載し、数値には必ず出典を付けること
 - 挨拶や説明文、```json などのマークダウン記号は一切含まず、純粋なJSONのみ出力すること。
 
-現在の年月：{{ $now.toFormat('yyyy年MM月dd日') }}
-
 ---
 
 ## 【⑤ 歴史的背景（近代100年）】
 直近100年の主要事象を10個収集すること。
 - 各事象：年号・事象名・概要（2〜3文）
-- 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} modern history major events 20th 21st century」
+- 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} modern history major events 20th and 21st century」
 - 深刻な事件,事故（虐殺・紛争・大地震・津波・ハリケーン・クーデター等）は必ず含めること
 
 ---
 
 ## 【⑥ 直近の動向（最新6ヶ月）】
 - 最新6ヶ月の政治・経済・社会の動向
-  - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} latest news {{ $now.toFormat('yyyy') }}」
-  - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} economy politics social {{ $now.toFormat('yyyy') }}」
+  - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} latest news and current affairs」
+  - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} economy politics social trends latest」
 - 読者が驚く統計や習慣（記事未登場のものを優先）
 - 日本との関連性・波及
 
