@@ -5,8 +5,9 @@ const r3Raw = $('researcher3').first().json;
 const parseOutput = (node) => {
   try {
     const raw = node.output ?? node.json ?? '{}';
+    if (!raw || raw.trim() === '') throw new Error('outputが空です');
     return JSON.parse(raw.replace(/```json|```/g, '').trim());
-  } catch(e) { return node; }
+  } catch(e) { throw new Error(`JSONパース失敗: ${e.message}`); }
 };
 
 const r1 = parseOutput(r1Raw);
@@ -18,24 +19,10 @@ const chiAn = $('②治安指標').first().json;
 const bukka = $('③物価').first().json;
 const boeki = $('④貿易').first().json;
 
-// 日本Googleシート
-const jSeido = $('Japan_①制度').all().map(i => i.json);
-const jChiAn = $('Japan_②治安指標').all().map(i => i.json);
-const jPrison = $('Japan_②刑務所推移').all().map(i => i.json);
-const jDeath = $('Japan_②死因トップ10').all().map(i => i.json);
-const jBukka = $('Japan_③物価').all().map(i => i.json);
-const jBoeki = $('Japan_④貿易').all().map(i => i.json);
-
-const toObj = (rows, keyCol, valCols) => {
-  const obj = {};
-  rows.forEach(r => {
-    if (r[keyCol]) {
-      obj[r[keyCol]] = {};
-      valCols.forEach(v => { if (r[keyCol]) obj[r[keyCol]][v] = r[v]; });
-    }
-  });
-  return obj;
-};
+// 日本Googleシート（固定データから読み込み）
+const jChiAn = $('Japan_②治安指標').first().json;
+const jBukka = $('Japan_③物価').first().json;
+const jBoeki = $('Japan_④貿易').first().json;
 
 const targetFixed = {
   治安指標: {
@@ -96,12 +83,59 @@ const targetFixed = {
 };
 
 const japanFixed = {
-  制度の9つの皿: toObj(jSeido, '項目', ['値', '出典']),
-  治安指標: toObj(jChiAn, '項目', ['値', '出典・年']),
+  制度の9つの皿: {
+    国家の形と統治機構: { 値: "立憲君主制（象徴天皇制）・議院内閣制・単一国家" },
+    行政トップ: { 値: "内閣総理大臣：高市早苗（2025年10月就任）" },
+    立法と選挙制度: { 値: "二院制（衆議院・参議院）・小選挙区比例代表並立制" },
+    司法と法制度: { 値: "最高裁判所を頂点とする三審制・大陸法基調" },
+    社会保障・医療・年金: { 値: "国民皆保険・国民年金（自己負担原則3割・受給開始65歳）" },
+    教育制度: { 値: "6-3-3-4制・義務教育9年・大学進学率約57%" },
+    徴税・財政制度: { 値: "消費税10%（軽減税率8%）・所得税最高45%・相続税最高55%" },
+    安全保障と兵役: { 値: "自衛隊（志願制）・兵役義務なし・日米安保基軸" },
+    基本権と価値観: { 値: "死刑制度維持（絞首刑・執行継続）・同性婚未承認" }
+  },
+  治安指標: {
+    '殺人率（10万人あたり）': { 値: jChiAn['殺人率'], '出典・年': `${jChiAn['殺人率_出典']} ${jChiAn['殺人率_年']}年` },
+    '交通事故死亡率（10万人あたり）': { 値: jChiAn['交通事故死亡率'], '出典・年': `${jChiAn['交通事故死亡率_出典']} ${jChiAn['交通事故死亡率_年']}年` },
+    '自殺率（10万人あたり）': { 値: jChiAn['自殺率'], '出典・年': `${jChiAn['自殺率_出典']} ${jChiAn['自殺率_年']}年` },
+    '刑務所収容率（10万人あたり）': { 値: jChiAn['刑務所収容率'], '出典・年': `${jChiAn['刑務所収容率_出典']} ${jChiAn['刑務所収容率_年']}年` },
+    '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典']} ${jChiAn['刑務所総収容者数_年']}年` },
+    'GPI スコア': { 値: jChiAn['GPIスコア'], '出典・年': `${jChiAn['GPI出典']} ${jChiAn['GPI年']}年` },
+    'GPI 順位': { 値: jChiAn['GPI順位'], '出典・年': `${jChiAn['GPI出典']} ${jChiAn['GPI年']}年` }
+  },
   刑務所推移: jPrison,
-  死因トップ10: jDeath.map(r => ({ 順位: r['順位'], 死因: r['死因'], 出典: r['出典'] })),
-  物価: toObj(jBukka, '項目', ['値（円）', '出典']),
-  貿易: toObj(jBoeki, '区分', ['品目・国名', '出典'])
+  死因トップ10: jDeath,
+  物価: {
+    'ビール（市販500ml）': { '値（円）': jBukka['ビール_円換算'] ? `${jBukka['ビール_円換算']}円` : 'データなし', 出典: jBukka['ビール_出典'] },
+    'タバコ（マルボロ1箱20本）': { '値（円）': jBukka['タバコ_円換算'] ? `${jBukka['タバコ_円換算']}円` : 'データなし', 出典: jBukka['タバコ_出典'] },
+    'ミネラルウォーター（500ml）': { '値（円）': jBukka['水_円換算'] ? `${jBukka['水_円換算']}円` : 'データなし', 出典: jBukka['水_出典'] },
+    'ビッグマック（1個）': { '値（円）': jBukka['ビッグマック_円換算'] ? `${jBukka['ビッグマック_円換算']}円` : 'データなし', 出典: jBukka['ビッグマック_出典'] },
+    'ガソリン（1L）': { '値（円）': jBukka['ガソリン_円換算'] ? `${jBukka['ガソリン_円換算']}円` : 'データなし', 出典: jBukka['ガソリン_出典'] },
+    '外食（安めの店・1食）': { '値（円）': jBukka['外食_円換算'] ? `${jBukka['外食_円換算']}円` : 'データなし', 出典: jBukka['外食_出典'] },
+    '電気・水道・ガス（月額・85㎡）': { '値（円）': jBukka['光熱費_円換算'] ? `${jBukka['光熱費_円換算']}円` : 'データなし', 出典: jBukka['光熱費_出典'] },
+    '家賃（1LDK・市内）': { '値（円）': jBukka['家賃_円換算'] ? `${jBukka['家賃_円換算']}円` : 'データなし', 出典: jBukka['家賃_出典'] },
+    '平均月収（手取り）': { '値（円）': jBukka['月収_円換算'] ? `${jBukka['月収_円換算']}円` : 'データなし', 出典: jBukka['月収_出典'] },
+    'Netflix（スタンダード・広告なし）': { '値（円）': jBukka['Netflix_円換算'] ? `${jBukka['Netflix_円換算']}円` : 'データなし', 出典: jBukka['Netflix_出典'] }
+  },
+  貿易: {
+    輸出: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: jBoeki[`輸出${i+1}位_品目`],
+      出典: jBoeki[`輸出${i+1}位_出典`]
+    })),
+    輸入: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      品目: jBoeki[`輸入${i+1}位_品目`],
+      出典: jBoeki[`輸入${i+1}位_出典`]
+    })),
+    貿易相手国: Array.from({length: 10}, (_, i) => ({
+      順位: `${i+1}位`,
+      国名: jBoeki[`貿易相手${i+1}位_国名`],
+      シェア: jBoeki[`貿易相手${i+1}位_シェア%`],
+      出典: jBoeki[`貿易相手${i+1}位_出典`]
+    }))
+  },
+  経済データ: r3.経済データ?.日本経済データ ?? {}
 };
 
 return [{
