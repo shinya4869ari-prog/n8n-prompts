@@ -221,7 +221,7 @@ new Chart(document.getElementById('prisonChart'), {
   }
 });
 </script>
-<p style="font-size:12px;color:#888;margin-top:4px;">出典：World Prison Brief</p>
+<p class="citation">出典：World Prison Brief</p>
 
 <h3>死因比較</h3>
 
