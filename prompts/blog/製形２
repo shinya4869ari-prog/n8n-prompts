@@ -21,8 +21,7 @@ article = article
 article = article.replace(/#{1,6}\s*.+\n\n?(<h[1-6][^>]*>)/g, '$1');
 // ⑤ 表内数値を太字に
 article = article.replace(/(<td[^>]*>)([^<]*?)(\d[\d.,]*\s*(?:人|%|億|万|兆|位|点|年)?)/g, '$1$2<strong>$3</strong>');
-// ⑥ 表内数値と出典を改行で分ける
-article = article.replace(/(\d[\d.,]*\s*(?:人|%|億|万|兆|位|点|年)?)（/g, '$1<br><br>（');
+
 // ⑦ テーブル角丸・リッチスタイル
 article = article.replace(
   /border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;/g,
