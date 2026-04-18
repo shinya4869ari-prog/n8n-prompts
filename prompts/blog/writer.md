@@ -197,7 +197,7 @@ new Chart(document.getElementById('prisonChart'), {
         backgroundColor: 'rgba(231,76,60,0.1)',
         tension: 0.3,
         pointRadius: 5,
-        spanGaps: false
+        spanGaps: true
       },
       {
         label: '日本',
@@ -207,7 +207,7 @@ new Chart(document.getElementById('prisonChart'), {
         borderDash: [5,5],
         tension: 0.3,
         pointRadius: 5,
-        spanGaps: false
+        spanGaps: true
       }
     ]
   },
