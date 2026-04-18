@@ -120,50 +120,68 @@ article = article.replace(
   }
 );
 
+/* --- 変更点 ---
+1. isRankingTable もカード化されるように修正
+2. カードのデザインをシャドウ付きのプレミアムなものに
+3. リンクボタンを「W」「IMDb」「▶」アイコン付きのモダンなチップ型に統一
+---------------- */
+
 // --- 4.5 ⑦⑧テーブルをカード型に変換 ---
 article = article.replace(
   /<table[^>]*>[\s\S]*?<\/table>/gi,
   (tableHtml) => {
-    // ⑦映像作品テーブルの判定（#列・タイトル・種別・公開年・概要・リンクの6列）
     const isFilmTable = tableHtml.includes('種別') && tableHtml.includes('公開年') && tableHtml.includes('概要');
-    // ⑧興行収入テーブルの判定
     const isRankingTable = tableHtml.includes('観客動員数') || tableHtml.includes('興行収入');
 
-    if (isRankingTable) return tableHtml;
-if (!isFilmTable && !isRankingTable) return tableHtml;
+    // いずれでもない場合はそのまま（または変換しない）
+    if (!isFilmTable && !isRankingTable) return tableHtml;
 
-    // 行を抽出
     const rows = [...tableHtml.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
     if (rows.length < 2) return tableHtml;
 
-    // ヘッダー行をスキップして各行をカードに変換
     const cards = rows.slice(1).map(row => {
       const cells = [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m => m[1].trim());
       if (!cells.length) return '';
 
-      const isSeriousRow = row.includes('fff3f3') || cells[0].includes('⚠️');
-      const bgColor = isSeriousRow ? '#fff3f3' : '#ffffff';
+      const isSeriousRow = row.includes('fff3f3') || row.includes('⚠️');
+      const bgColor = isSeriousRow ? '#fffcfc' : '#ffffff';
+      const accentColor = isRankingTable ? '#ff4500' : '#008080'; // ランキングはオレンジ、作品はティール
+
+      // リンクボタンのクリーンアップと再装飾
+      const decorateLinks = (html) => {
+        if (!html) return '';
+        return html
+          .replace(/<a /g, `<a style="display:inline-flex; align-items:center; padding:5px 12px; margin:2px; border-radius:20px; font-size:11px; font-weight:700; text-decoration:none; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05); color:#fff; cursor:pointer;" `)
+          .replace(/>Wikipedia<\/a>/g, ` style="background:#3366cc;">W Wikipedia</a>`)
+          .replace(/>IMDb<\/a>/g, ` style="background:#f5c518; color:#000;">IMDb</a>`)
+          .replace(/>YouTube予告編<\/a>/g, ` style="background:#ff0000;">▶ Trailer</a>`)
+          .replace(/>予告編<\/a>/g, ` style="background:#ff0000;">▶ Trailer</a>`);
+      };
 
       if (isRankingTable) {
         const [rank, title, year, revenue, links] = cells;
         return `
-<div style="background:${bgColor};border:1px solid #ddd;border-radius:10px;padding:14px;margin:10px 0;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-    <span style="background:#20B2AA;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;flex-shrink:0;">${rank || ''}</span>
-    <span style="font-weight:bold;font-size:15px;">${title || ''}</span>
+<div style="background:${bgColor}; border:1px solid #eee; border-radius:12px; padding:16px; margin:15px 0; box-shadow:0 4px 12px rgba(0,0,0,0.05); position:relative; overflow:hidden;">
+  <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:${accentColor};"></div>
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+    <span style="background:${accentColor}; color:#fff; border-radius:6px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; flex-shrink:0;">${rank.replace(/[^0-9]/g,'') || ''}</span>
+    <span style="font-weight:800; font-size:16px; color:#222;">${title || ''}</span>
   </div>
-  <div style="font-size:13px;color:#666;margin-bottom:8px;">📅 ${year || ''} &nbsp;|&nbsp; 👥 ${revenue || ''}</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">${links || ''}</div>
+  <div style="font-size:13px; color:#666; margin-bottom:12px; display:flex; gap:15px;">
+    <span>📅 ${year || ''}</span>
+    <span>👥 ${revenue || ''}</span>
+  </div>
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">${decorateLinks(links)}</div>
 </div>`;
       } else {
-        const warn = cells[0].includes('⚠️') ? '⚠️ ' : '';
+        const warnMark = cells[0].includes('⚠️') ? '<span style="color:#e63946; margin-right:4px;">⚠️</span>' : '';
         const [, title, type, year, summary, links] = cells;
         return `
-<div style="background:${bgColor};border:1px solid #ddd;border-radius:10px;padding:14px;margin:10px 0;">
-  <div style="font-weight:bold;font-size:15px;margin-bottom:6px;">${warn}${title || ''}</div>
-  <div style="font-size:12px;color:#888;margin-bottom:8px;">${type || ''} | ${year || ''}</div>
-  <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:10px;">${summary || ''}</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">${links || ''}</div>
+<div style="background:${bgColor}; border:1px solid #eee; border-radius:12px; padding:16px; margin:15px 0; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+  <div style="font-weight:800; font-size:16px; color:#222; margin-bottom:6px;">${warnMark}${title || ''}</div>
+  <div style="font-size:12px; color:${accentColor}; font-weight:bold; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">${type || ''} &nbsp;•&nbsp; ${year || ''}</div>
+  <div style="font-size:14px; color:#444; line-height:1.6; margin-bottom:12px;">${summary || ''}</div>
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">${decorateLinks(links)}</div>
 </div>`;
       }
     }).join('');
@@ -171,6 +189,18 @@ if (!isFilmTable && !isRankingTable) return tableHtml;
     return `<div style="margin:20px 0;">${cards}</div>`;
   }
 );
+
+// --- 5. 外部サービスリンク（TSUTAYA/予告編）の装飾 ---
+article = article.replace(
+  /(<a href="[^"]+"[^>]+>)(TSUTAYA|予告編)(<\/a>)/g,
+  (match, open, text, close) => {
+    const isTsutaya = text === 'TSUTAYA';
+    const bg = isTsutaya ? '#e60012' : '#ff0000';
+    const icon = isTsutaya ? 'T' : '▶';
+    return `<a ${open.slice(3)} style="display:inline-flex; align-items:center; padding:3px 10px; background:${bg}; color:#fff; border-radius:10px; text-decoration:none; font-size:11px; font-weight:bold; margin-right:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">${icon} ${text}</a>`;
+  }
+);
+
   // --- 5. 外部サービスリンクの付与 ---
   article = article.replace(
     /(<strong>)(⚠️\s*)?(\d+\.\s)([^（<]+)（([^）]+)）(<\/strong>)/g,
