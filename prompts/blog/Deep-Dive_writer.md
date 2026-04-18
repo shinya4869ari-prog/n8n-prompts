@@ -20,9 +20,10 @@
 
 ## Deep Dive
 
- 対象事件: {{ $json.selected_event }} 対象国: {{ $json.country }} 選定理由: {{ $json.reason }}
+ 対象事件: {{ $json.selected_event }} 
 
-## 【当事国Aの見解】-対象国-
+## 【当事国Aの見解】 {{ $json.country }}
+
 ・当時の報道（出典付き）
 ・現在の評価（出典付き）
 ・教科書記述（出典付き）
