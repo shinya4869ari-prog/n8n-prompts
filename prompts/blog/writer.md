@@ -352,63 +352,54 @@ data.対象国データ_記事.直近の動向 を使って以下を出力する
 
 ---
 
-<h2 style="margin-top:60px;padding-top:20px;border-top:2px solid #e0f5f5;">⑧ 映像で知る{{ $json.対象国 }}</h2>
+<h2>⑧ 映像で知る{{ $json.対象国 }}</h2>
 
-data.対象国データ_記事.映像作品 にデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
+data.対象国データ_記事.映像作品 にデータがある場合のみ出力。
 
-【必須：出力前に必ず検索ツールを使うこと】
-1. 「{{ $json.対象国 }} documentary film imdb」
-2. 「{{ $json.対象国 }} 映画 実話 Wikipedia」
-3. 「{{ $json.対象国 }} war genocide film」（紛争・虐殺がある国のみ）
+【出力ルール】
+1. 下記項目の6列テーブル形式で出力すること。
+2. 表のヘッダーは必ず「#」「タイトル」「種別」「公開年」「概要」「リンク」とすること。
+3. リンク列には、[Wikipedia](URL) [IMDb](URL) の形式でMarkdownリンクを出力すること。
+4. 深刻なテーマ（is_serious: true）の行は、行全体の背景色を #fff3f3 にし、#列に⚠️を表示すること。
 
-<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+<table style="width:100%;">
   <thead>
     <tr>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:5%;">#</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">タイトル</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:12%;">種別</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">公開年</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:28%;">概要</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:15%;">リンク</th>
+      <th>#</th><th>タイトル</th><th>種別</th><th>公開年</th><th>概要</th><th>リンク</th>
     </tr>
   </thead>
   <tbody>
-    【映像作品を1行ずつ出力。
-    - is_seriousがtrueの行はbackground:#fff3f3を付け、#列に⚠️を表示
-    - wikipedia_urlがある場合はWikipediaリンクボタンを出力
-    - imdb_urlがある場合はIMDbリンクボタンを出力
-    - タイトル_日本語と原題が同じ場合は原題のみ表示
-    - 最大10作品まで】
+    【映像作品を1行ずつ出力。最大10件まで】
   </tbody>
 </table>
-【深刻な作品が3件以上の場合はエラー猫コメントなし。3件未満の場合はエラー猫の一言を付ける】
+
+【深刻な作品が3件未満の場合は、ここにエラー猫の一言コメントを添える】
 
 ---
 
-<h2 style="margin-top:60px;padding-top:20px;border-top:2px solid #e0f5f5;">⑨ 特別枠：{{ $json.対象国 }}映画 歴代興行収入ランキング TOP10</h2>
+<h2>⑨ 特別枠：{{ $json.対象国 }}映画 歴代興行収入ランキング TOP10</h2>
 
-data.対象国データ_記事.興行収入ランキング にデータが存在する場合のみ出力。存在しない・空の場合はこのセクションごと出力しない。
+data.対象国データ_記事.興行収入ランキング にデータがある場合のみ出力。
 
-<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;">
+【出力ルール】
+1. 下記項目の5列テーブル形式で出力すること。
+2. 表のヘッダーは必ず「順位」「タイトル」「公開年」「観客動員数 / 興行収入」「リンク」とすること。
+3. リンク列には、[Wikipedia](URL) [IMDb](URL) [YouTube予告編](URL) の形式でMarkdownリンクを出力すること。
+
+<table style="width:100%;">
   <thead>
     <tr>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:8%;">順位</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">タイトル</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:10%;">公開年</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:22%;">観客動員数 / 興行収入</th>
-      <th style="border:1px solid #ddd;padding:10px;background:#f0f8f8;text-align:left;width:30%;">リンク</th>
+      <th>順位</th><th>タイトル</th><th>公開年</th><th>観客動員数 / 興行収入</th><th>リンク</th>
     </tr>
   </thead>
   <tbody>
-    【興行収入ランキングを1行ずつ出力。
-    - is_seriousがtrueの行はbackground:#fff3f3を付ける
-    - wikipedia_urlがある場合はWikipediaリンクボタンを出力
-    - imdb_urlがある場合はIMDbリンクボタンを出力
-    - 原題でYouTube予告編リンクボタンを出力】
+    【ランキングを1行ずつ出力】
   </tbody>
 </table>
-<p class="citation">出典：【出典】</p>
-【深刻な作品が3件以上の場合はエラー猫コメントなし。3件未満の場合はエラー猫の一言を付ける】
+
+【深刻な作品が3件未満の場合は、ここにエラー猫の一言コメントを添える】
+
+
 
 ---
 
