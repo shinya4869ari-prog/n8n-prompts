@@ -1,7 +1,5 @@
 const input = $input.first().json;
-// ① Writerのtext取得
 let raw = input?.content?.parts?.[0]?.text ?? "";
-// ② JSONとしてパース
 let article = raw;
 try {
   const parsed = JSON.parse(raw);
@@ -11,18 +9,12 @@ try {
     article = parsed.html;
   }
 } catch (e) {}
-// ③ エスケープ解除
 article = article
   .replace(/\\n/g, '\n')
   .replace(/\\t/g, '\t')
   .replace(/\\"/g, '"')
   .trim();
-// ④ 重複見出し除去
 article = article.replace(/#{1,6}\s*.+\n\n?(<h[1-6][^>]*>)/g, '$1');
-// ⑤ 表内数値を太字に
-article = article.replace(/(<td[^>]*>)([^<]*?)(\d[\d.,]*\s*(?:人|%|億|万|兆|位|点|年)?)/g, '$1$2<strong>$3</strong>');
-
-// ⑦ テーブル角丸・リッチスタイル
 article = article.replace(
   /border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;/g,
   'border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);'
@@ -39,8 +31,4 @@ article = article.replace(
   /border:1px solid #ddd;padding:10px;font-weight:bold;/g,
   'border:1px solid #eee;padding:12px 14px;font-weight:bold;'
 );
-return [{
-  json: {
-    article: article
-  }
-}];
+return [{ json: { article: article } }];
