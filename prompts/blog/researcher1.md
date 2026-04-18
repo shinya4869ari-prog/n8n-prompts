@@ -30,11 +30,15 @@
 
 ## 【① 制度の9つの皿】
 
+注意 -韓国、中国、日本は人名は漢字表記を優先すること。
+
 1. **国家の形と統治機構**
    - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} political system government structure」
 
 2. **行政トップ**
-   - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} current president prime minister {{ $now.toFormat('yyyy') }}」
+   - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} 
+current president prime minister {{ $now.toFormat('yyyy') }}」
+　　-注意 -韓国、中国、日本は人名は漢字表記を優先すること。
 
 3. **立法と選挙制度**
    - 検索クエリ：「{{ $('国名変換Code').first().json.countryEn }} parliament legislature election system voter turnout」
