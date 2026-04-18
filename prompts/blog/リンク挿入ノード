@@ -43,6 +43,7 @@ function enc(t) {
 
 // ⑤ バリエーション生成
 function getSearchVariants(name, type) {
+  name = name.replace(/(前大統領|元大統領|大統領|前首相|元首相|首相|前大臣|元大臣|大臣|氏|前|元)$/, '').trim();
   const base = name.replace(/[（\(\[［].*?[）\)］]/g, '').trim();
   const insideMatch = name.match(/[（\(［](.*?)[）\)］]/);
   const inside = insideMatch ? insideMatch[1].trim() : "";
@@ -54,11 +55,11 @@ function getSearchVariants(name, type) {
       break;
     }
   }
-  if (type === 'people') {
+ 　if (type === 'people') {
     const parts = base.split('・');
     const lastName = parts[parts.length - 1];
     if (lastName && lastName.length > 1) {
-      jpn.push(lastName + '大統領', lastName + '首相', lastName + '氏', lastName);
+      jpn.push(lastName);
     }
   }
   return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
@@ -110,6 +111,8 @@ for (const cand of uniquePatterns) {
   let mapUrl;
   if (cand.entity.type === 'keywords') {
     mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
+  } else if (cand.entity.type === 'people') {
+    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
   } else {
     mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
   }
