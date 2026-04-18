@@ -1,5 +1,6 @@
 const r1Raw = $('researcher1').first().json;
 const r2Raw = $('researcher2').first().json;
+const r25Raw = $('researcher25').first().json;
 const r3Raw = $('researcher3').first().json;
 
 const parseOutput = (node) => {
@@ -12,7 +13,17 @@ const parseOutput = (node) => {
 
 const r1 = parseOutput(r1Raw);
 const r2 = parseOutput(r2Raw);
+const r25 = parseOutput(r25Raw);
 const r3 = parseOutput(r3Raw);
+
+// r2とr2.5をマージ
+const r2Merged = {
+  対象国: r2.対象国,
+  歴史的背景: r2.歴史的背景,
+  直近の動向: r2.直近の動向,
+  映像作品: r25.映像作品,
+  興行収入ランキング: r25.興行収入ランキング
+};
 
 // 対象国Googleシート
 const chiAn = $('②治安指標').first().json;
@@ -23,6 +34,27 @@ const boeki = $('④貿易').first().json;
 const jChiAn = $('Japan_②治安指標').first().json;
 const jBukka = $('Japan_③物価').first().json;
 const jBoeki = $('Japan_④貿易').first().json;
+
+const jPrison = [
+  { 年: jChiAn['収容推移1_年'], 総収容者数: jChiAn['収容推移1_総収容者数'], 収容率: jChiAn['収容推移1_収容率'] },
+  { 年: jChiAn['収容推移2_年'], 総収容者数: jChiAn['収容推移2_総収容者数'], 収容率: jChiAn['収容推移2_収容率'] },
+  { 年: jChiAn['収容推移3_年'], 総収容者数: jChiAn['収容推移3_総収容者数'], 収容率: jChiAn['収容推移3_収容率'] },
+  { 年: jChiAn['収容推移4_年'], 総収容者数: jChiAn['収容推移4_総収容者数'], 収容率: jChiAn['収容推移4_収容率'] },
+  { 年: jChiAn['収容推移5_年'], 総収容者数: jChiAn['収容推移5_総収容者数'], 収容率: jChiAn['収容推移5_収容率'] }
+];
+
+const jDeath = [
+  { 順位: '1位', 死因: jChiAn['死因1位'] },
+  { 順位: '2位', 死因: jChiAn['死因2位'] },
+  { 順位: '3位', 死因: jChiAn['死因3位'] },
+  { 順位: '4位', 死因: jChiAn['死因4位'] },
+  { 順位: '5位', 死因: jChiAn['死因5位'] },
+  { 順位: '6位', 死因: jChiAn['死因6位'] },
+  { 順位: '7位', 死因: jChiAn['死因7位'] },
+  { 順位: '8位', 死因: jChiAn['死因8位'] },
+  { 順位: '9位', 死因: jChiAn['死因9位'] },
+  { 順位: '10位', 死因: jChiAn['死因10位'] }
+];
 
 const targetFixed = {
   治安指標: {
@@ -144,7 +176,7 @@ return [{
     world_bank_code: r1.world_bank_code,
     data: {
       対象国データ: r1,
-      対象国データ_記事: r2,
+      対象国データ_記事: r2Merged,  // ← r2 から r2Merged に変更
       対象国データ_経済: r3.経済データ,
       固定データ: targetFixed,
       日本固定データ: japanFixed
