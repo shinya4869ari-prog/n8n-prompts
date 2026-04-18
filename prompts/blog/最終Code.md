@@ -15,22 +15,32 @@ return $input.all().map(item => {
     }
   } catch(e) {}
 
-  // --- 2. タイトルの決定（ここを修正） ---
+  // --- 2. タイトルの決定（強化版） ---
+  
+  // A: 記事テキストの中から「対象国名：〇〇」という記述を探す（最も確実）
+  const countryFromText = article.match(/対象国名[：:]\s*([^\s<#]+)/)?.[1];
+  
+  // B: 見つからない場合は、前のノードのプロパティから探す
   const countryName =
+    countryFromText ||
     inputData.target_country ||
     inputData.targetCountry ||
     inputData.country ||
     inputData["対象国"] ||
-    "対象国";
+    inputData.title || // titleフィールドに国名が入っているケース用
+    "対象国（不明）";  // すべてダメだった場合
 
   const title = countryName;
+
 
   // --- 3. HTMLタグの調整 ---
   article = article.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>');
 article = article.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
 article = article.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
 article = article.replace(/^#\s+(.+)$/gm, '<h2>$1</h2>');
-article = article.replace(/(<h[23][^>]*>)(.*?)<\/h[23]>\s*\*\*\1\2\*\*/gi, '$1$2</h$3>');
+// 見出しの重複（AI特有のクセ）を削除し、タグを正しく閉じる
+article = article.replace(/(<(h[23])[^>]*>)(.*?)<\/\2>\s*\*\*\3\*\*/gi, '$1$3</$2>');
+
 article = article.replace(/(\*\*[^*]+\*\*)\s*\n\s*\1/g, '$1');
 
   // --- 4. リンクのHTML化 ---
