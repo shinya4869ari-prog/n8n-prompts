@@ -5,6 +5,14 @@ return $input.all().map(item => {
   let raw = item.json?.article ?? "";
   const inputData = item.json;
 
+  // Mermaidブロックを先に退避
+  const mermaidBlocks = [];
+  raw = raw.replace(/```mermaid[\s\S]*?```/g, (match) => {
+    const idx = mermaidBlocks.length;
+    mermaidBlocks.push(match);
+    return `%%MERMAID_${idx}%%`;
+  });
+
   let article = raw;
   try {
     const parsed = JSON.parse(raw);
@@ -129,6 +137,11 @@ return $input.all().map(item => {
   );
 
   // --- 6. 最終データの出力 ---
+  // Mermaidブロックを復元
+  mermaidBlocks.forEach((block, idx) => {
+    article = article.replace(`%%MERMAID_${idx}%%`, block);
+  });
+
   return {
     json: {
       article: promptBody ? `${promptBody}\n\n${article}` : article,
