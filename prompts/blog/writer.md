@@ -305,20 +305,20 @@ data.対象国データ_記事.直近の動向 を使って以下を出力する
 
 data.対象国データ_記事.映像作品 にデータがある場合のみ出力。
 
-【出力ルール】
-1. 下記項目の6列テーブル形式で出力すること。
-2. 表のヘッダーは必ず「#」「タイトル」「種別」「公開年」「概要」「リンク」とすること。
-3. リンク列には、[Wikipedia](URL) [IMDb](URL) の形式でMarkdownリンクを出力すること。
-4. 深刻なテーマ（is_serious: true）の行は、行全体の背景色を #fff3f3 にし、#列に⚠️を表示すること。
-
-<table style="width:100%;">
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
   <thead>
-    <tr>
-      <th>#</th><th>タイトル</th><th>種別</th><th>公開年</th><th>概要</th><th>リンク</th>
+    <tr style="background:#f8f9fa;">
+      <th style="border:1px solid #ddd;padding:8px;width:5%;">#</th>
+      <th style="border:1px solid #ddd;padding:8px;width:20%;">タイトル</th>
+      <th style="border:1px solid #ddd;padding:8px;width:10%;">種別</th>
+      <th style="border:1px solid #ddd;padding:8px;width:10%;">公開年</th>
+      <th style="border:1px solid #ddd;padding:8px;width:35%;">概要</th>
+      <th style="border:1px solid #ddd;padding:8px;width:20%;">リンク</th>
     </tr>
   </thead>
   <tbody>
-    【映像作品を1行ずつ出力。最大10件まで】
+    【データにある映像作品を★必ず1位から10位まで、10件すべて1行ずつ出力すること。ドキュメンタリーを優先的に表示。】
+    （リンク列は **[Wikipedia](URL)** / **[IMDb](URL)** のように★太字で出力すること）
   </tbody>
 </table>
 
@@ -329,19 +329,19 @@ data.対象国データ_記事.映像作品 にデータがある場合のみ出
 
 data.対象国データ_記事.興行収入ランキング にデータがある場合のみ出力。
 
-【出力ルール】
-1. 下記項目の5列テーブル形式で出力すること。
-2. 表のヘッダーは必ず「順位」「タイトル」「公開年」「観客動員数 / 興行収入」「リンク」とすること。
-3. リンク列には、[Wikipedia](URL) [IMDb](URL) [YouTube予告編](URL) の形式でMarkdownリンクを出力すること。
-
-<table style="width:100%;">
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
   <thead>
-    <tr>
-      <th>順位</th><th>タイトル</th><th>公開年</th><th>観客動員数 / 興行収入</th><th>リンク</th>
+    <tr style="background:#f8f9fa;">
+      <th style="border:1px solid #ddd;padding:8px;width:10%;">順位</th>
+      <th style="border:1px solid #ddd;padding:8px;width:30%;">タイトル</th>
+      <th style="border:1px solid #ddd;padding:8px;width:15%;">公開年</th>
+      <th style="border:1px solid #ddd;padding:8px;width:25%;">観客動員数 / 興行収入</th>
+      <th style="border:1px solid #ddd;padding:8px;width:20%;">リンク</th>
     </tr>
   </thead>
   <tbody>
-    【ランキングを1行ずつ出力】
+    【ランキングを★必ず1位から10位まで、10件すべて1行ずつ出力すること。】
+    （リンク列は **[Wikipedia](URL)** / **[IMDb](URL)** / **[YouTube](URL)** のように★太字で出力すること）
   </tbody>
 </table>
 
