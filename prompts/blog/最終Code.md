@@ -109,11 +109,20 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 5. 導入文（そのまま出力） ---
-  const introEnd = raw.indexOf('<h2');
-  if (introEnd !== -1) {
-    article += raw.substring(0, introEnd);
+  // --- 5. 導入文（パイプ区切り行・セクション見出し行を除いた先頭テキスト） ---
+  const introLines = raw.split('\n').filter(l => {
+    if (!l.trim()) return false;
+    if (/^(国家の形と統治機構|行政トップ|立法と選挙制度|司法と法制度|社会保障・医療・年金|教育制度|徴税・財政制度|安全保障と兵役|基本権と価値観|殺人率|交通事故死亡率|自殺率|刑務所収容率|GPI|刑務所推移|死因|輸出|輸入|貿易相手|物価|為替レート|歴史|映像|興行|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支|🔍)/.test(l)) return false;
+    if (/^① |^② |^③ |^④ |^⑤ |^⑥ |^⑦ |^⑧ |^⑨ /.test(l)) return false;
+    return true;
+  });
+  // 最初の空でない行から制度セクションより前までを導入文とする
+  let introText = '';
+  for (const l of introLines) {
+    if (/^(表の下に|data\.|貿易相手国について|経済トレンド|出典：|深刻な作品)/.test(l)) break;
+    introText += l + '\n';
   }
+  article += introText;
 
   // --- 6. ① 制度の9つの皿 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">① 制度の9つの皿</h2>\n`;
@@ -121,12 +130,11 @@ return $input.all().map(item => {
     const seidoRows = seidoData.map(d => [d['項目'] || '', d[countryName] || d['対象国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
   }
-  // 比較文をそのまま出力
-  const seidoCompMatch = raw.match(/<h2[^>]*>① 制度の9つの皿<\/h2>([\s\S]*?)<h2/);
-  if (seidoCompMatch) {
-    const compText = seidoCompMatch[1].replace(/^[^\n]*｜[^\n]*$/gm, '').trim();
-    article += `\n<p>${compText}</p>\n`;
-  }
+  // 比較文：パイプ区切りでない行でセクション見出しでもない行を抽出
+  const seidoSection = raw.split(/^① /m)[1] || '';
+  const seidoComp = seidoSection.split(/^② /m)[0] || '';
+  const seidoCompText = seidoComp.split('\n').filter(l => l.trim() && !l.includes('｜') && !/^(表の下に|data\.)/.test(l)).join('\n').trim();
+  if (seidoCompText) article += `\n<p>${seidoCompText}</p>\n`;
 
   // --- 7. ② 地理と経済の衡量 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">② 地理と経済の衡量</h2>\n`;
@@ -153,9 +161,22 @@ return $input.all().map(item => {
   article += makeTable(['指標', countryName, '日本'], econRows, ['35%', '32%', '33%']);
   article += `<p class="citation">出典：World Bank / IMF（各値の年度は表内に記載）</p>\n`;
 
-  // 経済トレンド
-  const trendMatch = raw.match(/経済トレンド要約([\s\S]*?)<h2/);
-  if (trendMatch) article += `<p>${trendMatch[1].trim()}</p>\n`;
+  // 経済トレンド（パイプ区切りでない行を抽出）
+  const trendLines = raw.split('\n').filter(l => {
+    if (!l.trim() || l.includes('｜')) return false;
+    if (/^(① |② |③ |④ |⑤ |⑥ |⑦ |⑧ |⑨ |あなたは|data\.|出典：|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支|🔍|表の下に|貿易相手国|為替レート|🇯🇵|🔍|エラー猫|死因)/.test(l)) return false;
+    return true;
+  });
+  // 導入文以降、③より前のテキストのみ
+  const rawLines = raw.split('\n');
+  const idx2start = rawLines.findIndex(l => /^② /.test(l));
+  const idx3start = rawLines.findIndex(l => /^③ /.test(l));
+  if (idx2start !== -1 && idx3start !== -1) {
+    const econTrendText = rawLines.slice(idx2start, idx3start)
+      .filter(l => l.trim() && !l.includes('｜') && !/^(② |data\.|出典：|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支)/.test(l))
+      .join('\n').trim();
+    if (econTrendText) article += `<p>${econTrendText}</p>\n`;
+  }
 
   // --- 8. ③ 治安と平和の衡量 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">③ 治安と平和の衡量</h2>\n`;
@@ -240,8 +261,15 @@ return $input.all().map(item => {
   }
 
   // 貿易解説
-  const boekiKaisetu = raw.match(/貿易相手国について([\s\S]*?)<h2/);
-  if (boekiKaisetu) article += `<p>${boekiKaisetu[1].trim()}</p>\n`;
+  const rawLines2 = raw.split('\n');
+  const idx4start = rawLines2.findIndex(l => /^④ /.test(l));
+  const idx5start = rawLines2.findIndex(l => /^⑤ /.test(l));
+  if (idx4start !== -1 && idx5start !== -1) {
+    const boekiText = rawLines2.slice(idx4start, idx5start)
+      .filter(l => l.trim() && !l.includes('｜') && !/^(④ |出典：|貿易相手国について)/.test(l))
+      .join('\n').trim();
+    if (boekiText) article += `<p>${boekiText}</p>\n`;
+  }
 
   // --- 10. ⑤ 物価比較 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
@@ -281,10 +309,15 @@ return $input.all().map(item => {
     article += rekishiHtml;
   }
 
-  // --- 12. ⑦ 直近の動向（そのまま出力） ---
+  // --- 12. ⑦ 直近の動向 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑦ 直近の動向</h2>\n`;
-  const dohMatch = raw.match(/<h2[^>]*>⑦ 直近の動向<\/h2>([\s\S]*?)<h2/);
-  if (dohMatch) article += dohMatch[1].trim() + '\n';
+  const rawLines3 = raw.split('\n');
+  const idx7start = rawLines3.findIndex(l => /^⑦ /.test(l));
+  const idx8start = rawLines3.findIndex(l => /^⑧ /.test(l));
+  if (idx7start !== -1 && idx8start !== -1) {
+    const dohText = rawLines3.slice(idx7start + 1, idx8start).join('\n').trim();
+    if (dohText) article += dohText + '\n';
+  }
 
   // --- 13. ⑧ 映像作品カード ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑧ 映像で知る${countryName}</h2>\n`;
