@@ -1,0 +1,30 @@
+const inputs = $input.all();
+
+// dataがstringのものがGitHub、objectのものが整形ノード1
+let prompt = "";
+let articleData = null;
+let countryName = "不明";
+
+for (const input of inputs) {
+  if (typeof input.json.data === 'string') {
+    prompt = input.json.data;
+  } else if (typeof input.json.data === 'object' && input.json.data !== null) {
+    articleData = input.json.data;
+    countryName = input.json.対象国 || "不明";
+  }
+}
+
+prompt = prompt.replace('{{ JSON.stringify($json.data) }}', JSON.stringify(articleData));
+prompt = prompt.replace(/\{\{\s*\$json\.対象国\s*\}\}/g, countryName);
+
+const now = new Date();
+const dateStr = now.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+prompt = prompt.replace(/\{\{\s*\$now\.toFormat\(.*?\)\s*\}\}/g, dateStr);
+
+return {
+  json: {
+    final_prompt: prompt,
+    debug_countryName: countryName,
+    debug_data_ok: !!articleData
+  }
+};
