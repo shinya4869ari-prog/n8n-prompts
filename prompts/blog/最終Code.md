@@ -23,64 +23,50 @@ return $input.all().map(item => {
         const obj = {};
         parts.forEach(p => {
           const idx = p.indexOf('：');
-          if (idx !== -1) {
-            obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim();
-          }
+          if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim();
         });
         return obj;
       });
   }
 
-  // --- 3. 各セクションのデータ抽出 ---
-  const seido = parseLines(raw, '国家の形と統治機構')
-    .concat(parseLines(raw, '行政トップ'))
-    .concat(parseLines(raw, '立法と選挙制度'))
-    .concat(parseLines(raw, '司法と法制度'))
-    .concat(parseLines(raw, '社会保障・医療・年金'))
-    .concat(parseLines(raw, '教育制度'))
-    .concat(parseLines(raw, '徴税・財政制度'))
-    .concat(parseLines(raw, '安全保障と兵役'))
-    .concat(parseLines(raw, '基本権と価値観'));
+  // --- 3. 各セクションデータ抽出 ---
+  const seidoItems = ['国家の形と統治機構','行政トップ','立法と選挙制度','司法と法制度','社会保障・医療・年金','教育制度','徴税・財政制度','安全保障と兵役','基本権と価値観'];
+  const seidoData = seidoItems.map(item => {
+    const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
+    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    const parts = line.replace(item + '｜', '').split('｜');
+    const obj = { 項目: item };
+    parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0,idx).trim()] = p.substring(idx+1).trim(); });
+    return obj;
+  });
 
-  // 制度データを項目名→値のマップに変換
-  function parseSeidoLines(text) {
-    const items = ['国家の形と統治機構','行政トップ','立法と選挙制度','司法と法制度','社会保障・医療・年金','教育制度','徴税・財政制度','安全保障と兵役','基本権と価値観'];
-    return items.map(item => {
-      const line = text.split('\n').find(l => l.startsWith(item + '｜'));
-      if (!line) return { 項目: item, 対象国: 'データなし', 日本: 'データなし' };
-      const parts = line.replace(item + '｜', '').split('｜');
-      const obj = { 項目: item };
-      parts.forEach(p => {
-        const idx = p.indexOf('：');
-        if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim();
-      });
-      return obj;
-    });
-  }
+  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','刑務所収容率（10万人あたり）','GPI（世界平和度指数）'];
+  const chiAnData = chiAnItems.map(item => {
+    const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
+    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    const parts = line.replace(item + '｜', '').split('｜');
+    const obj = { 項目: item };
+    parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0,idx).trim()] = p.substring(idx+1).trim(); });
+    return obj;
+  });
 
-  const seidoData = parseSeidoLines(raw);
-  const chiAnData = parseLines(raw, '殺人率（10万人あたり）')
-    .concat(parseLines(raw, '交通事故死亡率（10万人あたり）'))
-    .concat(parseLines(raw, '自殺率（10万人あたり）'))
-    .concat(parseLines(raw, '刑務所収容率（10万人あたり）'))
-    .concat(parseLines(raw, 'GPI（世界平和度指数）'));
+  const econItems = ['GDP（名目・USドル）','GDP成長率','一人当たりGDP','インフレ率','失業率','貧困率','ジニ係数','政府債務残高（GDP比）','経常収支（GDP比）'];
+  const econData = econItems.map(item => {
+    const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
+    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    const parts = line.replace(item + '｜', '').split('｜');
+    const obj = { 項目: item };
+    parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0,idx).trim()] = p.substring(idx+1).trim(); });
+    return obj;
+  });
 
-  function parseChiAnLines(text) {
-    const items = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','刑務所収容率（10万人あたり）','GPI（世界平和度指数）'];
-    return items.map(item => {
-      const line = text.split('\n').find(l => l.startsWith(item + '｜'));
-      if (!line) return { 項目: item, 対象国: 'データなし', 日本: 'データなし' };
-      const parts = line.replace(item + '｜', '').split('｜');
-      const obj = { 項目: item };
-      parts.forEach(p => {
-        const idx = p.indexOf('：');
-        if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim();
-      });
-      return obj;
-    });
-  }
+  const geoItems = ['位置','面積','公用語','日本からの飛行距離','外務省危険レベル'];
+  const geoData = geoItems.map(item => {
+    const line = raw.split('\n').find(l => l.startsWith(item + '：'));
+    const val = line ? line.replace(item + '：', '').trim() : 'データなし';
+    return { 項目: item, 値: val };
+  });
 
-  const chiAnRows = parseChiAnLines(raw);
   const prisonData = parseLines(raw, '刑務所推移');
   const shiinData = parseLines(raw, '死因');
   const yushutsuData = parseLines(raw, '輸出');
@@ -97,97 +83,73 @@ return $input.all().map(item => {
     const tdStyle = `border:1px solid #eee;padding:12px 14px;`;
     const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;`;
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
-
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
       const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
       return `<tr style="${bg}">${row.map((cell, ci) => `<td style="${ci === 0 ? tdBoldStyle : tdStyle}">${cell}</td>`).join('')}</tr>`;
     }).join('')}</tbody>`;
-
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
+  }
+
+  // --- 5. テキスト抽出ヘルパー ---
+  // startMarkerを含む行の次の行から、endMarkerを含む行の前までのテキストを抽出
+  // パイプ区切り行・出典行を除く
+  function extractTextBetween(text, startMarker, endMarker) {
+    const lines = text.split('\n');
+    let inRange = false;
+    const result = [];
+    for (const l of lines) {
+      if (!inRange && l.includes(startMarker)) { inRange = true; continue; }
+      if (inRange && endMarker && l.includes(endMarker)) break;
+      if (inRange) {
+        if (l.includes('｜')) continue;
+        if (/^出典：/.test(l.trim())) continue;
+        if (/^為替レート：/.test(l.trim())) continue;
+        result.push(l);
+      }
+    }
+    return result.join('\n').trim();
   }
 
   let article = '';
 
-  // --- 5. 導入文（パイプ区切り行・セクション見出し行を除いた先頭テキスト） ---
-  const introLines = raw.split('\n').filter(l => {
-    if (!l.trim()) return false;
-    if (/^(国家の形と統治機構|行政トップ|立法と選挙制度|司法と法制度|社会保障・医療・年金|教育制度|徴税・財政制度|安全保障と兵役|基本権と価値観|殺人率|交通事故死亡率|自殺率|刑務所収容率|GPI|刑務所推移|死因|輸出|輸入|貿易相手|物価|為替レート|歴史|映像|興行|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支|🔍)/.test(l)) return false;
-    if (/^① |^② |^③ |^④ |^⑤ |^⑥ |^⑦ |^⑧ |^⑨ /.test(l)) return false;
-    return true;
-  });
-  // 最初の空でない行から制度セクションより前までを導入文とする
+  // --- 6. 導入文（「数字と事実」で終わる行まで） ---
+  const rawLines = raw.split('\n');
   let introText = '';
-  for (const l of introLines) {
-    if (/^(表の下に|data\.|貿易相手国について|経済トレンド|出典：|深刻な作品)/.test(l)) break;
+  for (const l of rawLines) {
     introText += l + '\n';
+    if (l.includes('数字と事実（Fact）から、国家の真実を紐解きます')) break;
   }
-  article += introText;
+  article += introText + '\n';
 
-  // --- 6. ① 制度の9つの皿 ---
+  // --- 7. ① 制度の9つの皿 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">① 制度の9つの皿</h2>\n`;
-  if (seidoData.length > 0) {
-    const seidoRows = seidoData.map(d => [d['項目'] || '', d[countryName] || d['対象国'] || 'データなし', d['日本'] || 'データなし']);
-    article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
-  }
-  // 比較文：パイプ区切りでない行でセクション見出しでもない行を抽出
-  const seidoSection = raw.split(/^① /m)[1] || '';
-  const seidoComp = seidoSection.split(/^② /m)[0] || '';
-  const seidoCompText = seidoComp.split('\n').filter(l => l.trim() && !l.includes('｜') && !/^(表の下に|data\.)/.test(l)).join('\n').trim();
-  if (seidoCompText) article += `\n<p>${seidoCompText}</p>\n`;
+  const seidoRows = seidoData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
+  article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
 
-  // --- 7. ② 地理と経済の衡量 ---
+  // 比較文：基本権と価値観パイプ行の後、位置：行の前
+  const seidoCompText = extractTextBetween(raw, '基本権と価値観｜', '位置：');
+  if (seidoCompText) article += `\n${seidoCompText}\n`;
+
+  // --- 8. ② 地理と経済の衡量 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">② 地理と経済の衡量</h2>\n`;
-
-  // 地理テーブル
-  const geoItems = ['位置','面積','公用語','日本からの飛行距離','外務省危険レベル'];
-  const geoRows = geoItems.map(item => {
-    const line = raw.split('\n').find(l => l.startsWith(item + '：'));
-    const val = line ? line.replace(item + '：', '').trim() : 'データなし';
-    return [item, val];
-  });
+  const geoRows = geoData.map(d => [d['項目'], d['値']]);
   article += makeTable(['項目', countryName], geoRows, ['30%', '70%']);
 
-  // 経済テーブル
-  const econItems = ['GDP（名目・USドル）','GDP成長率','一人当たりGDP','インフレ率','失業率','貧困率','ジニ係数','政府債務残高（GDP比）','経常収支（GDP比）'];
-  const econRows = econItems.map(item => {
-    const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
-    if (!line) return [item, 'データなし', 'データなし'];
-    const parts = line.replace(item + '｜', '').split('｜');
-    const obj = {};
-    parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0,idx).trim()] = p.substring(idx+1).trim(); });
-    return [item, obj[countryName] || 'データなし', obj['日本'] || 'データなし'];
-  });
+  const econRows = econData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['指標', countryName, '日本'], econRows, ['35%', '32%', '33%']);
   article += `<p class="citation">出典：World Bank / IMF（各値の年度は表内に記載）</p>\n`;
 
-  // 経済トレンド（パイプ区切りでない行を抽出）
-  const trendLines = raw.split('\n').filter(l => {
-    if (!l.trim() || l.includes('｜')) return false;
-    if (/^(① |② |③ |④ |⑤ |⑥ |⑦ |⑧ |⑨ |あなたは|data\.|出典：|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支|🔍|表の下に|貿易相手国|為替レート|🇯🇵|🔍|エラー猫|死因)/.test(l)) return false;
-    return true;
-  });
-  // 導入文以降、③より前のテキストのみ
-  const rawLines = raw.split('\n');
-  const idx2start = rawLines.findIndex(l => /^② /.test(l));
-  const idx3start = rawLines.findIndex(l => /^③ /.test(l));
-  if (idx2start !== -1 && idx3start !== -1) {
-    const econTrendText = rawLines.slice(idx2start, idx3start)
-      .filter(l => l.trim() && !l.includes('｜') && !/^(② |data\.|出典：|位置：|面積：|公用語：|日本からの飛行距離：|外務省危険レベル：|GDP|インフレ率|失業率|貧困率|ジニ係数|政府債務残高|経常収支)/.test(l))
-      .join('\n').trim();
-    if (econTrendText) article += `<p>${econTrendText}</p>\n`;
-  }
+  // 経済トレンド：経常収支行の後、殺人率行の前
+  const econTrendText = extractTextBetween(raw, '経常収支（GDP比）｜', '殺人率（10万人あたり）｜');
+  if (econTrendText) article += `\n${econTrendText}\n`;
 
-  // --- 8. ③ 治安と平和の衡量 ---
+  // --- 9. ③ 治安と平和の衡量 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">③ 治安と平和の衡量</h2>\n`;
   article += `<h3>治安指標</h3>\n`;
+  const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
+  article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
 
-  if (chiAnRows.length > 0) {
-    const chiAnTableRows = chiAnRows.map(d => [d['項目'] || '', d[countryName] || d['対象国'] || 'データなし', d['日本'] || 'データなし']);
-    article += makeTable(['項目', countryName, '日本'], chiAnTableRows, ['35%', '32%', '33%']);
-  }
-
-  // 外務省危険レベル（導入文から抽出）
   const levelMatch = raw.match(/⚠️[^\n]+ニャ[^\n]*/);
   if (levelMatch) article += `<p>${levelMatch[0]}</p>\n`;
 
@@ -196,7 +158,8 @@ return $input.all().map(item => {
   if (prisonData.length > 0) {
     const years = prisonData.map(d => d['年']).filter(Boolean);
     const targetNums = prisonData.map(d => {
-      const v = d[countryName + '総収容者数'] || d['対象国総収容者数'];
+      const key = Object.keys(d).find(k => k.includes('総収容者数') && !k.includes('日本'));
+      const v = key ? d[key] : null;
       return v && v !== 'データなし' ? parseInt(v.replace(/,/g, '')) || null : null;
     });
     const japanNums = prisonData.map(d => {
@@ -236,22 +199,24 @@ return $input.all().map(item => {
   // 死因比較表
   article += `<h3>死因比較</h3>\n`;
   if (shiinData.length > 0) {
-    const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['対象国'] || 'データなし', d['日本'] || 'データなし']);
+    const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
-    article += `<p class="citation">出典：死因データ / 日本：厚生労働省 2025年人口動態統計</p>\n`;
+    const shiinCite = raw.split('\n').find(l => l.startsWith('出典：') && l.includes('死亡原因'));
+    article += `<p class="citation">${shiinCite || '出典：各国統計 / 日本：厚生労働省 2025年人口動態統計'}</p>\n`;
   }
 
-  // --- 9. ④ 貿易の衡量 ---
+  // --- 10. ④ 貿易の衡量 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">④ 貿易の衡量</h2>\n`;
-
   if (yushutsuData.length > 0 && yunyuData.length > 0) {
     const maxLen = Math.max(yushutsuData.length, yunyuData.length);
     const boekiRows = Array.from({length: maxLen}, (_, i) => [
       (i + 1) + '位',
-      yushutsuData[i] ? yushutsuData[i]['品目'] || 'データなし' : '',
-      yunyuData[i] ? yunyuData[i]['品目'] || 'データなし' : ''
+      yushutsuData[i] ? yushutsuData[i]['品目'] || '' : '',
+      yunyuData[i] ? yunyuData[i]['品目'] || '' : ''
     ]);
     article += makeTable(['順位', '輸出品目', '輸入品目'], boekiRows, ['10%', '45%', '45%']);
+    const boekiCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('関税') || l.includes('貿易') || l.includes('OEC')));
+    if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
   }
 
   article += `<h3>主要貿易相手国</h3>\n`;
@@ -260,36 +225,26 @@ return $input.all().map(item => {
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
   }
 
-  // 貿易解説
-  const rawLines2 = raw.split('\n');
-  const idx4start = rawLines2.findIndex(l => /^④ /.test(l));
-  const idx5start = rawLines2.findIndex(l => /^⑤ /.test(l));
-  if (idx4start !== -1 && idx5start !== -1) {
-    const boekiText = rawLines2.slice(idx4start, idx5start)
-      .filter(l => l.trim() && !l.includes('｜') && !/^(④ |出典：|貿易相手国について)/.test(l))
-      .join('\n').trim();
-    if (boekiText) article += `<p>${boekiText}</p>\n`;
-  }
+  // 貿易解説：貿易相手10位行の後、物価行の前
+  const boekiText = extractTextBetween(raw, '貿易相手｜順位：10位｜', '物価｜項目：');
+  if (boekiText) article += `\n${boekiText}\n`;
 
-  // --- 10. ⑤ 物価比較 ---
+  // --- 11. ⑤ 物価比較 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
-
   const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
   if (bukkaData.length > 0) {
     const bukkaRows = bukkaData.map(d => {
       const emoji = bukkaEmoji[d['項目']] || '';
-      return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['対象国'] || 'データなし', d['日本'] || 'データなし'];
+      return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
     });
     article += makeTable(['項目', countryName, '日本'], bukkaRows, ['35%', '32%', '33%']);
-    // 為替レート行を抽出
     const rateMatch = raw.match(/為替レート：([^\n]+)/);
     if (rateMatch) article += `<p class="citation">※${rateMatch[1].trim()}</p>\n`;
     article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
   }
 
-  // --- 11. ⑥ 歴史的背景 ---
+  // --- 12. ⑥ 歴史的背景 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑥ 歴史的背景（近代100年）</h2>\n`;
-
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;`;
@@ -309,19 +264,21 @@ return $input.all().map(item => {
     article += rekishiHtml;
   }
 
-  // --- 12. ⑦ 直近の動向 ---
+  // --- 13. ⑦ 直近の動向 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑦ 直近の動向</h2>\n`;
-  const rawLines3 = raw.split('\n');
-  const idx7start = rawLines3.findIndex(l => /^⑦ /.test(l));
-  const idx8start = rawLines3.findIndex(l => /^⑧ /.test(l));
-  if (idx7start !== -1 && idx8start !== -1) {
-    const dohText = rawLines3.slice(idx7start + 1, idx8start).join('\n').trim();
-    if (dohText) article += dohText + '\n';
+  // <p>タグがある行を歴史行の後、映像行の前から抽出
+  const dohStart = rawLines.findIndex(l => l.startsWith('<p>') && !l.includes('citation'));
+  const dohEnd = rawLines.findIndex(l => l.startsWith('映像｜'));
+  if (dohStart !== -1 && dohEnd !== -1 && dohStart < dohEnd) {
+    article += rawLines.slice(dohStart, dohEnd).join('\n') + '\n';
   }
 
-  // --- 13. ⑧ 映像作品カード ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑧ 映像で知る${countryName}</h2>\n`;
+  // エラー猫
+  const nekoMatch = raw.match(/🐱[^\n]+/);
+  if (nekoMatch) article += `<p>${nekoMatch[0]}</p>\n`;
 
+  // --- 14. ⑧ 映像作品カード ---
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑧ 映像で知る${countryName}</h2>\n`;
   if (eizouData.length > 0) {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -338,18 +295,10 @@ return $input.all().map(item => {
   <div>${wikiBtn}${imdbBtn}</div>
 </div>`;
     });
-
-    // エラー猫
-    const seriousCount = eizouData.filter(d => d['深刻'] === 'true').length;
-    if (seriousCount < 3) {
-      const nekoCom = raw.match(/【深刻な作品が3件未満[^\n]*\n([^\n【]+)/);
-      if (nekoCom) article += `<p>${nekoCom[1].trim()}</p>\n`;
-    }
   }
 
-  // --- 14. ⑨ 興行収入ランキングカード ---
+  // --- 15. ⑨ 興行収入ランキングカード ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
-
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -374,11 +323,11 @@ return $input.all().map(item => {
     });
   }
 
-  // --- 15. ライブログ（そのまま出力） ---
-  const logMatch = raw.match(/(🔍 \*\*リアルタイム検索[\s\S]*$)/);
+  // --- 16. ライブログ ---
+  const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
   if (logMatch) article += '\n' + logMatch[1];
 
-  // --- 16. 最終出力 ---
+  // --- 17. 最終出力 ---
   return {
     json: {
       article: promptBody ? `${promptBody}\n\n${article}` : article,
