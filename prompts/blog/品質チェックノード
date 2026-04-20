@@ -1,46 +1,46 @@
-const input = $input.first().json;
-const article = input.article || "";
-const country = input.target_country || input.title || "不明";
+const article = $input.first().json.article || "";
+const countryName = $input.first().json.target_country || $input.first().json.title || "不明";
 
 // データなし・欠測の検出
-const issues = [];
+const dataNashiMatches = article.match(/データなし/g) || [];
+const kekusokuMatches = article.match(/欠測/g) || [];
 
-// article内の「データなし」を検出
-const dataNashiMatches = article.match(/[^\n]*データなし[^\n]*/g) || [];
-dataNashiMatches.forEach(line => {
-  if (!issues.find(i => i.text === line.trim())) {
-    issues.push({ type: 'データなし', text: line.trim().substring(0, 80) });
+// セクション別に検出
+const sections = ['① 制度','② 地理','③ 治安','④ 貿易','⑤ 物価','⑥ 歴史','⑦ 直近','⑧ 映像','⑨ 興行'];
+const sectionIssues = [];
+
+sections.forEach(section => {
+  const regex = new RegExp(section + '[\\s\\S]*?(?=' + sections[sections.indexOf(section)+1] + '|$)');
+  const match = article.match(regex);
+  if (match) {
+    const count = (match[0].match(/データなし/g) || []).length;
+    if (count > 0) sectionIssues.push(`${section}：データなし ${count}件`);
   }
 });
 
-// article内の「欠測」を検出
-const ketsuokuMatches = article.match(/[^\n]*欠測[^\n]*/g) || [];
-ketsuokuMatches.forEach(line => {
-  issues.push({ type: '欠測', text: line.trim().substring(0, 80) });
-});
+const totalIssues = dataNashiMatches.length + kekusokuMatches.length;
 
-// レポート作成
-const dataNashiCount = issues.filter(i => i.type === 'データなし').length;
-const ketsuokuCount = issues.filter(i => i.type === '欠測').length;
-
-let report = `【品質チェックレポート】${country}\n`;
-report += `実行日時：${new Date().toLocaleString('ja-JP')}\n\n`;
-report += `■ データなし：${dataNashiCount}件\n`;
-report += `■ 欠測：${ketsuokuCount}件\n\n`;
-
-if (issues.length === 0) {
-  report += `✅ 問題なし\n`;
-} else {
-  issues.forEach((issue, i) => {
-    report += `${i + 1}. [${issue.type}] ${issue.text}\n`;
-  });
-}
+const message = `
+【国家の天秤】品質チェックレポート
+対象国：${countryName}
+─────────────────
+データなし：${dataNashiMatches.length}件
+欠測：${kekusokuMatches.length}件
+合計：${totalIssues}件
+─────────────────
+セクション別：
+${sectionIssues.length > 0 ? sectionIssues.join('\n') : '問題なし'}
+─────────────────
+${totalIssues === 0 ? '✅ 問題なし' : '⚠️ 要確認'}
+`.trim();
 
 return [{
   json: {
-    ...input,
-    report,
-    issue_count: issues.length,
-    issues
+    message: message,
+    totalIssues: totalIssues,
+    countryName: countryName,
+    article: $input.first().json.article,
+    title: $input.first().json.title,
+    target_country: $input.first().json.target_country
   }
 }];
