@@ -1,21 +1,15 @@
-const inputs = $input.all();
+const allItems = $input.all();
+const dataItem = allItems.find(i => i.json.対象国) || allItems[0];
+const promptItem = allItems.find(i => typeof i.json.data === 'string') || allItems[1];
 
-// dataがstringのものがGitHub、objectのものが整形ノード1
-let prompt = "";
-let articleData = null;
-let countryName = "不明";
+let prompt = promptItem.json.data || promptItem.json.content || "";
+const allData = dataItem.json;
 
-for (const input of inputs) {
-  if (typeof input.json.data === 'string') {
-    prompt = input.json.data;
-  } else if (typeof input.json.data === 'object' && input.json.data !== null) {
-    articleData = input.json.data;
-    countryName = input.json.対象国 || "不明";
-  }
-}
-
-prompt = prompt.replace('{{ JSON.stringify($json.data) }}', JSON.stringify(articleData));
+const countryName = allData.対象国 || allData.target_country || allData.country || "不明";
+const countryNameEn = allData.countryEn || "";
 prompt = prompt.replace(/\{\{\s*\$json\.対象国\s*\}\}/g, countryName);
+prompt = prompt.replace(/\(正式な英語名称\)/g, countryNameEn ? `（${countryNameEn}）` : '');
+prompt = prompt.replace(/\{\{\s*JSON\.stringify\(\$json\.data\)\s*\}\}/g, JSON.stringify(allData.data || allData));
 
 const now = new Date();
 const dateStr = now.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -24,7 +18,6 @@ prompt = prompt.replace(/\{\{\s*\$now\.toFormat\(.*?\)\s*\}\}/g, dateStr);
 return {
   json: {
     final_prompt: prompt,
-    debug_countryName: countryName,
-    debug_data_ok: !!articleData
+    debug_data_received: Object.keys(allData)
   }
 };
