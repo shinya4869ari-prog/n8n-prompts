@@ -1,0 +1,46 @@
+const input = $input.first().json;
+const article = input.article || "";
+const country = input.target_country || input.title || "不明";
+
+// データなし・欠測の検出
+const issues = [];
+
+// article内の「データなし」を検出
+const dataNashiMatches = article.match(/[^\n]*データなし[^\n]*/g) || [];
+dataNashiMatches.forEach(line => {
+  if (!issues.find(i => i.text === line.trim())) {
+    issues.push({ type: 'データなし', text: line.trim().substring(0, 80) });
+  }
+});
+
+// article内の「欠測」を検出
+const ketsuokuMatches = article.match(/[^\n]*欠測[^\n]*/g) || [];
+ketsuokuMatches.forEach(line => {
+  issues.push({ type: '欠測', text: line.trim().substring(0, 80) });
+});
+
+// レポート作成
+const dataNashiCount = issues.filter(i => i.type === 'データなし').length;
+const ketsuokuCount = issues.filter(i => i.type === '欠測').length;
+
+let report = `【品質チェックレポート】${country}\n`;
+report += `実行日時：${new Date().toLocaleString('ja-JP')}\n\n`;
+report += `■ データなし：${dataNashiCount}件\n`;
+report += `■ 欠測：${ketsuokuCount}件\n\n`;
+
+if (issues.length === 0) {
+  report += `✅ 問題なし\n`;
+} else {
+  issues.forEach((issue, i) => {
+    report += `${i + 1}. [${issue.type}] ${issue.text}\n`;
+  });
+}
+
+return [{
+  json: {
+    ...input,
+    report,
+    issue_count: issues.length,
+    issues
+  }
+}];
