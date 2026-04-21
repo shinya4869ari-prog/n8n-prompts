@@ -1,44 +1,71 @@
 const article = $input.first().json.article || "";
 const countryName = $input.first().json.target_country || $input.first().json.title || "不明";
 
-// データなし・欠測の検出
-const dataNashiMatches = article.match(/データなし/g) || [];
-const kekusokuMatches = article.match(/欠測/g) || [];
+// セクション別に欠落を検出
+const sectionPatterns = [
+  { name: '① 制度の9つの皿', markers: ['国家の形と統治機構','行政トップ','立法と選挙制度','司法と法制度','社会保障','教育制度','徴税','安全保障','基本権'] },
+  { name: '② 地理と経済', markers: ['GDP','失業率','インフレ率','ジニ係数','貧困率'] },
+  { name: '③ 治安', markers: ['殺人率','交通事故','自殺率','刑務所収容率','GPI'] },
+  { name: '④ 貿易', markers: ['輸出','輸入','貿易相手'] },
+  { name: '⑤ 物価', markers: ['ビール','タバコ','ガソリン','家賃','月収'] },
+  { name: '⑥ 歴史', markers: ['歴史的背景'] },
+  { name: '⑦ 直近の動向', markers: ['直近'] },
+  { name: '⑧ 映像', markers: ['映像'] },
+  { name: '⑨ 興行', markers: ['興行'] }
+];
 
-// セクション別に検出
-const sections = ['① 制度','② 地理','③ 治安','④ 貿易','⑤ 物価','⑥ 歴史','⑦ 直近','⑧ 映像','⑨ 興行'];
-const sectionIssues = [];
+const issues = [];
 
-sections.forEach(section => {
-  const regex = new RegExp(section + '[\\s\\S]*?(?=' + sections[sections.indexOf(section)+1] + '|$)');
-  const match = article.match(regex);
-  if (match) {
-    const count = (match[0].match(/データなし/g) || []).length;
-    if (count > 0) sectionIssues.push(`${section}：データなし ${count}件`);
+sectionPatterns.forEach(section => {
+  const missingMarkers = section.markers.filter(marker => !article.includes(marker));
+  const dataNashiCount = (() => {
+    // そのセクション周辺のデータなし件数を大まかに検出
+    const idx = article.indexOf(section.name);
+    if (idx === -1) {
+      issues.push(`${section.name}：セクション自体が見つかりません`);
+      return 0;
+    }
+    const nextIdx = article.indexOf('h2', idx + 1);
+    const chunk = nextIdx !== -1 ? article.slice(idx, nextIdx) : article.slice(idx);
+    return (chunk.match(/データなし/g) || []).length;
+  })();
+
+  if (missingMarkers.length > 0) {
+    issues.push(`${section.name}：「${missingMarkers.join('」「')}」が見つかりません`);
+  }
+  if (dataNashiCount > 0) {
+    issues.push(`${section.name}：データなし ${dataNashiCount}件`);
   }
 });
 
-const totalIssues = dataNashiMatches.length + kekusokuMatches.length;
+// 全体の欠落数
+const totalDataNashi = (article.match(/データなし/g) || []).length;
+const totalKekusoku = (article.match(/欠測/g) || []).length;
+const totalIssues = issues.length;
+
+const hasIssues = totalIssues > 0 || totalDataNashi > 0 || totalKekusoku > 0;
 
 const message = `
 【国家の天秤】品質チェックレポート
 対象国：${countryName}
 ─────────────────
-データなし：${dataNashiMatches.length}件
-欠測：${kekusokuMatches.length}件
-合計：${totalIssues}件
+データなし合計：${totalDataNashi}件
+欠測合計：${totalKekusoku}件
 ─────────────────
-セクション別：
-${sectionIssues.length > 0 ? sectionIssues.join('\n') : '問題なし'}
+${hasIssues ? '⚠️ 以下の問題が検出されました：\n' + issues.map(i => `• ${i}`).join('\n') : '✅ 問題なし'}
 ─────────────────
-${totalIssues === 0 ? '✅ 問題なし' : '⚠️ 要確認'}
+※WordPress投稿は保留中です。
+${hasIssues ? '内容を確認・修正後に再実行してください。' : '問題がなければ手動でWordPress投稿ノードを実行してください。'}
 `.trim();
 
 return [{
   json: {
     message: message,
-    totalIssues: totalIssues,
-    countryName: countryName,
+    hasIssues: hasIssues,
+    totalDataNashi: totalDataNashi,
+    totalKekusoku: totalKekusoku,
+    issues: issues,
+    // WordPress投稿用データをそのまま引き継ぐ
     article: $input.first().json.article,
     title: $input.first().json.title,
     target_country: $input.first().json.target_country
