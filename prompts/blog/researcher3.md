@@ -12,8 +12,6 @@
 - データが見つからない場合のみ「欠測」と記載
 - 数値には必ず年度と出典を明記すること
 - 最新年優先。見つからなければ直近5年遡って再検索すること
-- **World Bank / IMF で見つからない場合は、CIA World Factbook・OECD・政府公式統計・Wikipedia などの代替ソースで必ず再検索すること**
-- **アンドラ・モナコ・リヒテンシュタイン・サンマリノ・バチカン等の小国・マイクロステートは World Bank 非加盟のためデータ欠損が多い。その場合は CIA World Factbook または国家統計局を優先すること**
 - 挨拶・説明・マークダウン記号・JSON以外の文字を一切出力しないこと
 
 現在の年月：{{ $now.toFormat('yyyy年MM月dd日') }}
@@ -25,36 +23,27 @@
 ### GDP・成長率
 1. 「{{ $('国名変換Code').first().json.countryEn }} GDP current USD World Bank 2023 2024」
 2. 「{{ $('国名変換Code').first().json.countryEn }} GDP growth rate World Bank latest」
-3. （上記で欠測の場合）「{{ $('国名変換Code').first().json.countryEn }} GDP CIA World Factbook economy」
-4. （上記で欠測の場合）「{{ $('国名変換Code').first().json.countryEn }} GDP nominal statistics government」
 
 ### 一人当たりGDP
 1. 「{{ $('国名変換Code').first().json.countryEn }} GDP per capita USD World Bank 2023 2024」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} GDP per capita CIA World Factbook」
 
 ### インフレ率
 1. 「{{ $('国名変換Code').first().json.countryEn }} inflation rate consumer price World Bank 2023 2024」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} inflation rate statistics 2023 2024」
 
 ### 失業率
 1. 「{{ $('国名変換Code').first().json.countryEn }} unemployment rate World Bank ILO 2023 2024」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} unemployment rate CIA Factbook OECD」
 
 ### 貧困率
 1. 「{{ $('国名変換Code').first().json.countryEn }} poverty rate World Bank latest」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} poverty rate statistics government」
 
 ### ジニ係数
 1. 「{{ $('国名変換Code').first().json.countryEn }} gini index World Bank latest」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} income inequality gini OECD Eurostat」
 
 ### 政府債務残高（GDP比）
 1. 「{{ $('国名変換Code').first().json.countryEn }} government debt GDP ratio IMF World Bank latest」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} public debt GDP percentage」
 
 ### 経常収支（GDP比）
 1. 「{{ $('国名変換Code').first().json.countryEn }} current account balance GDP World Bank 2023 2024」
-2. （欠測時）「{{ $('国名変換Code').first().json.countryEn }} current account balance statistics」
 
 ## 【日本の経済データ（比較用）】
 
