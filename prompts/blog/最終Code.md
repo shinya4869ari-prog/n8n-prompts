@@ -4,15 +4,14 @@ return $input.all().map(item => {
   const inputData = item.json;
   let raw = inputData?.article ?? "";
 
-  // --- 1. タイトルの決定 ---
-  const countryName =
-    inputData.target_country ||
-    inputData.targetCountry ||
-    inputData.country ||
-    inputData["対象国"] ||
-    "対象国";
+const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
 
   const title = countryName;
+
+  const capital = $('国名変換Code').first().json.capital ?? '';
+const japanCapital = $('国名変換Code').first().json.japanCapital ?? '';
+const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
+const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
 
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
@@ -229,19 +228,22 @@ return $input.all().map(item => {
   const boekiText = extractTextBetween(raw, '貿易相手｜順位：10位｜', '物価｜項目：');
   if (boekiText) article += `\n${boekiText}\n`;
 
-  // --- 11. ⑤ 物価比較 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
-  const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
-  if (bukkaData.length > 0) {
-    const bukkaRows = bukkaData.map(d => {
-      const emoji = bukkaEmoji[d['項目']] || '';
-      return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
-    });
-    article += makeTable(['項目', countryName, '日本'], bukkaRows, ['35%', '32%', '33%']);
-    const rateMatch = raw.match(/為替レート：([^\n]+)/);
-    if (rateMatch) article += `<p class="citation">※${rateMatch[1].trim()}</p>\n`;
-    article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
+// --- 11. ⑤ 物価比較 ---
+article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
+const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
+if (bukkaData.length > 0) {
+  const bukkaRows = bukkaData.map(d => {
+    const emoji = bukkaEmoji[d['項目']] || '';
+    return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
+  });
+  article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
+  const rateMatch = raw.match(/為替レート：([^\n]+)/);
+  if (rateMatch) {
+    const rateText = rateMatch[1].trim().replace('現在', '');
+    article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
   }
+  article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
+}
 
   // --- 12. ⑥ 歴史的背景 ---
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑥ 歴史的背景（近代100年）</h2>\n`;
@@ -327,14 +329,17 @@ return $input.all().map(item => {
   const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
   if (logMatch) article += '\n' + logMatch[1];
 
-  // --- 17. 最終出力 ---
+  // --- 16.5. Deep-Dive ---
+const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>[\s\S]*/);
+if (deepDiveMatch) article += '\n' + deepDiveMatch[0];
+
+// --- 17. 最終出力 ---
   return {
     json: {
       article: promptBody ? `${promptBody}\n\n${article}` : article,
       title: title,
-      target_country: countryName,
+      country: countryName,
       processedAt: new Date().toISOString()
     }
   };
 });
-
