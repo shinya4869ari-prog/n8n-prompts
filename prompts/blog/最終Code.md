@@ -81,7 +81,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;${w ? 'width:'+w+';' : ''}`;
     const tdStyle = `border:1px solid #eee;padding:12px 14px;`;
     const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;`;
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:28px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
       const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
@@ -122,7 +122,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   article += introText + '\n';
 
   // --- 7. ① 制度の9つの皿 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">① 制度の9つの皿</h2>\n`;
+  article += `<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;border-top:3px solid #00bcd4;">`;
   const seidoRows = seidoData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
 
