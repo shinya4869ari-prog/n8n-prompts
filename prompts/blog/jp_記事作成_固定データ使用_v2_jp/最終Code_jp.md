@@ -198,8 +198,7 @@ article += `
             || ''}</span>
         <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>
     </div>
-    <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['動員数'] ||
-        'データなし'}</div>
+    <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['興行収入'] || d['動員数'] || d['観客動員数'] || 'データなし'}</div>
     <div>${wikiBtn}${imdbBtn}${ytBtn}</div>
 </div>`;
 });
