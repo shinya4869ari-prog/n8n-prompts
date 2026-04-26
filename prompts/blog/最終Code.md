@@ -107,9 +107,8 @@ return $input.all().map(item => {
     return result.join('\n').trim();
   }
 
-  const h2 = (text) => `<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;border-top:3px solid #00bcd4;font-size:18px!important;">${text}</h2>\n`;
-  const h3 = (text) => `<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;border-top:1px solid #ddd;font-size:15px!important;">${text}</h3>\n`;
-
+  const h2 = (text) => `<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;border-top:3px solid #00bcd4;font-size:18px!important;font-weight:900;color:#111;">${text}</h2>\n`;
+  const h3 = (text) => `<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;border-top:1px solid #ddd;font-size:15px!important;font-weight:900;color:#111;">${text}</h3>\n`;
   let article = '';
 
   // --- 6. 導入文 ---
@@ -140,7 +139,7 @@ return $input.all().map(item => {
 
   // --- 9. ③ 治安と平和の衡量 ---
   article += h2('③ 治安と平和の衡量');
-  article += `<h3 style="margin-top:40px;margin-bottom:16px;">治安指標</h3>\n`;
+  article += h3('治安指標');
   const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
   const levelMatch = raw.match(/⚠️[^\n]+ニャ[^\n]*/);
