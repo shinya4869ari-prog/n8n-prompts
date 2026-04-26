@@ -99,7 +99,12 @@ if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
 }
 article += h3('主要貿易相手国');
 if (boekiAiteData.length > 0) {
-const aiteRows = boekiAiteData.map(d => [d['順位'] || '', d['国名'] || 'データなし', d['シェア'] || 'データなし']);
+const aiteRows = boekiAiteData.map(d => {
+      const shareRaw = d['シェア'] || '';
+      const shareNum = parseFloat(shareRaw);
+      const shareStr = !isNaN(shareNum) && shareNum <= 1 ? (shareNum * 100).toFixed(1) + '%' : shareRaw;
+      return [d['順位'] || '', d['国名'] || 'データなし', shareStr || 'データなし'];
+    });
 article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
 }
 const boekiText = extractTextBetween(raw, '貿易相手｜順位：10位｜', '歴史｜年：');
