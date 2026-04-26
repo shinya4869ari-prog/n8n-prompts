@@ -108,7 +108,7 @@ return $input.all().map(item => {
   }
 
   const h2 = (text) => `<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;border-top:3px solid #00bcd4;">${text}</h2>\n`;
-  const h3 = (text) => `<h3 style="margin-top:40px;margin-bottom:16px;padding-top:16px;border-top:1px solid #ddd;">${text}</h3>\n`;
+const h3 = (text) => `<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;border-top:1px solid #ddd;">${text}</h3>\n`;
 
   let article = '';
 
