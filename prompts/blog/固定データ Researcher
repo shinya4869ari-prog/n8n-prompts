@@ -48,8 +48,10 @@
 「{{ $json.countryEn }} SL.UEM.TOTL.ZS World Bank latest data」
 
 ### 貧困率
-「{{ $json.countryEn }} poverty headcount ratio SI.POV.DDAY World Bank latest」
-「{{ $json.countryEn }} poverty rate World Bank latest official data」
+優先出典：厚生労働省 → World Bank → OECD
+「{{ $json.countryEn }} relative poverty rate official statistics latest data」
+「{{ $json.countryEn }} relative poverty rate OECD latest official」
+「{{ $json.countryEn }} SI.POV.NAHC World Bank latest data」
 
 ### ジニ係数
 「{{ $json.countryEn }} gini index SI.POV.GINI World Bank latest data」
