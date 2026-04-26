@@ -139,7 +139,7 @@ return $input.all().map(item => {
 
   // --- 9. ③ 治安と平和の衡量 ---
   article += h2('③ 治安と平和の衡量');
-  article += h3('治安指標');
+  article += h2('治安指標');
   const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
   const levelMatch = raw.match(/⚠️[^\n]+ニャ[^\n]*/);
