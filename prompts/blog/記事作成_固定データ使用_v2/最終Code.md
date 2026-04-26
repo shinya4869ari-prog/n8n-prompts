@@ -4,13 +4,14 @@ return $input.all().map(item => {
   const inputData = item.json;
   let raw = inputData?.article ?? "";
 
-  const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
+const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
+
   const title = countryName;
 
   const capital = $('国名変換Code').first().json.capital ?? '';
-  const japanCapital = $('国名変換Code').first().json.japanCapital ?? '';
-  const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
-  const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
+const japanCapital = $('国名変換Code').first().json.japanCapital ?? '';
+const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
+const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
 
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
@@ -80,7 +81,7 @@ return $input.all().map(item => {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;${w ? 'width:'+w+';' : ''}`;
     const tdStyle = `border:1px solid #eee;padding:12px 14px;`;
     const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;`;
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:28px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
       const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
@@ -90,6 +91,8 @@ return $input.all().map(item => {
   }
 
   // --- 5. テキスト抽出ヘルパー ---
+  // startMarkerを含む行の次の行から、endMarkerを含む行の前までのテキストを抽出
+  // パイプ区切り行・出典行を除く
   function extractTextBetween(text, startMarker, endMarker) {
     const lines = text.split('\n');
     let inRange = false;
@@ -107,11 +110,9 @@ return $input.all().map(item => {
     return result.join('\n').trim();
   }
 
-  const h2 = (text) => `<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;border-top:3px solid #00bcd4;font-size:18px!important;font-weight:900;color:#111;">${text}</h2>\n`;
-  const h3 = (text) => `<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;border-top:1px solid #ddd;font-size:15px!important;font-weight:900;color:#111;">${text}</h3>\n`;
   let article = '';
 
-  // --- 6. 導入文 ---
+  // --- 6. 導入文（「数字と事実」で終わる行まで） ---
   const rawLines = raw.split('\n');
   let introText = '';
   for (const l of rawLines) {
@@ -121,31 +122,38 @@ return $input.all().map(item => {
   article += introText + '\n';
 
   // --- 7. ① 制度の9つの皿 ---
-  article += h2('① 制度の9つの皿');
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">① 制度の9つの皿</h2>\n`;
   const seidoRows = seidoData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
+
+  // 比較文：基本権と価値観パイプ行の後、位置：行の前
   const seidoCompText = extractTextBetween(raw, '基本権と価値観｜', '位置：');
   if (seidoCompText) article += `\n${seidoCompText}\n`;
 
   // --- 8. ② 地理と経済の衡量 ---
-  article += h2('② 地理と経済の衡量');
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">② 地理と経済の衡量</h2>\n`;
   const geoRows = geoData.map(d => [d['項目'], d['値']]);
   article += makeTable(['項目', countryName], geoRows, ['30%', '70%']);
+
   const econRows = econData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['指標', countryName, '日本'], econRows, ['35%', '32%', '33%']);
   article += `<p class="citation">出典：World Bank / IMF（各値の年度は表内に記載）</p>\n`;
+
+  // 経済トレンド：経常収支行の後、殺人率行の前
   const econTrendText = extractTextBetween(raw, '経常収支（GDP比）｜', '殺人率（10万人あたり）｜');
   if (econTrendText) article += `\n${econTrendText}\n`;
 
   // --- 9. ③ 治安と平和の衡量 ---
-  article += h2('③ 治安と平和の衡量');
-  article += `<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;font-size:15px!important;font-weight:900;color:#111;">治安指標</h3>\n`;
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">③ 治安と平和の衡量</h2>\n`;
+  article += `<h3>治安指標</h3>\n`;
   const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
+
   const levelMatch = raw.match(/⚠️[^\n]+ニャ[^\n]*/);
   if (levelMatch) article += `<p>${levelMatch[0]}</p>\n`;
 
-  article += h3('刑務所収容者数の推移');
+  // 刑務所グラフ
+  article += `<h3>刑務所収容者数の推移</h3>\n`;
   if (prisonData.length > 0) {
     const years = prisonData.map(d => d['年']).filter(Boolean);
     const targetNums = prisonData.map(d => {
@@ -187,7 +195,8 @@ return $input.all().map(item => {
 <p class="citation">出典：World Prison Brief</p>\n`;
   }
 
-  article += h3('死因比較');
+  // 死因比較表
+  article += `<h3>死因比較</h3>\n`;
   if (shiinData.length > 0) {
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
@@ -196,7 +205,7 @@ return $input.all().map(item => {
   }
 
   // --- 10. ④ 貿易の衡量 ---
-  article += h2('④ 貿易の衡量');
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">④ 貿易の衡量</h2>\n`;
   if (yushutsuData.length > 0 && yunyuData.length > 0) {
     const maxLen = Math.max(yushutsuData.length, yunyuData.length);
     const boekiRows = Array.from({length: maxLen}, (_, i) => [
@@ -209,41 +218,44 @@ return $input.all().map(item => {
     if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
   }
 
-  article += h3('主要貿易相手国');
+  article += `<h3>主要貿易相手国</h3>\n`;
   if (boekiAiteData.length > 0) {
     const aiteRows = boekiAiteData.map(d => [d['順位'] || '', d['国名'] || 'データなし', d['シェア'] || 'データなし']);
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
   }
+
+  // 貿易解説：貿易相手10位行の後、物価行の前
   const boekiText = extractTextBetween(raw, '貿易相手｜順位：10位｜', '物価｜項目：');
   if (boekiText) article += `\n${boekiText}\n`;
 
-  // --- 11. ⑤ 物価比較 ---
-  article += h2('⑤ 生活・価値の衡量（物価比較）');
-  const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
-  if (bukkaData.length > 0) {
-    const bukkaRows = bukkaData.map(d => {
-      const emoji = bukkaEmoji[d['項目']] || '';
-      return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
-    });
-    article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
-    const rateMatch = raw.match(/為替レート：([^\n]+)/);
-    if (rateMatch) {
-      const rateText = rateMatch[1].trim().replace('現在', '');
-      article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
-    }
-    article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
+// --- 11. ⑤ 物価比較 ---
+article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
+const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
+if (bukkaData.length > 0) {
+  const bukkaRows = bukkaData.map(d => {
+    const emoji = bukkaEmoji[d['項目']] || '';
+    return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
+  });
+  article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
+  const rateMatch = raw.match(/為替レート：([^\n]+)/);
+  if (rateMatch) {
+    const rateText = rateMatch[1].trim().replace('現在', '');
+    article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
   }
+  article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
+}
 
   // --- 12. ⑥ 歴史的背景 ---
-  article += h2('⑥ 歴史的背景（重大事件・事故 直近10件）');
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑥ 歴史的背景（近代100年）</h2>\n`;
   if (rekishiData.length > 0) {
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:28px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;`;
     let rekishiHtml = `<table style="${tableStyle}"><thead><tr>`;
     rekishiHtml += `<th style="${thStyle}width:10%;">年</th><th style="${thStyle}width:25%;">事象名</th><th style="${thStyle}width:65%;">概要</th>`;
     rekishiHtml += `</tr></thead><tbody>`;
     rekishiData.forEach(d => {
-      const bg = 'background:#fff3f3;';
+      const isSerious = d['深刻'] === 'true';
+      const bg = isSerious ? 'background:#fff3f3;' : '';
       rekishiHtml += `<tr style="${bg}">`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['年'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['事象名'] || ''}</td>`;
@@ -255,17 +267,20 @@ return $input.all().map(item => {
   }
 
   // --- 13. ⑦ 直近の動向 ---
-  article += h2('⑦ 直近の動向');
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑦ 直近の動向</h2>\n`;
+  // <p>タグがある行を歴史行の後、映像行の前から抽出
   const dohStart = rawLines.findIndex(l => l.startsWith('<p>') && !l.includes('citation'));
   const dohEnd = rawLines.findIndex(l => l.startsWith('映像｜'));
   if (dohStart !== -1 && dohEnd !== -1 && dohStart < dohEnd) {
     article += rawLines.slice(dohStart, dohEnd).join('\n') + '\n';
   }
+
+  // エラー猫
   const nekoMatch = raw.match(/🐱[^\n]+/);
   if (nekoMatch) article += `<p>${nekoMatch[0]}</p>\n`;
 
   // --- 14. ⑧ 映像作品カード ---
-  article += h2(`⑧ 映像で知る${countryName}`);
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑧ 映像で知る${countryName}</h2>\n`;
   if (eizouData.length > 0) {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -285,7 +300,7 @@ return $input.all().map(item => {
   }
 
   // --- 15. ⑨ 興行収入ランキングカード ---
-  article += h2(`⑨ 特別枠：${countryName}映画 歴代ランキング`);
+  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -316,14 +331,9 @@ return $input.all().map(item => {
 
   // --- 16.5. Deep-Dive ---
 const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>[\s\S]*/);
-if (deepDiveMatch) {
-  article += `<hr style="margin:80px 0 60px;border:none;border-top:3px solid #00bcd4;">\n`;
-  const deepDiveHtml = deepDiveMatch[0]
-    .replace(/<h2>/g, '<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;font-size:18px!important;font-weight:900;color:#111;">')
-    .replace(/<h3>/g, '<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;font-size:15px!important;font-weight:900;color:#111;">');
-  article += deepDiveHtml;
-}
-  // --- 17. 最終出力 ---
+if (deepDiveMatch) article += '\n' + deepDiveMatch[0];
+
+// --- 17. 最終出力 ---
   return {
     json: {
       article: promptBody ? `${promptBody}\n\n${article}` : article,
