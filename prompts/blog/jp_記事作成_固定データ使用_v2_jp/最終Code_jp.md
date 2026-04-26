@@ -209,32 +209,27 @@ article += `
 });
 }
 
-// --- 12. ライブログ ---
-const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
-if (logMatch) article += '\n' + logMatch[1];
+  // --- 12. ライブログ ---
+  const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
+  if (logMatch) article += '\n' + logMatch[1];
 
-// --- 13. Deep-Dive ---
-const deepDiveMatch = raw.match(/<h2>Deep Dive<\ /h2>[\s\S]*/);
-        if (deepDiveMatch) {
-        article += `
-        <hr style="margin:80px 0 60px;border:none;border-top:3px solid #00bcd4;">\n`;
-        const deepDiveHtml = deepDiveMatch[0]
-        .replace(/<h2>/g, '<h2
-                style="margin-top:80px;margin-bottom:24px;padding-top:24px;font-size:18px!important;font-weight:900;color:#111;">
-                ')
-                .replace(/<h3>/g, '<h3
-                        style="margin-top:48px;margin-bottom:20px;padding-top:16px;font-size:15px!important;font-weight:900;color:#111;">
-                        ');
-                        article += deepDiveHtml;
-                        }
+  // --- 13. Deep-Dive ---
+  const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>[\s\S]*/);
+  if (deepDiveMatch) {
+    article += `<hr style="margin:80px 0 60px;border:none;border-top:3px solid #00bcd4;">\n`;
+    const deepDiveHtml = deepDiveMatch[0]
+      .replace(/<h2>/g, '<h2 style="margin-top:80px;margin-bottom:24px;padding-top:24px;font-size:18px!important;font-weight:900;color:#111;">')
+      .replace(/<h3>/g, '<h3 style="margin-top:48px;margin-bottom:20px;padding-top:16px;font-size:15px!important;font-weight:900;color:#111;">');
+    article += deepDiveHtml;
+  }
 
-                        // --- 14. 最終出力 ---
-                        return {
-                        json: {
-                        article: promptBody ? `${promptBody}\n\n${article}` : article,
-                        title: title,
-                        country: countryName,
-                        processedAt: new Date().toISOString()
-                        }
-                        };
-                        });
+  // --- 14. 最終出力 ---
+  return {
+    json: {
+      article: promptBody ? `${promptBody}\n\n${article}` : article,
+      title: title,
+      country: countryName,
+      processedAt: new Date().toISOString()
+    }
+  };
+});
