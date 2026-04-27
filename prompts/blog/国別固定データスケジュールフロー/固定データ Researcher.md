@@ -27,7 +27,7 @@
 ---
 
 ## 【① 経済データ】
-優先出典：World Bank → IMF → OECD
+優先出典：IMF → World Bank → OECD
 
 ### GDP（名目・USドル）
 「{{ $json.countryEn }} GDP current USD World Bank latest site:data.worldbank.org」
