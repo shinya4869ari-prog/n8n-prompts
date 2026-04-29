@@ -1,0 +1,40 @@
+const allItems = $input.all();
+
+const indicatorMap = {
+  'NGDPD': 'GDP_USD',
+  'NGDP_RPCH': 'GDP成長率',
+  'NGDPDPC': '一人当たりGDP_USD',
+  'PCPIPCH': 'インフレ率',
+  'LUR': '失業率',
+  'GGXWDG_NGDP': '政府債務残高_GDP比',
+  'BCA_NGDPD': '経常収支_GDP比'
+};
+
+const result = {};
+
+for (const item of allItems) {
+  const indId = item.json['INDICATOR.ID'];
+  const key = indicatorMap[indId];
+  if (!key) continue;
+
+  const val = item.json['2024'] || item.json['2023'] || '';
+  const actualYear = item.json['2024'] ? '2024' : '2023';
+
+  result[key] = val;
+  result[key + '_年'] = actualYear;
+  result[key + '_出典'] = 'IMF World Economic Outlook April 2026';
+}
+
+const base = $('国名変換Code').first().json;
+
+return [{
+  json: {
+    country: base.country,
+    countryEn: base.countryEn,
+    countryCode: base.countryCode,
+    code3: base.code3,
+    capital: base.capital,
+    isJapan: base.isJapan,
+    ...result
+  }
+}];
