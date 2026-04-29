@@ -7,7 +7,8 @@ const indicatorMap = {
   'PCPIPCH': 'インフレ率',
   'LUR': '失業率',
   'GGXWDG_NGDP': '政府債務残高_GDP比',
-  'BCA_NGDPD': '経常収支_GDP比'
+  'BCA_NGDPD': '経常収支_GDP比',
+  'LP': '総人口'
 };
 
 const result = {};
@@ -17,8 +18,8 @@ for (const item of allItems) {
   const key = indicatorMap[indId];
   if (!key) continue;
 
-  const val = item.json['2024'] || item.json['2023'] || '';
-  const actualYear = item.json['2024'] ? '2024' : '2023';
+  const val = item.json['2025'] || item.json['2024'] || item.json['2023'] || '';
+  const actualYear = item.json['2025'] ? '2025' : item.json['2024'] ? '2024' : '2023';
 
   result[key] = val;
   result[key + '_年'] = actualYear;

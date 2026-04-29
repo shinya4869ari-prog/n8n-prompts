@@ -1,0 +1,56 @@
+const item = $input.first().json;
+const raw = item.originalData?.output || item.output || "";
+const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+const t = data["治安・社会指標"];
+const prison = t["刑務所収容推移"] || [];
+const deathRaw = t["死因トップ10"] || {};
+const death = Array.isArray(deathRaw) ? deathRaw : (deathRaw["リスト"] || []);
+const deathCite = Array.isArray(deathRaw) ? "" : (deathRaw["出典"] || "");
+const countryJp = $('国名変換Code').first().json.country;
+const countryEn = $('国名変換Code').first().json.countryEn;
+const countryCode = $('国名変換Code').first().json.countryCode;
+
+const prisonRows = {};
+for (let i = 0; i < 10; i++) {
+  prisonRows[`収容推移${i+1}_年`] = prison[i] ? prison[i]["年"] || "" : "";
+  prisonRows[`収容推移${i+1}_総収容者数`] = prison[i] ? prison[i]["総収容者数"] || "" : "";
+}
+
+return [{ json: {
+  "国名（日本語）": countryJp,
+  "国名（英語）": countryEn,
+  "国コード": countryCode,
+  "殺人率": t["殺人率"]["値"],
+  "殺人率_年": t["殺人率"]["年"],
+  "殺人率_出典": t["殺人率"]["出典"],
+  "交通事故死亡率": t["交通事故死亡率"]["値"],
+  "交通事故死亡率_年": t["交通事故死亡率"]["年"],
+  "交通事故死亡率_出典": t["交通事故死亡率"]["出典"],
+  "自殺率": t["自殺率"]["値"],
+  "自殺率_年": t["自殺率"]["年"],
+  "自殺率_出典": t["自殺率"]["出典"],
+  "貧困率": t["貧困率"]["値"],
+  "貧困率_年": t["貧困率"]["年"],
+  "貧困率_出典": t["貧困率"]["出典"],
+  "ジニ係数": t["ジニ係数"]["値"],
+  "ジニ係数_年": t["ジニ係数"]["年"],
+  "ジニ係数_出典": t["ジニ係数"]["出典"],
+  "刑務所収容率": t["刑務所収容率"] ? t["刑務所収容率"]["値"] : "",
+  "刑務所収容率_年": t["刑務所収容率"] ? t["刑務所収容率"]["年"] : "",
+  "刑務所収容率_出典": t["刑務所収容率"] ? t["刑務所収容率"]["出典"] : "",
+  "刑務所総収容者数": t["刑務所総収容者数"] ? t["刑務所総収容者数"]["値"] : "",
+  "刑務所総収容者数_年": t["刑務所総収容者数"] ? t["刑務所総収容者数"]["年"] : "",
+  "刑務所総収容者数_出典": t["刑務所総収容者数"] ? t["刑務所総収容者数"]["出典"] : "",
+  ...prisonRows,
+  "GPIスコア": t["GPI"]["スコア"],
+  "GPI順位": t["GPI"]["順位"],
+  "GPI年": t["GPI"]["年"],
+  "GPI出典": t["GPI"]["出典"],
+  "外務省危険レベル": t["外務省危険レベル"]["レベル"],
+  "外務省危険レベル_出典": t["外務省危険レベル"]["出典"],
+  "死因_出典": deathCite,
+  "死因1位": death[0]||"", "死因2位": death[1]||"", "死因3位": death[2]||"",
+  "死因4位": death[3]||"", "死因5位": death[4]||"", "死因6位": death[5]||"",
+  "死因7位": death[6]||"", "死因8位": death[7]||"",
+  "死因9位": death[8]||"", "死因10位": death[9]||""
+}}];

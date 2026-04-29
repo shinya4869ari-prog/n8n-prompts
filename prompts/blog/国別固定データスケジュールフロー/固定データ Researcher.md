@@ -36,7 +36,7 @@
 
 ### GPI（世界平和度指数）・外務省危険レベル
 - 「Global Peace Index {{ $json.countryEn }} latest score rank site:visionofhumanity.org」
-- 「外務省  {{ $json.country }}　危険情報 危険レベル {{ $now.toFormat('yyyy') }}」
+- 「外務省 {{ $json.country }} 危険情報 危険レベル {{ $now.toFormat('yyyy') }}」
 
 ### 死因トップ10
 - 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
@@ -44,28 +44,51 @@
 ---
 
 ## 【③ 物価（生活コスト）】
-### 生活コスト（Numbeo等）
-- 「Numbeo cost of living {{ $json.countryEn }} latest prices」
-- 「{{ $json.countryEn }} gasoline price per liter latest」
-- 「Big Mac price {{ $json.countryEn }} local currency latest」
-- 「Netflix standard plan price {{ $json.countryEn }} official」
+
+### ビール（レストラン500ml）
+「Numbeo Domestic Beer price {{ $json.capital }} latest data」
+
+### タバコ（マルボロ1箱）
+「Numbeo cigarettes Marlboro price {{ $json.capital }} latest data」
+
+### ミネラルウォーター（500ml）
+「Numbeo water bottle 0.5 liter price {{ $json.capital }} latest data」
+
+### ビッグマック
+「Big Mac price {{ $json.countryEn }} latest data official」
+
+### ガソリン（1L）
+「Numbeo gasoline price {{ $json.capital }} latest data」
+
+### 外食（安めの店・1食）
+「Numbeo inexpensive restaurant meal price {{ $json.capital }} latest data」
+
+### 電気・水道・ガス（月額・85㎡）
+「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} latest data」
+
+### 家賃（1LDK・首都圏市内）
+「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} latest data」
+
+### 平均月収（手取り）
+「Numbeo average monthly net salary {{ $json.capital }} latest data」
+
+### Netflix（スタンダード）
+「Netflix standard plan price {{ $json.countryEn }} official latest data」
 
 ### 為替レート（対円）
-- 「{{ $json.countryEn }} currency JPY exchange rate today」
+「{{ $json.countryEn }} currency JPY exchange rate today」
 
 ---
 
 ## 【④ 貿易】
-### 主要輸出入品目
+### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
 - 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
-- 「{{ $json.countryEn }} top trading partners share percentage latest」
+- 「{{ $json.countryEn }} top 10 trading partners share percentage latest」
 
 ---
 
 ## 出力形式
-入力された経済データ（総人口、GDP等）をそのまま保持し、以下の構造で出力してください。
-
 {
   "国名（日本語）": "{{ $json.country }}",
   "国名（英語）": "{{ $json.countryEn }}",
@@ -78,9 +101,6 @@
   "失業率": {"値": "{{ $json.失業率 }}", "年": "{{ $json.失業率_年 }}", "出典": "{{ $json.失業率_出典 }}"},
   "政府債務残高_GDP比": {"値": "{{ $json.政府債務残高_GDP比 }}", "年": "{{ $json.政府債務残高_GDP比_年 }}", "出典": "{{ $json.政府債務残高_GDP比_出典 }}"},
   "経常収支_GDP比": {"値": "{{ $json.経常収支_GDP比 }}", "年": "{{ $json.経常収支_GDP比_年 }}", "出典": "{{ $json.経常収支_GDP比_出典 }}"},
-  "治安_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
-  "物価_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
-  "貿易_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
   "治安・社会指標": {
     "殺人率": {"値": "", "年": "", "出典": ""},
     "交通事故死亡率": {"値": "", "年": "", "出典": ""},
@@ -96,22 +116,20 @@
     "通貨コード": "",
     "為替レート": "",
     "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
-    "各項目": {
-      "ビッグマック": {"現地通貨": "", "円換算": "", "出典": ""},
-      "マクドナルド（セット）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "コーラ（330ml）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "水（1.5L）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "ビール（0.5L）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "卵（12個）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "鶏胸肉（1kg）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "米（1kg）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "タクシー（1km）": {"現地通貨": "", "円換算": "", "出典": ""},
-      "ガソリン（1L）": {"現地通貨": "", "円換算": "", "出典": ""}
-    }
+    "ビール": {"現地通貨": "", "円換算": "", "出典": ""},
+    "タバコ": {"現地通貨": "", "円換算": "", "出典": ""},
+    "水": {"現地通貨": "", "円換算": "", "出典": ""},
+    "ビッグマック": {"現地通貨": "", "円換算": "", "出典": ""},
+    "ガソリン": {"現地通貨": "", "円換算": "", "出典": ""},
+    "外食": {"現地通貨": "", "円換算": "", "出典": ""},
+    "光熱費": {"現地通貨": "", "円換算": "", "出典": ""},
+    "家賃": {"現地通貨": "", "円換算": "", "出典": ""},
+    "月収": {"現地通貨": "", "円換算": "", "出典": ""},
+    "Netflix": {"現地通貨": "", "円換算": "", "出典": ""}
   },
   "貿易": {
-    "主要輸出項目": [{"順位": "", "品目": "", "出典": ""}],
-    "主要輸入項目": [{"順位": "", "品目": "", "出典": ""}],
-    "貿易相手国": [{"順位": "", "国名": "", "シェア": "", "出典": ""}]
+    "主要輸出項目": [{"順位": "1〜10", "品目": "", "出典": ""}],
+    "主要輸入項目": [{"順位": "1〜10", "品目": "", "出典": ""}],
+    "貿易相手国": [{"順位": "1〜10", "国名": "", "シェア": "", "出典": ""}]
   }
 }
