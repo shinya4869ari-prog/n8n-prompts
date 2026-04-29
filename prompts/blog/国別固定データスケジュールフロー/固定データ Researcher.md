@@ -93,9 +93,6 @@
   "国名（日本語）": "{{ $json.country }}",
   "国名（英語）": "{{ $json.countryEn }}",
   "国コード（ISO）": "{{ $json.countryCode }}",
-  "治安_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
-  "物価_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
-  "貿易_最終取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
   "治安・社会指標": {
     "殺人率": {"値": "", "年": "", "出典": ""},
     "交通事故死亡率": {"値": "", "年": "", "出典": ""},
