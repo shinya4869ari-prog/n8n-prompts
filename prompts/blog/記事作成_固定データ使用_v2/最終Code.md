@@ -39,7 +39,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
     return obj;
   });
 
-  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','刑務所収容率（10万人あたり）','GPI（世界平和度指数）'];
+  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','貧困率','ジニ係数','刑務所収容率（10万人あたり）','刑務所総収容者数','GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
@@ -49,7 +49,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
     return obj;
   });
 
-  const econItems = ['GDP（名目・USドル）','GDP成長率','一人当たりGDP','インフレ率','失業率','貧困率','ジニ係数','政府債務残高（GDP比）','経常収支（GDP比）'];
+  const econItems = ['総人口','GDP（名目・USドル）','一人当たりGDP','GDP成長率','政府債務残高（GDP比）','経常収支（GDP比）','インフレ率','失業率'];
   const econData = econItems.map(item => {
     const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
@@ -330,8 +330,14 @@ if (bukkaData.length > 0) {
   if (logMatch) article += '\n' + logMatch[1];
 
   // --- 16.5. Deep-Dive ---
-const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>[\s\S]*/);
-if (deepDiveMatch) article += '\n' + deepDiveMatch[0];
+const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>([\s\S]*)/);
+if (deepDiveMatch) {
+  const ddTitle = '<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">Deep Dive</h2>';
+  let ddBody = deepDiveMatch[1];
+  // 小見出し（h2, h3）を太字の段落に変換してサイズを抑える
+  ddBody = ddBody.replace(/<(h[23])>(.*?)<\/\1>/g, '<p style="font-weight:bold; margin-top:20px; margin-bottom:5px;">$2</p>');
+  article += '\n' + ddTitle + ddBody;
+}
 
 // --- 17. 最終出力 ---
   return {
