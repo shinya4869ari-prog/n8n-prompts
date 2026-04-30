@@ -21,6 +21,7 @@
 
 ## 【② 治安・社会指標】
 優先出典：World Bank → UNODC → WHO → 各国統計局
+（※刑務所関連については下記の個別ルールを最優先すること）
 
 ### 殺人率・交通事故死亡率・自殺率（10万人あたり）
 - 「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC latest」
@@ -30,15 +31,19 @@
 ### 貧困率・ジニ係数
 - 「{{ $json.countryEn }} relative poverty rate official statistics latest data」
 - 「{{ $json.countryEn }} gini index World Bank latest data」
+※ジニ係数は必ず **「0〜100の指数形式」** で出力すること（例：32.3）。0.xxxの形式で見つかった場合は100倍して出力すること。
 
-### 刑務所収容率・総収容者数・収容推移
-1. **直近の刑務所収容率（10万人あたり）**: 値に加え、調査年と出典も必ず収集すること。
-   - 「{{ $json.countryEn }} prison population rate per 100,000 latest official」
-2. **直近の刑務所総収容者数**: 値に加え、調査年と出典も必ず収集すること。
-   - 「{{ $json.countryEn }} total prison population latest official statistics」
-3. **刑務所収容推移**: 直近から遡って10年分（または2000年以降の主要な10点）を抽出すること。
-   - 「{{ $json.countryEn }} prison population historical data trend World Prison Brief」
-   - 「{{ $json.countryEn }} total prison population by year last 20 years」
+### 刑務所データ（収容率・総数・推移）の絶対ルール
+**出典は必ず「World Prison Brief」を使用すること。世界銀行、UNODC、各国統計局などのデータは一切使用禁止。**
+1. **刑務所収容率（Occupancy level）**: 定員に対する収容割合を **「〇〇%」** の形式で収集すること。
+   - 「World Prison Brief {{ $json.countryEn }} occupancy level latest」
+2. **直近の刑務所総収容者数**: 「World Prison Brief」から最新の数値を収集すること。
+   - 「World Prison Brief {{ $json.countryEn }} latest total prison population」
+3. **刑務所収容推移（グラフ用・昇順）**: 
+   - **2000年を起点として、2026年（最新）に向かって「古い順（昇順）」で最大10件** 抽出すること。
+   - 間隔は原則 **「2年おき」**（2000, 2002, 2004...）を優先し、データがない場合は前後を補完して合計10件にすること。
+   - 「World Prison Brief {{ $json.countryEn }} historical prison population trend 2000-2026」
+   - **※推移の数値には「人」などの単位を付けず、純粋な数値のみを出力すること。**
 
 ### GPI（世界平和度指数）・外務省危険レベル
 - 「Global Peace Index {{ $json.countryEn }} latest score rank site:visionofhumanity.org」
