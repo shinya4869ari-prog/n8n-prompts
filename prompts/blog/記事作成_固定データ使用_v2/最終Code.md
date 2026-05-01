@@ -77,6 +77,8 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   const kougyouData = parseLines(raw, '興行');
 
   // --- 4. HTML生成ヘルパー ---
+  const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;font-size:20px;font-weight:900;color:#111;`;
+
   function makeTable(headers, rows, widths) {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;${w ? 'width:'+w+';' : ''}`;
     const tdStyle = `border:1px solid #eee;padding:12px 14px;`;
@@ -122,7 +124,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   article += introText + '\n';
 
   // --- 7. ① 制度の9つの皿 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">① 制度の9つの皿</h2>\n`;
+  article += `<h2 style="${h2Style}">① 制度の9つの皿</h2>\n`;
   const seidoRows = seidoData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], seidoRows, ['25%', '37%', '38%']);
 
@@ -131,7 +133,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   if (seidoCompText) article += `\n${seidoCompText}\n`;
 
   // --- 8. ② 地理と経済の衡量 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">② 地理と経済の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}">② 地理と経済の衡量</h2>\n`;
   const geoRows = geoData.map(d => [d['項目'], d['値']]);
   article += makeTable(['項目', countryName], geoRows, ['30%', '70%']);
 
@@ -144,7 +146,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   if (econTrendText) article += `\n${econTrendText}\n`;
 
   // --- 9. ③ 治安と平和の衡量 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">③ 治安と平和の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}">③ 治安と平和の衡量</h2>\n`;
   article += `<h3>治安指標</h3>\n`;
   const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
@@ -205,7 +207,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   }
 
   // --- 10. ④ 貿易の衡量 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">④ 貿易の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}">④ 貿易の衡量</h2>\n`;
   if (yushutsuData.length > 0 && yunyuData.length > 0) {
     const maxLen = Math.max(yushutsuData.length, yunyuData.length);
     const boekiRows = Array.from({length: maxLen}, (_, i) => [
@@ -229,7 +231,7 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   if (boekiText) article += `\n${boekiText}\n`;
 
 // --- 11. ⑤ 物価比較 ---
-article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
+article += `<h2 style="${h2Style}">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
 const bukkaEmoji = { 'ビール（市販500ml）':'🍺', 'タバコ（マルボロ1箱）':'🚬', 'ミネラルウォーター（500ml）':'💧', 'ビッグマック（1個）':'🍔', 'ガソリン（1L）':'⛽', '外食（安めの店・1食）':'🍜', '電気・水道・ガス（月額）':'💡', '家賃（1LDK・市内）':'🏠', '平均月収（手取り）':'💴', 'Netflix（スタンダード）':'📺' };
 if (bukkaData.length > 0) {
   const bukkaRows = bukkaData.map(d => {
@@ -246,7 +248,7 @@ if (bukkaData.length > 0) {
 }
 
   // --- 12. ⑥ 歴史的背景 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑥ 歴史的背景（近代100年）</h2>\n`;
+  article += `<h2 style="${h2Style}">⑥ 歴史的背景（近代100年）</h2>\n`;
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;`;
@@ -267,7 +269,7 @@ if (bukkaData.length > 0) {
   }
 
   // --- 13. ⑦ 直近の動向 ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑦ 直近の動向</h2>\n`;
+  article += `<h2 style="${h2Style}">⑦ 直近の動向</h2>\n`;
   // <p>タグがある行を歴史行の後、映像行の前から抽出
   const dohStart = rawLines.findIndex(l => l.startsWith('<p>') && !l.includes('citation'));
   const dohEnd = rawLines.findIndex(l => l.startsWith('映像｜'));
@@ -280,7 +282,7 @@ if (bukkaData.length > 0) {
   if (nekoMatch) article += `<p>${nekoMatch[0]}</p>\n`;
 
   // --- 14. ⑧ 映像作品カード ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑧ 映像で知る${countryName}</h2>\n`;
+  article += `<h2 style="${h2Style}">⑧ 映像で知る${countryName}</h2>\n`;
   if (eizouData.length > 0) {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -300,7 +302,7 @@ if (bukkaData.length > 0) {
   }
 
   // --- 15. ⑨ 興行収入ランキングカード ---
-  article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
+  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
@@ -332,7 +334,7 @@ if (bukkaData.length > 0) {
   // --- 16.5. Deep-Dive ---
 const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>([\s\S]*)/);
 if (deepDiveMatch) {
-  const ddTitle = '<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;">Deep Dive</h2>';
+  const ddTitle = `<h2 style="${h2Style}">Deep Dive</h2>`;
   let ddBody = deepDiveMatch[1];
   // 小見出し（h2, h3）を太字の段落に変換してサイズを抑える
   ddBody = ddBody.replace(/<(h[23])>(.*?)<\/\1>/g, '<p style="font-weight:bold; margin-top:20px; margin-bottom:5px;">$2</p>');
