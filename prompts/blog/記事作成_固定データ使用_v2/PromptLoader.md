@@ -18,7 +18,7 @@ try {
     this.helpers.httpRequest({ method: 'GET', url: files['Deep-Dive_writer'] })
   ]);
 
-  // 前のノード（国名変換Code）のデータを引き継ぐ
+  // 前のノード（国名変換Code）のデータを取得
   const base = $input.first().json;
   
   // 現在の日付データを作成
@@ -30,20 +30,23 @@ try {
   };
 
   // {{ $json.fieldName }} を実際の値に置換する関数
+  // 多言語やドットを含むパスにも対応できるように強化
   const evaluateTemplate = (text, data) => {
-    return text.replace(/\{\{\s*\$json\.(\w+)\s*\}\}/g, (match, field) => {
-      return data[field] !== undefined ? data[field] : match;
+    return text.replace(/\{\{\s*\$json\.([^\s\}]+)\s*\}\}/g, (match, path) => {
+      // ドット区切りのパス（例: data.対象国データ.地理）に対応
+      const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
+      return value !== undefined ? value : match;
     });
   };
 
   return [{
     json: {
       ...base,
-      researcher1: evaluateTemplate(r1, context),
-      researcher2: evaluateTemplate(r2, context),
-      researcher25: evaluateTemplate(r25, context),
-      writer: evaluateTemplate(w, context),
-      'Deep-Dive_writer': evaluateTemplate(dd, context)
+      researcherPrompt1: evaluateTemplate(r1, context),
+      researcherPrompt2: evaluateTemplate(r2, context),
+      researcherPrompt25: evaluateTemplate(r25, context),
+      writerPrompt: evaluateTemplate(w, context),
+      deepDivePrompt: evaluateTemplate(dd, context)
     }
   }];
 } catch (error) {
