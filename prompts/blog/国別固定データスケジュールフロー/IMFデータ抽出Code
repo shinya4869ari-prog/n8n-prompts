@@ -30,12 +30,17 @@ const base = $('国名変換Code').first().json;
 
 return [{
   json: {
-    country: base.country,
-    countryEn: base.countryEn,
-    countryCode: base.countryCode,
-    code3: base.code3,
-    capital: base.capital,
-    isJapan: base.isJapan,
+    "国名（日本語）": base.country,
+    "国名（英語）": base.countryEn,
+    "国コード（ISO）": base.countryCode,
+    "code3": base.code3,
+    "首都（日本語）": base.capital,
+    "物価": {
+      "通貨名": base.currency,
+      "通貨記号": base.currencySymbol,
+      "通貨コード": base.currencyCode
+    },
+    "isJapan": base.isJapan,
     // --- 経済データ（チェックしやすい順序） ---
     "総人口": result["総人口"],
     "総人口_年": result["総人口_年"],

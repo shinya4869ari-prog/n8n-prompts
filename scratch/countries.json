@@ -1,0 +1,1758 @@
+[
+  {
+    "name": "アフガニスタン",
+    "props": {
+      "en": "Afghanistan",
+      "code": "AF",
+      "code3": "AFG",
+      "capital": "カブール"
+    }
+  },
+  {
+    "name": "アルバニア",
+    "props": {
+      "en": "Albania",
+      "code": "AL",
+      "code3": "ALB",
+      "capital": "ティラナ"
+    }
+  },
+  {
+    "name": "アルジェリア",
+    "props": {
+      "en": "Algeria",
+      "code": "DZ",
+      "code3": "DZA",
+      "capital": "アルジェ"
+    }
+  },
+  {
+    "name": "アンドラ",
+    "props": {
+      "en": "Andorra",
+      "code": "AD",
+      "code3": "AND",
+      "capital": "アンドラ・ラ・ベリャ"
+    }
+  },
+  {
+    "name": "アンゴラ",
+    "props": {
+      "en": "Angola",
+      "code": "AO",
+      "code3": "AGO",
+      "capital": "ルアンダ"
+    }
+  },
+  {
+    "name": "アンティグア・バーブーダ",
+    "props": {
+      "en": "Antigua and Barbuda",
+      "code": "AG",
+      "code3": "ATG",
+      "capital": "セントジョンズ"
+    }
+  },
+  {
+    "name": "アルゼンチン",
+    "props": {
+      "en": "Argentina",
+      "code": "AR",
+      "code3": "ARG",
+      "capital": "ブエノスアイレス"
+    }
+  },
+  {
+    "name": "アルメニア",
+    "props": {
+      "en": "Armenia",
+      "code": "AM",
+      "code3": "ARM",
+      "capital": "エレバン"
+    }
+  },
+  {
+    "name": "オーストラリア",
+    "props": {
+      "en": "Australia",
+      "code": "AU",
+      "code3": "AUS",
+      "capital": "キャンベラ"
+    }
+  },
+  {
+    "name": "オーストリア",
+    "props": {
+      "en": "Austria",
+      "code": "AT",
+      "code3": "AUT",
+      "capital": "ウィーン"
+    }
+  },
+  {
+    "name": "アゼルバイジャン",
+    "props": {
+      "en": "Azerbaijan",
+      "code": "AZ",
+      "code3": "AZE",
+      "capital": "バクー"
+    }
+  },
+  {
+    "name": "バハマ",
+    "props": {
+      "en": "Bahamas",
+      "code": "BS",
+      "code3": "BHS",
+      "capital": "ナッソー"
+    }
+  },
+  {
+    "name": "バーレーン",
+    "props": {
+      "en": "Bahrain",
+      "code": "BH",
+      "code3": "BHR",
+      "capital": "マナーマ"
+    }
+  },
+  {
+    "name": "バングラデシュ",
+    "props": {
+      "en": "Bangladesh",
+      "code": "BD",
+      "code3": "BGD",
+      "capital": "ダッカ"
+    }
+  },
+  {
+    "name": "バルバドス",
+    "props": {
+      "en": "Barbados",
+      "code": "BB",
+      "code3": "BRB",
+      "capital": "ブリッジタウン"
+    }
+  },
+  {
+    "name": "ベラルーシ",
+    "props": {
+      "en": "Belarus",
+      "code": "BY",
+      "code3": "BLR",
+      "capital": "ミンスク"
+    }
+  },
+  {
+    "name": "ベルギー",
+    "props": {
+      "en": "Belgium",
+      "code": "BE",
+      "code3": "BEL",
+      "capital": "ブリュッセル"
+    }
+  },
+  {
+    "name": "ベリーズ",
+    "props": {
+      "en": "Belize",
+      "code": "BZ",
+      "code3": "BLZ",
+      "capital": "ベルモパン"
+    }
+  },
+  {
+    "name": "ベナン",
+    "props": {
+      "en": "Benin",
+      "code": "BJ",
+      "code3": "BEN",
+      "capital": "ポルトノボ"
+    }
+  },
+  {
+    "name": "ブータン",
+    "props": {
+      "en": "Bhutan",
+      "code": "BT",
+      "code3": "BTN",
+      "capital": "ティンプー"
+    }
+  },
+  {
+    "name": "ボリビア",
+    "props": {
+      "en": "Bolivia",
+      "code": "BO",
+      "code3": "BOL",
+      "capital": "スクレ"
+    }
+  },
+  {
+    "name": "ボスニア・ヘルツェゴビナ",
+    "props": {
+      "en": "Bosnia and Herzegovina",
+      "code": "BA",
+      "code3": "BIH",
+      "capital": "サラエボ"
+    }
+  },
+  {
+    "name": "ボツワナ",
+    "props": {
+      "en": "Botswana",
+      "code": "BW",
+      "code3": "BWA",
+      "capital": "ハボローネ"
+    }
+  },
+  {
+    "name": "ブラジル",
+    "props": {
+      "en": "Brazil",
+      "code": "BR",
+      "code3": "BRA",
+      "capital": "ブラジリア"
+    }
+  },
+  {
+    "name": "ブルネイ",
+    "props": {
+      "en": "Brunei",
+      "code": "BN",
+      "code3": "BRN",
+      "capital": "バンダルスリブガワン"
+    }
+  },
+  {
+    "name": "ブルガリア",
+    "props": {
+      "en": "Bulgaria",
+      "code": "BG",
+      "code3": "BGR",
+      "capital": "ソフィア"
+    }
+  },
+  {
+    "name": "ブルキナファソ",
+    "props": {
+      "en": "Burkina Faso",
+      "code": "BF",
+      "code3": "BFA",
+      "capital": "ワガドゥグー"
+    }
+  },
+  {
+    "name": "ブルンジ",
+    "props": {
+      "en": "Burundi",
+      "code": "BI",
+      "code3": "BDI",
+      "capital": "ギテガ"
+    }
+  },
+  {
+    "name": "カーボベルデ",
+    "props": {
+      "en": "Cabo Verde",
+      "code": "CV",
+      "code3": "CPV",
+      "capital": "プライア"
+    }
+  },
+  {
+    "name": "カンボジア",
+    "props": {
+      "en": "Cambodia",
+      "code": "KH",
+      "code3": "KHM",
+      "capital": "プノンペン"
+    }
+  },
+  {
+    "name": "カメルーン",
+    "props": {
+      "en": "Cameroon",
+      "code": "CM",
+      "code3": "CMR",
+      "capital": "ヤウンデ"
+    }
+  },
+  {
+    "name": "カナダ",
+    "props": {
+      "en": "Canada",
+      "code": "CA",
+      "code3": "CAN",
+      "capital": "オタワ"
+    }
+  },
+  {
+    "name": "中央アフリカ",
+    "props": {
+      "en": "Central African Republic",
+      "code": "CF",
+      "code3": "CAF",
+      "capital": "バンギ"
+    }
+  },
+  {
+    "name": "チャド",
+    "props": {
+      "en": "Chad",
+      "code": "TD",
+      "code3": "TCD",
+      "capital": "ンジャメナ"
+    }
+  },
+  {
+    "name": "チリ",
+    "props": {
+      "en": "Chile",
+      "code": "CL",
+      "code3": "CHL",
+      "capital": "サンティアゴ"
+    }
+  },
+  {
+    "name": "中国",
+    "props": {
+      "en": "China",
+      "code": "CN",
+      "code3": "CHN",
+      "capital": "北京"
+    }
+  },
+  {
+    "name": "コロンビア",
+    "props": {
+      "en": "Colombia",
+      "code": "CO",
+      "code3": "COL",
+      "capital": "ボゴタ"
+    }
+  },
+  {
+    "name": "コモロ",
+    "props": {
+      "en": "Comoros",
+      "code": "KM",
+      "code3": "COM",
+      "capital": "モロニ"
+    }
+  },
+  {
+    "name": "コンゴ共和国",
+    "props": {
+      "en": "Congo",
+      "code": "CG",
+      "code3": "COG",
+      "capital": "ブラザビル"
+    }
+  },
+  {
+    "name": "コンゴ民主共和国",
+    "props": {
+      "en": "Democratic Republic of the Congo",
+      "code": "CD",
+      "code3": "COD",
+      "capital": "キンシャサ"
+    }
+  },
+  {
+    "name": "コスタリカ",
+    "props": {
+      "en": "Costa Rica",
+      "code": "CR",
+      "code3": "CRC",
+      "capital": "サンホセ"
+    }
+  },
+  {
+    "name": "コートジボワール",
+    "props": {
+      "en": "Cote d'Ivoire",
+      "code": "CI",
+      "code3": "CIV",
+      "capital": "ヤムスクロ"
+    }
+  },
+  {
+    "name": "クロアチア",
+    "props": {
+      "en": "Croatia",
+      "code": "HR",
+      "code3": "HRV",
+      "capital": "ザグレブ"
+    }
+  },
+  {
+    "name": "キューバ",
+    "props": {
+      "en": "Cuba",
+      "code": "CU",
+      "code3": "CUB",
+      "capital": "ハバナ"
+    }
+  },
+  {
+    "name": "キプロス",
+    "props": {
+      "en": "Cyprus",
+      "code": "CY",
+      "code3": "CYP",
+      "capital": "ニコシア"
+    }
+  },
+  {
+    "name": "チェコ",
+    "props": {
+      "en": "Czech Republic",
+      "code": "CZ",
+      "code3": "CZE",
+      "capital": "プラハ"
+    }
+  },
+  {
+    "name": "デンマーク",
+    "props": {
+      "en": "Denmark",
+      "code": "DK",
+      "code3": "DNK",
+      "capital": "コペンハーゲン"
+    }
+  },
+  {
+    "name": "ジブチ",
+    "props": {
+      "en": "Djibouti",
+      "code": "DJ",
+      "code3": "DJI",
+      "capital": "ジブチ"
+    }
+  },
+  {
+    "name": "ドミニカ国",
+    "props": {
+      "en": "Dominica",
+      "code": "DM",
+      "code3": "DMA",
+      "capital": "ロゾー"
+    }
+  },
+  {
+    "name": "ドミニカ共和国",
+    "props": {
+      "en": "Dominican Republic",
+      "code": "DO",
+      "code3": "DOM",
+      "capital": "サントドミンゴ"
+    }
+  },
+  {
+    "name": "エクアドル",
+    "props": {
+      "en": "Ecuador",
+      "code": "EC",
+      "code3": "ECU",
+      "capital": "キト"
+    }
+  },
+  {
+    "name": "エジプト",
+    "props": {
+      "en": "Egypt",
+      "code": "EG",
+      "code3": "EGY",
+      "capital": "カイロ"
+    }
+  },
+  {
+    "name": "エルサルバドル",
+    "props": {
+      "en": "El Salvador",
+      "code": "SV",
+      "code3": "SLV",
+      "capital": "サンサルバドル"
+    }
+  },
+  {
+    "name": "赤道ギニア",
+    "props": {
+      "en": "Equatorial Guinea",
+      "code": "GQ",
+      "code3": "GNQ",
+      "capital": "マラボ"
+    }
+  },
+  {
+    "name": "エリトリア",
+    "props": {
+      "en": "Eritrea",
+      "code": "ER",
+      "code3": "ERI",
+      "capital": "アスマラ"
+    }
+  },
+  {
+    "name": "エストニア",
+    "props": {
+      "en": "Estonia",
+      "code": "EE",
+      "code3": "EST",
+      "capital": "タリン"
+    }
+  },
+  {
+    "name": "エスワティニ",
+    "props": {
+      "en": "Eswatini",
+      "code": "SZ",
+      "code3": "SWZ",
+      "capital": "ムババーネ"
+    }
+  },
+  {
+    "name": "エチオピア",
+    "props": {
+      "en": "Ethiopia",
+      "code": "ET",
+      "code3": "ETH",
+      "capital": "アディスアベバ"
+    }
+  },
+  {
+    "name": "フィジー",
+    "props": {
+      "en": "Fiji",
+      "code": "FJ",
+      "code3": "FJI",
+      "capital": "スバ"
+    }
+  },
+  {
+    "name": "フィンランド",
+    "props": {
+      "en": "Finland",
+      "code": "FI",
+      "code3": "FIN",
+      "capital": "ヘルシンキ"
+    }
+  },
+  {
+    "name": "フランス",
+    "props": {
+      "en": "France",
+      "code": "FR",
+      "code3": "FRA",
+      "capital": "パリ"
+    }
+  },
+  {
+    "name": "ガボン",
+    "props": {
+      "en": "Gabon",
+      "code": "GA",
+      "code3": "GAB",
+      "capital": "リーブルビル"
+    }
+  },
+  {
+    "name": "ガンビア",
+    "props": {
+      "en": "Gambia",
+      "code": "GM",
+      "code3": "GMB",
+      "capital": "バンジュール"
+    }
+  },
+  {
+    "name": "ジョージア",
+    "props": {
+      "en": "Georgia",
+      "code": "GE",
+      "code3": "GEO",
+      "capital": "トビリシ"
+    }
+  },
+  {
+    "name": "ドイツ",
+    "props": {
+      "en": "Germany",
+      "code": "DE",
+      "code3": "DEU",
+      "capital": "ベルリン"
+    }
+  },
+  {
+    "name": "ガーナ",
+    "props": {
+      "en": "Ghana",
+      "code": "GH",
+      "code3": "GHA",
+      "capital": "アクラ"
+    }
+  },
+  {
+    "name": "ギリシャ",
+    "props": {
+      "en": "Greece",
+      "code": "GR",
+      "code3": "GRC",
+      "capital": "アテネ"
+    }
+  },
+  {
+    "name": "グレナダ",
+    "props": {
+      "en": "Grenada",
+      "code": "GD",
+      "code3": "GRD",
+      "capital": "セントジョージズ"
+    }
+  },
+  {
+    "name": "グアテマラ",
+    "props": {
+      "en": "Guatemala",
+      "code": "GT",
+      "code3": "GTM",
+      "capital": "グアテマラシティ"
+    }
+  },
+  {
+    "name": "ギニア",
+    "props": {
+      "en": "Guinea",
+      "code": "GN",
+      "code3": "GIN",
+      "capital": "コナクリ"
+    }
+  },
+  {
+    "name": "ギニアビサウ",
+    "props": {
+      "en": "Guinea-Bissau",
+      "code": "GW",
+      "code3": "GNB",
+      "capital": "ビサウ"
+    }
+  },
+  {
+    "name": "ガイアナ",
+    "props": {
+      "en": "Guyana",
+      "code": "GY",
+      "code3": "GUY",
+      "capital": "ジョージタウン"
+    }
+  },
+  {
+    "name": "ハイチ",
+    "props": {
+      "en": "Haiti",
+      "code": "HT",
+      "code3": "HTI",
+      "capital": "ポルトープランス"
+    }
+  },
+  {
+    "name": "ホンジュラス",
+    "props": {
+      "en": "Honduras",
+      "code": "HN",
+      "code3": "HND",
+      "capital": "テグシガルパ"
+    }
+  },
+  {
+    "name": "ハンガリー",
+    "props": {
+      "en": "Hungary",
+      "code": "HU",
+      "code3": "HUN",
+      "capital": "ブダペスト"
+    }
+  },
+  {
+    "name": "アイスランド",
+    "props": {
+      "en": "Iceland",
+      "code": "IS",
+      "code3": "ISL",
+      "capital": "レイキャビク"
+    }
+  },
+  {
+    "name": "インド",
+    "props": {
+      "en": "India",
+      "code": "IN",
+      "code3": "IND",
+      "capital": "ニューデリー"
+    }
+  },
+  {
+    "name": "インドネシア",
+    "props": {
+      "en": "Indonesia",
+      "code": "ID",
+      "code3": "IDN",
+      "capital": "ジャカルタ"
+    }
+  },
+  {
+    "name": "イラン",
+    "props": {
+      "en": "Iran",
+      "code": "IR",
+      "code3": "IRN",
+      "capital": "テヘラン"
+    }
+  },
+  {
+    "name": "イラク",
+    "props": {
+      "en": "Iraq",
+      "code": "IQ",
+      "code3": "IRQ",
+      "capital": "バグダッド"
+    }
+  },
+  {
+    "name": "アイルランド",
+    "props": {
+      "en": "Ireland",
+      "code": "IE",
+      "code3": "IRL",
+      "capital": "ダブリン"
+    }
+  },
+  {
+    "name": "イスラエル",
+    "props": {
+      "en": "Israel",
+      "code": "IL",
+      "code3": "ISR",
+      "capital": "エルサレム"
+    }
+  },
+  {
+    "name": "イタリア",
+    "props": {
+      "en": "Italy",
+      "code": "IT",
+      "code3": "ITA",
+      "capital": "ローマ"
+    }
+  },
+  {
+    "name": "ジャマイカ",
+    "props": {
+      "en": "Jamaica",
+      "code": "JM",
+      "code3": "JAM",
+      "capital": "キングストン"
+    }
+  },
+  {
+    "name": "日本",
+    "props": {
+      "en": "Japan",
+      "code": "JP",
+      "code3": "JPN",
+      "capital": "東京",
+      "isJapan": true
+    }
+  },
+  {
+    "name": "ヨルダン",
+    "props": {
+      "en": "Jordan",
+      "code": "JO",
+      "code3": "JOR",
+      "capital": "アンマン"
+    }
+  },
+  {
+    "name": "カザフスタン",
+    "props": {
+      "en": "Kazakhstan",
+      "code": "KZ",
+      "code3": "KAZ",
+      "capital": "アスタナ"
+    }
+  },
+  {
+    "name": "ケニア",
+    "props": {
+      "en": "Kenya",
+      "code": "KE",
+      "code3": "KEN",
+      "capital": "ナイロビ"
+    }
+  },
+  {
+    "name": "キリバス",
+    "props": {
+      "en": "Kiribati",
+      "code": "KI",
+      "code3": "KIR",
+      "capital": "タラワ"
+    }
+  },
+  {
+    "name": "クウェート",
+    "props": {
+      "en": "Kuwait",
+      "code": "KW",
+      "code3": "KWT",
+      "capital": "クウェートシティ"
+    }
+  },
+  {
+    "name": "キルギス",
+    "props": {
+      "en": "Kyrgyzstan",
+      "code": "KG",
+      "code3": "KGZ",
+      "capital": "ビシュケク"
+    }
+  },
+  {
+    "name": "ラオス",
+    "props": {
+      "en": "Laos",
+      "code": "LA",
+      "code3": "LAO",
+      "capital": "ビエンチャン"
+    }
+  },
+  {
+    "name": "ラトビア",
+    "props": {
+      "en": "Latvia",
+      "code": "LV",
+      "code3": "LVA",
+      "capital": "リガ"
+    }
+  },
+  {
+    "name": "レバノン",
+    "props": {
+      "en": "Lebanon",
+      "code": "LB",
+      "code3": "LBN",
+      "capital": "ベイルート"
+    }
+  },
+  {
+    "name": "レソト",
+    "props": {
+      "en": "Lesotho",
+      "code": "LS",
+      "code3": "LSO",
+      "capital": "マセル"
+    }
+  },
+  {
+    "name": "リベリア",
+    "props": {
+      "en": "Liberia",
+      "code": "LR",
+      "code3": "LBR",
+      "capital": "モンロビア"
+    }
+  },
+  {
+    "name": "リビア",
+    "props": {
+      "en": "Libya",
+      "code": "LY",
+      "code3": "LBY",
+      "capital": "トリポリ"
+    }
+  },
+  {
+    "name": "リヒテンシュタイン",
+    "props": {
+      "en": "Liechtenstein",
+      "code": "LI",
+      "code3": "LIE",
+      "capital": "ファドゥーツ"
+    }
+  },
+  {
+    "name": "リトアニア",
+    "props": {
+      "en": "Lithuania",
+      "code": "LT",
+      "code3": "LTU",
+      "capital": "ビリニュス"
+    }
+  },
+  {
+    "name": "ルクセンブルク",
+    "props": {
+      "en": "Luxembourg",
+      "code": "LU",
+      "code3": "LUX",
+      "capital": "ルクセンブルク"
+    }
+  },
+  {
+    "name": "マダガスカル",
+    "props": {
+      "en": "Madagascar",
+      "code": "MG",
+      "code3": "MDG",
+      "capital": "アンタナナリボ"
+    }
+  },
+  {
+    "name": "マラウイ",
+    "props": {
+      "en": "Malawi",
+      "code": "MW",
+      "code3": "MWI",
+      "capital": "リロングウェ"
+    }
+  },
+  {
+    "name": "マレーシア",
+    "props": {
+      "en": "Malaysia",
+      "code": "MY",
+      "code3": "MYS",
+      "capital": "クアラルンプール"
+    }
+  },
+  {
+    "name": "モルディブ",
+    "props": {
+      "en": "Maldives",
+      "code": "MV",
+      "code3": "MDV",
+      "capital": "マレ"
+    }
+  },
+  {
+    "name": "マリ",
+    "props": {
+      "en": "Mali",
+      "code": "ML",
+      "code3": "MLI",
+      "capital": "バマコ"
+    }
+  },
+  {
+    "name": "マルタ",
+    "props": {
+      "en": "Malta",
+      "code": "MT",
+      "code3": "MLT",
+      "capital": "バレッタ"
+    }
+  },
+  {
+    "name": "マーシャル諸島",
+    "props": {
+      "en": "Marshall Islands",
+      "code": "MH",
+      "code3": "MHL",
+      "capital": "マジュロ"
+    }
+  },
+  {
+    "name": "モーリタニア",
+    "props": {
+      "en": "Mauritania",
+      "code": "MR",
+      "code3": "MRT",
+      "capital": "ヌアクショット"
+    }
+  },
+  {
+    "name": "モーリシャス",
+    "props": {
+      "en": "Mauritius",
+      "code": "MU",
+      "code3": "MUS",
+      "capital": "ポートルイス"
+    }
+  },
+  {
+    "name": "メキシコ",
+    "props": {
+      "en": "Mexico",
+      "code": "MX",
+      "code3": "MEX",
+      "capital": "メキシコシティ"
+    }
+  },
+  {
+    "name": "ミクロネシア連邦",
+    "props": {
+      "en": "Micronesia",
+      "code": "FM",
+      "code3": "FSM",
+      "capital": "パリキール"
+    }
+  },
+  {
+    "name": "モルドバ",
+    "props": {
+      "en": "Moldova",
+      "code": "MD",
+      "code3": "MDA",
+      "capital": "キシナウ"
+    }
+  },
+  {
+    "name": "モナコ",
+    "props": {
+      "en": "Monaco",
+      "code": "MC",
+      "code3": "MCO",
+      "capital": "モナコ"
+    }
+  },
+  {
+    "name": "モンゴル",
+    "props": {
+      "en": "Mongolia",
+      "code": "MN",
+      "code3": "MNG",
+      "capital": "ウランバートル"
+    }
+  },
+  {
+    "name": "モンテネグロ",
+    "props": {
+      "en": "Montenegro",
+      "code": "ME",
+      "code3": "MNE",
+      "capital": "ポドゴリツァ"
+    }
+  },
+  {
+    "name": "モロッコ",
+    "props": {
+      "en": "Morocco",
+      "code": "MA",
+      "code3": "MAR",
+      "capital": "ラバト"
+    }
+  },
+  {
+    "name": "モザンビーク",
+    "props": {
+      "en": "Mozambique",
+      "code": "MZ",
+      "code3": "MOZ",
+      "capital": "マプト"
+    }
+  },
+  {
+    "name": "ミャンマー",
+    "props": {
+      "en": "Myanmar",
+      "code": "MM",
+      "code3": "MMR",
+      "capital": "ネーピードー"
+    }
+  },
+  {
+    "name": "ナミビア",
+    "props": {
+      "en": "Namibia",
+      "code": "NA",
+      "code3": "NAM",
+      "capital": "ウィントフック"
+    }
+  },
+  {
+    "name": "ナウル",
+    "props": {
+      "en": "Nauru",
+      "code": "NR",
+      "code3": "NRU",
+      "capital": "ヤレン"
+    }
+  },
+  {
+    "name": "ネパール",
+    "props": {
+      "en": "Nepal",
+      "code": "NP",
+      "code3": "NPL",
+      "capital": "カトマンズ"
+    }
+  },
+  {
+    "name": "オランダ",
+    "props": {
+      "en": "Netherlands",
+      "code": "NL",
+      "code3": "NLD",
+      "capital": "アムステルダム"
+    }
+  },
+  {
+    "name": "ニュージーランド",
+    "props": {
+      "en": "New Zealand",
+      "code": "NZ",
+      "code3": "NZL",
+      "capital": "ウェリントン"
+    }
+  },
+  {
+    "name": "ニカラグア",
+    "props": {
+      "en": "Nicaragua",
+      "code": "NI",
+      "code3": "NIC",
+      "capital": "マナグア"
+    }
+  },
+  {
+    "name": "ニジェール",
+    "props": {
+      "en": "Niger",
+      "code": "NE",
+      "code3": "NER",
+      "capital": "ニアメ"
+    }
+  },
+  {
+    "name": "ナイジェリア",
+    "props": {
+      "en": "Nigeria",
+      "code": "NG",
+      "code3": "NGA",
+      "capital": "アブジャ"
+    }
+  },
+  {
+    "name": "北朝鮮",
+    "props": {
+      "en": "North Korea",
+      "code": "KP",
+      "code3": "PRK",
+      "capital": "平壌"
+    }
+  },
+  {
+    "name": "北マケドニア",
+    "props": {
+      "en": "North Macedonia",
+      "code": "MK",
+      "code3": "MKD",
+      "capital": "スコピエ"
+    }
+  },
+  {
+    "name": "ノルウェー",
+    "props": {
+      "en": "Norway",
+      "code": "NO",
+      "code3": "NOR",
+      "capital": "オスロ"
+    }
+  },
+  {
+    "name": "オマーン",
+    "props": {
+      "en": "Oman",
+      "code": "OM",
+      "code3": "OMN",
+      "capital": "マスカット"
+    }
+  },
+  {
+    "name": "パキスタン",
+    "props": {
+      "en": "Pakistan",
+      "code": "PK",
+      "code3": "PAK",
+      "capital": "イスラマバード"
+    }
+  },
+  {
+    "name": "パラオ",
+    "props": {
+      "en": "Palau",
+      "code": "PW",
+      "code3": "PLW",
+      "capital": "ンゲルルムッド"
+    }
+  },
+  {
+    "name": "パナマ",
+    "props": {
+      "en": "Panama",
+      "code": "PA",
+      "code3": "PAN",
+      "capital": "パナマシティ"
+    }
+  },
+  {
+    "name": "パプアニューギニア",
+    "props": {
+      "en": "Papua New Guinea",
+      "code": "PG",
+      "code3": "PNG",
+      "capital": "ポートモレスビー"
+    }
+  },
+  {
+    "name": "パラグアイ",
+    "props": {
+      "en": "Paraguay",
+      "code": "PY",
+      "code3": "PRY",
+      "capital": "アスンシオン"
+    }
+  },
+  {
+    "name": "ペルー",
+    "props": {
+      "en": "Peru",
+      "code": "PE",
+      "code3": "PER",
+      "capital": "リマ"
+    }
+  },
+  {
+    "name": "フィリピン",
+    "props": {
+      "en": "Philippines",
+      "code": "PH",
+      "code3": "PHL",
+      "capital": "マニラ"
+    }
+  },
+  {
+    "name": "ポーランド",
+    "props": {
+      "en": "Poland",
+      "code": "PL",
+      "code3": "POL",
+      "capital": "ワルシャワ"
+    }
+  },
+  {
+    "name": "ポルトガル",
+    "props": {
+      "en": "Portugal",
+      "code": "PT",
+      "code3": "PRT",
+      "capital": "リスボン"
+    }
+  },
+  {
+    "name": "カタール",
+    "props": {
+      "en": "Qatar",
+      "code": "QA",
+      "code3": "QAT",
+      "capital": "ドーハ"
+    }
+  },
+  {
+    "name": "ルーマニア",
+    "props": {
+      "en": "Romania",
+      "code": "RO",
+      "code3": "ROU",
+      "capital": "ブカレスト"
+    }
+  },
+  {
+    "name": "ロシア",
+    "props": {
+      "en": "Russia",
+      "code": "RU",
+      "code3": "RUS",
+      "capital": "モスクワ"
+    }
+  },
+  {
+    "name": "ルワンダ",
+    "props": {
+      "en": "Rwanda",
+      "code": "RW",
+      "code3": "RWA",
+      "capital": "キガリ"
+    }
+  },
+  {
+    "name": "セントクリストファー・ネービス",
+    "props": {
+      "en": "Saint Kitts and Nevis",
+      "code": "KN",
+      "code3": "KNA",
+      "capital": "バセテール"
+    }
+  },
+  {
+    "name": "セントルシア",
+    "props": {
+      "en": "Saint Lucia",
+      "code": "LC",
+      "code3": "LCA",
+      "capital": "カストリーズ"
+    }
+  },
+  {
+    "name": "セントビンセント・グレナディーン",
+    "props": {
+      "en": "Saint Vincent and the Grenadines",
+      "code": "VC",
+      "code3": "VCT",
+      "capital": "キングスタウン"
+    }
+  },
+  {
+    "name": "サモア",
+    "props": {
+      "en": "Samoa",
+      "code": "WS",
+      "code3": "WSM",
+      "capital": "アピア"
+    }
+  },
+  {
+    "name": "サンマリノ",
+    "props": {
+      "en": "San Marino",
+      "code": "SM",
+      "code3": "SMR",
+      "capital": "サンマリノ"
+    }
+  },
+  {
+    "name": "サントメ・プリンシペ",
+    "props": {
+      "en": "Sao Tome and Principe",
+      "code": "ST",
+      "code3": "STP",
+      "capital": "サントメ"
+    }
+  },
+  {
+    "name": "サウジアラビア",
+    "props": {
+      "en": "Saudi Arabia",
+      "code": "SA",
+      "code3": "SAU",
+      "capital": "リヤド"
+    }
+  },
+  {
+    "name": "セネガル",
+    "props": {
+      "en": "Senegal",
+      "code": "SN",
+      "code3": "SEN",
+      "capital": "ダカール"
+    }
+  },
+  {
+    "name": "セルビア",
+    "props": {
+      "en": "Serbia",
+      "code": "RS",
+      "code3": "SRB",
+      "capital": "ベオグラード"
+    }
+  },
+  {
+    "name": "セーシェル",
+    "props": {
+      "en": "Seychelles",
+      "code": "SC",
+      "code3": "SYC",
+      "capital": "ビクトリア"
+    }
+  },
+  {
+    "name": "シエラレオネ",
+    "props": {
+      "en": "Sierra Leone",
+      "code": "SL",
+      "code3": "SLE",
+      "capital": "フリータウン"
+    }
+  },
+  {
+    "name": "シンガポール",
+    "props": {
+      "en": "Singapore",
+      "code": "SG",
+      "code3": "SGP",
+      "capital": "シンガポール"
+    }
+  },
+  {
+    "name": "スロバキア",
+    "props": {
+      "en": "Slovakia",
+      "code": "SK",
+      "code3": "SVK",
+      "capital": "ブラチスラバ"
+    }
+  },
+  {
+    "name": "スロベニア",
+    "props": {
+      "en": "Slovenia",
+      "code": "SI",
+      "code3": "SVN",
+      "capital": "リュブリャナ"
+    }
+  },
+  {
+    "name": "ソロモン諸島",
+    "props": {
+      "en": "Solomon Islands",
+      "code": "SB",
+      "code3": "SLB",
+      "capital": "ホニアラ"
+    }
+  },
+  {
+    "name": "ソマリア",
+    "props": {
+      "en": "Somalia",
+      "code": "SO",
+      "code3": "SOM",
+      "capital": "モガディシュ"
+    }
+  },
+  {
+    "name": "南アフリカ",
+    "props": {
+      "en": "South Africa",
+      "code": "ZA",
+      "code3": "ZAF",
+      "capital": "プレトリア"
+    }
+  },
+  {
+    "name": "韓国",
+    "props": {
+      "en": "Republic of Korea",
+      "code": "KR",
+      "code3": "KOR",
+      "capital": "ソウル"
+    }
+  },
+  {
+    "name": "南スーダン",
+    "props": {
+      "en": "South Sudan",
+      "code": "SS",
+      "code3": "SSD",
+      "capital": "ジュバ"
+    }
+  },
+  {
+    "name": "スペイン",
+    "props": {
+      "en": "Spain",
+      "code": "ES",
+      "code3": "ESP",
+      "capital": "マドリード"
+    }
+  },
+  {
+    "name": "スリランカ",
+    "props": {
+      "en": "Sri Lanka",
+      "code": "LK",
+      "code3": "LKA",
+      "capital": "スリジャヤワルダナプラコッテ"
+    }
+  },
+  {
+    "name": "スーダン",
+    "props": {
+      "en": "Sudan",
+      "code": "SD",
+      "code3": "SDN",
+      "capital": "ハルツーム"
+    }
+  },
+  {
+    "name": "スリナム",
+    "props": {
+      "en": "Suriname",
+      "code": "SR",
+      "code3": "SUR",
+      "capital": "パラマリボ"
+    }
+  },
+  {
+    "name": "スウェーデン",
+    "props": {
+      "en": "Sweden",
+      "code": "SE",
+      "code3": "SWE",
+      "capital": "ストックホルム"
+    }
+  },
+  {
+    "name": "スイス",
+    "props": {
+      "en": "Switzerland",
+      "code": "CH",
+      "code3": "CHE",
+      "capital": "ベルン"
+    }
+  },
+  {
+    "name": "シリア",
+    "props": {
+      "en": "Syria",
+      "code": "SY",
+      "code3": "SYR",
+      "capital": "ダマスカス"
+    }
+  },
+  {
+    "name": "台湾",
+    "props": {
+      "en": "Taiwan",
+      "code": "TW",
+      "code3": "TWN",
+      "capital": "台北"
+    }
+  },
+  {
+    "name": "タジキスタン",
+    "props": {
+      "en": "Tajikistan",
+      "code": "TJ",
+      "code3": "TJK",
+      "capital": "ドゥシャンベ"
+    }
+  },
+  {
+    "name": "タンザニア",
+    "props": {
+      "en": "Tanzania",
+      "code": "TZ",
+      "code3": "TZA",
+      "capital": "ドドマ"
+    }
+  },
+  {
+    "name": "タイ",
+    "props": {
+      "en": "Thailand",
+      "code": "TH",
+      "code3": "THA",
+      "capital": "バンコク"
+    }
+  },
+  {
+    "name": "東ティモール",
+    "props": {
+      "en": "Timor-Leste",
+      "code": "TL",
+      "code3": "TLS",
+      "capital": "ディリ"
+    }
+  },
+  {
+    "name": "トーゴ",
+    "props": {
+      "en": "Togo",
+      "code": "TG",
+      "code3": "TGO",
+      "capital": "ロメ"
+    }
+  },
+  {
+    "name": "トンガ",
+    "props": {
+      "en": "Tonga",
+      "code": "TO",
+      "code3": "TON",
+      "capital": "ヌクアロファ"
+    }
+  },
+  {
+    "name": "トリニダード・トバゴ",
+    "props": {
+      "en": "Trinidad and Tobago",
+      "code": "TT",
+      "code3": "TTO",
+      "capital": "ポートオブスペイン"
+    }
+  },
+  {
+    "name": "チュニジア",
+    "props": {
+      "en": "Tunisia",
+      "code": "TN",
+      "code3": "TUN",
+      "capital": "チュニス"
+    }
+  },
+  {
+    "name": "トルコ",
+    "props": {
+      "en": "Turkey",
+      "code": "TR",
+      "code3": "TUR",
+      "capital": "アンカラ"
+    }
+  },
+  {
+    "name": "トルクメニスタン",
+    "props": {
+      "en": "Turkmenistan",
+      "code": "TM",
+      "code3": "TKM",
+      "capital": "アシガバット"
+    }
+  },
+  {
+    "name": "ツバル",
+    "props": {
+      "en": "Tuvalu",
+      "code": "TV",
+      "code3": "TUV",
+      "capital": "フナフティ"
+    }
+  },
+  {
+    "name": "ウガンダ",
+    "props": {
+      "en": "Uganda",
+      "code": "UG",
+      "code3": "UGA",
+      "capital": "カンパラ"
+    }
+  },
+  {
+    "name": "ウクライナ",
+    "props": {
+      "en": "Ukraine",
+      "code": "UA",
+      "code3": "UKR",
+      "capital": "キーウ"
+    }
+  },
+  {
+    "name": "アラブ首長国連邦",
+    "props": {
+      "en": "United Arab Emirates",
+      "code": "AE",
+      "code3": "ARE",
+      "capital": "アブダビ"
+    }
+  },
+  {
+    "name": "イギリス",
+    "props": {
+      "en": "United Kingdom",
+      "code": "GB",
+      "code3": "GBR",
+      "capital": "ロンドン"
+    }
+  },
+  {
+    "name": "アメリカ合衆国",
+    "props": {
+      "en": "United States",
+      "code": "US",
+      "code3": "USA",
+      "capital": "ワシントンD.C."
+    }
+  },
+  {
+    "name": "ウルグアイ",
+    "props": {
+      "en": "Uruguay",
+      "code": "UY",
+      "code3": "URY",
+      "capital": "モンテビデオ"
+    }
+  },
+  {
+    "name": "ウズベキスタン",
+    "props": {
+      "en": "Uzbekistan",
+      "code": "UZ",
+      "code3": "UZB",
+      "capital": "タシケント"
+    }
+  },
+  {
+    "name": "バヌアツ",
+    "props": {
+      "en": "Vanuatu",
+      "code": "VU",
+      "code3": "VUT",
+      "capital": "ポートビラ"
+    }
+  },
+  {
+    "name": "バチカン市国",
+    "props": {
+      "en": "Vatican City",
+      "code": "VA",
+      "code3": "VAT",
+      "capital": "バチカン市国"
+    }
+  },
+  {
+    "name": "ベネズエラ",
+    "props": {
+      "en": "Venezuela",
+      "code": "VE",
+      "code3": "VEN",
+      "capital": "カラカス"
+    }
+  },
+  {
+    "name": "ベトナム",
+    "props": {
+      "en": "Vietnam",
+      "code": "VN",
+      "code3": "VNM",
+      "capital": "ハノイ"
+    }
+  },
+  {
+    "name": "イエメン",
+    "props": {
+      "en": "Yemen",
+      "code": "YE",
+      "code3": "YEM",
+      "capital": "サヌア"
+    }
+  },
+  {
+    "name": "ザンビア",
+    "props": {
+      "en": "Zambia",
+      "code": "ZM",
+      "code3": "ZMB",
+      "capital": "ルサカ"
+    }
+  },
+  {
+    "name": "ジンバブエ",
+    "props": {
+      "en": "Zimbabwe",
+      "code": "ZW",
+      "code3": "ZWE",
+      "capital": "ハラレ"
+    }
+  }
+]
