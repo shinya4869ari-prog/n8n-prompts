@@ -11,7 +11,7 @@ const countryName = $('国名変換Code').first().json.country || inputData.coun
   const capital = $('国名変換Code').first().json.capital ?? '';
 const japanCapital = $('国名変換Code').first().json.japanCapital ?? '';
 const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
-const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
+const japanLabel = '日本（東京）';
 
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
