@@ -112,6 +112,59 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
     return result.join('\n').trim();
   }
 
+  function formatValue(item, val) {
+    if (!val || val === 'データなし') return val;
+    if (val.includes('%')) return val;
+
+    const numMatch = val.match(/([\d,]+\.?\d*)/);
+    if (!numMatch) return val;
+    let num = parseFloat(numMatch[1].replace(/,/g, ''));
+    let rest = val.replace(numMatch[1], '').trim();
+
+    // --- 1. GDP / 一人当たりGDP (USD系) ---
+    if (item.includes('GDP') && !item.includes('成長率') && !item.includes('比')) {
+      const unit = 'USD';
+      const unitRest = rest.replace(/USドル|USD|ドル/g, '').trim();
+      
+      if (val.includes('億')) {
+        if (num >= 10000) {
+          const unitRestClean = unitRest.replace('億','').trim();
+          return `${(num / 10000).toFixed(2)}兆${unit} ${unitRestClean}`.trim();
+        }
+        return `${num.toFixed(2).toLocaleString()}億${unit} ${unitRest.replace('億','')}`.trim();
+      } else {
+        if (num >= 10000) {
+          return `${(num / 10000).toFixed(2)}万${unit} ${unitRest}`.trim();
+        }
+        return `${Math.round(num).toLocaleString()}${unit} ${unitRest}`.trim();
+      }
+    }
+
+    // --- 2. 総人口 (人系) ---
+    if (item.includes('人口')) {
+      const unitRest = rest.replace(/万人|万|人/g, '').trim();
+      if (val.includes('万')) {
+        if (num >= 10000) {
+          const oku = Math.floor(num / 10000);
+          const man = Math.round(num % 10000);
+          return `${oku}億${man.toLocaleString()}万人 ${unitRest}`.trim();
+        }
+        const roundedMan = Math.round(num * 10) / 10;
+        return `${roundedMan.toLocaleString()}万人 ${unitRest}`.trim();
+      } else {
+        if (num >= 100000000) {
+          const oku = Math.floor(num / 100000000);
+          const man = Math.round((num % 100000000) / 10000);
+          return `${oku}億${man.toLocaleString()}万人 ${unitRest}`.trim();
+        } else if (num >= 10000) {
+          return `${Math.round(num / 10000).toLocaleString()}万人 ${unitRest}`.trim();
+        }
+        return `${Math.round(num).toLocaleString()}人 ${unitRest}`.trim();
+      }
+    }
+    return val;
+  }
+
   let article = '';
 
   // --- 6. 導入文（「数字と事実」で終わる行まで） ---
@@ -137,7 +190,13 @@ const japanLabel = japanCapital ? `日本（${japanCapital}）` : '日本';
   const geoRows = geoData.map(d => [d['項目'], d['値']]);
   article += makeTable(['項目', countryName], geoRows, ['30%', '70%']);
 
-  const econRows = econData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
+  const econRows = econData.map(d => {
+    return [
+      d['項目'], 
+      formatValue(d['項目'], d[countryName] || 'データなし'), 
+      formatValue(d['項目'], d['日本'] || 'データなし')
+    ];
+  });
   article += makeTable(['指標', countryName, '日本'], econRows, ['35%', '32%', '33%']);
   article += `<p class="citation">出典：World Bank / IMF（各値の年度は表内に記載）</p>\n`;
 
@@ -347,6 +406,10 @@ if (deepDiveMatch) {
       article: promptBody ? `${promptBody}\n\n${article}` : article,
       title: title,
       country: countryName,
+      capital: capital,
+      japanCapital: japanCapital,
+      countryLabel: countryLabel,
+      japanLabel: japanLabel,
       processedAt: new Date().toISOString()
     }
   };
