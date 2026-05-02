@@ -83,10 +83,10 @@ const japanLabel = '日本（東京）';
   const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;font-size:20px;font-weight:900;color:#111;`;
 
   function makeTable(headers, rows, widths) {
-    const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;${w ? 'width:'+w+';' : ''}`;
-    const tdStyle = `border:1px solid #eee;padding:12px 14px;`;
-    const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;`;
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;font-size:14px;${w ? 'width:'+w+';' : ''}`;
+    const tdStyle = `border:1px solid #eee;padding:12px 14px;font-size:14px;`;
+    const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;font-size:14px;`;
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
       const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
@@ -265,7 +265,7 @@ const japanLabel = '日本（東京）';
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
     const shiinCite = raw.split('\n').find(l => l.startsWith('出典：') && l.includes('死亡原因'));
-    article += `<p class="citation">${shiinCite || '出典：各国統計 / 日本：厚生労働省 2025年人口動態統計'}</p>\n`;
+    article += `<p class="citation">${shiinCite || `出典：${countryName}統計 / 日本：厚生労働省 2025年人口動態統計`}</p>\n`;
   }
 
   // --- 10. ④ 貿易の衡量 ---
@@ -370,9 +370,9 @@ if (bukkaData.length > 0) {
       const cite = d['出典'] || '';
       const wikiUrl = d['wikipedia_url'] || (cite.includes('wikipedia.org') ? cite : '');
       const imdbUrl = d['imdb_url'] || (cite.includes('imdb.com') ? cite : '');
-      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
-      const citeHtml = cite && !cite.startsWith('http') ? `<div style="font-size:11px;color:#999;margin-top:8px;">出典：${cite}</div>` : '';
+      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;margin-right:6px;">Wiki</a>` : '';
+      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;margin-right:6px;">IMDb</a>` : '';
+      const citeHtml = cite ? `<div style="font-size:10px;color:#999;margin-top:8px;">出典：${cite.startsWith('http') ? `<a href="${cite}" target="_blank" style="color:#999;">${cite}</a>` : cite}</div>` : '';
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
@@ -397,10 +397,10 @@ if (bukkaData.length > 0) {
       const imdbUrl = d['imdb_url'] || (cite.includes('imdb.com') ? cite : '');
       const genTitle = d['原題'] || d['タイトル'] || '';
       const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(genTitle + ' trailer')}`;
-      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
-      const ytBtn = `<a href="${ytUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">▶ Trailer</a>`;
-      const citeHtml = cite && !cite.startsWith('http') ? `<div style="font-size:11px;color:#999;margin-top:8px;">出典：${cite}</div>` : '';
+      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;margin-right:6px;">Wiki</a>` : '';
+      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;margin-right:6px;">IMDb</a>` : '';
+      const ytBtn = `<a href="${ytUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;margin-right:6px;">▶ Trailer</a>`;
+      const citeHtml = cite ? `<div style="font-size:10px;color:#999;margin-top:8px;">出典：${cite.startsWith('http') ? `<a href="${cite}" target="_blank" style="color:#999;">${cite}</a>` : cite}</div>` : '';
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
