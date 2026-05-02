@@ -39,7 +39,7 @@ const japanLabel = '日本（東京）';
     return obj;
   });
 
-  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','貧困率','ジニ係数','刑務所収容率（10万人あたり）','刑務所総収容者数','GPI（世界平和度指数）'];
+  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','貧困率','ジニ係数','刑務所収容率','刑務所総収容者数','GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = raw.split('\n').find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
