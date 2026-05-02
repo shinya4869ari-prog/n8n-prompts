@@ -80,7 +80,8 @@ const japanLabel = '日本（東京）';
   const kougyouData = parseLines(raw, '興行');
 
   // --- 4. HTML生成ヘルパー ---
-  const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;font-size:20px;font-weight:900;color:#111;`;
+  const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid #00bcd4;font-size:16px;font-weight:900;color:#111;`;
+  const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
 
   function makeTable(headers, rows, widths) {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;font-size:14px;${w ? 'width:'+w+';' : ''}`;
@@ -209,7 +210,7 @@ const japanLabel = '日本（東京）';
 
   // --- 9. ③ 治安と平和の衡量 ---
   article += `<h2 style="${h2Style}">③ 治安と平和の衡量</h2>\n`;
-  article += `<h3>治安指標</h3>\n`;
+  article += `<h3 style="${h3Style}">治安指標</h3>\n`;
   const chiAnRows2 = chiAnData.map(d => [d['項目'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['項目', countryName, '日本'], chiAnRows2, ['35%', '32%', '33%']);
 
@@ -217,7 +218,7 @@ const japanLabel = '日本（東京）';
   if (levelMatch) article += `<p>${levelMatch[0]}</p>\n`;
 
   // 刑務所グラフ
-  article += `<h3>刑務所収容者数の推移</h3>\n`;
+  article += `<h3 style="${h3Style}">刑務所収容者数の推移</h3>\n`;
   if (prisonData.length > 0) {
     const years = prisonData.map(d => d['年']).filter(Boolean);
     const targetNums = prisonData.map(d => {
@@ -260,7 +261,7 @@ const japanLabel = '日本（東京）';
   }
 
   // 死因比較表
-  article += `<h3>死因比較</h3>\n`;
+  article += `<h3 style="${h3Style}">死因比較</h3>\n`;
   if (shiinData.length > 0) {
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
@@ -282,7 +283,7 @@ const japanLabel = '日本（東京）';
     if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
   }
 
-  article += `<h3>主要貿易相手国</h3>\n`;
+  article += `<h3 style="${h3Style}">主要貿易相手国</h3>\n`;
   if (boekiAiteData.length > 0) {
     const aiteRows = boekiAiteData.map(d => {
       let share = d['シェア'] || 'データなし';
