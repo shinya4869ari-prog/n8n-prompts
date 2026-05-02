@@ -269,7 +269,7 @@ const japanLabel = '日本（東京）';
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
     const shiinCiteLine = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('死亡原因') || l.includes('死因')));
-    article += `<p class="citation">${shiinCiteLine || citation || '出典：固定データベース / 日本：厚生労働省 2025年人口動態統計'}</p>\n`;
+    if (shiinCiteLine || citation) article += `<p class="citation">${shiinCiteLine || citation}</p>\n`;
   }
 
   // --- 10. ④ 貿易の衡量 ---
@@ -283,7 +283,8 @@ const japanLabel = '日本（東京）';
     ]);
     article += makeTable(['順位', '輸出品目', '輸入品目'], boekiRows, ['10%', '45%', '45%']);
     const boekiCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('関税') || l.includes('貿易') || l.includes('OEC')));
-    if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
+    const boekiFallback = inputData.data?.貿易出典 ? `出典：${inputData.data.貿易出典}` : '';
+    article += `<p class="citation">${boekiCite || boekiFallback}</p>\n`;
   }
 
   article += `<h3 style="${h3Style}">主要貿易相手国</h3>\n`;
@@ -301,7 +302,8 @@ const japanLabel = '日本（東京）';
     });
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
     const aiteCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('Trade') || l.includes('IMF')));
-    article += `<p class="citation">${aiteCite || '出典：IMF Direction of Trade Statistics / Trade Map'}</p>\n`;
+    const aiteFallback = inputData.data?.貿易出典 ? `出典：${inputData.data.貿易出典}` : '';
+    article += `<p class="citation">${aiteCite || aiteFallback}</p>\n`;
   }
 
   // 貿易解説：貿易相手10位行の後、物価行の前
