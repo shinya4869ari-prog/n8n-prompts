@@ -4,7 +4,7 @@ const e = (i, col) => $items("輸出").find(item => item.json.順位 === (i + 1)
 const im = (i, col) => $items("輸入").find(item => item.json.順位 === (i + 1))?.json[col] || "";
 const pt = (i, col) => $items("貿易相手国").find(item => item.json.順位 === (i + 1))?.json[col] || "";
 
-// 出典は各テーブルの1位から取得（全て同じ前提）
+// 全て共通のため、代表して1つ取得
 const tradeCite = e(0, "出典") || im(0, "出典") || pt(0, "出典") || "IMF / Trade Map";
 
 return [{ json: {
