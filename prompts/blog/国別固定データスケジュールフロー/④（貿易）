@@ -5,7 +5,8 @@ const im = (i, col) => $items("輸入").find(item => item.json.順位 === (i + 1
 const pt = (i, col) => $items("貿易相手国").find(item => item.json.順位 === (i + 1))?.json[col] || "";
 
 // 貿易相手10位の後にある独立した出典データを取得
-const tradeCite = $items("貿易相手国").find(item => !item.json.順位 && item.json.出典)?.json.出典 
+// 「順位」が空、または「出典」という文字が入っている行の「出典」カラムを拾う
+const tradeCite = $items("貿易相手国").find(item => (!item.json.順位 || item.json.順位 === "出典") && item.json.出典)?.json.出典 
                || $items("貿易相手国").last()?.json.出典 
                || "IMF / Trade Map";
 
