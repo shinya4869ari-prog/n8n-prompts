@@ -367,16 +367,21 @@ if (bukkaData.length > 0) {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-      const wikiUrl = d['wikipedia_url'] && d['wikipedia_url'] !== 'データなし' ? d['wikipedia_url'] : '';
-      const imdbUrl = d['imdb_url'] && d['imdb_url'] !== 'データなし' ? d['imdb_url'] : '';
-      const wikiBtn = wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
+      const cite = d['出典'] || '';
+      const wikiUrl = d['wikipedia_url'] || (cite.includes('wikipedia.org') ? cite : '');
+      const imdbUrl = d['imdb_url'] || (cite.includes('imdb.com') ? cite : '');
+      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
+      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
+      const citeHtml = cite && !cite.startsWith('http') ? `<div style="font-size:11px;color:#999;margin-top:8px;">出典：${cite}</div>` : '';
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
   <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
-  <div>${wikiBtn}${imdbBtn}</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>${wikiBtn}${imdbBtn}</div>
+    ${citeHtml}
+  </div>
 </div>`;
     });
   }
@@ -387,13 +392,15 @@ if (bukkaData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-      const wikiUrl = d['wikipedia_url'] && d['wikipedia_url'] !== 'データなし' ? d['wikipedia_url'] : '';
-      const imdbUrl = d['imdb_url'] && d['imdb_url'] !== 'データなし' ? d['imdb_url'] : '';
+      const cite = d['出典'] || '';
+      const wikiUrl = d['wikipedia_url'] || (cite.includes('wikipedia.org') ? cite : '');
+      const imdbUrl = d['imdb_url'] || (cite.includes('imdb.com') ? cite : '');
       const genTitle = d['原題'] || d['タイトル'] || '';
       const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(genTitle + ' trailer')}`;
-      const wikiBtn = wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
+      const wikiBtn = wikiUrl && wikiUrl !== 'データなし' ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
+      const imdbBtn = imdbUrl && imdbUrl !== 'データなし' ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
       const ytBtn = `<a href="${ytUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">▶ Trailer</a>`;
+      const citeHtml = cite && !cite.startsWith('http') ? `<div style="font-size:11px;color:#999;margin-top:8px;">出典：${cite}</div>` : '';
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
@@ -402,7 +409,10 @@ if (bukkaData.length > 0) {
     <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>
   </div>
   <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['動員数'] || 'データなし'}</div>
-  <div>${wikiBtn}${imdbBtn}${ytBtn}</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>${wikiBtn}${imdbBtn}${ytBtn}</div>
+    ${citeHtml}
+  </div>
 </div>`;
     });
   }
