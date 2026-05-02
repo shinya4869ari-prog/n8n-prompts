@@ -415,10 +415,23 @@ if (bukkaData.length > 0) {
   // --- 16.5. Deep-Dive ---
 const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>([\s\S]*)/);
 if (deepDiveMatch) {
-  const ddTitle = `<h2 style="${h2Style}">Deep Dive</h2>`;
+  const ddTitle = `<h2 style="${h2Style}">Deep Dive：さらなる深掘り</h2>`;
   let ddBody = deepDiveMatch[1];
-  // 小見出し（h2, h3）を太字の段落に変換してサイズを抑える
-  ddBody = ddBody.replace(/<(h[23])>(.*?)<\/\1>/g, '<p style="font-weight:bold; margin-top:20px; margin-bottom:5px;">$2</p>');
+  
+  // 各トピック（h3）をカード形式に変換
+  // デザイン：左側にアクセント線の入った清潔感のあるカード
+  ddBody = ddBody.replace(/<h3>(.*?)<\/h3>([\s\S]*?)(?=<h3>|$)/g, (match, title, content) => {
+    return `
+<div style="background:#f8fcfc; border:1px solid #e0eeee; border-left:5px solid #00bcd4; border-radius:8px; padding:20px; margin-bottom:25px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+  <div style="font-weight:900; font-size:16px; color:#008b8b; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+    <span style="font-size:18px;">💡</span> ${title}
+  </div>
+  <div style="font-size:14px; color:#444; line-height:1.7;">${content.trim()}</div>
+</div>`;
+  });
+
+  // まだ残っているタグを微調整
+  ddBody = ddBody.replace(/<h[23]>.*?<\/h[23]>/g, ''); // 重複を削除
   article += '\n' + ddTitle + ddBody;
 }
 
