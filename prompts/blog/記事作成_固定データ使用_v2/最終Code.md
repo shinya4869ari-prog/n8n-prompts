@@ -8,6 +8,7 @@ return $input.all().map(item => {
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
 
 const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
+const citation = inputData.data?.死因出典 ? `出典：${inputData.data.死因出典} / 日本：厚生労働省 2025年人口動態統計` : '';
 
   const title = countryName;
 
@@ -265,8 +266,8 @@ const japanLabel = '日本（東京）';
   if (shiinData.length > 0) {
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
-    const shiinCite = raw.split('\n').find(l => l.startsWith('出典：') && l.includes('死亡原因'));
-    article += `<p class="citation">${shiinCite || `出典：${countryName}統計 / 日本：厚生労働省 2025年人口動態統計`}</p>\n`;
+    const shiinCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('死亡原因') || l.includes('死因')));
+    article += `<p class="citation">${shiinCite || citation}</p>\n`;
   }
 
   // --- 10. ④ 貿易の衡量 ---
