@@ -41,7 +41,8 @@
       "概要": "",
       "wikipedia_url": "",
       "imdb_url": "",
-      "is_serious": false
+      "is_serious": false,
+      "出典": ""
     }
   ],
   "興行収入ランキング": [
