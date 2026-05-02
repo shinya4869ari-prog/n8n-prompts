@@ -381,6 +381,7 @@ if (bukkaData.length > 0) {
   </div>
 </div>`;
     });
+    article += `<p class="citation">出典根拠：IMDb / Google Search（検索クエリ：best documentaries/movies about ${countryName}）</p>\n`;
   }
 
   // --- 15. ⑨ 興行収入ランキングカード ---
@@ -404,6 +405,7 @@ if (bukkaData.length > 0) {
   </div>
 </div>`;
     });
+    article += `<p class="citation">出典根拠：Box Office Mojo / Wikipedia（検索クエリ：${countryName} all-time highest-grossing domestic films）</p>\n`;
   }
 
   // --- 16. ライブログ ---
