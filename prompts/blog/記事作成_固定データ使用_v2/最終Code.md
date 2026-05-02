@@ -3,6 +3,9 @@ const promptBody = $input.first()?.json?.externalPrompt ?? "";
 return $input.all().map(item => {
   const inputData = item.json;
   let raw = inputData?.article ?? "";
+  
+  // --- 1. 見出しの重複削除（AIが出したプレーンな見出しを消す） ---
+  raw = raw.replace(/^[①-⑨] .*$/gm, '');
 
 const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
 
@@ -281,8 +284,20 @@ const japanLabel = '日本（東京）';
 
   article += `<h3>主要貿易相手国</h3>\n`;
   if (boekiAiteData.length > 0) {
-    const aiteRows = boekiAiteData.map(d => [d['順位'] || '', d['国名'] || 'データなし', d['シェア'] || 'データなし']);
+    const aiteRows = boekiAiteData.map(d => {
+      let share = d['シェア'] || 'データなし';
+      // 0.184 のような小数を 18% に変換、または 18.4% を 18% に丸める
+      let shareStr = share.toString();
+      let num = parseFloat(shareStr.replace('%',''));
+      if (!isNaN(num)) {
+        if (num < 1 && !shareStr.includes('%')) num = num * 100;
+        share = Math.round(num) + '%';
+      }
+      return [d['順位'] || '', d['国名'] || 'データなし', share];
+    });
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
+    const aiteCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('Trade') || l.includes('IMF')));
+    article += `<p class="citation">${aiteCite || '出典：IMF Direction of Trade Statistics / Trade Map'}</p>\n`;
   }
 
   // 貿易解説：貿易相手10位行の後、物価行の前
@@ -327,6 +342,8 @@ if (bukkaData.length > 0) {
     });
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
+    const rekishiCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('Wikipedia') || l.includes('政府')));
+    if (rekishiCite) article += `<p class="citation">${rekishiCite}</p>\n`;
   }
 
   // --- 13. ⑦ 直近の動向 ---
@@ -336,6 +353,8 @@ if (bukkaData.length > 0) {
   const dohEnd = rawLines.findIndex(l => l.startsWith('映像｜'));
   if (dohStart !== -1 && dohEnd !== -1 && dohStart < dohEnd) {
     article += rawLines.slice(dohStart, dohEnd).join('\n') + '\n';
+    const dohCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('ロイター') || l.includes('BBC') || l.includes('メディア')));
+    if (dohCite) article += `<p class="citation">${dohCite}</p>\n`;
   }
 
   // エラー猫
