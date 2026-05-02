@@ -194,6 +194,8 @@ const japanLabel = '日本（東京）';
   article += `<h2 style="${h2Style}">② 地理と経済の衡量</h2>\n`;
   const geoRows = geoData.map(d => [d['項目'], d['値']]);
   article += makeTable(['項目', countryName], geoRows, ['30%', '70%']);
+  article += `<div style="height:20px;"></div>\n`;
+  article += `<h3 style="${h3Style}">主要経済指標</h3>\n`;
 
   const econRows = econData.map(d => {
     return [
@@ -266,8 +268,8 @@ const japanLabel = '日本（東京）';
   if (shiinData.length > 0) {
     const shiinRows = shiinData.map(d => [d['順位'] || '', d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows, ['15%', '42%', '43%']);
-    const shiinCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('死亡原因') || l.includes('死因')));
-    article += `<p class="citation">${shiinCite || citation}</p>\n`;
+    const shiinCiteLine = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('死亡原因') || l.includes('死因')));
+    article += `<p class="citation">${shiinCiteLine || citation || '出典：固定データベース / 日本：厚生労働省 2025年人口動態統計'}</p>\n`;
   }
 
   // --- 10. ④ 貿易の衡量 ---
@@ -377,11 +379,10 @@ if (bukkaData.length > 0) {
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
     <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル']||'') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
-    <div style="font-size:10px;color:#999;">出典：IMDb / Google Search</div>
   </div>
 </div>`;
     });
-    article += `<p class="citation">出典根拠：IMDb / Google Search（検索クエリ：best documentaries/movies about ${countryName}）</p>\n`;
+    article += `<p class="citation">出典根拠：IMDb / Google Search</p>\n`;
   }
 
   // --- 15. ⑨ 興行収入ランキングカード ---
@@ -401,11 +402,10 @@ if (bukkaData.length > 0) {
   <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['動員数'] || 'データなし'}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
     <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル']||'') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
-    <div style="font-size:10px;color:#999;">出典：Box Office Mojo / Wikipedia</div>
   </div>
 </div>`;
     });
-    article += `<p class="citation">出典根拠：Box Office Mojo / Wikipedia（検索クエリ：${countryName} all-time highest-grossing domestic films）</p>\n`;
+    article += `<p class="citation">出典根拠：Box Office Mojo / 公式統計</p>\n`;
   }
 
   // --- 16. ライブログ ---
