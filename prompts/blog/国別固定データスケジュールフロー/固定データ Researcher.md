@@ -100,6 +100,12 @@
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 trading partners share percentage latest」
 
+**【出典の書き込みルール（絶対）】**
+- 「主要輸出項目」「主要輸入項目」の出典欄はすべて空欄にすること。
+- 「貿易相手国」リストの1位〜10位までの出典欄もすべて空欄にすること。
+- **「貿易相手国」リストの11件目として、以下の形式でセクション全体の出典を1つだけ追加すること。**
+  - `{"順位": "出典", "国名": "", "シェア": "", "出典": "ここに調査した出典名を記載（例：IMF / Trade Map）"}`
+
 ---
 
 ## 出力形式
