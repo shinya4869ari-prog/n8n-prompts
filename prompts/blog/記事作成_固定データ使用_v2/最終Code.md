@@ -320,7 +320,7 @@ if (bukkaData.length > 0) {
     const rateText = rateMatch[1].trim().replace('現在', '');
     article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
   }
-  article += `<p class="citation">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。</p>\n`;
+  article += `<p class="citation">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
   article += `<div style="height: 10px;"></div>\n`;
   article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
 }
