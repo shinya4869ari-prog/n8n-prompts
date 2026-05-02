@@ -283,7 +283,9 @@ const japanLabel = '日本（東京）';
     ]);
     article += makeTable(['順位', '輸出品目', '輸入品目'], boekiRows, ['10%', '45%', '45%']);
     const boekiCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('関税') || l.includes('貿易') || l.includes('OEC')));
-    const boekiFallback = inputData.data?.貿易出典 ? `出典：${inputData.data.貿易出典}` : '';
+    const boekiFallback = (inputData.data?.貿易出典_対象国 || inputData.data?.貿易出典_日本) 
+      ? `出典：${countryName}：${inputData.data.貿易出典_対象国 || 'IMF'} / 日本：${inputData.data.貿易出典_日本 || '財務省貿易統計'}` 
+      : '';
     article += `<p class="citation">${boekiCite || boekiFallback}</p>\n`;
   }
 
@@ -302,7 +304,9 @@ const japanLabel = '日本（東京）';
     });
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
     const aiteCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('Trade') || l.includes('IMF')));
-    const aiteFallback = inputData.data?.貿易出典 ? `出典：${inputData.data.貿易出典}` : '';
+    const aiteFallback = (inputData.data?.貿易出典_対象国 || inputData.data?.貿易出典_日本)
+      ? `出典：${countryName}：${inputData.data.貿易出典_対象国 || 'IMF'} / 日本：${inputData.data.貿易出典_日本 || '財務省貿易統計'}`
+      : '';
     article += `<p class="citation">${aiteCite || aiteFallback}</p>\n`;
   }
 
