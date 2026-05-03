@@ -157,13 +157,56 @@ const japanLabel = '日本（東京）';
   const geoRows = geoData.map(d => [d.項目, d.値]);
   article += makeTable(['地理項目', '内容'], geoRows, ['30%', '70%']);
 
+  // --- 経済データ整形ヘルパー ---
+  function formatEconValue(itemName, rawValue) {
+    if (!rawValue || rawValue === 'データなし' || typeof rawValue !== 'string') return rawValue;
+    
+    // 数字とそれ以外（年号など）を分離
+    const match = rawValue.match(/^([\d\.,-]+)(.*)$/);
+    if (!match) return rawValue;
+    
+    let num = parseFloat(match[1].replace(/,/g, ''));
+    const suffix = match[2]; // （2025年）など
+    
+    if (itemName === '総人口') {
+      // IMFデータは100万人単位
+      const total = num * 1000000;
+      if (total >= 100000000) return (total / 100000000).toFixed(3) + '億人' + suffix;
+      if (total >= 10000) return (total / 10000).toFixed(1) + '万人' + suffix;
+      return Math.round(total).toLocaleString() + '人' + suffix;
+    }
+    
+    if (itemName.includes('GDP（名目')) {
+      // IMFデータは10億ドル単位
+      return num.toLocaleString() + '0億ドル' + suffix;
+    }
+    
+    if (itemName === '一人当たりGDP') {
+      return '$' + Math.round(num).toLocaleString() + suffix;
+    }
+    
+    if (itemName.includes('率') || itemName.includes('比')) {
+      return num.toLocaleString() + '%' + suffix;
+    }
+    
+    return rawValue;
+  }
+
   const econItems = ['総人口','GDP（名目・USドル）','一人当たりGDP','GDP成長率','政府債務残高（GDP比）','経常収支（GDP比）','インフレ率','失業率'];
   const econData = econItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
     const parts = line.replace(item + '｜', '').split('｜');
     const obj = { 項目: item };
-    parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0,idx).trim()] = p.substring(idx+1).trim(); });
+    parts.forEach(p => { 
+      const idx = p.indexOf('：'); 
+      if (idx !== -1) {
+        const key = p.substring(0,idx).trim();
+        const val = p.substring(idx+1).trim();
+        // ここで数値を整形
+        obj[key] = formatEconValue(item, val);
+      }
+    });
     return obj;
   });
   const econRows = econData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
