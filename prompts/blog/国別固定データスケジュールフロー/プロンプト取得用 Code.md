@@ -9,7 +9,7 @@ try {
     this.helpers.httpRequest({ method: 'GET', url: urls.update })
   ]);
 
-  const base = $input.first().json;
+  const base = $('国名変換Code').first().json;
   const now = new Date();
   const context = {
     ...base,
