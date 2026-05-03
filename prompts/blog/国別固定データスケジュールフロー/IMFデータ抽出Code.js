@@ -26,7 +26,12 @@ for (const item of allItems) {
   result[key + '_出典'] = 'IMF World Economic Outlook April 2026';
 }
 
-const base = $('国名変換Code').first().json;
+// 29行目の他ノード参照を廃止し、引数またはハブから取得するように変更
+const base = $('プロンプト取得用 Code').first().json.base;
+
+if (!base) {
+  throw new Error("ハブノードに 'base' (国名情報) が見当たりません。プロンプト取得用 Code を更新してください。");
+}
 
 return [{
   json: {

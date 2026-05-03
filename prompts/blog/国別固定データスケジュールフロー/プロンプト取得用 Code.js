@@ -51,7 +51,8 @@ try {
       code4:            raw.code4,
       codeImf:          raw.codeImf,
       codeReplace:      raw.codeReplace,
-      codeUpdate:       raw.codeUpdate
+      codeUpdate:       raw.codeUpdate,
+      base:             base
     }
   }];
 } catch (error) {
