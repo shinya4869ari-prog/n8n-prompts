@@ -15,12 +15,12 @@ const files = {
   qualityCheck:     baseUrl + 'quality_check.md',
   responseExtract:  baseUrl + 'response_extraction.md',
   // --- プログラムコード類（JavaScript） ---
-  seikei1:          baseUrl + encodeURIComponent('整形ノード１.md'),
-  seikei2:          baseUrl + encodeURIComponent('製形２.md'),
-  seikei3:          baseUrl + encodeURIComponent('整形３.md'),
-  finalCode:        baseUrl + encodeURIComponent('最終Code.md'),
-  linkInsert:       baseUrl + encodeURIComponent('リンク挿入ノード.md'),
-  substitution:     baseUrl + encodeURIComponent('万能置換ノード.md')
+  seikei1:          baseUrl + encodeURIComponent('整形ノード１.js'),
+  seikei2:          baseUrl + encodeURIComponent('製形２.js'),
+  seikei3:          baseUrl + encodeURIComponent('整形３.js'),
+  finalCode:        baseUrl + encodeURIComponent('最終Code.js'),
+  linkInsert:       baseUrl + encodeURIComponent('リンク挿入ノード.js'),
+  substitution:     baseUrl + encodeURIComponent('万能置換ノード.js')
 };
 
 try {

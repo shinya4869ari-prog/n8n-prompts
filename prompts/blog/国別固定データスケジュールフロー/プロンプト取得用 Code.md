@@ -1,13 +1,25 @@
+const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E5%9B%BD%E5%88%A5%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E3%83%95%E3%83%AD%E3%83%BC/";
+
 const urls = {
-  researcher: "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E5%9B%BD%E5%88%A5%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E3%83%95%E3%83%AD%E3%83%BC/%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%20Researcher.md",
-  update: "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E5%9B%BD%E5%88%A5%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E3%83%95%E3%83%AD%E3%83%BC/%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%A2%E3%83%83%E3%83%97%E3%83%87%E3%83%BC%E3%83%88.md"
+  researcher: baseUrl + encodeURIComponent("固定データ Researcher.md"),
+  update:     baseUrl + encodeURIComponent("固定データアップデート.md"),
+  code1:      baseUrl + encodeURIComponent("①（経済）.js"),
+  code2:      baseUrl + encodeURIComponent("②（治安）.js"),
+  code3:      baseUrl + encodeURIComponent("③（物価）.js"),
+  code4:      baseUrl + encodeURIComponent("④（貿易）.js"),
+  codeImf:    baseUrl + encodeURIComponent("IMFデータ抽出Code.js"),
+  codeReplace:baseUrl + encodeURIComponent("置換Code.js"),
+  codeUpdate: baseUrl + encodeURIComponent("管理シート更新Code.js")
 };
 
 try {
-  const [researcherRaw, updateRaw] = await Promise.all([
-    this.helpers.httpRequest({ method: 'GET', url: urls.researcher }),
-    this.helpers.httpRequest({ method: 'GET', url: urls.update })
-  ]);
+  const keys = Object.keys(urls);
+  const responses = await Promise.all(
+    keys.map(key => this.helpers.httpRequest({ method: 'GET', url: urls[key] }))
+  );
+  
+  const raw = {};
+  keys.forEach((key, i) => { raw[key] = responses[i]; });
 
   const base = $('国名変換Code').first().json;
   const now = new Date();
@@ -31,8 +43,15 @@ try {
 
   return [{
     json: {
-      researcherPrompt: forceInstruction + evaluateTemplate(researcherRaw, context),
-      updatePrompt: forceInstruction + evaluateTemplate(updateRaw, context)
+      researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
+      updatePrompt:     forceInstruction + evaluateTemplate(raw.update, context),
+      code1:            raw.code1,
+      code2:            raw.code2,
+      code3:            raw.code3,
+      code4:            raw.code4,
+      codeImf:          raw.codeImf,
+      codeReplace:      raw.codeReplace,
+      codeUpdate:       raw.codeUpdate
     }
   }];
 } catch (error) {
