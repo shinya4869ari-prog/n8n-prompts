@@ -40,7 +40,7 @@ try {
       return value !== undefined ? String(value) : match;
     })
     .replace(/\{\{\s*\$now\.toFormat\([^)]+\)\s*\}\}/g, context.now_date)
-    .replace(/\{\{[^}]+\}\}/g, '');
+    .replace(/\{\{(?!\s*\$json\.article)[^}]+\}\}/g, '');
   };
 
   const results = {};

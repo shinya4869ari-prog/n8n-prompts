@@ -228,7 +228,7 @@ const japanLabel = '日本（東京）';
 
   // --- 8. ③ 治安と平和の衡量 ---
   article += `<h2 style="${h2Style}">③ 治安と平和の衡量</h2>\n`;
-  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','貧困率','ジニ係数','刑務所収容率','刑務所総収容者数','GPI（世界平和度指数）'];
+  const chiAnItems = ['殺人率（10万人あたり）','交通事故死亡率（10万人あたり）','自殺率（10万人あたり）','失業率','貧困率','ジニ係数','刑務所収容率','刑務所総収容者数','GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
@@ -297,10 +297,6 @@ const japanLabel = '日本（東京）';
 
     const chartUrl = `https://quickchart.io/chart?width=800&height=400&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
     article += `<div style="margin: 20px 0; text-align: center;"><img src="${chartUrl}" alt="刑務所収容者数の推移グラフ" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>\n`;
-    
-    // 補足として表も残す（正確な数値確認用）
-    const prisonRows = prisonData.map(d => [d['年'], d[`${countryName}総収容者数`]||'データなし', d[`${countryName}収容率`]||'データなし', d['日本総収容者数']||'データなし', d['日本収容率']||'データなし']);
-    article += makeTable(['年', countryName+'(数)', countryName+'(%)', '日本(数)', '日本(%)'], prisonRows);
     
     article += `<p class="citation">出典：World Prison Brief</p>\n`;
   }
