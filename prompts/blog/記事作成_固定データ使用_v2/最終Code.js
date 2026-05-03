@@ -199,7 +199,7 @@ const japanLabel = '日本（東京）';
     return rawValue;
   }
 
-  const econItems = ['総人口','GDP（名目・USドル）','一人当たりGDP','GDP成長率','政府債務残高（GDP比）','経常収支（GDP比）','インフレ率','失業率'];
+  const econItems = ['総人口','GDP（名目・USドル）','一人当たりGDP','GDP成長率','政府債務残高（GDP比）','経常収支（GDP比）','インフレ率'];
   const econData = econItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
@@ -346,11 +346,17 @@ const japanLabel = '日本（東京）';
   if (bukkaData.length > 0) {
     const bukkaRows = bukkaData.map(d => {
       const emoji = bukkaEmoji[d['項目']] || '';
-      const pVal = d[countryName] || d['韓国'] || 'データなし';
-      let displayP = pVal;
-      if (pVal !== 'データなし') {
-        const yen = Math.round(parseFloat(pVal.replace(/,/g, '')) * rate);
-        displayP = `${currencySymbol}${pVal} （${yen}円）`;
+      const rawVal = d[countryName] || d['韓国'] || 'データなし';
+      let displayP = rawVal;
+      
+      if (rawVal !== 'データなし') {
+        // 数字部分だけを抽出（€などの記号や以前の計算結果を排除）
+        const numMatch = rawVal.match(/[\d\.]+/);
+        if (numMatch) {
+          const num = parseFloat(numMatch[0]);
+          const yen = Math.round(num * rate);
+          displayP = `${currencySymbol}${num.toLocaleString()} （${yen.toLocaleString()}円）`;
+        }
       }
       return [`${emoji} ${d['項目'] || ''}`, displayP, d['日本'] || 'データなし'];
     });
@@ -399,11 +405,10 @@ const japanLabel = '日本（東京）';
 
   // --- 12. ⑦ 直近の動向 ---
   article += `<h2 style="${h2Style}">⑦ 直近の動向</h2>\n`;
-  const dohStart = rawLines.findIndex(l => l.startsWith('<p>') && !l.includes('citation'));
-  const dohEnd = rawLines.findIndex(l => l.includes('🐱 エラーネコ：'), dohStart);
-  if (dohStart !== -1 && (dohEnd !== -1 || rawLines.length > dohStart)) {
-    article += rawLines.slice(dohStart, dohEnd === -1 ? undefined : dohEnd).join('\n') + '\n';
-    const dohCite = rawLines.find(l => l.startsWith('出典：') && (l.includes('ロイター') || l.includes('BBC') || l.includes('メディア')));
+  const dohContent = extractTextBetween(raw, '直近の動向｜本文：', '🐱 エラーネコ：');
+  if (dohContent) {
+    article += `<p style="line-height:1.7; color:#444;">${dohContent.replace(/\n/g, '<br>')}</p>\n`;
+    const dohCite = rawLines.find(l => l.startsWith('出典：') && (l.includes('ロイター') || l.includes('BBC') || l.includes('メディア') || l.includes('Encyclopedia')));
     if (dohCite) article += `<p class="citation">${dohCite}</p>\n`;
   }
   
