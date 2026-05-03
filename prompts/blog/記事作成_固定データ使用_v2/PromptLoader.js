@@ -1,26 +1,17 @@
 // GitHubのRaw URLベースパス
 const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E8%A8%98%E4%BA%8B%E4%BD%9C%E6%88%90_%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E4%BD%BF%E7%94%A8_v2/';
 
-// 同期対象の全15ファイル
+// 同期対象のAIプロンプトファイル（コードノードはn8n直接管理のため除外）
 const files = {
-  // --- AIプロンプト（既存のキー名を維持） ---
   researcher1:      baseUrl + 'researcher1.md',
   researcher2:      baseUrl + 'researcher2.md',
   researcher25:     baseUrl + 'researcher25.md',
-  writer:           baseUrl + 'writer.md',
-  deepDiveWriter:   baseUrl + 'Deep-Dive_writer.md',
-  // --- AIプロンプト（追加分） ---
+  writerPrompt:     baseUrl + 'writer.md',
+  deepDivePrompt:   baseUrl + 'Deep-Dive_writer.md',
   deepDiveSelect:   baseUrl + 'Deep-Dive_select.md',
-  mainWriter:       baseUrl + 'main-writer.md',
+
   qualityCheck:     baseUrl + 'quality_check.md',
   responseExtract:  baseUrl + 'response_extraction.md',
-  // --- プログラムコード類（JavaScript） ---
-  seikei1:          baseUrl + encodeURIComponent('整形ノード１.js'),
-  seikei2:          baseUrl + encodeURIComponent('製形２.js'),
-  seikei3:          baseUrl + encodeURIComponent('整形３.js'),
-  finalCode:        baseUrl + encodeURIComponent('最終Code.js'),
-  linkInsert:       baseUrl + encodeURIComponent('リンク挿入ノード.js'),
-  substitution:     baseUrl + encodeURIComponent('万能置換ノード.js')
 };
 
 try {
@@ -46,33 +37,21 @@ try {
     if (!text) return "";
     return text.replace(/\{\{\s*\$json\.([^\s\}]+)\s*\}\}/g, (match, path) => {
       const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
-      return value !== undefined ? value : match;
-    });
+      return value !== undefined ? String(value) : match;
+    })
+    .replace(/\{\{\s*\$now\.toFormat\([^)]+\)\s*\}\}/g, context.now_date)
+    .replace(/\{\{[^}]+\}\}/g, '');
   };
+
+  const results = {};
+  Object.keys(rawData).forEach(key => {
+    results[key] = evaluateTemplate(rawData[key], context);
+  });
 
   return [{
     json: {
-      ...base,
-      // 既存ノードがそのまま動くための出力キー
-      researcherPrompt1: evaluateTemplate(rawData.researcher1, context),
-      researcherPrompt2: evaluateTemplate(rawData.researcher2, context),
-      researcherPrompt25: evaluateTemplate(rawData.researcher25, context),
-      writerPrompt: evaluateTemplate(rawData.writer, context),
-      deepDivePrompt: evaluateTemplate(rawData.deepDiveWriter, context),
-
-      // プログラムコード類（後続のCodeノードで eval() して使えるように渡す）
-      scripts: {
-        seikei1: rawData.seikei1,
-        seikei2: rawData.seikei2,
-        seikei3: rawData.seikei3,
-        finalCode: rawData.finalCode,
-        linkInsert: rawData.linkInsert,
-        substitution: rawData.substitution
-      },
-
-      // その他のプロンプト
-      qualityCheckPrompt: evaluateTemplate(rawData.qualityCheck, context),
-      mainWriterPrompt: evaluateTemplate(rawData.mainWriter, context)
+      ...results,
+      ...context
     }
   }];
 } catch (error) {
