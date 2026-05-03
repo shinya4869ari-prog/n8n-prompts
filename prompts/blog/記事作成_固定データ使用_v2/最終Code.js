@@ -9,6 +9,13 @@ return $input.all().map(item => {
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
 
 const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
+const currencySymbol = $('国名変換Code').first().json.currencySymbol || '';
+const rate = $('国名変換Code').first().json.rate || 1;
+
+// --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
+raw = raw.replace(/^[①-⑨] .*$/gm, '');
+raw = raw.replace(/^出典：.*$/gm, '');
+
 const citation = inputData.data?.死因出典 ? `出典：${inputData.data.死因出典} / 日本：厚生労働省 2025年人口動態統計` : '';
 
   const title = countryName;
@@ -343,7 +350,13 @@ const japanLabel = '日本（東京）';
   if (bukkaData.length > 0) {
     const bukkaRows = bukkaData.map(d => {
       const emoji = bukkaEmoji[d['項目']] || '';
-      return [`${emoji} ${d['項目'] || ''}`, d[countryName] || d['韓国'] || 'データなし', d['日本'] || 'データなし'];
+      const pVal = d[countryName] || d['韓国'] || 'データなし';
+      let displayP = pVal;
+      if (pVal !== 'データなし') {
+        const yen = Math.round(parseFloat(pVal.replace(/,/g, '')) * rate);
+        displayP = `${currencySymbol}${pVal} （${yen}円）`;
+      }
+      return [`${emoji} ${d['項目'] || ''}`, displayP, d['日本'] || 'データなし'];
     });
     article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
     const rateMatch = raw.match(/為替レート：([^\n]+)/);
