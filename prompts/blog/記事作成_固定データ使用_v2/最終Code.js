@@ -241,8 +241,60 @@ const japanLabel = '日本（東京）';
   const prisonData = parseLines(raw, '刑務所推移');
   if (prisonData.length > 0) {
     article += `<h3 style="${h3Style}">刑務所収容者数の推移</h3>\n`;
+    
+    // グラフ用データの準備
+    const labels = prisonData.map(d => d['年']);
+    const targetData = prisonData.map(d => parseInt(d[`${countryName}総収容者数`]?.replace(/,/g, '')) || 0);
+    const japanData = prisonData.map(d => parseInt(d['日本総収容者数']?.replace(/,/g, '')) || 0);
+    
+    const chartConfig = {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: `${countryName} (右軸)`,
+            data: targetData,
+            borderColor: '#00bcd4',
+            backgroundColor: 'rgba(0, 188, 212, 0.1)',
+            yAxisID: 'y1',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 3,
+            pointRadius: 4
+          },
+          {
+            label: '日本 (左軸)',
+            data: japanData,
+            borderColor: '#ff4500',
+            backgroundColor: 'transparent',
+            yAxisID: 'y',
+            fill: false,
+            tension: 0.3,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        title: { display: true, text: '総収容者数の推移比較', fontSize: 16, fontColor: '#333' },
+        scales: {
+          yAxes: [
+            { id: 'y', type: 'linear', position: 'left', scaleLabel: { display: true, labelString: '日本 (人)', fontColor: '#ff4500' }, ticks: { fontColor: '#ff4500' } },
+            { id: 'y1', type: 'linear', position: 'right', scaleLabel: { display: true, labelString: `${countryName} (人)`, fontColor: '#00bcd4' }, ticks: { fontColor: '#00bcd4' }, gridLines: { drawOnChartArea: false } }
+          ]
+        }
+      }
+    };
+
+    const chartUrl = `https://quickchart.io/chart?width=800&height=400&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+    article += `<div style="margin: 20px 0; text-align: center;"><img src="${chartUrl}" alt="刑務所収容者数の推移グラフ" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>\n`;
+    
+    // 補足として表も残す（正確な数値確認用）
     const prisonRows = prisonData.map(d => [d['年'], d[`${countryName}総収容者数`]||'データなし', d[`${countryName}収容率`]||'データなし', d['日本総収容者数']||'データなし', d['日本収容率']||'データなし']);
     article += makeTable(['年', countryName+'(数)', countryName+'(%)', '日本(数)', '日本(%)'], prisonRows);
+    
     article += `<p class="citation">出典：World Prison Brief</p>\n`;
   }
 
