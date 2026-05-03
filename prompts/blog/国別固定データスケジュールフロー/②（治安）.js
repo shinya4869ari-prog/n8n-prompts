@@ -1,23 +1,25 @@
 const item = $input.first().json;
 const raw = item.originalData?.output || item.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+const hub = $('プロンプト取得用 Code').first().json;
+const base = hub.base;
+
 const t = data["治安・社会指標"];
-const prison = t["刑務所収容推移"] || [];
+const prison = t["刑務所総収容者数推移"] || t["刑務所収容推移"] || [];
 const deathRaw = t["死因トップ10"] || {};
 const death = Array.isArray(deathRaw) ? deathRaw : (deathRaw["リスト"] || []);
 const deathCite = Array.isArray(deathRaw) ? "" : (deathRaw["出典"] || "");
-const countryJp = $('国名変換Code').first().json.country;
-const countryEn = $('国名変換Code').first().json.countryEn;
-const countryCode = $('国名変換Code').first().json.countryCode;
+
 const prisonRows = {};
 for (let i = 0; i < 10; i++) {
   prisonRows[`収容推移${i+1}_年`] = prison[i] ? prison[i]["年"] || "" : "";
   prisonRows[`収容推移${i+1}_総収容者数`] = prison[i] ? prison[i]["総収容者数"] || "" : "";
 }
+
 return [{ json: {
-  "国名（日本語）": countryJp,
-  "国名（英語）": countryEn,
-  "国コード": countryCode,
+  "国名（日本語）": base.country,
+  "国名（英語）": base.countryEn,
+  "国コード": base.countryCode,
   "殺人率": t["殺人率"]?.["値"] || "",
   "殺人率_年": t["殺人率"]?.["年"] || "",
   "殺人率_出典": t["殺人率"]?.["出典"] || "",
@@ -54,4 +56,4 @@ return [{ json: {
   "死因4位": death[3]||"", "死因5位": death[4]||"", "死因6位": death[5]||"",
   "死因7位": death[6]||"", "死因8位": death[7]||"",
   "死因9位": death[8]||"", "死因10位": death[9]||""
-}}];
+}}];
