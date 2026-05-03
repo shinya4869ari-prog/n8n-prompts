@@ -1,4 +1,11 @@
+// 一括処理モードを想定した軽量・高速版
 const allItems = $input.all();
+const hub = $('プロンプト取得用 Code').first().json;
+const base = hub.base;
+
+if (!base) {
+  throw new Error("ハブノードに国名情報（base）が見当たりません。");
+}
 
 const indicatorMap = {
   'NGDPD': 'GDP_USD',
@@ -13,6 +20,7 @@ const indicatorMap = {
 
 const result = {};
 
+// 全アイテムを一括でスキャンしてマップを作成
 for (const item of allItems) {
   const indId = item.json['INDICATOR.ID'];
   const key = indicatorMap[indId];
@@ -26,13 +34,7 @@ for (const item of allItems) {
   result[key + '_出典'] = 'IMF World Economic Outlook April 2026';
 }
 
-// 29行目の他ノード参照を廃止し、引数またはハブから取得するように変更
-const base = $('プロンプト取得用 Code').first().json.base;
-
-if (!base) {
-  throw new Error("ハブノードに 'base' (国名情報) が見当たりません。プロンプト取得用 Code を更新してください。");
-}
-
+// 最終的なオブジェクトを1件だけ返す
 return [{
   json: {
     "国名（日本語）": base.country,
@@ -46,7 +48,6 @@ return [{
       "通貨コード": base.currencyCode
     },
     "isJapan": base.isJapan,
-    // --- 経済データ（チェックしやすい順序） ---
     "総人口": result["総人口"],
     "総人口_年": result["総人口_年"],
     "総人口_出典": result["総人口_出典"],
@@ -72,4 +73,4 @@ return [{
     "失業率_年": result["失業率_年"],
     "失業率_出典": result["失業率_出典"]
   }
-}];
+}];
