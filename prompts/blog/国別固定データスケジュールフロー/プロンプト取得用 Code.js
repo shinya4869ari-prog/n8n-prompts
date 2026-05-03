@@ -1,15 +1,9 @@
 const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E5%9B%BD%E5%88%A5%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E3%83%95%E3%83%AD%E3%83%BC/";
 
+// AIへの指示書のみ取得（コードノードはn8nに直接貼り付けて管理）
 const urls = {
   researcher: baseUrl + encodeURIComponent("固定データ Researcher.md"),
   update:     baseUrl + encodeURIComponent("固定データアップデート.md"),
-  code1:      baseUrl + encodeURIComponent("①（経済）.js"),
-  code2:      baseUrl + encodeURIComponent("②（治安）.js"),
-  code3:      baseUrl + encodeURIComponent("③（物価）.js"),
-  code4:      baseUrl + encodeURIComponent("④（貿易）.js"),
-  codeImf:    baseUrl + encodeURIComponent("IMFデータ抽出Code.js"),
-  codeReplace:baseUrl + encodeURIComponent("置換Code.js"),
-  codeUpdate: baseUrl + encodeURIComponent("管理シート更新Code.js")
 };
 
 try {
@@ -45,13 +39,6 @@ try {
     json: {
       researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
       updatePrompt:     forceInstruction + evaluateTemplate(raw.update, context),
-      code1:            raw.code1,
-      code2:            raw.code2,
-      code3:            raw.code3,
-      code4:            raw.code4,
-      codeImf:          raw.codeImf,
-      codeReplace:      raw.codeReplace,
-      codeUpdate:       raw.codeUpdate,
       base:             base
     }
   }];
