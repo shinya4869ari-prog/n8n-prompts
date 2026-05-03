@@ -13,7 +13,7 @@ const countryJp = $('国名変換Code').first().json.country;
 
 return [{ json: {
   "国名（日本語）": countryJp,
-  "首都（日本語）": b["首都（日本語）"] || "",
+  "首都（日本語）": $('国名変換Code').first().json.capital || b["首都（日本語）"] || "",
   "通貨コード": b["通貨コード"],
   "為替レート": fx,
   "為替取得日": b["為替取得日"],
