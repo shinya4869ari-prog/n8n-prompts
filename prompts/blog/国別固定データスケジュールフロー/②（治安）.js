@@ -5,7 +5,7 @@ const hub = $('プロンプト取得用 Code').first().json;
 const base = hub.base;
 
 const t = data["治安・社会指標"];
-const prison = t["刑務所総収容者数推移"] || t["刑務所収容推移"] || [];
+const prison = t["収容推移"] || t["刑務所総収容者数推移"] || t["刑務所総収容推移"] || t["刑務所収容推移"] || [];
 const deathRaw = t["死因トップ10"] || {};
 const death = Array.isArray(deathRaw) ? deathRaw : (deathRaw["リスト"] || []);
 const deathCite = Array.isArray(deathRaw) ? "" : (deathRaw["出典"] || "");
