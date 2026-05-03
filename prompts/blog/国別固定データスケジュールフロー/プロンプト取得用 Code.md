@@ -14,14 +14,17 @@ try {
   const context = {
     ...base,
     now_date: `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`,
-    now_year: String(now.getFullYear())
+    now_year: String(now.getFullYear()),
+    rate: base.rate || '',
   };
 
   const evaluateTemplate = (text, data) => {
     return text.replace(/\{\{\s*\$json\.([^\s\}]+)\s*\}\}/g, (match, path) => {
       const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
-      return value !== undefined ? value : match;
-    });
+      return value !== undefined ? String(value) : match;
+    })
+    .replace(/\{\{\s*\$now\.toFormat\([^)]+\)\s*\}\}/g, `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`)
+    .replace(/\{\{[^}]+\}\}/g, '');
   };
 
   const forceInstruction = "You MUST use the search tool (Tavily/Perplexity) BEFORE answering. Never rely on your own knowledge for social, price, and trade statistics.\n\n";
