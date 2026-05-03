@@ -1,17 +1,23 @@
 const raw = $input.first().json.output ?? $input.first().json.text ?? '';
 const cleaned = raw.replace(/```json|```/g, '').trim();
-const data = JSON.parse(cleaned);
+let data;
 
-const t = data.貿易 || {};
-const exports = t.主要輸出項目 || [];
-const imports = t.主要輸入項目 || [];
-const partners = t.貿易相手国 || [];
+try {
+  data = JSON.parse(cleaned);
+} catch (e) {
+  throw new Error("貿易データのJSON解析に失敗しました。AIの回答が不正な形式です。");
+}
 
-const tradeCite = partners.find(p => p.順位 === "出典")?.出典 || "IMF / Trade Map";
-const partnerList = partners.filter(p => p.順位 !== "出典");
+const t = data.貿易 || data.trade || {};
+const exports = t.主要輸出項目 || t.exports || [];
+const imports = t.主要輸入項目 || t.imports || [];
+const partners = t.貿易相手国 || t.partners || [];
+
+const tradeCite = partners.find(p => p.順位 === "出典" || p.rank === "Source")?.出典 || partners.find(p => p.出典)?.出典 || "IMF / Trade Map";
+const partnerList = partners.filter(p => p.順位 !== "出典" && p.rank !== "Source");
 
 return [{ json: {
-  "国名（日本語）": data["国名（日本語）"] || "",
+  "国名（日本語）": data["国名（日本語）"] || data.country_jp || "",
   "貿易統計_出典": tradeCite,
   "輸出1位_品目": exports[0]?.品目||"", "輸出2位_品目": exports[1]?.品目||"", "輸出3位_品目": exports[2]?.品目||"",
   "輸出4位_品目": exports[3]?.品目||"", "輸出5位_品目": exports[4]?.品目||"", "輸出6位_品目": exports[5]?.品目||"",
