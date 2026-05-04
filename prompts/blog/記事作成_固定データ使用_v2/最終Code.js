@@ -15,7 +15,7 @@ return $input.all().map(item => {
 
   // --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
-
+  raw = raw.replace(/^出典：.*$/gm, '');
 
   const citation = sheetData.data?.固定データ?.死因出典 
     ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}` 
@@ -434,11 +434,7 @@ return $input.all().map(item => {
     });
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
-    const rekishiData2 = inputData.data?.対象国データ_記事?.歴史的背景 || [];
-    const rekishiCites = [...new Set(rekishiData2.map(d => d.出典).filter(Boolean))];
-    if (rekishiCites.length > 0) {
-      article += `<p class="citation">出典：${rekishiCites.join(' / ')}</p>\n`;
-    }
+
   }
 
   // --- 12. ⑦ 直近の動向 ---
@@ -446,7 +442,7 @@ return $input.all().map(item => {
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
-    const dohCite = inputData.data?.対象国データ_記事?.直近の動向?.出典 || '';
+    const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
     if (dohCite) article += `<p class="citation">出典：${dohCite}</p>\n`;
   }
 
@@ -470,7 +466,7 @@ return $input.all().map(item => {
   </div>
 </div>`;
     });
-    const eizouData2 = inputData.data?.対象国データ_記事?.映像作品 || [];
+    const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
     const eizouCites = [...new Set(eizouData2.map(d => d.出典).filter(Boolean))];
     if (eizouCites.length > 0) {
       article += `<p class="citation">出典：${eizouCites.join(' / ')}</p>\n`;
@@ -500,7 +496,7 @@ return $input.all().map(item => {
   </div>
 </div>`;
     });
-    const kougyouData2 = inputData.data?.対象国データ_記事?.興行収入ランキング || [];
+    const kougyouData2 = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
     const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
     if (kougyouCites.length > 0) {
       article += `<p class="citation">出典：${kougyouCites.join(' / ')}</p>\n`;
