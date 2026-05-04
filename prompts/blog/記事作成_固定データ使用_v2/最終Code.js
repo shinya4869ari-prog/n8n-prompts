@@ -178,14 +178,15 @@ return $input.all().map(item => {
     if (itemName === '総人口') {
       // IMFデータは100万人単位
       const total = num * 1000000;
-      if (total >= 100000000) return (total / 100000000).toFixed(3) + '億人' + suffix;
-      if (total >= 10000) return (total / 10000).toFixed(1) + '万人' + suffix;
+      if (total >= 100000000) return (total / 100000000).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '億人' + suffix;
+      if (total >= 10000) return (total / 10000).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '万人' + suffix;
       return Math.round(total).toLocaleString() + '人' + suffix;
     }
 
     if (itemName.includes('GDP（名目')) {
-      // IMFデータは10億ドル単位
-      return num.toLocaleString() + '0億ドル' + suffix;
+      // IMFデータは10億ドル単位（Billions）なので、10倍して「億ドル」にする
+      const okuValue = num * 10;
+      return okuValue.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '億ドル' + suffix;
     }
 
     if (itemName === '一人当たりGDP') {
@@ -193,7 +194,7 @@ return $input.all().map(item => {
     }
 
     if (itemName.includes('率') || itemName.includes('比')) {
-      return num.toLocaleString() + '%' + suffix;
+      return num.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%' + suffix;
     }
 
     return rawValue;
@@ -341,29 +342,56 @@ return $input.all().map(item => {
 
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
   article += `<h2 style="${h2Style}">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
+  
+  // 為替レートが1（または未取得）の場合、テキストから抽出を試みる
+  let currentRate = rate;
+  if (currentRate === 1) {
+    const rateTextMatch = raw.match(/為替レート[は：]\s*1\s*[A-Z]+\s*\(.*?\)\s*=\s*([\d\.]+)\s*JPY/i);
+    if (rateTextMatch) {
+      currentRate = parseFloat(rateTextMatch[1]);
+    }
+  }
+
   const bukkaData = parseLines(raw, '物価');
   const bukkaEmoji = { 'ビール（レストラン500ml）': '🍺', 'タバコ（マルボロ1箱）': '🚬', 'ミネラルウォーター（500ml）': '💧', 'ビッグマック（1個）': '🍔', 'ガソリン（1L）': '⛽', '外食（安めの店・1食）': '🍜', '電気・水道・ガス（月額）': '💡', '家賃（1LDK・首都圏市内）': '🏠', '平均月収（手取り）': '💴', 'Netflix（スタンダード）': '📺' };
+  
+  function formatValueWithCommas(val) {
+    if (!val || val === 'データなし') return val;
+    // 数値部分（カンマ・ドット含む）を抽出して、カンマを除去してから再フォーマット
+    return val.replace(/[\d,\.]+/g, (m) => {
+      const n = parseFloat(m.replace(/,/g, ''));
+      return isNaN(n) ? m : n.toLocaleString();
+    });
+  }
+
   if (bukkaData.length > 0) {
     const bukkaRows = bukkaData.map(d => {
       const emoji = bukkaEmoji[d['項目']] || '';
-      const rawVal = d[countryName] || d['韓国'] || 'データなし';
+      const rawVal = d[countryName] || d['対象国'] || 'データなし';
       let displayP = rawVal;
 
       if (rawVal !== 'データなし') {
-        // 数字部分だけを抽出（€などの記号や以前の計算結果を排除）
-        const numMatch = rawVal.match(/[\d\.]+/);
+        // 数字部分（カンマ含む）を抽出
+        const numMatch = rawVal.match(/[\d,\.]+/);
         if (numMatch) {
-          const num = parseFloat(numMatch[0]);
-          const yen = Math.round(num * rate);
+          const num = parseFloat(numMatch[0].replace(/,/g, ''));
+          const yen = Math.round(num * currentRate);
+          // 対象国側の通貨表示もカンマを入れる
           displayP = `${currencySymbol}${num.toLocaleString()} （${yen.toLocaleString()}円）`;
         }
       }
-      return [`${emoji} ${d['項目'] || ''}`, displayP, d['日本'] || 'データなし'];
+      
+      // 日本側の価格もカンマを入れる
+      const japanVal = formatValueWithCommas(d['日本'] || 'データなし');
+      
+      return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
     article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
-    const rateMatch = raw.match(/為替レート：([^\n]+)/);
+    
+    // 為替レートの注釈表示
+    const rateMatch = raw.match(/為替レート[は：]([^\n]+)/);
     if (rateMatch) {
-      const rateText = rateMatch[1].trim().replace('現在', '');
+      const rateText = rateMatch[1].trim().replace('現在', '').replace(/^は/, '');
       article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
     }
     article += `<p class="citation">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
@@ -471,19 +499,20 @@ return $input.all().map(item => {
   // --- 16. Deep-Dive ---
   const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>([\s\S]*)/);
   if (deepDiveMatch) {
-    const ddTitle = `<h2 style="${h2Style}">Deep Dive：さらなる深掘り</h2>`;
+    const ddTitle = `<h2 style="${h2Style}">Deep Dive</h2>`;
     let ddBody = deepDiveMatch[1];
-    ddBody = ddBody.replace(/<h3>(.*?)<\/h3>([\s\S]*?)(?=<h3>|$)/g, (match, title, content) => {
-      return `
-<div style="background:#f8fcfc; border:1px solid #e0eeee; border-left:5px solid #00bcd4; border-radius:8px; padding:20px; margin-bottom:25px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-  <div style="font-weight:900; font-size:16px; color:#008b8b; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
-    <span style="font-size:18px;">💡</span> ${title}
-  </div>
-  <div style="font-size:14px; color:#444; line-height:1.7;">${content.trim()}</div>
-</div>`;
-    });
-    ddBody = ddBody.replace(/<h[23]>.*?<\/h[23]>/g, '');
-    article += '\n' + ddTitle + ddBody;
+    const ddRows = [];
+    const ddRegex = /<h3>(.*?)<\/h3>([\s\S]*?)(?=<h3|$)/g;
+    let match;
+    while ((match = ddRegex.exec(ddBody)) !== null) {
+      const title = match[1].trim();
+      const content = match[2].trim().replace(/\n/g, '<br>');
+      ddRows.push([`💡 ${title}`, content]);
+    }
+    
+    if (ddRows.length > 0) {
+      article += '\n' + ddTitle + makeTable(['項目', '内容'], ddRows, ['30%', '70%']);
+    }
   }
 
   return {
