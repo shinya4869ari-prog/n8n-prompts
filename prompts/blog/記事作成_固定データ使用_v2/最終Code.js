@@ -2,6 +2,7 @@ const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 return $input.all().map(item => {
   const inputData = item.json;
+  const sheetData = $('整形ノード1').first().json;
   let raw = inputData?.article ?? "";
   const rawLines = raw.split('\n');
 
@@ -14,9 +15,11 @@ return $input.all().map(item => {
 
   // --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
-  raw = raw.replace(/^出典：.*$/gm, '');
 
-  const citation = inputData.data?.死因出典 ? `出典：${inputData.data.死因出典} / 日本：厚生労働省 2025年人口動態統計` : '';
+
+  const citation = sheetData.data?.固定データ?.死因出典 
+    ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}` 
+    : '';
 
   const title = countryName;
 
@@ -81,7 +84,7 @@ return $input.all().map(item => {
   }
 
   // --- データ事前抽出（ヘッダーで使用するため） ---
-  const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離', '外務省危険レベル'];
+  const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
   const geoData = geoItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '：'));
     const val = line ? line.replace(item + '：', '').trim() : 'データなし';
@@ -91,8 +94,8 @@ return $input.all().map(item => {
   let article = '';
 
   // --- 4. ヒーローステータスカード（冒頭） ---
-  const kikenLevelStr = geoData.find(d => d.項目 === '外務省危険レベル')?.値 || '0';
-  const kikenLevel = parseInt(kikenLevelStr.replace(/[^0-9]/g, '')) || 0;
+  const kikenLevelRaw = inputData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
+  const kikenLevel = parseInt(String(kikenLevelRaw).replace(/[^0-9]/g, '')) || 0;
   const location = geoData.find(d => d.項目 === '位置')?.値 || '不明';
 
   let headerBg = 'linear-gradient(135deg, #f0fafa 0%, #e0f5f5 100%)';
@@ -161,7 +164,10 @@ return $input.all().map(item => {
   // --- 7. ② 地理と経済の衡量 ---
   article += `<h2 style="${h2Style}">② 地理と経済の衡量</h2>\n`;
   // geoData は上で事前抽出済み
-  const geoRows = geoData.map(d => [d.項目, d.値]);
+  const geoRows = [
+    ...geoData.map(d => [d.項目, d.値]),
+    ['外務省危険レベル', kikenLevelRaw]
+  ];
   article += makeTable(['地理項目', '内容'], geoRows, ['30%', '70%']);
 
   // --- 経済データ整形ヘルパー ---
@@ -219,7 +225,7 @@ return $input.all().map(item => {
   });
   const econRows = econData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['経済指標', countryLabel, japanLabel], econRows, ['30%', '35%', '35%']);
-  const econCite = inputData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
+  const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
   article += `<p class="citation">出典：${econCite}</p>\n`;
 
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
@@ -331,7 +337,7 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
-    const boekiCiteStr = inputData.data?.固定データ?.貿易出典_対象国 || 'IMF / Trade Map';
+    const boekiCiteStr = sheetData.data?.固定データ?.貿易出典_対象国 || 'IMF / Trade Map';
     article += `<p class="citation">出典：${boekiCiteStr}</p>\n`;
   }
 
@@ -437,9 +443,9 @@ return $input.all().map(item => {
 
   // --- 12. ⑦ 直近の動向 ---
   article += `<h2 style="${h2Style}">⑦ 直近の動向</h2>\n`;
-  const dohContent = extractTextBetween(raw, '直近の動向｜本文：', '🐱 エラーネコ：');
+  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
-    article += `<p style="line-height:1.7; color:#444;">${dohContent.replace(/\n/g, '<br>')}</p>\n`;
+    article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
     const dohCite = inputData.data?.対象国データ_記事?.直近の動向?.出典 || '';
     if (dohCite) article += `<p class="citation">出典：${dohCite}</p>\n`;
   }
@@ -476,7 +482,7 @@ return $input.all().map(item => {
 
   // --- 14. ⑨ 特別枠：${countryName}映画 歴代興行収入 ---
   article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName}映画 歴代興行収入</h2>\n`;
-  const kougyouData = parseLines(raw, '興行');
+  const kougyouData = parseLines(raw, '興行').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
