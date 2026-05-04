@@ -18,8 +18,14 @@ try {
 }
 
 // ② 記事と基本情報の取得
-const mainArticle = $('記事集合').first().json.article ?? '';
-const country = $('整形ノード１').first().json.country ?? '不明';
+let mainArticle = '';
+try { mainArticle = $('記事集合').first().json.article ?? ''; } catch(e) {}
+
+let deepDiveRaw = '';
+try { deepDiveRaw = $('整形3').first().json?.article ?? ''; } catch(e) {}
+
+let country = '不明';
+try { country = $('整形ノード1').first().json.country ?? '不明'; } catch(e) {}
 
 // ③ ポップアップHTML（歴史館リンク表示用）
 const popupHTML = `
@@ -90,57 +96,61 @@ for (const cand of flatPatterns.sort((a,b) => b.pattern.length - a.pattern.lengt
   }
 }
 
-// ⑦ 分離置換
-let tokens = mainArticle.split(/(<[^>]+>)/g).filter(p => p).map(p => ({
-  type: (p.startsWith('<') && p.endsWith('>')) ? 'tag' : 'text',
-  text: p
-}));
+// リンク插入処理を再利用できるよう関数化
+function insertLinks(articleText) {
+  let linkTokens = articleText.split(/(<[^>]+>)/g).filter(p => p).map(p => ({
+    type: (p.startsWith('<') && p.endsWith('>')) ? 'tag' : 'text',
+    text: p
+  }));
 
-const linkedEntities = new Set();
+  const linkedInThisArticle = new Set();
 
-for (const cand of uniquePatterns) {
-  if (linkedEntities.has(cand.entity.name)) continue;
+  for (const cand of uniquePatterns) {
+    if (linkedInThisArticle.has(cand.entity.name)) continue;
 
-  // ★ typeによってURLを切り替え（ハブリンク）
-  let mapUrl;
-  if (cand.entity.type === 'keywords') {
-    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
-  } else if (cand.entity.type === 'people') {
-    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
-  } else {
-    mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
-  }
-
-  const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
-
-  const n = enc(cand.entity.name);
-  const i = enc(cand.entity.info + linkHTML);
-
-  const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
-
-  let newTokens = [];
-  let replaced = false;
-
-  for (let token of tokens) {
-    if (replaced || token.type === 'tag' || token.text.includes('quickchart.io')) {
-      newTokens.push(token);
-      continue;
-    }
-
-    const idx = token.text.indexOf(cand.pattern);
-    if (idx !== -1) {
-      replaced = true;
-      newTokens.push({ type: 'text', text: token.text.substring(0, idx) });
-      newTokens.push({ type: 'tag', text: `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>` });
-      newTokens.push({ type: 'text', text: token.text.substring(idx + cand.pattern.length) });
-      linkedEntities.add(cand.entity.name);
+    let mapUrl;
+    if (cand.entity.type === 'keywords') {
+      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
+    } else if (cand.entity.type === 'people') {
+      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
     } else {
-      newTokens.push(token);
+      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
     }
+
+    const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+    const n = enc(cand.entity.name);
+    const i = enc(cand.entity.info + linkHTML);
+    const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+
+    let newTokens = [];
+    let replaced = false;
+
+    for (let token of linkTokens) {
+      if (replaced || token.type === 'tag' || token.text.includes('quickchart.io')) {
+        newTokens.push(token);
+        continue;
+      }
+      const idx = token.text.indexOf(cand.pattern);
+      if (idx !== -1) {
+        replaced = true;
+        newTokens.push({ type: 'text', text: token.text.substring(0, idx) });
+        newTokens.push({ type: 'tag', text: `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>` });
+        newTokens.push({ type: 'text', text: token.text.substring(idx + cand.pattern.length) });
+        linkedInThisArticle.add(cand.entity.name);
+      } else {
+        newTokens.push(token);
+      }
+    }
+    linkTokens = newTokens;
   }
-  tokens = newTokens;
+  return linkTokens.map(t => t.text).join('');
 }
 
-const finalArticle = tokens.map(t => t.text).join('') + '\n\n' + popupHTML;
+// メイン記事にリンク挙入
+const linkedMain = insertLinks(mainArticle);
+// Deep Diveにも同じリンク插入を適用
+const linkedDeepDive = deepDiveRaw ? insertLinks(deepDiveRaw) : '';
 
-return [{ json: { article: finalArticle, country: country } }];
+const finalArticle = linkedMain + '\n\n' + popupHTML;
+
+return [{ json: { article: finalArticle, deepDiveArticle: linkedDeepDive, country: country } }];

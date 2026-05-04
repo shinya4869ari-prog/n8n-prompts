@@ -17,8 +17,8 @@ return $input.all().map(item => {
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
 
-  const citation = sheetData.data?.固定データ?.死因出典 
-    ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}` 
+  const citation = sheetData.data?.固定データ?.死因出典
+    ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}`
     : '';
 
   const title = countryName;
@@ -94,7 +94,7 @@ return $input.all().map(item => {
   let article = '';
 
   // --- 4. ヒーローステータスカード（冒頭） ---
-  const kikenLevelRaw = inputData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
+  const kikenLevelRaw = sheetData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
   const kikenLevel = parseInt(String(kikenLevelRaw).replace(/[^0-9]/g, '')) || 0;
   const location = geoData.find(d => d.項目 === '位置')?.値 || '不明';
 
@@ -249,62 +249,96 @@ return $input.all().map(item => {
   article += makeTable(['治安・社会指標', countryLabel, japanLabel], chiAnRows, ['35%', '32%', '33%']);
 
 
-  // 危険レベル警告
-  const kikenMatch = raw.match(/[⚠️🚨] 外務省から[^\n]+/);
-  if (kikenMatch) article += `<p style="color:#d32f2f;font-weight:bold;background:#fff3f3;padding:10px;border-radius:8px;">${kikenMatch[0]}</p>\n`;
+  // 危険レベル警告 (レベル1以上の場合のみ表示)
+  if (kikenLevel > 0) {
+    const kikenMatch = raw.match(/[⚠️🚨] 外務省から[^\n]+/);
+    if (kikenMatch) article += `<p style="color:#d32f2f;font-weight:bold;background:#fff3f3;padding:10px;border-radius:8px;">${kikenMatch[0]}</p>\n`;
+  }
 
   const prisonData = parseLines(raw, '刑務所推移');
   if (prisonData.length > 0) {
     article += `<h3 style="${h3Style}">刑務所収容者数の推移</h3>\n`;
 
-    // グラフ用データの準備
     const labels = prisonData.map(d => d['年']);
     const targetData = prisonData.map(d => parseInt(d[`${countryName}総収容者数`]?.replace(/,/g, '')) || 0);
     const japanData = prisonData.map(d => parseInt(d['日本総収容者数']?.replace(/,/g, '')) || 0);
 
-    const chartConfig = {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: `${countryName} (右軸)`,
+    // 数値の規模にどれくらい差があるか判定 (スマート・チャート・ロジック)
+    const maxTarget = Math.max(...targetData, 1);
+    const maxJapan = Math.max(...japanData, 1);
+    const ratio = Math.max(maxTarget, maxJapan) / Math.min(maxTarget, maxJapan);
+
+    if (ratio > 20) {
+      // --- 規模が20倍以上違う場合は、2つのグラフに分ける ---
+      const targetChartConfig = {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${countryName} (人)`,
             data: targetData,
             borderColor: '#00bcd4',
             backgroundColor: 'rgba(0, 188, 212, 0.1)',
-            yAxisID: 'y1',
             fill: true,
             tension: 0.3,
-            borderWidth: 3,
-            pointRadius: 4
-          },
-          {
-            label: '日本 (左軸)',
+            borderWidth: 3
+          }]
+        },
+        options: { title: { display: true, text: `${countryName}の推移 (小規模)` } }
+      };
+
+      const japanChartConfig = {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '日本 (人)',
             data: japanData,
             borderColor: '#ff4500',
-            backgroundColor: 'transparent',
-            yAxisID: 'y',
-            fill: false,
+            backgroundColor: 'rgba(255, 69, 0, 0.1)',
+            fill: true,
             tension: 0.3,
-            borderWidth: 2,
-            borderDash: [5, 5],
-            pointRadius: 3
-          }
-        ]
-      },
-      options: {
-        title: { display: true, text: '総収容者数の推移比較', fontSize: 16, fontColor: '#333' },
-        scales: {
-          yAxes: [
-            { id: 'y', type: 'linear', position: 'left', scaleLabel: { display: true, labelString: '日本 (人)', fontColor: '#ff4500' }, ticks: { fontColor: '#ff4500' } },
-            { id: 'y1', type: 'linear', position: 'right', scaleLabel: { display: true, labelString: `${countryName} (人)`, fontColor: '#00bcd4' }, ticks: { fontColor: '#00bcd4' }, gridLines: { drawOnChartArea: false } }
-          ]
-        }
-      }
-    };
+            borderWidth: 3
+          }]
+        },
+        options: { title: { display: true, text: '日本の推移 (大規模)' } }
+      };
 
-    const chartUrl = `https://quickchart.io/chart?width=800&height=400&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
-    article += `<div style="margin: 20px 0; text-align: center;"><img src="${chartUrl}" alt="刑務所収容者数の推移グラフ" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>\n`;
+      const targetChartUrl = `https://quickchart.io/chart?width=400&height=250&c=${encodeURIComponent(JSON.stringify(targetChartConfig))}`;
+      const japanChartUrl = `https://quickchart.io/chart?width=400&height=250&c=${encodeURIComponent(JSON.stringify(japanChartConfig))}`;
+
+      article += `
+<p style="font-size:12px; color:#666; background:#f9f9f9; padding:10px; border-radius:6px; border-left:4px solid #ccc;">
+  ※日本と${countryName}では収容者数の規模が大きく異なるため（約${Math.round(ratio)}倍の差）、それぞれの傾向を正確に把握できるよう個別にグラフを表示しています。
+</p>
+<div style="display:flex; flex-wrap:wrap; gap:10px; margin:20px 0;">
+  <div style="flex:1; min-width:300px;"><img src="${targetChartUrl}" style="max-width:100%; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);"></div>
+  <div style="flex:1; min-width:300px;"><img src="${japanChartUrl}" style="max-width:100%; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);"></div>
+</div>`;
+
+    } else {
+      // --- 規模が近い場合は、1つのグラフにまとめる (2軸) ---
+      const chartConfig = {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: `${countryName} (右軸)`, data: targetData, borderColor: '#00bcd4', yAxisID: 'y1', fill: false, tension: 0.3, borderWidth: 3 },
+            { label: '日本 (左軸)', data: japanData, borderColor: '#ff4500', yAxisID: 'y', fill: false, tension: 0.3, borderWidth: 2, borderDash: [5, 5] }
+          ]
+        },
+        options: {
+          scales: {
+            yAxes: [
+              { id: 'y', type: 'linear', position: 'left', ticks: { fontColor: '#ff4500' } },
+              { id: 'y1', type: 'linear', position: 'right', ticks: { fontColor: '#00bcd4' }, gridLines: { drawOnChartArea: false } }
+            ]
+          }
+        }
+      };
+      const chartUrl = `https://quickchart.io/chart?width=800&height=400&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+      article += `<div style="margin: 20px 0; text-align: center;"><img src="${chartUrl}" alt="比較グラフ" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>\n`;
+    }
 
     article += `<p class="citation">出典：World Prison Brief</p>\n`;
   }
@@ -350,13 +384,12 @@ return $input.all().map(item => {
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
   article += `<h2 style="${h2Style}">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
 
-  // 為替レートが1（または未取得）の場合、テキストから抽出を試みる
-  let currentRate = rate;
-  if (currentRate === 1) {
-    const rateTextMatch = raw.match(/為替レート[は：]\s*1\s*[A-Z]+\s*\(.*?\)\s*=\s*([\d\.]+)\s*JPY/i);
-    if (rateTextMatch) {
-      currentRate = parseFloat(rateTextMatch[1]);
-    }
+  // 為替レートをsheetData（整形ノード1）から直接取得、なければ国名変換Codeの値を使用
+  const sheetRate = parseFloat(sheetData.data?.固定データ?.物価?.為替レート) || 0;
+  let currentRate = sheetRate > 1 ? sheetRate : rate;
+  if (currentRate <= 1) {
+    const rateTextMatch = raw.match(/為替レート[は：]\s*1\s*[A-Z]+\s*[（(].*?[)）]\s*=\s*([\d\.]+)\s*JPY/i);
+    if (rateTextMatch) currentRate = parseFloat(rateTextMatch[1]);
   }
 
   const bukkaData = parseLines(raw, '物価');
@@ -511,22 +544,25 @@ return $input.all().map(item => {
   if (logMatch) article += '\n' + logMatch[1];
 
   // --- 16. Deep-Dive ---
-  const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>([\s\S]*)/);
-  if (deepDiveMatch) {
-    const ddTitle = `<h2 style="${h2Style}">Deep Dive</h2>`;
-    let ddBody = deepDiveMatch[1];
-    const ddRows = [];
-    const ddRegex = /<h3>(.*?)<\/h3>([\s\S]*?)(?=<h3|$)/g;
-    let match;
-    while ((match = ddRegex.exec(ddBody)) !== null) {
-      const title = match[1].trim();
-      const content = match[2].trim().replace(/\n/g, '<br>');
-      ddRows.push([`💡 ${title}`, content]);
-    }
-
-    if (ddRows.length > 0) {
-      article += '\n' + ddTitle + makeTable(['項目', '内容'], ddRows, ['30%', '70%']);
-    }
+  let deepDiveArticle = '';
+  try {
+    deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || '';
+  } catch(e) {
+    // リンク挿入ノードが接続されていないか名前が違う場合は整形3から直接取得を試みる
+    try { deepDiveArticle = $('整形3').first().json?.article || ''; } catch(e2) {}
+  }
+  
+  if (deepDiveArticle) {
+    // --- Deep Dive セクション仕切り ---
+    article += `
+<div style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
+  <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
+  <h2 style="font-size:20px; font-weight:900; color:#1a237e; margin:0 0 16px; letter-spacing:-0.3px;">📖 深掘り特別記事</h2>
+  <div style="background:#f3f4f9; border-left:4px solid #1a237e; padding:14px 18px; border-radius:0 10px 10px 0; font-size:13px; color:#444; line-height:1.8;">
+    本記事で取り上げた歴史的事件・事故・大災害などの中から、特に深掘りすべきテーマを選定し、さらに詳しく解説します。
+  </div>
+</div>\n`;
+    article += deepDiveArticle;
   }
 
   return {
