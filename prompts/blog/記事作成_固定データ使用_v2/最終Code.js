@@ -178,15 +178,15 @@ return $input.all().map(item => {
     if (itemName === '総人口') {
       // IMFデータは100万人単位
       const total = num * 1000000;
-      if (total >= 100000000) return (total / 100000000).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '億人' + suffix;
-      if (total >= 10000) return (total / 10000).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '万人' + suffix;
+      if (total >= 100000000) return (total / 100000000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '億人' + suffix;
+      if (total >= 10000) return (total / 10000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '万人' + suffix;
       return Math.round(total).toLocaleString() + '人' + suffix;
     }
 
     if (itemName.includes('GDP（名目')) {
       // IMFデータは10億ドル単位（Billions）なので、10倍して「億ドル」にする
       const okuValue = num * 10;
-      return okuValue.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '億ドル' + suffix;
+      return okuValue.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '億ドル' + suffix;
     }
 
     if (itemName === '一人当たりGDP') {
@@ -194,7 +194,7 @@ return $input.all().map(item => {
     }
 
     if (itemName.includes('率') || itemName.includes('比')) {
-      return num.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%' + suffix;
+      return num.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' + suffix;
     }
 
     return rawValue;
@@ -219,7 +219,8 @@ return $input.all().map(item => {
   });
   const econRows = econData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['経済指標', countryLabel, japanLabel], econRows, ['30%', '35%', '35%']);
-  article += `<p class="citation">出典：World Bank / IMF / 各国統計局</p>\n`;
+  const econCite = inputData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
+  article += `<p class="citation">出典：${econCite}</p>\n`;
 
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
   if (econExplanation) article += `\n${econExplanation}\n`;
@@ -240,7 +241,7 @@ return $input.all().map(item => {
   });
   const chiAnRows = chiAnData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['治安・社会指標', countryLabel, japanLabel], chiAnRows, ['35%', '32%', '33%']);
-  article += `<p class="citation">出典：UNODC / WHO / World Prison Brief / Vision of Humanity</p>\n`;
+
 
   // 危険レベル警告
   const kikenMatch = raw.match(/[⚠️🚨] 外務省から[^\n]+/);
@@ -330,8 +331,8 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
-    const boekiCite = raw.split('\n').find(l => l.startsWith('出典：') && (l.includes('貿易出典') || l.includes('OEC') || l.includes('財務省')));
-    if (boekiCite) article += `<p class="citation">${boekiCite}</p>\n`;
+    const boekiCiteStr = inputData.data?.固定データ?.貿易出典_対象国 || 'IMF / Trade Map';
+    article += `<p class="citation">出典：${boekiCiteStr}</p>\n`;
   }
 
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
@@ -342,7 +343,7 @@ return $input.all().map(item => {
 
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
   article += `<h2 style="${h2Style}">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
-  
+
   // 為替レートが1（または未取得）の場合、テキストから抽出を試みる
   let currentRate = rate;
   if (currentRate === 1) {
@@ -354,7 +355,7 @@ return $input.all().map(item => {
 
   const bukkaData = parseLines(raw, '物価');
   const bukkaEmoji = { 'ビール（レストラン500ml）': '🍺', 'タバコ（マルボロ1箱）': '🚬', 'ミネラルウォーター（500ml）': '💧', 'ビッグマック（1個）': '🍔', 'ガソリン（1L）': '⛽', '外食（安めの店・1食）': '🍜', '電気・水道・ガス（月額）': '💡', '家賃（1LDK・首都圏市内）': '🏠', '平均月収（手取り）': '💴', 'Netflix（スタンダード）': '📺' };
-  
+
   function formatValueWithCommas(val) {
     if (!val || val === 'データなし') return val;
     // 数値部分（カンマ・ドット含む）を抽出して、カンマを除去してから再フォーマット
@@ -380,14 +381,14 @@ return $input.all().map(item => {
           displayP = `${currencySymbol}${num.toLocaleString()} （${yen.toLocaleString()}円）`;
         }
       }
-      
+
       // 日本側の価格もカンマを入れる
       const japanVal = formatValueWithCommas(d['日本'] || 'データなし');
-      
+
       return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
     article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
-    
+
     // 為替レートの注釈表示
     const rateMatch = raw.match(/為替レート[は：]([^\n]+)/);
     if (rateMatch) {
@@ -427,8 +428,11 @@ return $input.all().map(item => {
     });
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
-    const rekishiCite = rawLines.find(l => l.startsWith('出典：') && (l.includes('Wikipedia') || l.includes('政府')));
-    if (rekishiCite) article += `<p class="citation">${rekishiCite}</p>\n`;
+    const rekishiData2 = inputData.data?.対象国データ_記事?.歴史的背景 || [];
+    const rekishiCites = [...new Set(rekishiData2.map(d => d.出典).filter(Boolean))];
+    if (rekishiCites.length > 0) {
+      article += `<p class="citation">出典：${rekishiCites.join(' / ')}</p>\n`;
+    }
   }
 
   // --- 12. ⑦ 直近の動向 ---
@@ -436,8 +440,8 @@ return $input.all().map(item => {
   const dohContent = extractTextBetween(raw, '直近の動向｜本文：', '🐱 エラーネコ：');
   if (dohContent) {
     article += `<p style="line-height:1.7; color:#444;">${dohContent.replace(/\n/g, '<br>')}</p>\n`;
-    const dohCite = rawLines.find(l => l.startsWith('出典：') && (l.includes('ロイター') || l.includes('BBC') || l.includes('メディア') || l.includes('Encyclopedia')));
-    if (dohCite) article += `<p class="citation">${dohCite}</p>\n`;
+    const dohCite = inputData.data?.対象国データ_記事?.直近の動向?.出典 || '';
+    if (dohCite) article += `<p class="citation">出典：${dohCite}</p>\n`;
   }
 
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑦ 直近の動向')) && l.includes('🐱 エラーネコ：'));
@@ -460,7 +464,11 @@ return $input.all().map(item => {
   </div>
 </div>`;
     });
-    article += `<p class="citation">出典根拠：IMDb / Google Search</p>\n`;
+    const eizouData2 = inputData.data?.対象国データ_記事?.映像作品 || [];
+    const eizouCites = [...new Set(eizouData2.map(d => d.出典).filter(Boolean))];
+    if (eizouCites.length > 0) {
+      article += `<p class="citation">出典：${eizouCites.join(' / ')}</p>\n`;
+    }
   }
 
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑧ 映像で知る')) && l.includes('🐱 エラーネコ：'));
@@ -486,7 +494,11 @@ return $input.all().map(item => {
   </div>
 </div>`;
     });
-    article += `<p class="citation">出典根拠：Box Office Mojo / 公式統計</p>\n`;
+    const kougyouData2 = inputData.data?.対象国データ_記事?.興行収入ランキング || [];
+    const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
+    if (kougyouCites.length > 0) {
+      article += `<p class="citation">出典：${kougyouCites.join(' / ')}</p>\n`;
+    }
   }
 
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑨ 特別枠')) && l.includes('🐱 エラーネコ：'));
@@ -509,7 +521,7 @@ return $input.all().map(item => {
       const content = match[2].trim().replace(/\n/g, '<br>');
       ddRows.push([`💡 ${title}`, content]);
     }
-    
+
     if (ddRows.length > 0) {
       article += '\n' + ddTitle + makeTable(['項目', '内容'], ddRows, ['30%', '70%']);
     }
