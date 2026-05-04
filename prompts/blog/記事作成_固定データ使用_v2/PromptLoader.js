@@ -3,15 +3,15 @@ const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompt
 
 // 同期対象のAIプロンプトファイル（コードノードはn8n直接管理のため除外）
 const files = {
-  researcher1:      baseUrl + 'researcher1.md',
-  researcher2:      baseUrl + 'researcher2.md',
-  researcher25:     baseUrl + 'researcher25.md',
-  writerPrompt:     baseUrl + 'writer.md',
-  deepDivePrompt:   baseUrl + 'Deep-Dive_writer.md',
-  deepDiveSelect:   baseUrl + 'Deep-Dive_select.md',
+  researcher1: baseUrl + 'researcher1.md',
+  researcher2: baseUrl + 'researcher2.md',
+  researcher25: baseUrl + 'researcher25.md',
+  writerPrompt: baseUrl + 'writer.md',
+  deepDivePrompt: baseUrl + 'Deep-Dive_writer.md',
+  deepDiveSelect: baseUrl + 'Deep-Dive_select.md',
 
-  qualityCheck:     baseUrl + 'quality_check.md',
-  responseExtract:  baseUrl + 'response_extraction.md',
+  qualityCheck: baseUrl + 'quality_check.md',
+  responseExtract: baseUrl + 'response_extraction.md',
 };
 
 try {
@@ -35,12 +35,24 @@ try {
 
   const evaluateTemplate = (text, data) => {
     if (!text) return "";
-    return text.replace(/\{\{\s*\$json\.([^\s\}]+)\s*\}\}/g, (match, path) => {
-      const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
-      return value !== undefined ? String(value) : match;
-    })
-    .replace(/\{\{\s*\$now\.toFormat\([^)]+\)\s*\}\}/g, context.now_date)
-    .replace(/\{\{(?!\s*\$json\.article)[^}]+\}\}/g, '');
+    // {{ $json.a || $json.b || "default" }} のような形式をパースして置換
+    return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
+      if (expression.includes('$now.toFormat')) return context.now_date;
+
+      const parts = expression.split('||').map(p => p.trim());
+      for (const part of parts) {
+        if (part.startsWith('$json.')) {
+          const path = part.replace('$json.', '');
+          const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
+          if (value !== undefined && value !== null && value !== '') return String(value);
+        } else if ((part.startsWith('"') && part.endsWith('"')) || (part.startsWith("'") && part.endsWith("'"))) {
+          return part.slice(1, -1);
+        }
+      }
+      // 置換対象が見つからず、かつ $json.article を含む場合は、後の処理のために一旦残す（または消す）
+      // ここでは置換できなかった {{ ... }} は空文字にする（n8nエラー回避のため）
+      return "";
+    });
   };
 
   const results = {};
