@@ -107,7 +107,7 @@ return $input.all().map(item => {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;`;
     let rekishiHtml = `<table style="${tableStyle}"><thead><tr>`;
-    rekishiHtml += `<th style="${thStyle}width:10%;">年</th><th style="${thStyle}width:20%;">事象名</th><th style="${thStyle}width:15%;">種別</th><th style="${thStyle}width:55%;">概要</th>`;
+    rekishiHtml += `<th style="${thStyle}width:10%;">年</th><th style="${thStyle}width:20%;">事象名</th><th style="${thStyle}width:15%;">種別</th><th style="${thStyle}width:40%;">概要</th><th style="${thStyle}width:15%;">出典</th>`;
     rekishiHtml += `</tr></thead><tbody>`;
     rekishiData.forEach(d => {
       const type = d['種別'] || '';
@@ -120,6 +120,7 @@ return $input.all().map(item => {
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['事象名'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:11px;">${type}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['概要'] || ''}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:11px;color:#666;">${d['出典'] || '-'}</td>`;
       rekishiHtml += `</tr>`;
     });
     rekishiHtml += `</tbody></table>`;
