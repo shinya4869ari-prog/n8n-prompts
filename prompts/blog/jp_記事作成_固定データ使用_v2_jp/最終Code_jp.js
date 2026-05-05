@@ -96,24 +96,19 @@ return $input.all().map(item => {
 
   // ① 貿易
   article += h2('① 貿易');
-  const boekiData = sheetData.data?.固定データ?.貿易 || {};
-  const yushutsu = boekiData.輸出 || [];
-  const yunyu = boekiData.輸入 || [];
-
-  if (yushutsu.length > 0 || yunyu.length > 0) {
-    const maxLen = Math.max(yushutsu.length, yunyu.length);
+  if (yushutsuData.length > 0 || yunyuData.length > 0) {
+    const maxLen = Math.max(yushutsuData.length, yunyuData.length);
     const boekiRows = Array.from({length: maxLen}, (_, i) => [
       (i + 1) + '位',
-      yushutsu[i] ? yushutsu[i]['品目'] || '-' : '-',
-      yunyu[i] ? yunyu[i]['品目'] || '-' : '-'
+      yushutsuData[i] ? yushutsuData[i]['品目'] || '-' : '-',
+      yunyuData[i] ? yunyuData[i]['品目'] || '-' : '-'
     ]);
     article += makeTable(['順位', '輸出品目', '輸入品目'], boekiRows, ['10%', '45%', '45%']);
   }
 
   article += h3('主要貿易相手国');
-  const boekiAite = boekiData.貿易相手国 || [];
-  if (boekiAite.length > 0) {
-    const aiteRows = boekiAite.map(d => [d['順位'] || '-', d['国名'] || '-', d['シェア'] || '-']);
+  if (boekiAiteData.length > 0) {
+    const aiteRows = boekiAiteData.map(d => [d['順位'] || '-', d['国名'] || '-', d['シェア'] || '-']);
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
   }
   const boekiComment = cleanArticleText(raw.split(/① 貿易|④ 貿易/)[1]?.split(/② 歴史|⑤ 歴史/)[0] || "");
