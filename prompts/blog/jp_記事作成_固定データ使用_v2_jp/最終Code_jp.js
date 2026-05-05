@@ -116,9 +116,14 @@ return $input.all().map(item => {
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
 
-  // --- 6. ③ 直近の動向（メイン版と完全同一のextractTextBetweenを使用） ---
+  // --- 6. ③ 直近の動向（「政治経済社会」キーワードで柔軟に抽出） ---
   article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
-  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
+  // AIがpタグを付けない場合でも確実に動くよう、キーワードのみで行を特定
+  const dohStartIdx = rawLines.findIndex(l => l.includes('政治経済社会'));
+  const dohNekoIdx = rawLines.findIndex((l, i) => i > dohStartIdx && l.includes('🐱 エラーネコ：'));
+  const dohContent = dohStartIdx !== -1
+    ? rawLines.slice(dohStartIdx + 1, dohNekoIdx === -1 ? rawLines.length : dohNekoIdx).join('\n').trim()
+    : '';
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
     const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
