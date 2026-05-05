@@ -10,7 +10,7 @@ const files = {
   deepDivePrompt: baseUrl + 'Deep-Dive_writer.md',
   deepDiveSelect: baseUrl + 'Deep-Dive_select.md',
 
-  qualityCheck: baseUrl + 'quality_check.md',
+  qualityCheck: 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/universal_quality_check.md',
   responseExtract: baseUrl + 'response_extraction.md',
 };
 
