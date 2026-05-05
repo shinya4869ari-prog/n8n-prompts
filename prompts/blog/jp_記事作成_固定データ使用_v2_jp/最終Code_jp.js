@@ -12,12 +12,12 @@ return $input.all().map(item => {
 
   const countryName = "日本";
   const capital = "東京";
-  const themeColor = "#d32f2f";
+  const themeColor = "#d32f2f"; // 日本版メインカラー
   const title = countryName;
   const countryLabel = "日本（東京）";
   const japanLabel = '日本（東京）';
 
-  // --- 3. HTML生成ヘルパー（メイン版と同一） ---
+  // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
     return text.split('\n')
       .filter(l => l.startsWith(prefix + '｜'))
@@ -61,6 +61,7 @@ return $input.all().map(item => {
   function makeNekoBubble(text) {
     if (!text || !text.includes('🐱')) return '';
     const content = text.replace(/🐱\s*エラーネコ：/, '').trim();
+    if (!content) return '';
     return `
 <div style="margin: 20px 0; display: flex; align-items: flex-start; gap: 12px;">
   <div style="font-size: 24px;">🐱</div>
@@ -101,12 +102,11 @@ return $input.all().map(item => {
   // --- 5. 導入文 ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
-    // [INTRO]などのタグが含まれていても、ここで純粋な本文のみを抽出
     const introLines = rawLines.slice(0, introEndIdx).filter(l => !l.includes('[') && l.trim() !== '');
     article += introLines.join('\n') + '\n';
   }
 
-  // --- 5. ① 貿易の衡量 ---
+  // --- 6. ① 貿易の衡量 ---
   article += `<h2 style="${h2Style}">① 貿易の衡量</h2>\n`;
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
@@ -131,7 +131,7 @@ return $input.all().map(item => {
   const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 貿易')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(boekiNeko);
 
-  // --- 6. ② 歴史的背景（メイン版と完全同一のカスタムテーブル、色のみJP） ---
+  // --- 7. ② 歴史적背景 ---
   article += `<h2 style="${h2Style}">② 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
@@ -160,7 +160,7 @@ return $input.all().map(item => {
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
 
-  // --- 7. ③ 直近の動向 ---
+  // --- 8. ③ 直近の動向 ---
   article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
@@ -171,7 +171,7 @@ return $input.all().map(item => {
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(dohNeko);
 
-  // --- 8. ④ 映像で知る日本 ---
+  // --- 9. ④ 映像で知る日本 ---
   article += `<h2 style="${h2Style}">④ 映像で知る日本</h2>\n`;
   const eizouData = parseLines(raw, '映像');
   if (eizouData.length > 0) {
@@ -195,7 +195,7 @@ return $input.all().map(item => {
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
 
-  // --- 9. ⑤ 日本映画 歴代ランキング ---
+  // --- 10. ⑤ 日本映画 歴代ランキング ---
   article += `<h2 style="${h2Style}">⑤ 日本映画 歴代ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行');
   if (kougyouData.length > 0) {
@@ -222,7 +222,7 @@ return $input.all().map(item => {
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);
 
-  // --- 10. Deep Dive（メイン版と完全同一） ---
+  // --- 11. Deep Dive（メイン版準拠） ---
   let deepDiveArticle = '';
   try {
     deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
@@ -231,7 +231,7 @@ return $input.all().map(item => {
   }
 
   if (deepDiveArticle) {
-    const ddColor = "#b71c1c"; // 深掘り用赤
+    const ddColor = "#b71c1c";
     article += `
 <div style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
@@ -245,8 +245,8 @@ return $input.all().map(item => {
 
   return {
     json: {
-      article: article,
-      title: countryName,
+      article: promptBody ? `${promptBody}\n\n${article}` : article,
+      title: title,
       country: countryName,
       capital: capital
     }
