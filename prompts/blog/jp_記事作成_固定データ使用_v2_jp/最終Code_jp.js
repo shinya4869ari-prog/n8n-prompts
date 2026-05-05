@@ -46,20 +46,23 @@ return $input.all().map(item => {
     return text.split('\n').filter(l => {
       const t = l.trim();
       if (!t) return true;
-      if (t.includes('｜')) return false;
-      if (t.includes('[INTRO]') || t.includes('[DEEP_DIVE')) return false;
-      if (/^[①②③④⑤⑥⑦⑧⑨]/.test(t)) return false;
+      if (t.includes('｜')) return false; // データ行を除去
+      if (t.includes('[INTRO]') || t.includes('[DEEP_DIVE')) return false; // タグを除去
+      if (/^#{1,4}\s*[①②③④⑤]/.test(t)) return false; // Markdownヘッダーの見出し行のみ除去
+      if (/^\s*\.\.\./.test(t)) return false; // 「...（省略）」行を除去
       return true;
     }).join('\n').trim();
   }
 
   // --- セクション分割の実行 ---
-  const introRaw = extractSection(raw, '[INTRO]', '① 貿易') || raw.split('① 貿易')[0];
-  const boekiSection = getSectionByHeader(raw, '① 貿易', /② 歴史/);
-  const rekishiSection = getSectionByHeader(raw, '② 歴史', /③ 直近/);
-  const dohSection = getSectionByHeader(raw, '③ 直近', /④ 映像/);
-  const eizouSection = getSectionByHeader(raw, '④ 映像', /⑤ 日本映画/);
-  const kougyouSection = getSectionByHeader(raw, '⑤ 日本映画', /\[DEEP_DIVE/);
+  // AIが #### ① 貿易 のようにMarkdownヘッダー付きで書いても確実に分割できるようregexを使用
+  const splitBySection = (text, regex) => text.split(regex);
+  const introRaw = extractSection(raw, '[INTRO]', '① 貿易') || raw.split(/#{0,4}\s*① 貿易/)[0];
+  const boekiSection = (raw.split(/#{0,4}\s*① 貿易/)[1] || '').split(/#{0,4}\s*② 歴史/)[0];
+  const rekishiSection = (raw.split(/#{0,4}\s*② 歴史/)[1] || '').split(/#{0,4}\s*③ 直近/)[0];
+  const dohSection = (raw.split(/#{0,4}\s*③ 直近/)[1] || '').split(/#{0,4}\s*④ 映像/)[0];
+  const eizouSection = (raw.split(/#{0,4}\s*④ 映像/)[1] || '').split(/#{0,4}\s*⑤ 日本映画/)[0];
+  const kougyouSection = (raw.split(/#{0,4}\s*⑤ 日本映画/)[1] || '').split(/\[DEEP_DIVE/)[0];
   const deepDiveRaw = extractSection(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
 
   const h2 = (text) => `<h2 style="margin-top:50px;margin-bottom:24px;padding-top:20px;border-top:1px solid #eee;font-size:18px;font-weight:900;color:#111;">${text}</h2>\n`;
