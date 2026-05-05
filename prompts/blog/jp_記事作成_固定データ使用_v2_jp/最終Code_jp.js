@@ -167,8 +167,12 @@ return $input.all().map(item => {
   // --- 10. Deep Dive ---
   const ddRaw = extractTextBetween(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
   if (ddRaw) {
+    const ddColor = "#d32f2f"; 
     article += `<hr style="margin:60px 0;border:none;border-top:1px solid #eee;">\n`;
-    article += `<h2 style="font-size:22px;font-weight:900;color:#1a237e;">📖 Deep Dive - 視点の対比</h2>\n`;
+    article += `
+<div style="margin-bottom:25px;">
+  <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase;">✦ Deep Dive</div>
+</div>\n`;
     article += ddRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ');
   }
 
