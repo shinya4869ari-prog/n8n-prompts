@@ -116,8 +116,38 @@ return $input.all().map(item => {
   // ② 歴史的背景
   article += h2('② 歴史的背景（近代100年）');
   if (rekishiData.length > 0) {
-    const rekishiRows = rekishiData.map(d => [d['年'] || '-', d['事象名'] || '-', d['概要'] || '-']);
-    article += makeTable(['年', '事象名', '概要'], rekishiRows, ['15%', '25%', '60%']);
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(211,47,47,0.05);border:1px solid #ffebee;`;
+    const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;font-size:14px;color:#111;${w ? 'width:'+w+';' : ''}`;
+    const tdStyle = `border:1px solid #eee;padding:12px 14px;font-size:14px;color:#333;`;
+    const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;font-size:14px;color:#111;`;
+
+    let rekishiHtml = `<table style="${tableStyle}"><thead><tr>`;
+    rekishiHtml += `<th style="${thStyle('12%')}">年</th><th style="${thStyle('25%')}">事象名</th><th style="${thStyle('63%')}">概要</th>`;
+    rekishiHtml += `</tr></thead><tbody>`;
+
+    rekishiData.forEach((d, ri) => {
+      const type = d['種別'] || '';
+      let bg = ri % 2 === 1 ? 'background:#fffafa;' : ''; // デフォルト（交互色）
+
+      // 重大度による色の上書き
+      if (type.includes('戦争') || type.includes('虐殺') || type.includes('震災') || type.includes('テロ') || type.includes('大災害')) {
+        bg = 'background:#fff3f3;'; // 警戒の赤
+      } else if (type.includes('事件') || type.includes('事故')) {
+        bg = 'background:#f0f7ff;'; // 出来事の青
+      } else if (type.includes('政治') || type.includes('体制') || type.includes('改元')) {
+        bg = 'background:#f0fff4;'; // 変化の緑
+      }
+
+      rekishiHtml += `<tr style="${bg}">`;
+      rekishiHtml += `<td style="${tdBoldStyle}">${d['年'] || ''}</td>`;
+      rekishiHtml += `<td style="${tdStyle}">${d['事象名'] || ''}</td>`;
+      rekishiHtml += `<td style="${tdStyle}">${d['概要'] || ''}</td>`;
+      rekishiHtml += `</tr>`;
+    });
+    rekishiHtml += `</tbody></table>`;
+    article += rekishiHtml;
+    
+    // ライターが書き出した歴史の出典があれば表示
     const rekishiComment = cleanArticleText(raw.split(/② 歴史|⑤ 歴史/)[1]?.split(/③ 直近|⑥ 直近/)[0] || "");
     if (rekishiComment) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin:20px 0;">${rekishiComment}</div>\n`;
   }
