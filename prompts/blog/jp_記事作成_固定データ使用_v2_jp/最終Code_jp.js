@@ -164,16 +164,21 @@ return $input.all().map(item => {
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);
 
-  // --- 10. Deep Dive ---
-  const ddRaw = extractTextBetween(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
-  if (ddRaw) {
-    const ddColor = "#d32f2f"; 
-    article += `<hr style="margin:60px 0;border:none;border-top:1px solid #eee;">\n`;
+  // --- 10. Deep Dive（メイン版と同じ方式）---
+  let deepDiveArticle = '';
+  try {
+    deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
+  } catch(e) {
+    try { deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || ''; } catch(e2) {}
+  }
+
+  if (deepDiveArticle) {
+    const ddColor = "#d32f2f";
     article += `
-<div style="margin-bottom:25px;">
-  <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase;">✦ Deep Dive</div>
+<div style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
+  <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
-    article += ddRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ');
+    article += deepDiveArticle;
   }
 
   return { json: { article: article } };
