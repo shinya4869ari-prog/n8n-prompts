@@ -47,12 +47,14 @@ return $input.all().map(item => {
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
   }
 
-  // ★抽出を大幅強化：タグの有無や文言の微差を許容する
-  function extractSection(text, startKeyword, endKeyword) {
-    const regex = new RegExp(`${startKeyword}[\\s\\S]*?(?=${endKeyword}|🐱|$)`, 'i');
-    const match = text.match(regex);
-    if (!match) return '';
-    return match[0].replace(new RegExp(`^.*${startKeyword}.*?\n`, 'i'), '').trim();
+  // メイン版と同一のextractTextBetween（確実に動く）
+  function extractTextBetween(text, start, end) {
+    const lines = text.split('\n');
+    const startIdx = lines.findIndex(l => l.includes(start));
+    if (startIdx === -1) return '';
+    const slice = lines.slice(startIdx + 1);
+    const endIdx = slice.findIndex(l => l.includes(end));
+    return (endIdx === -1 ? slice : slice.slice(0, endIdx)).join('\n').trim();
   }
 
   function makeNekoBubble(text) {
@@ -95,6 +97,12 @@ return $input.all().map(item => {
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
     article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${boekiCite}</p>\n`;
   }
+  // 貿易解説文（パイプ行でない行をすべて拾う）
+  const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
+  if (boekiExplanation) {
+    const cleanExp = boekiExplanation.split('\n').filter(l => !l.includes('｜')).join('\n').trim();
+    if (cleanExp) article += `\n${cleanExp}\n`;
+  }
   const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 貿易')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(boekiNeko);
 
@@ -108,11 +116,11 @@ return $input.all().map(item => {
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
 
-  // --- 6. ③ 直近の動向 ---
+  // --- 6. ③ 直近の動向（メイン版と完全同一のextractTextBetweenを使用） ---
   article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
-  const dohContent = extractSection(raw, '政治経済社会', '🐱 エラーネコ：');
+  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
-    article += `<div class="doh-body">${dohContent}</div>\n`;
+    article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
     const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
     if (dohCite) article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${dohCite}</p>\n`;
   }
@@ -164,7 +172,7 @@ return $input.all().map(item => {
   article += makeNekoBubble(kougyouNeko);
 
   // --- 9. Deep Dive ---
-  const ddRaw = extractSection(raw, '対象事件', 'DEEP_DIVE_END');
+  const ddRaw = extractTextBetween(raw, '対象事件：', '[DEEP_DIVE_END]');
   if (ddRaw) {
     article += `<hr style="margin:80px 0;border:none;border-top:1px solid #eee;">\n`;
     article += `<h2 style="font-size:22px;font-weight:900;color:#1a237e;">📖 Deep Dive - 視点の対比</h2>\n`;
