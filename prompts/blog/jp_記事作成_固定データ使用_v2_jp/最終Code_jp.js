@@ -1,27 +1,25 @@
-const promptBody = $input.first()?.json?.externalPrompt ?? "";
+const sheetData = $('整形ノード1_jp').first().json;
 
 return $input.all().map(item => {
   const inputData = item.json;
-  const sheetData = $('整形ノード1_jp').first().json;
   let raw = inputData?.article ?? "";
+  const rawLines = raw.split('\n');
 
-  // --- 1. 見出し・出典・システムタグの削除（メイン版準拠） ---
+  // --- 1. 見出し・出典の重複削除（メイン版準拠） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
-  raw = raw.replace(/^#*\s*\[INTRO\]\s*$/gim, '');
-  raw = raw.replace(/\[DEEP_DIVE_START\]/gi, '');
-  raw = raw.replace(/\[DEEP_DIVE_END\]/gi, '');
 
-  const rawLines = raw.split('\n');
   const countryName = "日本";
-  const h2Color = "#d32f2f";
+  const capital = "東京";
+  const themeColor = "#d32f2f";
 
-  // --- 2. 補助関数（メイン版と同一ロジックだが、抽出を強化） ---
+  // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
     return text.split('\n')
-      .filter(l => l.includes(prefix + '｜')) // startsWithより柔軟に
+      .filter(l => l.includes(prefix + '｜'))
       .map(l => {
-        const parts = l.replace(prefix + '｜', '').split('｜');
+        const cleanedLine = l.replace(/<\/?[^>]+(>|$)/g, "").trim();
+        const parts = cleanedLine.split('｜');
         const obj = {};
         parts.forEach(p => {
           const idx = p.indexOf('：');
@@ -31,7 +29,8 @@ return $input.all().map(item => {
       });
   }
 
-  const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid ${h2Color};font-size:16px;font-weight:900;color:#111;`;
+  // --- 3. HTML生成ヘルパー ---
+  const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid ${themeColor};font-size:16px;font-weight:900;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
 
   function makeTable(headers, rows, widths) {
@@ -47,7 +46,6 @@ return $input.all().map(item => {
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
   }
 
-  // メイン版と同一のextractTextBetween（確実に動く）
   function extractTextBetween(text, start, end) {
     const lines = text.split('\n');
     const startIdx = lines.findIndex(l => l.includes(start));
@@ -72,13 +70,13 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 3. 導入文 ---
+  // --- 4. 導入文 ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
     article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
   }
 
-  // --- 4. ① 貿易の衡量 ---
+  // --- 5. ① 貿易 ---
   article += `<h2 style="${h2Style}">① 貿易の衡量</h2>\n`;
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
@@ -94,101 +92,85 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
+    
+    // 【動的出典】メイン版と同じくJSONから自動取得
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
-    article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${boekiCite}</p>\n`;
+    article += `<p style="font-size:12px;color:#999;text-align:right;margin-top:-10px;">出典：${boekiCite}</p>\n`;
   }
-  // 貿易解説文（パイプ行でない行をすべて拾う）
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
-  if (boekiExplanation) {
-    const cleanExp = boekiExplanation.split('\n').filter(l => !l.includes('｜')).join('\n').trim();
-    if (cleanExp) article += `\n${cleanExp}\n`;
-  }
+  if (boekiExplanation) article += `\n${boekiExplanation}\n`;
   const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 貿易')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(boekiNeko);
 
-  // --- 5. ② 歴史的背景 ---
+  // --- 6. ② 歴史的背景 ---
   article += `<h2 style="${h2Style}">② 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
-    const rows = rekishiData.map(d => [d['年'] || '-', d['事象名'] || '-', d['種別'] || '-', d['概要'] || '-', `<span style="font-size:11px;color:#777;">${d['出典'] || '-'}</span>`]);
-    article += makeTable(['年', '事象名', '種別', '概要', '出典'], rows, ['10%', '20%', '15%', '40%', '15%']);
+    const rows = rekishiData.map(d => [d['年'], d['事象名'], d['種別'], d['概要']]);
+    article += makeTable(['年', '事象名', '種別', '概要'], rows, ['10%', '20%', '15%', '55%']);
   }
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
 
-  // --- 6. ③ 直近の動向（「政治経済社会」キーワードで柔軟に抽出） ---
+  // --- 7. ③ 直近の動向 ---
   article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
-  // AIがpタグを付けない場合でも確実に動くよう、キーワードのみで行を特定
-  const dohStartIdx = rawLines.findIndex(l => l.includes('政治経済社会'));
-  const dohNekoIdx = rawLines.findIndex((l, i) => i > dohStartIdx && l.includes('🐱 エラーネコ：'));
-  const dohContent = dohStartIdx !== -1
-    ? rawLines.slice(dohStartIdx + 1, dohNekoIdx === -1 ? rawLines.length : dohNekoIdx).join('\n').trim()
-    : '';
-  if (dohContent) {
-    article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
-    const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
-    if (dohCite) article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${dohCite}</p>\n`;
-  }
+  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
+  if (dohContent) article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(dohNeko);
 
-  // --- 7. ④ 映像で知る日本 ---
+  // --- 8. ④ 映像で知る日本 ---
   article += `<h2 style="${h2Style}">④ 映像で知る日本</h2>\n`;
   const eizouData = parseLines(raw, '映像');
-  if (eizouData.length > 0) {
-    eizouData.forEach(d => {
-      article += `
+  eizouData.forEach(d => {
+    article += `
 <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${d['タイトル'] || ''}</div>
-  <div style="font-size:12px;color:${h2Color};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
+  <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
   <div style="display:flex;gap:10px;">
-    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube</a>
+    <a href="${d['wikipedia_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">Wikipedia</a>
+    <a href="${d['imdb_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;">IMDb</a>
   </div>
 </div>`;
-    });
-    const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
-    const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
-    if (eizouCites.length > 0) article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${eizouCites.join(' / ')}</p>\n`;
-  }
+  });
+  // 【動的出典】映像作品からユニークな出典を抽出して表示
+  const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
+  const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
+  if (eizouCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${eizouCites.join(' / ')}</p>\n`;
+
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
 
-  // --- 8. ⑤ 日本映画 歴代ランキング ---
+  // --- 9. ⑤ 日本映画 歴代ランキング ---
   article += `<h2 style="${h2Style}">⑤ 日本映画 歴代ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行');
-  if (kougyouData.length > 0) {
-    kougyouData.forEach(d => {
-      article += `
+  kougyouData.forEach(d => {
+    article += `
 <div style="display:flex;align-items:center;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-  <span style="background:${h2Color};color:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:12px;flex-shrink:0;">${d['順位'] || ''}</span>
+  <span style="background:${themeColor};color:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:12px;flex-shrink:0;">${d['順位'] || ''}</span>
   <div style="flex-grow:1;">
     <div style="font-weight:800;font-size:15px;">${d['タイトル'] || ''}</div>
     <div style="font-size:12px;color:#777;">${d['公開年'] || ''}年 | ${d['興行収入'] || ''}</div>
   </div>
   <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ Trailer</a>
 </div>`;
-    });
-    const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
-    const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
-    if (rankingCites.length > 0) article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;">出典：${rankingCites.join(' / ')}</p>\n`;
-  }
+  });
+  // 【動的出典】ランキングから出典を取得
+  const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
+  const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
+  if (rankingCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${rankingCites.join(' / ')}</p>\n`;
+
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);
 
-  // --- 9. Deep Dive ---
-  const ddRaw = extractTextBetween(raw, '対象事件：', '[DEEP_DIVE_END]');
+  // --- 10. Deep Dive ---
+  const ddRaw = extractTextBetween(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
   if (ddRaw) {
-    article += `<hr style="margin:80px 0;border:none;border-top:1px solid #eee;">\n`;
+    article += `<hr style="margin:60px 0;border:none;border-top:1px solid #eee;">\n`;
     article += `<h2 style="font-size:22px;font-weight:900;color:#1a237e;">📖 Deep Dive - 視点の対比</h2>\n`;
-    article += `<div class="dd-body">${ddRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ')}</div>`;
+    article += ddRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ');
   }
 
-  return {
-    json: {
-      article: promptBody ? `${promptBody}\n\n${article}` : article,
-      title: countryName,
-      country: countryName
-    }
-  };
+  return { json: { article: article } };
 });
