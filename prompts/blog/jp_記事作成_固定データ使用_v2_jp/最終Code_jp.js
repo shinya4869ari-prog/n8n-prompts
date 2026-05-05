@@ -11,7 +11,7 @@ return $input.all().map(item => {
 
   const countryName = "日本";
   const capital = "東京";
-  const themeColor = "#d32f2f"; // 日本用カラー
+  const themeColor = "#d32f2f";
 
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
@@ -29,7 +29,7 @@ return $input.all().map(item => {
       });
   }
 
-  // --- 3. HTML生成ヘルパー（メイン版のデザインを完全再現） ---
+  // --- 3. HTML生成ヘルパー ---
   const h2Style = `margin-top:60px;padding-top:20px;border-top:3px solid ${themeColor};font-size:16px;font-weight:900;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
 
@@ -70,7 +70,7 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 4. 導入文（メイン版形式） ---
+  // --- 4. 導入文 ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
     article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
@@ -92,6 +92,10 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
+    
+    // 【動的出典】メイン版と同じくJSONから自動取得
+    const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
+    article += `<p style="font-size:12px;color:#999;text-align:right;margin-top:-10px;">出典：${boekiCite}</p>\n`;
   }
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
@@ -130,6 +134,11 @@ return $input.all().map(item => {
   </div>
 </div>`;
   });
+  // 【動的出典】映像作品からユニークな出典を抽出して表示
+  const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
+  const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
+  if (eizouCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${eizouCites.join(' / ')}</p>\n`;
+
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
 
@@ -147,6 +156,11 @@ return $input.all().map(item => {
   <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ Trailer</a>
 </div>`;
   });
+  // 【動的出典】ランキングから出典を取得
+  const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
+  const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
+  if (rankingCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${rankingCites.join(' / ')}</p>\n`;
+
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);
 
