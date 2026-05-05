@@ -34,19 +34,34 @@ const japanBoeki = {
   }))
 };
 
+// --- データの集約 ---
+const finalData = {
+  対象国データ_記事: {
+    歴史的背景: r2.歴史的背景,
+    直近の動向: r2.直近の動向,
+    映像作品: r2.映像作品,
+    興行収入ランキング: r2.興行収入ランキング
+  },
+  固定データ: {
+    貿易: japanBoeki,
+    貿易出典_日本: boeki['貿易統計_出典']
+  }
+};
+
+// --- PromptLoaderからwriter_jpプロンプトを取得してデータを埋め込む ---
+const writerPromptTemplate = $('PromptLoader_jp').first().json.writerPrompt || "";
+
+const now = new Date();
+const dateStr = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+const writerPrompt = writerPromptTemplate
+  .replace('{{ JSON.stringify($json.data) }}', JSON.stringify(finalData))
+  .replace(/\{\{\s*\$now\.toFormat\(.*?\)\s*\}\}/g, dateStr);
+
 return [{
   json: {
     対象国: "日本",
-    data: {
-      対象国データ_記事: {
-        歴史的背景: r2.歴史的背景,
-        直近の動向: r2.直近の動向,
-        映像作品: r2.映像作品,
-        興行収入ランキング: r2.興行収入ランキング
-      },
-      固定データ: {
-        貿易: japanBoeki
-      }
-    }
+    writerPrompt: writerPrompt,
+    data: finalData
   }
 }];
