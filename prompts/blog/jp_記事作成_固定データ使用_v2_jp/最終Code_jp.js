@@ -6,21 +6,18 @@ return $input.all().map(item => {
   let raw = inputData?.article ?? "";
   const rawLines = raw.split('\n');
 
-  // --- 1. 見出し・出典・システムタグの削除（メイン版と完全同一のクリーン化） ---
+  // --- 1. 見出し・出典の重複削除（メイン版準拠） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
-  raw = raw.replace(/\[INTRO\]/gi, '');
-  raw = raw.replace(/\[DEEP_DIVE_START\]/gi, '');
-  raw = raw.replace(/\[DEEP_DIVE_END\]/gi, '');
 
   const countryName = "日本";
   const capital = "東京";
-  const themeColor = "#d32f2f"; // 日本版メインカラー
-
+  const themeColor = "#d32f2f";
   const title = countryName;
   const countryLabel = "日本（東京）";
+  const japanLabel = '日本（東京）';
 
-  // --- 2. パイプ区切りデータをパース ---
+  // --- 3. HTML生成ヘルパー（メイン版と同一） ---
   function parseLines(text, prefix) {
     return text.split('\n')
       .filter(l => l.startsWith(prefix + '｜'))
@@ -76,10 +73,37 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 4. 導入文 ---
+  // --- 4. ヒーローステータスカード（冒頭） ---
+  const headerBg = 'linear-gradient(135deg, #fff3f3 0%, #ffebee 100%)';
+  const statusColor = themeColor;
+  const statusText = '✅ 安定';
+
+  article += `
+<div style="background:${headerBg}; border:1px solid #eee; border-left:8px solid ${statusColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
+  <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:${statusColor}; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
+    <div>
+      <div style="font-size:12px; color:${statusColor}; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">National Profile</div>
+      <h1 style="margin:0; font-size:28px; font-weight:900; color:#111; letter-spacing:-0.5px;">${countryName}</h1>
+      <div style="margin:8px 0 0; font-size:14px; color:#555; display:flex; gap:12px; align-items:center;">
+        <span>📍 ${capital}</span>
+        <span style="color:#ccc;">|</span>
+        <span>🌍 東アジア</span>
+      </div>
+    </div>
+    <div style="background:${statusColor}; color:#fff; padding:8px 18px; border-radius:30px; font-weight:900; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; gap:6px;">
+      ${statusText}
+    </div>
+  </div>
+</div>
+`;
+
+  // --- 5. 導入文 ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
-    article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
+    // [INTRO]などのタグが含まれていても、ここで純粋な本文のみを抽出
+    const introLines = rawLines.slice(0, introEndIdx).filter(l => !l.includes('[') && l.trim() !== '');
+    article += introLines.join('\n') + '\n';
   }
 
   // --- 5. ① 貿易の衡量 ---
