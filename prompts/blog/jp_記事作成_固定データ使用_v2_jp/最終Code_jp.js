@@ -7,7 +7,7 @@ return $input.all().map(item => {
   // --- 1. 見出し・出典・システムタグの削除 ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
-  raw = raw.replace(/\[INTRO\]/gi, ''); // どこにあっても消す
+  raw = raw.replace(/^#*\s*\[INTRO\]\s*$/gim, ''); // 見出し記号込みで一行消す
   raw = raw.replace(/\[DEEP_DIVE_START\]/gi, '');
   raw = raw.replace(/\[DEEP_DIVE_END\]/gi, '');
 
