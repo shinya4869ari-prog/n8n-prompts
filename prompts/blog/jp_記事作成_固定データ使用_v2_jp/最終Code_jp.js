@@ -16,10 +16,9 @@ return $input.all().map(item => {
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
     return text.split('\n')
-      .filter(l => l.includes(prefix + '｜'))
+      .filter(l => l.startsWith(prefix + '｜'))
       .map(l => {
-        const cleanedLine = l.replace(/<\/?[^>]+(>|$)/g, "").trim();
-        const parts = cleanedLine.split('｜');
+        const parts = l.replace(prefix + '｜', '').split('｜');
         const obj = {};
         parts.forEach(p => {
           const idx = p.indexOf('：');
@@ -93,9 +92,8 @@ return $input.all().map(item => {
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
     
-    // 【動的出典】メイン版と同じくJSONから自動取得
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
-    article += `<p style="font-size:12px;color:#999;text-align:right;margin-top:-10px;">出典：${boekiCite}</p>\n`;
+    article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${boekiCite}</p>\n`;
   }
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
