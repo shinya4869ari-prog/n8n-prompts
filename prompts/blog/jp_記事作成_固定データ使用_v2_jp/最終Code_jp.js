@@ -5,16 +5,15 @@ return $input.all().map(item => {
   let raw = inputData?.article ?? "";
   const rawLines = raw.split('\n');
 
-  // --- 1. 見出し・出典の重複削除（メイン版準拠のクリーン処理） ---
+  // --- 1. 見出し・出典の重複削除（メイン版準拠） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
 
   const countryName = "日本";
   const capital = "東京";
-  const countryLabel = "日本（東京）";
   const themeColor = "#d32f2f"; // 日本用カラー
 
-  // --- 2. パイプ区切りデータをパース（メイン版と共通） ---
+  // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
     return text.split('\n')
       .filter(l => l.includes(prefix + '｜'))
@@ -63,7 +62,7 @@ return $input.all().map(item => {
 <div style="margin: 20px 0; display: flex; align-items: flex-start; gap: 12px;">
   <div style="font-size: 24px;">🐱</div>
   <div style="position: relative; background: #fffafa; border: 1px solid #ffebee; border-radius: 12px; padding: 12px 16px; font-size: 13px; line-height: 1.6; color: #444; flex: 1;">
-    <div style="position: absolute; top: 12px; left: -8px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 8px solid #fffafa;"></div>
+    <div style="position: absolute; top: 12px; left: -8px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid #fffafa;"></div>
     <strong>エラーネコの一言：</strong><br>${content}
   </div>
 </div>`;
@@ -71,7 +70,7 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 4. 導入文（メイン版のテキスト直書き形式） ---
+  // --- 4. 導入文（メイン版形式） ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
     article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
@@ -116,7 +115,7 @@ return $input.all().map(item => {
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(dohNeko);
 
-  // --- 8. ④ 映像作品 ---
+  // --- 8. ④ 映像で知る日本 ---
   article += `<h2 style="${h2Style}">④ 映像で知る日本</h2>\n`;
   const eizouData = parseLines(raw, '映像');
   eizouData.forEach(d => {
@@ -125,21 +124,31 @@ return $input.all().map(item => {
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${d['タイトル'] || ''}</div>
   <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
-  <div><a href="${d['wikipedia_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">Wikipedia</a></div>
+  <div style="display:flex;gap:10px;">
+    <a href="${d['wikipedia_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">Wikipedia</a>
+    <a href="${d['imdb_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;">IMDb</a>
+  </div>
 </div>`;
   });
+  const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
+  article += makeNekoBubble(eizouNeko);
 
-  // --- 9. ⑤ 興行収入ランキング ---
+  // --- 9. ⑤ 日本映画 歴代ランキング ---
   article += `<h2 style="${h2Style}">⑤ 日本映画 歴代ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行');
   kougyouData.forEach(d => {
     article += `
 <div style="display:flex;align-items:center;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
   <span style="background:${themeColor};color:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:12px;flex-shrink:0;">${d['順位'] || ''}</span>
-  <span style="font-weight:800;font-size:15px;">${d['タイトル'] || ''}</span>
-  <span style="margin-left:auto;font-size:13px;color:#666;">${d['興行収入'] || ''}</span>
+  <div style="flex-grow:1;">
+    <div style="font-weight:800;font-size:15px;">${d['タイトル'] || ''}</div>
+    <div style="font-size:12px;color:#777;">${d['公開年'] || ''}年 | ${d['興行収入'] || ''}</div>
+  </div>
+  <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ Trailer</a>
 </div>`;
   });
+  const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
+  article += makeNekoBubble(kougyouNeko);
 
   // --- 10. Deep Dive ---
   const ddRaw = extractTextBetween(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
