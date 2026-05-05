@@ -9,6 +9,7 @@ return $input.all().map(item => {
   const title = "日本";
   const themeColor = "#d32f2f"; // ジャパン・レッド
 
+  // 補助関数：AIの生テキストから特定の接頭辞を持つ行を抽出してオブジェクト化
   function parseLines(text, prefix) {
     return text.split('\n')
       .filter(l => l.startsWith(prefix + '｜'))
@@ -23,6 +24,7 @@ return $input.all().map(item => {
       });
   }
 
+  // データのパース
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
   const boekiAiteData = parseLines(raw, '貿易相手');
@@ -30,176 +32,178 @@ return $input.all().map(item => {
   const eizouData = parseLines(raw, '映像');
   const kougyouData = parseLines(raw, '興行');
 
+  // テーブル生成関数
   function makeTable(headers, rows, widths) {
-    const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fff5f5,#ffebee);text-align:left;font-size:14px;${w ? 'width:'+w+';' : ''}`;
-    const tdStyle = `border:1px solid #eee;padding:12px 14px;font-size:14px;`;
-    const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;font-size:14px;`;
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:28px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;font-size:14px;color:#111;${w ? 'width:'+w+';' : ''}`;
+    const tdStyle = `border:1px solid #eee;padding:12px 14px;font-size:14px;color:#333;`;
+    const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;font-size:14px;color:#111;`;
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(211,47,47,0.05);border:1px solid #ffebee;`;
+    
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
-      const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
+      const bg = ri % 2 === 1 ? 'background:#fffafa;' : '';
       return `<tr style="${bg}">${row.map((cell, ci) => `<td style="${ci === 0 ? tdBoldStyle : tdStyle}">${cell}</td>`).join('')}</tr>`;
     }).join('')}</tbody>`;
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
   }
 
-  function extractTextBetween(text, startMarker, endMarker) {
-    const lines = text.split('\n');
-    let inRange = false;
-    const result = [];
-    for (const l of lines) {
-      if (!inRange && l.includes(startMarker)) { inRange = true; continue; }
-      if (inRange && endMarker && l.includes(endMarker)) break;
-      if (inRange) {
-        if (l.includes('｜')) continue;
-        if (/^出典：/.test(l.trim())) continue;
-        if (/^為替レート：/.test(l.trim())) continue;
-        result.push(l);
-      }
-    }
-    return result.join('\n').trim();
+  // 補助関数：AIの生テキスト（解析用の｜が含まれる行など）を排除して純粋な解説文だけを抽出
+  function cleanArticleText(text) {
+    if (!text) return "";
+    return text.split('\n').filter(l => {
+      const trimmed = l.trim();
+      if (!trimmed) return true;
+      if (trimmed.includes('｜')) return false; 
+      if (/^[①②③④⑤⑥⑦⑧⑨]/.test(trimmed)) return false; 
+      return true;
+    }).join('\n').trim();
   }
 
-  const h2 = (text) => `<h2 style="margin-top:60px;margin-bottom:24px;padding-top:20px;border-top:3px solid ${themeColor};font-size:16px;font-weight:900;color:#111;">${text}</h2>\n`;
-  const h3 = (text) => `<h3 style="margin-top:40px;margin-bottom:20px;padding-top:16px;border-top:1px solid #ddd;font-size:14px;font-weight:900;color:#333;">${text}</h3>\n`;
+  const h2 = (text) => `<h2 style="margin-top:50px;margin-bottom:24px;padding-top:20px;border-top:1px solid #ffcdd2;font-size:18px;font-weight:900;color:#111;">${text}</h2>\n`;
+  const h3 = (text) => `<h3 style="margin-top:40px;margin-bottom:15px;font-size:15px;font-weight:900;color:#111;display:flex;align-items:center;gap:8px;"><span style="width:3px;height:16px;background:${themeColor};display:inline-block;border-radius:2px;"></span>${text}</h3>\n`;
   
   let article = '';
 
-  // --- ヒーローステータスカード（冒頭） ---
+  // --- ヒーローステータスカード ---
   article += `
-<div style="background:linear-gradient(135deg, #fff5f5 0%, #ffebee 100%); border:1px solid #eee; border-left:8px solid ${themeColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
-  <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:${themeColor}; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
+<div style="background:linear-gradient(135deg, #fffafa 0%, #ffebee 100%); border:1px solid #ffcdd2; border-left:10px solid ${themeColor}; border-radius:15px; padding:28px; margin-bottom:45px; box-shadow:0 8px 25px rgba(211,47,47,0.08); position:relative; overflow:hidden;">
+  <div style="position:absolute; top:-10px; right:-10px; font-size:120px; color:${themeColor}; opacity:0.04; transform:rotate(-10deg); font-weight:bold; pointer-events:none;">JP</div>
   <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
     <div>
-      <div style="font-size:12px; color:${themeColor}; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">National Profile</div>
-      <h1 style="margin:0; font-size:28px; font-weight:900; color:#111; letter-spacing:-0.5px;">${countryName}</h1>
-      <div style="margin:8px 0 0; font-size:14px; color:#555; display:flex; gap:12px; align-items:center;">
-        <span>📍 東京（Tokyo）</span>
-        <span style="color:#ccc;">|</span>
-        <span>🌍 東アジア</span>
+      <div style="font-size:12px; color:${themeColor}; font-weight:bold; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;">National Report</div>
+      <h1 style="margin:0; font-size:32px; font-weight:900; color:#111; letter-spacing:-0.5px;">${countryName}</h1>
+      <div style="margin:12px 0 0; font-size:14px; color:#444; display:flex; gap:15px; align-items:center; font-weight:500;">
+        <span>🇯🇵 首都：東京</span>
+        <span style="color:#ffcdd2;">|</span>
+        <span>🌏 地域：東アジア</span>
       </div>
     </div>
-    <div style="background:${themeColor}; color:#fff; padding:8px 18px; border-radius:30px; font-weight:900; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; gap:6px;">
-      ✅ 安定
+    <div style="background:${themeColor}; color:#fff; padding:10px 22px; border-radius:40px; font-weight:900; font-size:14px; box-shadow:0 4px 12px rgba(211,47,47,0.3); display:flex; align-items:center; gap:8px;">
+      ✅ FACT CHECKED
     </div>
   </div>
 </div>
 `;
 
+  // 導入文
   const rawLines = raw.split('\n');
-  let introText = '';
+  let introLines = [];
   for (const l of rawLines) {
-    introText += l + '\n';
-    if (l.includes('数字と事実（Fact）から、日本の真実を紐解きます')) break;
+    if (l.includes('① 貿易') || l.includes('④ 貿易')) break;
+    if (!l.includes('｜')) introLines.push(l);
   }
-  article += introText + '\n';
+  article += `<div style="font-size:15px; line-height:1.8; color:#333; margin-bottom:40px;">${introLines.join('\n').trim()}</div>\n`;
 
+  // ① 貿易
   article += h2('① 貿易');
-  if (yushutsuData.length > 0 && yunyuData.length > 0) {
+  if (yushutsuData.length > 0 || yunyuData.length > 0) {
     const maxLen = Math.max(yushutsuData.length, yunyuData.length);
     const boekiRows = Array.from({length: maxLen}, (_, i) => [
       (i + 1) + '位',
-      yushutsuData[i] ? yushutsuData[i]['品目'] || '' : '',
-      yunyuData[i] ? yunyuData[i]['品目'] || '' : ''
+      yushutsuData[i] ? yushutsuData[i]['品目'] || '-' : '-',
+      yunyuData[i] ? yunyuData[i]['品目'] || '-' : '-'
     ]);
     article += makeTable(['順位', '輸出品目', '輸入品目'], boekiRows, ['10%', '45%', '45%']);
-    const boekiCiteStr = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
-    article += `<p class="citation">出典：${boekiCiteStr}</p>\n`;
   }
   article += h3('主要貿易相手国');
   if (boekiAiteData.length > 0) {
-    const aiteRows = boekiAiteData.map(d => [d['順位'] || '', d['国名'] || 'データなし', d['シェア'] || 'データなし']);
+    const aiteRows = boekiAiteData.map(d => [d['順位'] || '-', d['国名'] || '-', d['シェア'] || '-']);
     article += makeTable(['順位', '国名', 'シェア'], aiteRows, ['10%', '60%', '30%']);
   }
-  const boekiText = extractTextBetween(raw, '貿易相手｜順位：10位｜', '歴史｜年：');
-  if (boekiText) article += `\n${boekiText}\n`;
+  const boekiComment = cleanArticleText(raw.split(/① 貿易|④ 貿易/)[1]?.split(/② 歴史|⑤ 歴史/)[0] || "");
+  if (boekiComment) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin:20px 0;">${boekiComment}</div>\n`;
 
+  // ② 歴史的背景
   article += h2('② 歴史的背景（近代100年）');
   if (rekishiData.length > 0) {
-    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:28px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
-    const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fff5f5,#ffebee);text-align:left;font-size:14px;`;
-    let rekishiHtml = `<table style="${tableStyle}"><thead><tr>`;
-    rekishiHtml += `<th style="${thStyle}width:10%;">年</th><th style="${thStyle}width:25%;">事象名</th><th style="${thStyle}width:65%;">概要</th>`;
-    rekishiHtml += `</tr></thead><tbody>`;
-    rekishiData.forEach(d => {
-      rekishiHtml += `<tr style="background:#fffafa;">`;
-      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:14px;">${d['年'] || ''}</td>`;
-      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:14px;">${d['事象名'] || ''}</td>`;
-      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:14px;">${d['概要'] || ''}</td>`;
-      rekishiHtml += `</tr>`;
-    });
-    rekishiHtml += `</tbody></table>`;
-    article += rekishiHtml;
+    const rekishiRows = rekishiData.map(d => [d['年'] || '-', d['事象名'] || '-', d['概要'] || '-']);
+    article += makeTable(['年', '事象名', '概要'], rekishiRows, ['15%', '25%', '60%']);
+    const rekishiComment = cleanArticleText(raw.split(/② 歴史|⑤ 歴史/)[1]?.split(/③ 直近|⑥ 直近/)[0] || "");
+    if (rekishiComment) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin:20px 0;">${rekishiComment}</div>\n`;
   }
 
+  // ③ 直近の動向
   article += h2('③ 直近の動向');
-  const dohStart = rawLines.findIndex(l => l.startsWith('<p>') && !l.includes('citation'));
-  const dohEnd = rawLines.findIndex(l => l.startsWith('映像｜'));
-  if (dohStart !== -1 && dohEnd !== -1 && dohStart < dohEnd) {
-    article += rawLines.slice(dohStart, dohEnd).join('\n') + '\n';
-  }
-  const nekoMatch = raw.match(/🐱[^\n]+/);
-  if (nekoMatch) article += `<p>${nekoMatch[0]}</p>\n`;
+  const dohRaw = raw.split(/③ 直近の動向|⑥ 直近の動向/)[1]?.split(/④ 映像|⑦ 映像/)[0] || "";
+  const dohClean = cleanArticleText(dohRaw);
+  if (dohClean) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin-bottom:30px;">${dohClean}</div>\n`;
 
+  // ④ 映像で知る日本
   article += h2('④ 映像で知る日本');
   if (eizouData.length > 0) {
     eizouData.forEach(d => {
-      const isSerious = d['深刻'] === 'true';
-      const bg = isSerious ? '#fff3f3' : '#ffffff';
-      const wikiUrl = d['wikipedia_url'] && d['wikipedia_url'] !== 'データなし' ? d['wikipedia_url'] : '';
-      const imdbUrl = d['imdb_url'] && d['imdb_url'] !== 'データなし' ? d['imdb_url'] : '';
-      const wikiBtn = wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
-      article += `\n<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">\n  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>\n  <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>\n  <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>\n  <div>${wikiBtn}${imdbBtn}</div>\n</div>`;
+      const isSerious = d['深刻'] === 'true' || d['is_serious'] === 'true';
+      const wikiUrl = d['wikipedia_url'] || '';
+      const imdbUrl = d['imdb_url'] || '';
+      article += `
+<div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:20px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.05); position:relative;">
+  ${isSerious ? `<div style="position:absolute; top:15px; right:15px; background:#ffebee; color:${themeColor}; font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px;">⚠️ 深刻な題材</div>` : ''}
+  <div style="font-weight:900; font-size:17px; color:#111; margin-bottom:8px;">${d['タイトル'] || ''}</div>
+  <div style="font-size:12px; color:${themeColor}; font-weight:bold; margin-bottom:12px;">${d['種別'] || '作品'} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
+  <div style="font-size:14px; color:#444; line-height:1.6; margin-bottom:15px;">${d['概要'] || ''}</div>
+  <div style="display:flex; gap:10px;">
+    ${wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="text-decoration:none; font-size:12px; color:#fff; background:#4CAF50; padding:5px 15px; border-radius:5px;">Wikipedia</a>` : ''}
+    ${imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="text-decoration:none; font-size:12px; color:#000; background:#F5C518; padding:5px 15px; border-radius:5px;">IMDb</a>` : ''}
+  </div>
+</div>`;
     });
-    // 出典：sheetDataの映像作品リストから重複なしで取得（メイン版と同じ方式）
-    const eizouSheetData = sheetData.data?.対象国データ_記事?.映像作品 || [];
-    const eizouCites = [...new Set(eizouSheetData.map(d => d.出典).filter(Boolean))];
-    if (eizouCites.length > 0) {
-      article += `<p class="citation">出典：${eizouCites.join(' / ')}</p>\n`;
-    }
+    const eizouComment = cleanArticleText(raw.split(/④ 映像|⑦ 映像/)[1]?.split(/⑤ 日本映画|⑧ 興行/)[0] || "");
+    if (eizouComment) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin:20px 0;">${eizouComment}</div>\n`;
   }
 
+  // ⑤ 日本映画 歴代興行収入ランキング
   article += h2('⑤ 日本映画 歴代興行収入ランキング');
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
-      const isSerious = d['深刻'] === 'true';
-      const bg = isSerious ? '#fff3f3' : '#ffffff';
-      const wikiUrl = d['wikipedia_url'] && d['wikipedia_url'] !== 'データなし' ? d['wikipedia_url'] : '';
-      const imdbUrl = d['imdb_url'] && d['imdb_url'] !== 'データなし' ? d['imdb_url'] : '';
-      const genTitle = d['原題'] || d['タイトル'] || '';
-      const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(genTitle + ' trailer')}`;
-      const wikiBtn = wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">Wiki</a>` : '';
-      const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">IMDb</a>` : '';
-      const ytBtn = `<a href="${ytUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:12px;margin-right:6px;">▶ Trailer</a>`;
-      article += `\n<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">\n  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>\n  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">\n    <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>\n    <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>\n  </div>\n  <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['興行収入'] || d['動員数'] || d['観客動員数'] || 'データなし'}</div>\n  <div>${wikiBtn}${imdbBtn}${ytBtn}</div>\n</div>`;
+      const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}`;
+      article += `
+<div style="display:flex; align-items:center; background:#fff; border:1px solid #eee; border-radius:12px; padding:15px; margin:15px 0; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+  <div style="background:${themeColor}; color:#fff; width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:18px; margin-right:15px; flex-shrink:0;">${d['順位'] || ''}</div>
+  <div style="flex-grow:1;">
+    <div style="font-weight:800; font-size:15px; color:#111;">${d['タイトル'] || ''}</div>
+    <div style="font-size:12px; color:#777; margin-top:4px;">${d['公開年'] || ''}年公開 &nbsp;|&nbsp; 興行収入：<span style="color:${themeColor}; font-weight:bold;">${d['興行収入'] || '-'}</span></div>
+  </div>
+  <a href="${ytUrl}" target="_blank" style="text-decoration:none; display:inline-block; padding:6px 14px; background:#ff0000; color:#fff; border-radius:20px; font-size:11px; font-weight:bold; flex-shrink:0;">▶ Trailer</a>
+</div>`;
     });
-    // 出典：sheetDataの興行収入リストから重複なしで取得（メイン版と同じ方式）
-    const kougyouSheetData = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
-    const kougyouCites = [...new Set(kougyouSheetData.map(d => d.出典).filter(Boolean))];
-    if (kougyouCites.length > 0) {
-      article += `<p class="citation">出典：${kougyouCites.join(' / ')}</p>\n`;
-    }
+    const kougyouComment = cleanArticleText(raw.split(/⑤ 日本映画|⑧ 興行/)[1]?.split(/Deep Dive/i)[0] || "");
+    if (kougyouComment) article += `<div style="font-size:15px; line-height:1.8; color:#333; margin:20px 0;">${kougyouComment}</div>\n`;
   }
 
-  const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
-  if (logMatch) article += '\n' + logMatch[1];
-
-  const deepDiveMatch = raw.match(/<h2>Deep Dive<\/h2>[\s\S]*/);
-  if (deepDiveMatch) {
-    article += `<hr style="margin:80px 0 60px;border:none;border-top:3px solid ${themeColor};">\n`;
-    const deepDiveHtml = deepDiveMatch[0]
-      .replace(/<h2>/g, `<h2 style="margin-top:60px;margin-bottom:24px;padding-top:20px;font-size:16px;font-weight:900;color:#111;border-top:3px solid ${themeColor};">`)
-      .replace(/<h3>/g, '<h3 style="margin-top:40px;margin-bottom:20px;padding-top:16px;font-size:14px;font-weight:900;color:#333;">');
-    article += deepDiveHtml;
+  // Deep Dive
+  if (raw.includes('Deep Dive')) {
+    article += `<hr style="margin:80px 0 60px; border:none; border-top:1px solid #ffcdd2;">\n`;
+    article += h2('Deep Dive - 視点の対比');
+    const ddContentRaw = raw.split(/Deep Dive/i)[1] || "";
+    let ddContent = ddContentRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ').replace(/当事国（日本）/g, '日本');
+    const sections = ddContent.split(/### /);
+    let ddHtml = '<div style="background:#fffafa; padding:30px; border-radius:24px; border:1px solid #ffebee;">';
+    sections.forEach(sec => {
+      if (!sec.trim()) return;
+      const lines = sec.split('\n');
+      const subTitle = lines[0].trim();
+      const body = lines.slice(1).join('\n').trim();
+      if (subTitle) {
+        ddHtml += `
+<div style="background:#fff; border:1px solid #eee; border-radius:16px; padding:25px; margin-bottom:25px; box-shadow:0 4px 15px rgba(211,47,47,0.03);">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+    <span style="background:${themeColor}; color:#fff; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:900;">VIEWPOINT</span>
+    <div style="font-weight:900; font-size:16px; color:#111;">${subTitle}</div>
+  </div>
+  <div style="font-size:15px; line-height:1.8; color:#444;">${cleanArticleText(body)}</div>
+</div>`;
+      }
+    });
+    ddHtml += '</div>';
+    article += ddHtml;
   }
 
   return {
     json: {
-      article: promptBody ? `${promptBody}\n\n${article}` : article,
+      article: article,
       title: title,
       country: countryName,
       processedAt: new Date().toISOString()
     }
   };
-});
+});
