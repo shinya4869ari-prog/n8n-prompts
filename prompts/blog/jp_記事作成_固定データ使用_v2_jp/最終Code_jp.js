@@ -4,14 +4,14 @@ return $input.all().map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1_jp').first().json;  // ★日本版ノード名
   let raw = inputData?.article ?? "";
-  const rawLines = raw.split('\n');
-
-  // --- 1. 見出し・出典・システムタグの削除（メイン版と完全同一） ---
+  // --- 1. 見出し・出典・システムタグの削除 ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
-  raw = raw.replace(/^\[INTRO\]\s*/m, '');
-  raw = raw.replace(/\[DEEP_DIVE_START\]/g, '');
-  raw = raw.replace(/\[DEEP_DIVE_END\]/g, '');
+  raw = raw.replace(/\[INTRO\]/gi, ''); // どこにあっても消す
+  raw = raw.replace(/\[DEEP_DIVE_START\]/gi, '');
+  raw = raw.replace(/\[DEEP_DIVE_END\]/gi, '');
+
+  const rawLines = raw.split('\n');
 
   const countryName = "日本";  // ★日本版固定
   const h2Color = "#d32f2f";   // ★日本版カラー（メイン版は#00bcd4）
