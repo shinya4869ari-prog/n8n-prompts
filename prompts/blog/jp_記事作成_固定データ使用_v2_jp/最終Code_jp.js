@@ -59,7 +59,7 @@ return $input.all().map(item => {
     }).join('\n').trim();
   }
 
-  const h2 = (text) => `<h2 style="margin-top:50px;margin-bottom:24px;padding-top:20px;border-top:1px solid #ffcdd2;font-size:18px;font-weight:900;color:#111;">${text}</h2>\n`;
+  const h2 = (text) => `<h2 style="margin-top:50px;margin-bottom:24px;padding-top:20px;border-top:1px solid #eee;font-size:18px;font-weight:900;color:#111;">${text}</h2>\n`;
   const h3 = (text) => `<h3 style="margin-top:40px;margin-bottom:15px;font-size:15px;font-weight:900;color:#111;display:flex;align-items:center;gap:8px;"><span style="width:3px;height:16px;background:${themeColor};display:inline-block;border-radius:2px;"></span>${text}</h3>\n`;
   
   let article = '';
@@ -202,7 +202,7 @@ return $input.all().map(item => {
 
   // Deep Dive
   if (raw.includes('Deep Dive')) {
-    article += `<hr style="margin:80px 0 60px; border:none; border-top:1px solid #ffcdd2;">\n`;
+    article += `<hr style="margin:80px 0 60px; border:none; border-top:1px solid #eee;">\n`;
     article += h2('Deep Dive - 視点の対比');
     const ddContentRaw = raw.split(/Deep Dive/i)[1] || "";
     let ddContent = ddContentRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ').replace(/当事国（日本）/g, '日本');
