@@ -154,7 +154,7 @@ return $input.all().map(item => {
   // 【動的出典】映像作品からユニークな出典を抽出して表示
   const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
   const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
-  if (eizouCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${eizouCites.join(' / ')}</p>\n`;
+  if (eizouCites.length > 0) article += `<p class="citation">出典：${eizouCites.join(' / ')}</p>\n`;
 
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
@@ -176,18 +176,37 @@ return $input.all().map(item => {
   // 【動的出典】ランキングから出典を取得
   const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
   const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
-  if (rankingCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${rankingCites.join(' / ')}</p>\n`;
+  if (rankingCites.length > 0) article += `<p class="citation">出典：${rankingCites.join(' / ')}</p>\n`;
 
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);
 
   // --- 10. Deep Dive ---
-  const ddRaw = extractTextBetween(raw, '[DEEP_DIVE_START]', '[DEEP_DIVE_END]');
-  if (ddRaw) {
-    article += `<hr style="margin:60px 0;border:none;border-top:1px solid #eee;">\n`;
-    article += `<h2 style="font-size:22px;font-weight:900;color:#1a237e;">📖 Deep Dive - 視点の対比</h2>\n`;
-    article += ddRaw.replace(/当事国A/g, '日本').replace(/当事国B/g, 'アメリカ');
+  let deepDiveArticle = '';
+  try {
+    deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
+  } catch(e) {
+    try { deepDiveArticle = $('整形3_jp').first().json?.article || ''; } catch(e2) {}
   }
 
-  return { json: { article: article } };
+  if (deepDiveArticle) {
+    article += `
+<div style="border-top:4px solid #b71c1c; margin:80px 0 40px; padding-top:40px;">
+  <div style="display:inline-block; background:#b71c1c; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
+  <h2 style="font-size:20px; font-weight:900; color:#b71c1c; margin:0 0 16px; letter-spacing:-0.3px;">📖 深掘り特別記事</h2>
+  <div style="background:#f9f3f3; border-left:4px solid #b71c1c; padding:14px 18px; border-radius:0 10px 10px 0; font-size:13px; color:#444; line-height:1.8;">
+    本記事で取り上げた歴史的事件・事故・大災害などの中から、特に深掘りすべきテーマを選定し、さらに詳しく解説します。
+  </div>
+</div>\n`;
+    article += deepDiveArticle;
+  }
+
+  return {
+    json: {
+      article: article,
+      title: countryName,
+      country: countryName,
+      capital: capital
+    }
+  };
 });
