@@ -12,9 +12,9 @@ return $input.all().map(item => {
   // 補助関数：AIの生テキストから特定の接頭辞を持つ行を抽出してオブジェクト化
   function parseLines(text, prefix) {
     return text.split('\n')
-      .filter(l => l.startsWith(prefix + '｜'))
+      .filter(l => l.includes(prefix + '｜'))
       .map(l => {
-        const parts = l.replace(prefix + '｜', '').split('｜');
+        const parts = l.replace(/<\/?[^>]+(>|$)/g, "").split('｜'); // タグを除去してから分割
         const obj = {};
         parts.forEach(p => {
           const idx = p.indexOf('：');
