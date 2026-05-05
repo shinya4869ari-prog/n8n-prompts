@@ -35,8 +35,17 @@ try {
   const evaluateTemplate = (text, data) => {
     if (!text) return "";
     return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
+      // 1. JSON.stringify($json.xxx) の評価
+      const jsonMatch = expression.match(/JSON\.stringify\(\s*([^)]+)\s*\)/);
+      if (jsonMatch) {
+        let path = jsonMatch[1].trim().replace('$json.', '');
+        const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
+        return JSON.stringify(value || {}, null, 2);
+      }
+      
+      // 2. $json.xxx の単純置換（従来のロジックをカバー）
       if (expression.includes('$now.toFormat')) return context.now_date;
-
+      
       const parts = expression.split('||').map(p => p.trim());
       for (const part of parts) {
         if (part.startsWith('$json.')) {
@@ -47,7 +56,6 @@ try {
           return part.slice(1, -1);
         }
       }
-      // 未解決のタグはそのまま返す（後続AIノードでn8nが評価）
       return match;
     });
   };
