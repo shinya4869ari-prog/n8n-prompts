@@ -102,12 +102,15 @@ return $input.all().map(item => {
   article += `<h2 style="margin-top:60px;padding-top:20px;border-top:3px solid ${themeColor};font-size:16px;font-weight:900;color:#111;">② 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
-    const rows = rekishiData.map(d => [d['年'], d['事象名'], d['種別'], d['概要']]);
-    article += makeTable(['年', '事象名', '種別', '概要'], rows, ['10%', '20%', '15%', '55%']);
-    
-    // 歴史の出典は、データ内の最初のアイテムから取得を試みる
-    const rekishiCite = rekishiData[0]?.出典 || '';
-    if (rekishiCite) article += `<p class="citation" style="font-size:12px;color:#999;text-align:right;margin-top:-10px;">出典：${rekishiCite}</p>\n`;
+    // カラムに出典を追加
+    const rows = rekishiData.map(d => [
+      d['年'] || '-',
+      d['事象名'] || '-',
+      d['種別'] || '-',
+      d['概要'] || '-',
+      `<span style="font-size:11px;color:#666;">${d['出典'] || '-'}</span>`
+    ]);
+    article += makeTable(['年', '事象名', '種別', '概要', '出典'], rows, ['10%', '20%', '15%', '40%', '15%']);
   }
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
