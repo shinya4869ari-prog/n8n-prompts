@@ -100,12 +100,30 @@ return $input.all().map(item => {
   const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 貿易')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(boekiNeko);
 
-  // --- 6. ② 歴史的背景 ---
+  // --- 6. ② 歴史的背景（メイン版と完全同一のカスタムテーブル） ---
   article += `<h2 style="${h2Style}">② 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
-    const rows = rekishiData.map(d => [d['年'], d['事象名'], d['種別'], d['概要']]);
-    article += makeTable(['年', '事象名', '種別', '概要'], rows, ['10%', '20%', '15%', '55%']);
+    const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+    const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;`;
+    let rekishiHtml = `<table style="${tableStyle}"><thead><tr>`;
+    rekishiHtml += `<th style="${thStyle}width:10%;">年</th><th style="${thStyle}width:20%;">事象名</th><th style="${thStyle}width:15%;">種別</th><th style="${thStyle}width:55%;">概要</th>`;
+    rekishiHtml += `</tr></thead><tbody>`;
+    rekishiData.forEach(d => {
+      const type = d['種別'] || '';
+      let bg = '';
+      if (type.includes('戦争') || type.includes('虐殺')) bg = 'background:#fff3f3;';
+      else if (type.includes('事件') || type.includes('事故')) bg = 'background:#f0f7ff;';
+      else if (type.includes('政治') || type.includes('体制')) bg = 'background:#f0fff4;';
+      rekishiHtml += `<tr style="${bg}">`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['年'] || ''}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['事象名'] || ''}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:11px;">${type}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['概要'] || ''}</td>`;
+      rekishiHtml += `</tr>`;
+    });
+    rekishiHtml += `</tbody></table>`;
+    article += rekishiHtml;
   }
   const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(rekishiNeko);
