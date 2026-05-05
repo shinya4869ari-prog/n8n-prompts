@@ -5,9 +5,12 @@ return $input.all().map(item => {
   let raw = inputData?.article ?? "";
   const rawLines = raw.split('\n');
 
-  // --- 1. 見出し・出典の重複削除（メイン版準拠） ---
+  // --- 1. 見出し・出典・システムタグの削除（メイン版準拠） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
+  raw = raw.replace(/\[INTRO\]/gi, '');
+  raw = raw.replace(/\[DEEP_DIVE_START\]/gi, '');
+  raw = raw.replace(/\[DEEP_DIVE_END\]/gi, '');
 
   const countryName = "日本";
   const capital = "東京";
