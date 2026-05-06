@@ -1,4 +1,5 @@
 const r2Raw = $('researcher2_jp').first().json;
+const r25Raw = $('researcher25_jp').first().json;
 const boeki = $('Japan_④貿易').first().json;
 
 const parseOutput = (node) => {
@@ -14,6 +15,7 @@ const parseOutput = (node) => {
 };
 
 const r2 = parseOutput(r2Raw);
+const r25 = parseOutput(r25Raw);
 
 const formatShare = (val) => {
   if (val === undefined || val === null || val === '') return '';
@@ -48,8 +50,8 @@ const finalData = {
   対象国データ_記事: {
     歴史的背景: r2.歴史的背景,
     直近の動向: r2.直近の動向,
-    映像作品: r2.映像作品,
-    興行収入ランキング: r2.興行収入ランキング
+    映像作品: r25.映像作品,
+    興行収入ランキング: r25.興行収入ランキング
   },
   固定データ: {
     貿易: japanBoeki,
