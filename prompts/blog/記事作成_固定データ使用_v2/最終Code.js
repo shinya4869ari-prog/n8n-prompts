@@ -559,12 +559,32 @@ return $input.all().map(item => {
 <div style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
-    article += deepDiveArticle;
+
+    // ディープダイブの「■ 主な出典」セクションを薄い色で小さくスタイルする
+    let styledDD = deepDiveArticle;
+    const idx = styledDD.search(/(?:###|####)?\s*■?\s*主な出典/);
+    if (idx !== -1) {
+      const before = styledDD.substring(0, idx);
+      const after = styledDD.substring(idx);
+      styledDD = before + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px;">\n\n` + after + `\n\n</div>`;
+    }
+    article += styledDD;
   }
+
+  // --- 17. リンクポップアップHTMLの最終挿入（はりボテリンク解消） ---
+  const popupHTML = `
+<div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
+<div id="tenbin-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;background:#fff;border:1px solid #ddd;border-radius:12px;padding:25px;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,0.3);color:#333;font-family:sans-serif;">
+  <div onclick="document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none'" style="position:absolute;top:10px;right:15px;cursor:pointer;font-size:20px;color:#999;">✕</div>
+  <div id="tenbin-popup-title" style="font-weight:bold;color:#20B2AA;margin-bottom:10px;font-size:18px;border-bottom:1px solid #eee;padding-bottom:10px;"></div>
+  <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
+</div>`;
+
+  const finalArticleText = article + '\n\n' + popupHTML;
 
   return {
     json: {
-      article: promptBody ? `${promptBody}\n\n${article}` : article,
+      article: promptBody ? `${promptBody}\n\n${finalArticleText}` : finalArticleText,
       title: title,
       country: countryName,
       capital: capital
