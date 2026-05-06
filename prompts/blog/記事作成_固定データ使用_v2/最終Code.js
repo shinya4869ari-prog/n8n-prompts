@@ -227,7 +227,7 @@ return $input.all().map(item => {
   const econRows = econData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['経済指標', countryLabel, japanLabel], econRows, ['30%', '35%', '35%']);
   const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
-  article += `<p class="citation">出典：${econCite}</p>\n`;
+  article += `<p class="citation" style="${citationStyle}">出典：${econCite}</p>\n`;
 
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
   if (econExplanation) article += `\n${econExplanation}\n`;
