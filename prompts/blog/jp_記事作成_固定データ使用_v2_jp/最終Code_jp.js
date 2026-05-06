@@ -201,13 +201,16 @@ return $input.all().map(item => {
   const kougyouData = parseLines(raw, '興行');
   kougyouData.forEach(d => {
     article += `
-<div style="display:flex;align-items:center;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-  <span style="background:${themeColor};color:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:12px;flex-shrink:0;">${d['順位'] || ''}</span>
-  <div style="flex-grow:1;">
-    <div style="font-weight:800;font-size:15px;">${d['タイトル'] || ''}</div>
-    <div style="font-size:12px;color:#777;">${d['公開年'] || ''}年 | ${d['興行収入'] || ''}</div>
+<div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+    <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
+    <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>
   </div>
-  <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ Trailer</a>
+  <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+    <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
+  </div>
 </div>`;
   });
   // 【動的出典】ランキングから出典を取得
