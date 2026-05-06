@@ -15,6 +15,15 @@ const parseOutput = (node) => {
 
 const r2 = parseOutput(r2Raw);
 
+const formatShare = (val) => {
+  if (val === undefined || val === null || val === '') return '';
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  if (num < 1 && num > 0) return (num * 100).toFixed(1) + "%";
+  if (num >= 1 && String(val).indexOf('%') === -1) return num.toFixed(1) + "%";
+  return val;
+};
+
 const japanBoeki = {
   輸出: Array.from({length: 10}, (_, i) => ({
     順位: `${i+1}位`,
@@ -29,7 +38,7 @@ const japanBoeki = {
   貿易相手国: Array.from({length: 10}, (_, i) => ({
     順位: `${i+1}位`,
     国名: boeki[`貿易相手${i+1}位_国名`],
-    シェア: boeki[`貿易相手${i+1}位_シェア%`],
+    シェア: formatShare(boeki[`貿易相手${i+1}位_シェア%`]),
     出典: boeki[`貿易相手${i+1}位_出典`]
   }))
 };
