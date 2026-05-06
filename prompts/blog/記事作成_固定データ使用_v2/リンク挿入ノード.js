@@ -19,7 +19,7 @@ try {
 
 // ② 記事と基本情報の取得
 let mainArticle = '';
-try { mainArticle = $('記事集合').first().json.article ?? ''; } catch(e) {}
+try { mainArticle = $('整形2').first().json.article ?? $('記事集合').first().json.article ?? ''; } catch(e) {}
 
 let deepDiveRaw = '';
 try { deepDiveRaw = $('整形3').first().json?.article ?? ''; } catch(e) {}

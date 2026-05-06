@@ -169,7 +169,17 @@ return $input.all().map(item => {
   try {
     deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
   } catch(e) {
-    try { deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || ''; } catch(e2) {}
+    try {
+      deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || '';
+    } catch(e2) {
+      try {
+        deepDiveArticle = $('整形3_jp').first().json?.article || '';
+      } catch(e3) {
+        try {
+          deepDiveArticle = $('整形3').first().json?.article || '';
+        } catch(e4) {}
+      }
+    }
   }
 
   if (deepDiveArticle) {
