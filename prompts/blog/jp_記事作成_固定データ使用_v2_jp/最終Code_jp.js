@@ -242,7 +242,16 @@ return $input.all().map(item => {
 <div style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
-    article += deepDiveArticle;
+    
+    // ディープダイブの「■ 主な出典」セクションを薄い色で小さくスタイルする
+    let styledDD = deepDiveArticle;
+    const idx = styledDD.search(/(?:###|####)?\s*■?\s*主な出典/);
+    if (idx !== -1) {
+      const before = styledDD.substring(0, idx);
+      const after = styledDD.substring(idx);
+      styledDD = before + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px;">\n\n` + after + `\n\n</div>`;
+    }
+    article += styledDD;
   }
 
   return { json: { article: article } };

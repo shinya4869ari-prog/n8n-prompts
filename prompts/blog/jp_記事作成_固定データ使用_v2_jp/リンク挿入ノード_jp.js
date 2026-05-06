@@ -122,23 +122,45 @@ function insertLinks(articleText) {
     const i = enc(cand.entity.info + linkHTML);
     const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
 
+    const tradePartners = ["アメリカ合衆国", "中国", "台湾", "韓国", "香港", "タイ", "シンガポール", "インド", "ベトナム", "ドイツ"];
+    const isTradePartner = cand.entity.type === 'places' && tradePartners.includes(cand.pattern);
+
     let newTokens = [];
     let replaced = false;
 
-    for (let token of linkTokens) {
+    for (let idxToken = 0; idxToken < linkTokens.length; idxToken++) {
+      let token = linkTokens[idxToken];
       if (replaced || token.type === 'tag' || token.text.includes('quickchart.io')) {
         newTokens.push(token);
         continue;
       }
-      const idx = token.text.indexOf(cand.pattern);
-      if (idx !== -1) {
-        replaced = true;
-        newTokens.push({ type: 'text', text: token.text.substring(0, idx) });
-        newTokens.push({ type: 'tag', text: `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>` });
-        newTokens.push({ type: 'text', text: token.text.substring(idx + cand.pattern.length) });
-        linkedInThisArticle.add(cand.entity.name);
+
+      if (isTradePartner) {
+        // 貿易相手国は、<td>セル内でのみリンク化（直前が<td>、直後が</td>）
+        const prevToken = linkTokens[idxToken - 1];
+        const nextToken = linkTokens[idxToken + 1];
+        const isInsideTd = prevToken && prevToken.type === 'tag' && prevToken.text.toLowerCase().startsWith('<td') &&
+                           nextToken && nextToken.type === 'tag' && nextToken.text.toLowerCase().startsWith('</td');
+
+        if (isInsideTd && token.text.trim() === cand.pattern) {
+          replaced = true;
+          newTokens.push({ type: 'tag', text: `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>` });
+          linkedInThisArticle.add(cand.entity.name);
+        } else {
+          newTokens.push(token);
+        }
       } else {
-        newTokens.push(token);
+        // その他の地名やキーワードは最初に出現したテキスト部分で通常リンク化
+        const idx = token.text.indexOf(cand.pattern);
+        if (idx !== -1) {
+          replaced = true;
+          newTokens.push({ type: 'text', text: token.text.substring(0, idx) });
+          newTokens.push({ type: 'tag', text: `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>` });
+          newTokens.push({ type: 'text', text: token.text.substring(idx + cand.pattern.length) });
+          linkedInThisArticle.add(cand.entity.name);
+        } else {
+          newTokens.push(token);
+        }
       }
     }
     linkTokens = newTokens;
