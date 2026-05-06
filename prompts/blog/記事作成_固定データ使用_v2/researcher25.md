@@ -10,11 +10,13 @@
 ---
 
 ## 【⑦ 映像作品】
-対象国を題材にしたドキュメンタリー・映画について収集。
-- ドキュメンタリーを優先的に含めること（最低でも3本以上）。
-- 検索クエリ：「{{ $json.countryEn }} best documentary films and non-fiction movies IMDb」
-- 検索クエリ：「{{ $json.countryEn }} historical true story movies and award-winning films Wikipedia」
-- 検索クエリ：「{{ $json.countryEn }} films about war or critical social issues documentaries」
+前段の「歴史的背景」で収集された、対象国「{{ $json.country }}」の10個の出来事・事件（以下の入力データ）を参照し、**それらの具体的な歴史的事象や事件そのものをテーマ・題材とした、実在するドキュメンタリー・映画・ドラマ作品**を検索ツールでリサーチして収集してください。
+
+入力データ（歴史的背景の出来事）：
+{{ JSON.stringify($json.歴史的背景) }}
+
+- 検索方法：上記に入力されている各「事象名」や「事件」と、「documentary」「movie」「film」「imdb」などのキーワードを組み合わせて検索を行ってください。
+- 単なる一般的な映画ではなく、**歴史的背景にリストアップされた事件そのものを描いた作品**（例：戦争、紛争、クーデター、大震災、大事故などの実話ベース作品）を最優先してください（ドキュメンタリーを優先的に最低でも3本以上含めること）。
 - 各作品：タイトル_日本語、原題、種別（ドキュメンタリー/映画/ドラマ）、公開年、監督_主演、概要、wikipedia_url、imdb_url、is_serious（深刻な題材ならtrue）
 
 ---
