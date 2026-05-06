@@ -144,11 +144,16 @@ return $input.all().map(item => {
       else if (type.includes('事件') || type.includes('事故')) bg = 'background:#f0f7ff;';
       else if (type.includes('政治') || type.includes('体制')) bg = 'background:#f0fff4;';
 
+      let ganyouText = d['概要'] || '';
+      if (d['出典'] && d['出典'] !== '欠測' && d['出典'] !== '未確認') {
+        ganyouText += `<span style="color:#888;font-size:12px;display:block;margin-top:4px;">（出典：${d['出典']}）</span>`;
+      }
+
       rekishiHtml += `<tr style="${bg}">`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-weight:bold;">${d['年'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['事象名'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:11px;">${type}</td>`;
-      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['概要'] || ''}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${ganyouText}</td>`;
       rekishiHtml += `</tr>`;
     });
     rekishiHtml += `</tbody></table>`;
