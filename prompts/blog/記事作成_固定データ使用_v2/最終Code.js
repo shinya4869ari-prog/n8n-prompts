@@ -557,10 +557,6 @@ return $input.all().map(item => {
     article += `
 <div style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
-  <h2 style="font-size:20px; font-weight:900; color:#1a237e; margin:0 0 16px; letter-spacing:-0.3px;">📖 深掘り特別記事</h2>
-  <div style="background:#f3f4f9; border-left:4px solid #1a237e; padding:14px 18px; border-radius:0 10px 10px 0; font-size:13px; color:#444; line-height:1.8;">
-    本記事で取り上げた歴史的事件・事故・大災害などの中から、特に深掘りすべきテーマを選定し、さらに詳しく解説します。
-  </div>
 </div>\n`;
     article += deepDiveArticle;
   }
