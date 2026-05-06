@@ -1,0 +1,17 @@
+// クオリティチェックのテキストを安全に取得
+const rawText = $input.first().json.output 
+             || $input.first().json.content 
+             || $input.first().json.text 
+             || "テキストが見つかりません";
+
+// 100%確実にエラーなしで添付ファイル用データを作成して出力
+return [{
+  json: {},
+  binary: {
+    data: {
+      data: Buffer.from(rawText).toString('base64'),
+      mimeType: 'text/markdown',
+      fileName: 'quality_check.md'
+    }
+  }
+}];

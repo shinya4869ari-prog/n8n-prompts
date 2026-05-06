@@ -17,12 +17,25 @@ const parseOutput = (node) => {
 const r2 = parseOutput(r2Raw);
 const r25 = parseOutput(r25Raw);
 
+// 10カ国のシェアデータ全体をスキャンし、すべての値が1未満（小数表記フォーマット）かどうかを判定
+const sharesRaw = Array.from({length: 10}, (_, i) => boeki[`貿易相手${i+1}位_シェア%`]);
+const numericShares = sharesRaw
+  .map(v => (v !== undefined && v !== null && v !== '') ? parseFloat(v) : NaN)
+  .filter(v => !isNaN(v) && v > 0);
+const isDecimalFormat = numericShares.length > 0 && numericShares.every(v => v < 1);
+
 const formatShare = (val) => {
   if (val === undefined || val === null || val === '') return '';
   const num = parseFloat(val);
   if (isNaN(num)) return val;
-  if (num < 1 && num > 0) return (num * 100).toFixed(1) + "%";
-  if (num >= 1 && String(val).indexOf('%') === -1) return num.toFixed(1) + "%";
+  
+  if (isDecimalFormat) {
+    return (num * 100).toFixed(1) + "%";
+  } else {
+    if (String(val).indexOf('%') === -1) {
+      return num.toFixed(1) + "%";
+    }
+  }
   return val;
 };
 

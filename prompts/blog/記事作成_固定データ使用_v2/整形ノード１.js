@@ -65,6 +65,31 @@ const jDeath = [
   { 順位: '10位', 死因: jChiAn['死因10位'] }
 ];
 
+// --- シェア（%）の表記揺れを統一する安全なフォーマッタ ---
+const createShareFormatter = (rawList) => {
+  const numeric = rawList
+    .map(v => (v !== undefined && v !== null && v !== '') ? parseFloat(v) : NaN)
+    .filter(v => !isNaN(v) && v > 0);
+  const isDecimal = numeric.length > 0 && numeric.every(v => v < 1);
+  
+  return (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    const num = parseFloat(val);
+    if (isNaN(num)) return val;
+    if (isDecimal) {
+      return (num * 100).toFixed(1) + "%";
+    } else {
+      if (String(val).indexOf('%') === -1) {
+        return num.toFixed(1) + "%";
+      }
+    }
+    return val;
+  };
+};
+
+const formatShare = createShareFormatter(Array.from({length: 10}, (_, i) => boeki[`貿易相手${i+1}位_シェア%`]));
+const formatJShare = createShareFormatter(Array.from({length: 10}, (_, i) => jBoeki[`貿易相手${i+1}位_シェア%`]));
+
 const targetFixed = {
   経済データ: {
     総人口:           { 値: keizai['総人口'],           年: keizai['総人口_年'],           出典: keizai['総人口_出典'] },
@@ -131,7 +156,7 @@ const targetFixed = {
     貿易相手国: Array.from({length: 10}, (_, i) => ({
       順位: `${i+1}位`,
       国名: boeki[`貿易相手${i+1}位_国名`],
-      シェア: boeki[`貿易相手${i+1}位_シェア%`]
+      シェア: formatShare(boeki[`貿易相手${i+1}位_シェア%`])
     }))
   },
   貿易出典_対象国: boeki['貿易統計_出典']
@@ -205,7 +230,7 @@ const japanFixed = {
     貿易相手国: Array.from({length: 10}, (_, i) => ({
       順位: `${i+1}位`,
       国名: jBoeki[`貿易相手${i+1}位_国名`],
-      シェア: jBoeki[`貿易相手${i+1}位_シェア%`]
+      シェア: formatJShare(jBoeki[`貿易相手${i+1}位_シェア%`])
     }))
   },
   貿易出典_日本: jBoeki['貿易統計_出典']

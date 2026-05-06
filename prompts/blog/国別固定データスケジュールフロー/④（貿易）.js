@@ -16,12 +16,24 @@ const partners = t.貿易相手国 || t.partners || [];
 const tradeCite = partners.find(p => p.順位 === "出典" || p.rank === "Source")?.出典 || partners.find(p => p.出典)?.出典 || "IMF / Trade Map";
 const partnerList = partners.filter(p => p.順位 !== "出典" && p.rank !== "Source");
 
+// 全体のシェアデータから、すべての値が1未満（小数表記フォーマット）かどうかを判定
+const sharesRaw = partnerList.map(p => p?.シェア);
+const numericShares = sharesRaw
+  .map(v => (v !== undefined && v !== null && v !== '') ? parseFloat(v) : NaN)
+  .filter(v => !isNaN(v) && v > 0);
+const isDecimalFormat = numericShares.length > 0 && numericShares.every(v => v < 1);
+
 const formatShare = (val) => {
   if (!val || isNaN(parseFloat(val))) return val || "";
   const num = parseFloat(val);
-  // もし1未満（0.44など）なら100倍して%を付ける。1以上ならそのまま%を付ける
-  if (num < 1 && num > 0) return (num * 100).toFixed(1) + "%";
-  if (num >= 1) return num.toFixed(1) + "%";
+  
+  if (isDecimalFormat) {
+    return (num * 100).toFixed(1) + "%";
+  } else {
+    if (String(val).indexOf('%') === -1) {
+      return num.toFixed(1) + "%";
+    }
+  }
   return val;
 };
 
