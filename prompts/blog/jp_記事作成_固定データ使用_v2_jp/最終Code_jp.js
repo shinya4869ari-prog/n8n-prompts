@@ -71,7 +71,32 @@ return $input.all().map(item => {
 
   let article = '';
 
-  // --- 4. 導入文 ---
+  // --- 4. プロフィールカード（メイン版準拠・日本版テーマ） ---
+  let headerBg = 'linear-gradient(135deg, #fffafa 0%, #ffebee 100%)';
+  let statusColor = '#d32f2f';
+  let statusText = '🇯🇵 本国（安全）';
+
+  article += `
+<div style="background:${headerBg}; border:1px solid #eee; border-left:8px solid ${statusColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
+  <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:${statusColor}; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
+    <div>
+      <div style="font-size:12px; color:${statusColor}; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">National Profile</div>
+      <h1 style="margin:0; font-size:28px; font-weight:900; color:#111; letter-spacing:-0.5px;">日本</h1>
+      <div style="margin:8px 0 0; font-size:14px; color:#555; display:flex; gap:12px; align-items:center;">
+        <span>📍 東京（首都）</span>
+        <span style="color:#ccc;">|</span>
+        <span>🌍 東アジア、太平洋</span>
+      </div>
+    </div>
+    <div style="background:${statusColor}; color:#fff; padding:8px 18px; border-radius:30px; font-weight:900; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.15); display:flex; align-items:center; gap:6px;">
+      ${statusText}
+    </div>
+  </div>
+</div>
+`;
+
+  // --- 5. 導入文 ---
   const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
   if (introEndIdx !== -1) {
     article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
