@@ -191,11 +191,18 @@ return $input.all().map(item => {
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
-    // 【動的出典】直近の動向の出典をシートから取得（ない場合は信頼できるフォールバックを表示）
-    let dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
-    if (!dohCite || dohCite === '欠測' || dohCite === 'データなし') {
-      dohCite = '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
-    }
+    // 【動的出典】トピック別出典 → 共通出典 → フォールバックの順で取得
+    const dohData = sheetData.data?.対象国データ_記事?.直近の動向 || {};
+    const cite1 = dohData['出典_政治経済社会'] || '';
+    const cite2 = dohData['出典_驚く統計'] || '';
+    const cite3 = dohData['出典_国際社会'] || '';
+    const citeAll = dohData['出典'] || '';
+    // トピック別出典がある場合はそれを結合、なければ共通出典を使う
+    const combinedCites = [cite1, cite2, cite3].filter(c => c && c !== '欠測' && c !== 'データなし');
+    let dohCite = combinedCites.length > 0
+      ? combinedCites.join(' ／ ')
+      : (citeAll && citeAll !== '欠測' && citeAll !== 'データなし' ? citeAll : '');
+    if (!dohCite) dohCite = '日本経済新聞 / NHK / 首相官邸 / 総務省 / 外務省';
     article += `<p style="${citationStyle}">出典：${dohCite}</p>\n`;
   }
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
