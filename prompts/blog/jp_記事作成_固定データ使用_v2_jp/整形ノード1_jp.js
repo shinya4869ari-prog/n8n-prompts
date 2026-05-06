@@ -6,10 +6,17 @@ const parseOutput = (node) => {
   try {
     const raw = node.output ?? node.json ?? '{}';
     if (!raw || raw.trim() === '') throw new Error('outputが空です');
-    const cleaned = raw
+    let cleaned = raw
       .replace(/```json|```/g, '')
       .replace(/,(\s*[}\]])/g, '$1')
       .trim();
+
+    // AIがJSON文字列の中に「エスケープされていない本物の改行」を出力してしまった場合、
+    // JSON.parseが「Unterminated string」エラーで落ちるのを防ぐため、文字列内の改行を \\n に置換して救済する
+    cleaned = cleaned.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/gs, (match) => {
+      return match.replace(/\r?\n/g, '\\n');
+    });
+
     return JSON.parse(cleaned);
   } catch(e) { throw new Error(`JSONパース失敗: ${e.message}`); }
 };
