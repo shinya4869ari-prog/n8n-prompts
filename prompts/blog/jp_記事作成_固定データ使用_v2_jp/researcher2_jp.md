@@ -21,9 +21,10 @@
 ---
 
 ## 【⑥ 直近の動向（最新6ヶ月）】
-- 最新6ヶ月の政治・経済・社会の動向
+- 最新の政治・経済・社会の動向（特に、内閣・総理大臣の動向、日銀の金融政策の変更や金利動向、重要な税制や法改正、安全保障・外交政策の進展など、日本の大局を変える重大な意思決定や直近1年間の最大トピックを優先的に収集してください）
   - 検索クエリ：「日本 最新ニュース 政治 経済 社会 {{ $now.toFormat('yyyy') }}」
-  - 検索クエリ：「Japan latest news economy politics social {{ $now.toFormat('yyyy') }}」
+  - 検索クエリ：「Japan major political developments economic reforms latest news {{ $now.toFormat('yyyy') }}」
+  - 検索クエリ：「日本 金融政策 法改正 安全保障 ニュース {{ $now.toFormat('yyyy') }}」
 - 読者が驚く統計や習慣（記事未登場のものを優先）
 - 国際社会との関連性・波及
 
