@@ -30,7 +30,7 @@ return $input.all().map(item => {
   }
 
   // --- 3. HTML生成ヘルパー ---
-  const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:16px;font-weight:900;color:#111;`;
+  const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #ffcdd2;font-size:16px;font-weight:900;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
 
   function makeTable(headers, rows, widths) {
