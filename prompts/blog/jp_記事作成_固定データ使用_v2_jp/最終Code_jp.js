@@ -292,5 +292,14 @@ return $input.all().map(item => {
   <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
 </div>`;
 
-  return { json: { article: article + '\n\n' + popupHTML } };
+  return {
+    json: {
+      article: article + '\n\n' + popupHTML,
+      title: "日本",
+      country: countryName,
+      capital: capital,
+      post_type: "page",
+      is_page: true
+    }
+  };
 });
