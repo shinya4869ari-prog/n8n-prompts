@@ -560,14 +560,13 @@ return $input.all().map(item => {
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
 
-    // ディープダイブの「■ 主な出典」セクションを薄い色で小さくスタイルする
+    // ディープダイブの「■ 主な出典」セクションのみをピンポイントで薄い色で小さくスタイルする
     let styledDD = deepDiveArticle;
-    const idx = styledDD.search(/(?:###|####)?\s*■?\s*主な出典/);
-    if (idx !== -1) {
-      const before = styledDD.substring(0, idx);
-      const after = styledDD.substring(idx);
-      styledDD = before + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px;">\n\n` + after + `\n\n</div>`;
-    }
+    styledDD = styledDD.replace(/(■\s*主な出典[\s\S]*?)(?=(?:<h[1-4]|<\/div>\s*$|$))/gi, (match) => {
+      let cleanedMatch = match.replace(/font-size:\s*14px/g, 'font-size:11px');
+      cleanedMatch = cleanedMatch.replace(/color:\s*#333/g, 'color:#aaa');
+      return `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n\n` + cleanedMatch + `\n\n</div>`;
+    });
     article += styledDD;
   }
 
