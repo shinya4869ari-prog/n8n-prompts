@@ -1,16 +1,16 @@
 // GitHubのRaw URLベースパス
-const baseUrlJp  = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/jp_%E8%A8%98%E4%BA%8B%E4%BD%9C%E6%88%90_%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E4%BD%BF%E7%94%A8_v2_jp/';
+const baseUrlJp = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/jp_%E8%A8%98%E4%BA%8B%E4%BD%9C%E6%88%90_%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E4%BD%BF%E7%94%A8_v2_jp/';
 const baseUrlMain = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E8%A8%98%E4%BA%8B%E4%BD%9C%E6%88%90_%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E4%BD%BF%E7%94%A8_v2/';
 
 // JP版固有プロンプト → jp_フォルダから、メイン版と共通のものはメインフォルダから
 const files = {
-  researcher2:     baseUrlJp   + 'researcher2_jp.md',
-  researcher25:    baseUrlMain + 'researcher25.md',
-  writerPrompt:    baseUrlJp   + 'Writer_JP.md',
-  deepDiveSelect:  baseUrlMain + 'Deep-Dive_select.md',
-  deepDivePrompt:  baseUrlMain + 'Deep-Dive_writer.md',
+  researcher2: baseUrlJp + 'researcher2_jp.md',
+  researcher25: baseUrlJp + 'researcher25_jp.md',
+  writerPrompt: baseUrlJp + 'Writer_JP.md',
+  deepDiveSelect: baseUrlMain + 'Deep-Dive_select.md',
+  deepDivePrompt: baseUrlMain + 'Deep-Dive_writer.md',
   responseExtract: baseUrlMain + 'response_extraction.md',
-  qualityCheck:    'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/universal_quality_check.md',
+  qualityCheck: 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/universal_quality_check.md',
 };
 
 try {
@@ -42,10 +42,10 @@ try {
         const value = path.split('.').reduce((obj, key) => (obj && obj[key] !== undefined) ? obj[key] : undefined, data);
         return JSON.stringify(value || {}, null, 2);
       }
-      
+
       // 2. $json.xxx の単純置換（従来のロジックをカバー）
       if (expression.includes('$now.toFormat')) return context.now_date;
-      
+
       const parts = expression.split('||').map(p => p.trim());
       for (const part of parts) {
         if (part.startsWith('$json.')) {
