@@ -203,6 +203,27 @@ if (!entry) {
   throw new Error(`国名変換できませんでした: ${japaneseCountry}`);
 }
 
+const getRegion = (code3) => {
+  const asia = ["AFG", "BGD", "BTN", "BRN", "KHM", "CHN", "IND", "IDN", "JPN", "KAZ", "KGZ", "LAO", "MYS", "MDV", "MNG", "MMR", "NPL", "PAK", "PHL", "SGP", "KOR", "LKA", "TWN", "TJK", "THA", "TLS", "UZB", "VNM"];
+  const middleEast = ["BHR", "IRN", "IRQ", "ISR", "JOR", "KWT", "LBN", "OMN", "QAT", "SAU", "SYR", "TUR", "ARE", "YEM"];
+  const europe = ["ALB", "AND", "ARM", "AUT", "AZE", "BLR", "BEL", "BIH", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "GEO", "DEU", "GRC", "HUN", "ISL", "IRL", "ITA", "LVA", "LIE", "LTU", "LUX", "MLT", "MDA", "MCO", "MNE", "NLD", "MKD", "NOR", "POL", "PRT", "ROU", "RUS", "SMR", "SRB", "SVK", "SVN", "ESP", "SWE", "CHE", "UKR", "GBR", "VAT"];
+  const africa = ["DZA", "AGO", "BEN", "BWA", "BFA", "BDI", "CPV", "CMR", "CAF", "TCD", "COM", "COG", "COD", "CIV", "DJI", "EGY", "GNQ", "ERI", "SWZ", "ETH", "GAB", "GMB", "GHA", "GIN", "GNB", "KEN", "LSO", "LBR", "LBY", "MDG", "MWI", "MLI", "MRT", "MUS", "MAR", "MOZ", "NAM", "NER", "NGA", "RWA", "STP", "SEN", "SYC", "SLE", "SOM", "ZAF", "SSD", "SDN", "TZA", "TGO", "TUN", "UGA", "ESH", "ZMB", "ZWE"];
+  const oceania = ["AUS", "FJI", "KIR", "MHL", "FSM", "NRU", "NZL", "PLW", "PNG", "WSM", "SLB", "TON", "TUV", "VUT"];
+  const northAmerica = ["ATG", "BHS", "BRB", "BLZ", "CAN", "CRC", "CUB", "DMA", "DOM", "SLV", "GRD", "GTM", "HTI", "HND", "JAM", "MEX", "NIC", "PAN", "KNA", "LCA", "VCT", "USA"];
+  const southAmerica = ["ARG", "BOL", "BRA", "CHL", "COL", "ECU", "GUY", "PRY", "PER", "SUR", "URY", "VEN"];
+
+  if (middleEast.includes(code3)) return "中東";
+  if (asia.includes(code3)) return "アジア";
+  if (europe.includes(code3)) return "ヨーロッパ";
+  if (africa.includes(code3)) return "アフリカ";
+  if (oceania.includes(code3)) return "オセアニア";
+  if (northAmerica.includes(code3)) return "北米";
+  if (southAmerica.includes(code3)) return "南米";
+  return "その他";
+};
+
+const countryRegion = getRegion(entry.code3 || "");
+
 return [{
   json: {
     country: japaneseCountry,
@@ -213,6 +234,8 @@ return [{
     isJapan: entry.isJapan === true,
     currency: entry.currency || "",
     currencyCode: entry.currencyCode || "",
-    currencySymbol: entry.currencySymbol || ""
+    currencySymbol: entry.currencySymbol || "",
+    region: countryRegion,
+    "地域": countryRegion
   }
 }];

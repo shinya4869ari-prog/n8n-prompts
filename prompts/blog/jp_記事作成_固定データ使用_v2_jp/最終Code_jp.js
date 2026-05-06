@@ -299,7 +299,10 @@ return $input.all().map(item => {
       country: countryName,
       capital: capital,
       post_type: "page",
-      is_page: true
+      is_page: true,
+      category_name: "アジア",
+      category_id: 2,
+      categories: [2]
     }
   };
 });

@@ -609,12 +609,30 @@ return $input.all().map(item => {
 
   const finalArticleText = article + '\n\n' + popupHTML;
 
+  // --- WordPressカテゴリーID自動振り分け設定 ---
+  // ※WordPress側のカテゴリーIDに合わせて右側の数値を変更・調整してください
+  const categoryIdMap = {
+    "アジア": 2,
+    "ヨーロッパ": 3,
+    "アフリカ": 4,
+    "中東": 5,
+    "オセアニア": 6,
+    "北米": 7,
+    "南米": 8,
+    "その他": 1
+  };
+  const regionName = $('国名変換Code').first().json.region || "その他";
+  const categoryId = categoryIdMap[regionName] || 1;
+
   return {
     json: {
       article: promptBody ? `${promptBody}\n\n${finalArticleText}` : finalArticleText,
       title: title,
       country: countryName,
-      capital: capital
+      capital: capital,
+      category_name: regionName,
+      category_id: categoryId,
+      categories: [categoryId] // WordPressノードのcategoriesフィールドにそのまま渡せる配列形式
     }
   };
 });
