@@ -63,7 +63,7 @@ return $input.all().map(item => {
 <div style="margin: 20px 0; display: flex; align-items: flex-start; gap: 12px;">
   <div style="font-size: 24px;">🐱</div>
   <div style="position: relative; background: #fffafa; border: 1px solid #ffebee; border-radius: 12px; padding: 12px 16px; font-size: 13px; line-height: 1.6; color: #444; flex: 1;">
-    <div style="position: absolute; top: 12px; left: -8px; width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 10px solid #fffafa;"></div>
+    <div style="position: absolute; top: 12px; left: -8px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 8px solid #fffafa;"></div>
     <strong>エラーネコの一言：</strong><br>${content}
   </div>
 </div>`;
