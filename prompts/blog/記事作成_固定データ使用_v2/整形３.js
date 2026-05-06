@@ -44,7 +44,7 @@ const withoutMermaid = cleaned.replace(/```mermaid[\s\S]*?```/g, (match) => {
   return `%%MERMAID_${idx}%%`;
 });
 
-let html = markdownToHtml(withoutMermaid);
+let html = `<div style="font-size:14px;line-height:1.9;color:#333;">${markdownToHtml(withoutMermaid)}</div>`;
 
 // Mermaidブロックを元に戻す
 mermaidPlaceholders.forEach((block, idx) => {
