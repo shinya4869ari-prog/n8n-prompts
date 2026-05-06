@@ -32,6 +32,7 @@ return $input.all().map(item => {
   // --- 3. HTML生成ヘルパー ---
   const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #ffcdd2;font-size:16px;font-weight:900;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
+  const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
 
   function makeTable(headers, rows, widths) {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;font-size:14px;${w ? 'width:' + w + ';' : ''}`;
@@ -95,7 +96,7 @@ return $input.all().map(item => {
     
     // 【動的出典】メイン版と同じくJSONから自動取得
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
-    article += `<p style="font-size:12px;color:#999;text-align:right;margin-top:-10px;">出典：${boekiCite}</p>\n`;
+    article += `<p style="${citationStyle}">出典：${boekiCite}</p>\n`;
   }
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
@@ -128,16 +129,15 @@ return $input.all().map(item => {
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${d['タイトル'] || ''}</div>
   <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
-  <div style="display:flex;gap:10px;">
-    <a href="${d['wikipedia_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#4CAF50;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">Wikipedia</a>
-    <a href="${d['imdb_url'] || '#'}" target="_blank" style="display:inline-block;padding:4px 14px;background:#F5C518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;">IMDb</a>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+    <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
   </div>
 </div>`;
   });
   // 【動的出典】映像作品からユニークな出典を抽出して表示
   const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
   const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
-  if (eizouCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${eizouCites.join(' / ')}</p>\n`;
+  if (eizouCites.length > 0) article += `<p style="${citationStyle}">出典：${eizouCites.join(' / ')}</p>\n`;
 
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
@@ -159,7 +159,7 @@ return $input.all().map(item => {
   // 【動的出典】ランキングから出典を取得
   const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
   const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
-  if (rankingCites.length > 0) article += `<p style="font-size:12px;color:#999;text-align:right;">出典：${rankingCites.join(' / ')}</p>\n`;
+  if (rankingCites.length > 0) article += `<p style="${citationStyle}">出典：${rankingCites.join(' / ')}</p>\n`;
 
   const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(kougyouNeko);

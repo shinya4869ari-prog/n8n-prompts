@@ -46,6 +46,7 @@ return $input.all().map(item => {
   // --- 3. HTML生成ヘルパー ---
   const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #b2ebf2;font-size:16px;font-weight:900;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
+  const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
 
   function makeTable(headers, rows, widths) {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;font-size:14px;${w ? 'width:' + w + ';' : ''}`;
@@ -340,7 +341,7 @@ return $input.all().map(item => {
       article += `<div style="margin: 20px 0; text-align: center;"><img src="${chartUrl}" alt="比較グラフ" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>\n`;
     }
 
-    article += `<p class="citation">出典：World Prison Brief</p>\n`;
+    article += `<p class="citation" style="${citationStyle}">出典：World Prison Brief</p>\n`;
   }
 
   const shiinData = parseLines(raw, '死因');
@@ -348,7 +349,7 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な死因トップ10</h3>\n`;
     const shiinRows = shiinData.map(d => [d['順位'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows);
-    if (citation) article += `<p class="citation">${citation}</p>\n`;
+    if (citation) article += `<p class="citation" style="${citationStyle}">${citation}</p>\n`;
   }
 
   const chianNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 治安と平和')) && l.includes('🐱 エラーネコ：'));
@@ -372,7 +373,7 @@ return $input.all().map(item => {
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
     const boekiCiteStr = sheetData.data?.固定データ?.貿易出典_対象国 || 'IMF / Trade Map';
-    article += `<p class="citation">出典：${boekiCiteStr}</p>\n`;
+    article += `<p class="citation" style="${citationStyle}">出典：${boekiCiteStr}</p>\n`;
   }
 
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
@@ -432,11 +433,11 @@ return $input.all().map(item => {
     const rateMatch = raw.match(/為替レート[は：]([^\n]+)/);
     if (rateMatch) {
       const rateText = rateMatch[1].trim().replace('現在', '').replace(/^は/, '');
-      article += `<p class="citation">※為替レートは${rateText}時点のレートを使用</p>\n`;
+      article += `<p class="citation" style="${citationStyle}">※為替レートは${rateText}時点のレートを使用</p>\n`;
     }
-    article += `<p class="citation">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
+    article += `<p class="citation" style="${citationStyle}">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
     article += `<div style="height: 10px;"></div>\n`;
-    article += `<p class="citation">出典：Numbeo / Netflix公式サイト</p>\n`;
+    article += `<p class="citation" style="${citationStyle}">出典：Numbeo / Netflix公式サイト</p>\n`;
   }
 
   const bukkaNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 生活・価値')) && l.includes('🐱 エラーネコ：'));
@@ -476,7 +477,7 @@ return $input.all().map(item => {
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
     const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
-    if (dohCite) article += `<p class="citation">出典：${dohCite}</p>\n`;
+    if (dohCite) article += `<p class="citation" style="${citationStyle}">出典：${dohCite}</p>\n`;
   }
 
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑦ 直近の動向')) && l.includes('🐱 エラーネコ：'));
@@ -502,7 +503,7 @@ return $input.all().map(item => {
     const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
     const eizouCites = [...new Set(eizouData2.map(d => d.出典).filter(Boolean))];
     if (eizouCites.length > 0) {
-      article += `<p class="citation">出典：${eizouCites.join(' / ')}</p>\n`;
+      article += `<p class="citation" style="${citationStyle}">出典：${eizouCites.join(' / ')}</p>\n`;
     }
   }
 
@@ -532,7 +533,7 @@ return $input.all().map(item => {
     const kougyouData2 = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
     const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
     if (kougyouCites.length > 0) {
-      article += `<p class="citation">出典：${kougyouCites.join(' / ')}</p>\n`;
+      article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
     }
   }
 
