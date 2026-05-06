@@ -137,6 +137,12 @@ const targetFixed = {
   貿易出典_対象国: boeki['貿易統計_出典']
 };
 
+const getCleanYearString = (val) => {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  return trimmed.endsWith('年') ? trimmed : trimmed + '年';
+};
+
 const japanFixed = {
   制度の9つの皿: {
     国家の形と統治機構: { 値: "立憲君主制（象徴天皇制）・議院内閣制・単一国家" },
@@ -159,16 +165,16 @@ const japanFixed = {
     インフレ率:       { 値: jKeizai['インフレ率'],       年: jKeizai['インフレ率_年'],       出典: jKeizai['インフレ率_出典'] }
   },
   治安指標: {
-    '殺人率':           { 値: jChiAn['殺人率'],           '出典・年': `${jChiAn['殺人率_出典']} ${jChiAn['殺人率_年']}年` },
-    '交通事故死亡率':   { 値: jChiAn['交通事故死亡率'],   '出典・年': `${jChiAn['交通事故死亡率_出典']} ${jChiAn['交通事故死亡率_年']}年` },
-    '自殺率':           { 値: jChiAn['自殺率'],           '出典・年': `${jChiAn['自殺率_出典']} ${jChiAn['自殺率_年']}年` },
-    '失業率':           { 値: jChiAn['失業率'],           '出典・年': `${jChiAn['失業率_出典']} ${jChiAn['失業率_年']}年` },
-    '貧困率':           { 値: jChiAn['貧困率'],           '出典・年': `${jChiAn['貧困率_出典']} ${jChiAn['貧困率_年']}年` },
-    'ジニ係数':         { 値: jChiAn['ジニ係数'],         '出典・年': `${jChiAn['ジニ係数_出典']} ${jChiAn['ジニ係数_年']}年` },
-    '刑務所収容率':     { 値: jChiAn['刑務所収容率'],     '出典・年': `${jChiAn['刑務所収容率_出典']} ${jChiAn['刑務所収容率_年']}年` },
-    '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典']} ${jChiAn['刑務所総収容者数_年']}年` },
-    'GPIスコア':        { 値: jChiAn['GPIスコア'],        '出典・年': `${jChiAn['GPI出典']} ${jChiAn['GPI年']}年` },
-    'GPI順位':          { 値: jChiAn['GPI順位'],          '出典・年': `${jChiAn['GPI出典']} ${jChiAn['GPI年']}年` }
+    '殺人率':           { 値: jChiAn['殺人率'],           '出典・年': `${jChiAn['殺人率_出典']} ${getCleanYearString(jChiAn['殺人率_年'])}`.trim() },
+    '交通事故死亡率':   { 値: jChiAn['交通事故死亡率'],   '出典・年': `${jChiAn['交通事故死亡率_出典']} ${getCleanYearString(jChiAn['交通事故死亡率_年'])}`.trim() },
+    '自殺率':           { 値: jChiAn['自殺率'],           '出典・年': `${jChiAn['自殺率_出典']} ${getCleanYearString(jChiAn['自殺率_年'])}`.trim() },
+    '失業率':           { 値: jChiAn['失業率'],           '出典・年': `${jChiAn['失業率_出典']} ${getCleanYearString(jChiAn['失業率_年'])}`.trim() },
+    '貧困率':           { 値: jChiAn['貧困率'],           '出典・年': `${jChiAn['貧困率_出典']} ${getCleanYearString(jChiAn['貧困率_年'])}`.trim() },
+    'ジニ係数':         { 値: jChiAn['ジニ係数'],         '出典・年': `${jChiAn['ジニ係数_出典']} ${getCleanYearString(jChiAn['ジニ係数_年'])}`.trim() },
+    '刑務所収容率':     { 値: jChiAn['刑務所収容率'],     '出典・年': `${jChiAn['刑務所収容率_出典']} ${getCleanYearString(jChiAn['刑務所収容率_年'])}`.trim() },
+    '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典']} ${getCleanYearString(jChiAn['刑務所総収容者数_年'])}`.trim() },
+    'GPIスコア':        { 値: jChiAn['GPIスコア'],        '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() },
+    'GPI順位':          { 値: jChiAn['GPI順位'],          '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() }
   },
   刑務所推移: jPrison,
   死因トップ10: jDeath,
