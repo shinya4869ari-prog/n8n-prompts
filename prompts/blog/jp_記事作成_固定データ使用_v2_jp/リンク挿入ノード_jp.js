@@ -11,7 +11,7 @@ try {
   const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
   const parsed = JSON.parse(cleaned);
   places = parsed.places || [];
-  parsed.people = parsed.people || [];
+  people = parsed.people || [];
   keywords = parsed.keywords || [];
 } catch(e) {
   // 解析失敗時は空配列のまま進める
