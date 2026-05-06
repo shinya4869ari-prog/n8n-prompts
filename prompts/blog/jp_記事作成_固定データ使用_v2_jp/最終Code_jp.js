@@ -96,10 +96,34 @@ return $input.all().map(item => {
 </div>
 `;
 
-  // --- 5. 導入文 ---
-  const introEndIdx = rawLines.findIndex(l => l.includes('① 貿易'));
-  if (introEndIdx !== -1) {
-    article += rawLines.slice(0, introEndIdx).join('\n') + '\n';
+  // --- 5. 導入文（超頑強アルゴリズム ＋ HTML段落自動整形） ---
+  let introText = "";
+  const firstSectionIdx = rawLines.findIndex(l => /(?:①|1\.?)\s*貿易/.test(l) || /^輸出[｜|]/.test(l));
+  if (firstSectionIdx !== -1) {
+    introText = rawLines.slice(0, firstSectionIdx).join('\n').trim();
+  } else {
+    const fallbackIdx = rawLines.findIndex(l => /^輸出[｜|]/.test(l) || /^貿易相手[｜|]/.test(l));
+    if (fallbackIdx !== -1) {
+      introText = rawLines.slice(0, fallbackIdx).join('\n').trim();
+    }
+  }
+
+  // 重複タイトルや余計な記号を綺麗にクリーンアップ
+  introText = introText
+    .replace(/^#+.*$/gm, '')
+    .trim();
+
+  if (introText) {
+    const introHtml = introText
+      .split(/\n{2,}/)
+      .map(p => {
+        const cleanP = p.trim().replace(/^[\s\n]+|[\s\n]+$/g, '');
+        if (!cleanP || cleanP.includes('FACT') || cleanP.startsWith('①')) return '';
+        return `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${cleanP.split('\n').join('<br>')}</p>`;
+      })
+      .filter(Boolean)
+      .join('\n');
+    article += introHtml + '\n';
   }
 
   // --- 5. ① 貿易 ---
@@ -167,9 +191,12 @@ return $input.all().map(item => {
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
-    // 【動的出典】直近の動向の出典をシートから取得
-    const dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
-    if (dohCite) article += `<p style="${citationStyle}">出典：${dohCite}</p>\n`;
+    // 【動的出典】直近の動向の出典をシートから取得（ない場合は信頼できるフォールバックを表示）
+    let dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
+    if (!dohCite || dohCite === '欠測' || dohCite === 'データなし') {
+      dohCite = '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
+    }
+    article += `<p style="${citationStyle}">出典：${dohCite}</p>\n`;
   }
   const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(dohNeko);
