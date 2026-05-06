@@ -18,9 +18,10 @@
 ---
 
 ## 【⑥ 直近の動向（最新6ヶ月）】
-- 最新6ヶ月の政治・経済・社会の動向
-  - 検索クエリ：「{{ $json.countryEn }} latest news and current affairs」
-  - 検索クエリ：「{{ $json.countryEn }} economy politics social trends latest」
+- 最新の政治・経済・社会の動向（特に、EUとの連合協定や大規模な外交・通商協定の批准・経済開放、税制改革、重要な法改正など、国家のあり方を変える重大な出来事や直近1年間の最大ニュースを優先的に拾い上げてください）
+  - 検索クエリ：「{{ $json.countryEn }} latest news and current affairs {{ $json.now_year }}」
+  - 検索クエリ：「{{ $json.countryEn }} major political developments economic reforms latest news」
+  - 検索クエリ：「{{ $json.countryEn }} international agreement treaty EU relations latest news {{ $json.now_year }}」
 - 読者が驚く統計や習慣（記事未登場のものを優先）
 - 日本との関連性・波及
 

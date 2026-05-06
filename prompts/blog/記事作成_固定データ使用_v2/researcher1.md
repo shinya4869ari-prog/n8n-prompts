@@ -36,8 +36,9 @@
    - 検索クエリ：「{{ $json.countryEn }} political system government structure」
 
 2. **行政トップ**
-   - 検索クエリ：「{{ $json.countryEn }} current president prime minister {{ $json.now_year }}」
-　　-注意 -韓国、中国、日本は人名は漢字表記を優先すること。
+   - 検索クエリ：「{{ $json.countryEn }} current president prime minister head of state monarch co-prince {{ $json.now_year }}」
+   - 注意：国王、共同元首（例：アンドラ）、大公、大統領、首相、宗教的トップ（例：イラン）など、国家元首や行政最高責任者が複数存在する、あるいは大統領以外の元首がいる場合は、必ず全員の現職者名と就任状況を検索で正確に確認すること。最近（2025年〜2026年など）に交代があった場合は新旧交代の事実を反映すること。
+   - 注意：韓国、中国、日本は人名は漢字表記を優先すること。
 
 3. **立法と選挙制度**
    - 検索クエリ：「{{ $json.countryEn }} parliament legislature election system voter turnout」
