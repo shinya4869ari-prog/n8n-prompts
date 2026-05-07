@@ -84,6 +84,18 @@ return $input.all().map(item => {
 </div>`;
   }
 
+  function getNekoBubbleForSection(sectionNum) {
+    const startIdx = rawLines.findIndex(l => l.trim().startsWith(sectionNum) || l.includes(sectionNum));
+    if (startIdx === -1) {
+      const circleNums = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+      const orderIdx = circleNums.indexOf(sectionNum);
+      const nekoLines = rawLines.filter(l => l.includes('🐱 エラーネコ：'));
+      return nekoLines[orderIdx] || '';
+    }
+    const slice = rawLines.slice(startIdx);
+    return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
+  }
+
   // --- データ事前抽出（ヘッダーで使用するため） ---
   const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
   const geoData = geoItems.map(item => {
@@ -183,7 +195,7 @@ return $input.all().map(item => {
   const seidoExplanation = extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：');
   if (seidoExplanation) article += `\n${seidoExplanation}\n`;
 
-  const seidoNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 制度')) && l.includes('🐱 エラーネコ：'));
+  const seidoNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(seidoNeko);
 
   // --- 7. ② 地理と経済の衡量 ---
@@ -256,7 +268,7 @@ return $input.all().map(item => {
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
   if (econExplanation) article += `\n${econExplanation}\n`;
 
-  const econNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 地理と経済')) && l.includes('🐱 エラーネコ：'));
+  const econNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(econNeko);
 
   // --- 8. ③ 治安と平和の衡量 ---
@@ -376,7 +388,7 @@ return $input.all().map(item => {
     if (citation) article += `<p class="citation" style="${citationStyle}">${citation}</p>\n`;
   }
 
-  const chianNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 治安と平和')) && l.includes('🐱 エラーネコ：'));
+  const chianNeko = getNekoBubbleForSection('③');
   article += makeNekoBubble(chianNeko);
 
   // --- 9. ④ 貿易の衡量 ---
@@ -403,7 +415,7 @@ return $input.all().map(item => {
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
 
-  const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 貿易の衡量')) && l.includes('🐱 エラーネコ：'));
+  const boekiNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(boekiNeko);
 
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
@@ -464,7 +476,7 @@ return $input.all().map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：Numbeo / Netflix公式サイト</p>\n`;
   }
 
-  const bukkaNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 生活・価値')) && l.includes('🐱 エラーネコ：'));
+  const bukkaNeko = getNekoBubbleForSection('⑤');
   article += makeNekoBubble(bukkaNeko);
 
   // --- 11. ⑥ 歴史的背景 ---
@@ -508,7 +520,7 @@ return $input.all().map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：${dohCite}</p>\n`;
   }
 
-  const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑦ 直近の動向')) && l.includes('🐱 エラーネコ：'));
+  const dohNeko = getNekoBubbleForSection('⑦');
   article += makeNekoBubble(dohNeko);
 
   // --- 13. ⑧ 映像で知る${countryName} ---
@@ -535,7 +547,7 @@ return $input.all().map(item => {
     }
   }
 
-  const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑧ 映像で知る')) && l.includes('🐱 エラーネコ：'));
+  const eizouNeko = getNekoBubbleForSection('⑧');
   article += makeNekoBubble(eizouNeko);
 
   // --- 14. ⑨ 特別枠：${countryName}映画 歴代ランキング ---
@@ -576,7 +588,7 @@ return $input.all().map(item => {
     }
   }
 
-  const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑨ 特別枠')) && l.includes('🐱 エラーネコ：'));
+  const kougyouNeko = getNekoBubbleForSection('⑨');
   article += makeNekoBubble(kougyouNeko);
 
   // --- 15. ライブログ ---

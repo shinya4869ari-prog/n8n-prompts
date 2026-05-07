@@ -69,6 +69,18 @@ return $input.all().map(item => {
 </div>`;
   }
 
+  function getNekoBubbleForSection(sectionNum) {
+    const startIdx = rawLines.findIndex(l => l.trim().startsWith(sectionNum) || l.includes(sectionNum));
+    if (startIdx === -1) {
+      const circleNums = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+      const orderIdx = circleNums.indexOf(sectionNum);
+      const nekoLines = rawLines.filter(l => l.includes('🐱 エラーネコ：'));
+      return nekoLines[orderIdx] || '';
+    }
+    const slice = rawLines.slice(startIdx);
+    return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
+  }
+
   let article = '';
 
   // --- 4. プロフィールカード（メイン版準拠・日本版テーマ） ---
@@ -149,7 +161,7 @@ return $input.all().map(item => {
   }
   const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
-  const boekiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('① 貿易')) && l.includes('🐱 エラーネコ：'));
+  const boekiNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(boekiNeko);
 
   // --- 6. ② 歴史的背景 ---
@@ -183,7 +195,7 @@ return $input.all().map(item => {
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
   }
-  const rekishiNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('② 歴史')) && l.includes('🐱 エラーネコ：'));
+  const rekishiNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(rekishiNeko);
 
   // --- 7. ③ 直近の動向 ---
@@ -198,7 +210,7 @@ return $input.all().map(item => {
     }
     article += `<p style="${citationStyle}">出典：${dohCite}</p>\n`;
   }
-  const dohNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('③ 直近')) && l.includes('🐱 エラーネコ：'));
+  const dohNeko = getNekoBubbleForSection('③');
   article += makeNekoBubble(dohNeko);
 
   // --- 8. ④ 映像で知る日本 ---
@@ -220,7 +232,7 @@ return $input.all().map(item => {
   const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
   if (eizouCites.length > 0) article += `<p style="${citationStyle}">出典：${eizouCites.join(' / ')}</p>\n`;
 
-  const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
+  const eizouNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(eizouNeko);
 
   // --- 9. ⑤ 日本映画 歴代興行収入ランキング ---
@@ -245,7 +257,7 @@ return $input.all().map(item => {
   const rankingCites = [...new Set(rankingList.map(d => d.出典).filter(Boolean))];
   if (rankingCites.length > 0) article += `<p style="${citationStyle}">出典：${rankingCites.join(' / ')}</p>\n`;
 
-  const kougyouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑤ 日本映画')) && l.includes('🐱 エラーネコ：'));
+  const kougyouNeko = getNekoBubbleForSection('⑤');
   article += makeNekoBubble(kougyouNeko);
 
   // --- 10. Deep Dive（メイン版と同じ方式）---
