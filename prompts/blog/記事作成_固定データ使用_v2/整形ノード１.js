@@ -2,7 +2,7 @@ const r1Raw = $('researcher1').first().json;
 const r2Raw = $('researcher2').first().json;
 const r25Raw = $('researcher25').first().json;
 
-const parseOutput = (node) => {
+const parseOutput = (node, nodeName) => {
   try {
     const raw = node.output ?? node.json ?? '{}';
     if (!raw || raw.trim() === '') throw new Error('outputが空です');
@@ -11,20 +11,91 @@ const parseOutput = (node) => {
       .replace(/,(\s*[}\]])/g, '$1')
       .trim();
 
-    // AIがJSON文字列の中に「エスケープされていない本物の改行」を出力してしまった場合、
-    // JSON.parseが「Unterminated string」エラーで落ちるのを防ぐため、文字列内の改行を \\n に置換して救済する
-    cleaned = cleaned.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/gs, (match) => {
-      return match.replace(/\r?\n/g, '\\n');
-    });
+    // 【文字単位ステートマシン：超堅牢版】
+    // AIが文字列値の中に出力してしまった「生のダブルクォーテーション」と「生の改行」を
+    // 1文字ずつ走査して自動修復する。
+    // 判定ロジック：文字列内で " に遭遇したとき、閉じクォーテーションとして正当か超厳格に判定する
+    //   - 後続文字が ':' | '}' | ']' | 終端 → 正当な閉じクォーテーション
+    //   - 後続文字が ',' の場合 → そのカンマの先の非空白文字が '"' | '}' | ']' なら正当な閉じクォーテーション、それ以外は値の途中の生クォーテーション
+    //   - それ以外              → 値の途中にある生クォーテーション → \" にエスケープ
+    let repaired = '';
+    let i = 0;
+    while (i < cleaned.length) {
+      const ch = cleaned[i];
+      if (ch === '\\') {
+        // エスケープ済み文字（\" \n \t 等）はそのまま保持してスキップ
+        repaired += ch + (cleaned[i + 1] || '');
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        // 文字列の開始クォーテーション
+        repaired += '"';
+        i++;
+        // 文字列の中身を読み進める
+        while (i < cleaned.length) {
+          const c = cleaned[i];
+          if (c === '\\') {
+            // 文字列内のエスケープ済み文字はそのまま保持
+            repaired += c + (cleaned[i + 1] || '');
+            i += 2;
+            continue;
+          }
+          if (c === '"') {
+            // 閉じクォーテーション候補 → 先読みで判定
+            let j = i + 1;
+            while (j < cleaned.length && /\s/.test(cleaned[j])) j++;
+            const next = cleaned[j];
+            
+            let isValidClose = false;
+            if (next === ':' || next === '}' || next === ']' || j >= cleaned.length) {
+              isValidClose = true;
+            } else if (next === ',') {
+              // カンマの場合、そのカンマのさらに先を検証する
+              let k = j + 1;
+              while (k < cleaned.length && /\s/.test(cleaned[k])) k++;
+              const afterComma = cleaned[k];
+              // カンマの次の実質的な文字が、別のキー/値の開始（"）、オブジェクト閉じ（}）、配列閉じ（]）であれば本物の閉じ
+              if (afterComma === '"' || afterComma === '}' || afterComma === ']') {
+                isValidClose = true;
+              }
+            }
+
+            if (isValidClose) {
+              // 正当な閉じクォーテーション
+              repaired += '"';
+              i++;
+              break;
+            } else {
+              // 値の途中にある生のダブルクォーテーション → エスケープ
+              repaired += '\\"';
+              i++;
+            }
+          } else if (c === '\r' || c === '\n') {
+            // 文字列内の生の改行文字 → \\n にエスケープ
+            repaired += '\\n';
+            if (c === '\r' && cleaned[i + 1] === '\n') i++; // CRLF を1つとして処理
+            i++;
+          } else {
+            repaired += c;
+            i++;
+          }
+        }
+        continue;
+      }
+      repaired += ch;
+      i++;
+    }
+    cleaned = repaired;
 
     return JSON.parse(cleaned);
-  } catch(e) { throw new Error(`JSONパース失敗: ${e.message}`); }
+  } catch(e) { throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}`); }
 };
 
-const r1 = parseOutput(r1Raw);
-const r2 = parseOutput(r2Raw);
+const r1 = parseOutput(r1Raw, 'researcher1');
+const r2 = parseOutput(r2Raw, 'researcher2');
 
-const r25 = parseOutput(r25Raw);
+const r25 = parseOutput(r25Raw, 'researcher25');
 
 const r2Merged = {
   country: r2.country,
