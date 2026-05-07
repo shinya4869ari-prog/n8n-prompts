@@ -538,13 +538,24 @@ return $input.all().map(item => {
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('⑧ 映像で知る')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
 
-  // --- 14. ⑨ 特別枠：${countryName}映画 歴代興行収入 ---
-  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName}映画 歴代興行収入</h2>\n`;
+  // --- 14. ⑨ 特別枠：${countryName}映画 歴代ランキング ---
+  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
+      
+      let meta = `📅 ${d['公開年'] || ''}`;
+      const showAdmissions = d['動員数'] && d['動員数'] !== '欠測' && d['動員数'] !== 'データなし';
+      const showRevenue = d['興行収入'] && d['興行収入'] !== '欠測' && d['興行収入'] !== 'データなし';
+      if (showAdmissions) {
+        meta += ` &nbsp;|&nbsp; 👥 ${d['動員数']}`;
+      }
+      if (showRevenue) {
+        meta += ` &nbsp;|&nbsp; 💰 ${d['興行収入']}`;
+      }
+
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
@@ -552,7 +563,7 @@ return $input.all().map(item => {
     <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
     <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>
   </div>
-  <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''} &nbsp;|&nbsp; 👥 ${d['動員数'] || 'データなし'}</div>
+  <div style="font-size:13px;color:#666;margin-bottom:12px;">${meta}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
     <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
   </div>

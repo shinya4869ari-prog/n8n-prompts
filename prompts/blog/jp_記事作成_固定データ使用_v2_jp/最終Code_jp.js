@@ -223,8 +223,8 @@ return $input.all().map(item => {
   const eizouNeko = rawLines.find((l, i) => i > rawLines.findIndex(lx => lx.includes('④ 映像')) && l.includes('🐱 エラーネコ：'));
   article += makeNekoBubble(eizouNeko);
 
-  // --- 9. ⑤ 日本映画 歴代ランキング ---
-  article += `<h2 style="${h2Style}">⑤ 日本映画 歴代ランキング</h2>\n`;
+  // --- 9. ⑤ 日本映画 歴代興行収入ランキング ---
+  article += `<h2 style="${h2Style}">⑤ 日本映画 歴代興行収入ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行');
   kougyouData.forEach(d => {
     article += `
