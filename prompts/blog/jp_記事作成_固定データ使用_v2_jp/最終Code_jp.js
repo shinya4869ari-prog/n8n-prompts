@@ -242,13 +242,19 @@ return $input.all().map(item => {
     article += `
 <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-    <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-    <span style="font-weight:800;font-size:16px;">${d['タイトル'] || ''}</span>
-  </div>
-  <div style="font-size:13px;color:#666;margin-bottom:12px;">📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}</div>
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-    <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+    <div style="flex:1;min-width:280px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
+      </div>
+      <div style="font-size:13px;color:#666;margin-bottom:10px;">
+        📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}
+        ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
+      </div>
+      ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
+      <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
+    </div>
   </div>
 </div>`;
   });
