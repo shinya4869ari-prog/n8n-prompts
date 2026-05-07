@@ -239,8 +239,10 @@ return $input.all().map(item => {
   article += `<h2 style="${h2Style}">⑤ 日本映画 歴代興行収入ランキング</h2>\n`;
   const kougyouData = parseLines(raw, '興行');
   kougyouData.forEach(d => {
+    const isSerious = d['深刻'] === 'true';
+    const bg = isSerious ? '#fff3f3' : '#ffffff';
     article += `
-<div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
+<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
     <div style="flex:1;min-width:280px;">
