@@ -3,19 +3,27 @@ const r2Raw = $('researcher2').first().json;
 const r25Raw = $('researcher25').first().json;
 
 const parseOutput = (node) => {
+const parseOutput = (node) => {
   try {
     const raw = node.output ?? node.json ?? '{}';
     if (!raw || raw.trim() === '') throw new Error('outputが空です');
     let cleaned = raw
       .replace(/```json|```/g, '')
-      .replace(/,(\s*[}\]])/g, '$1')
       .trim();
 
-    // AIがJSON文字列の中に「エスケープされていない本物の改行」を出力してしまった場合、
-    // JSON.parseが「Unterminated string」エラーで落ちるのを防ぐため、文字列内の改行を \\n に置換して救済する
-    cleaned = cleaned.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/gs, (match) => {
-      return match.replace(/\r?\n/g, '\\n');
-    });
+    let result = '';
+    let inString = false;
+    let escaped = false;
+    for (let i = 0; i < cleaned.length; i++) {
+      const ch = cleaned[i];
+      if (escaped) { result += ch; escaped = false; continue; }
+      if (ch === '\\' && inString) { result += ch; escaped = true; continue; }
+      if (ch === '"') { inString = !inString; result += ch; continue; }
+      if (inString && ch === '\n') { result += '\\n'; continue; }
+      if (inString && ch === '\r') { continue; }
+      result += ch;
+    }
+    cleaned = result.replace(/,(\s*[}\]])/g, '$1');
 
     return JSON.parse(cleaned);
   } catch(e) { throw new Error(`JSONパース失敗: ${e.message}`); }
