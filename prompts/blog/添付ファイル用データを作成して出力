@@ -1,8 +1,22 @@
+const inputJson = $input.first().json;
+
+// n8nの手動実行・テスト制限によるデータトリムを検知
+const isTrimmed = inputJson.__isTrimmedManualExecutionDataItem === true;
+
 // クオリティチェックのテキストを安全に取得
-const rawText = $input.first().json.output 
-             || $input.first().json.content 
-             || $input.first().json.text 
-             || "テキストが見つかりません";
+let rawText = inputJson.output 
+             || inputJson.content 
+             || inputJson.text;
+
+if (!rawText) {
+  if (isTrimmed) {
+    rawText = "⚠️【n8n警告】手動テスト実行時のデータ制限（__isTrimmedManualExecutionDataItem）により、前段のテキストデータがトリムされています。\n\n" +
+              "記事の生成やクオリティチェック自体は正常に完了していますが、このノードを単体で「テスト実行（Test Step）」すると、n8nの仕様によりデータの実体が失われ、このメッセージが書き出されます。\n\n" +
+              "この問題を回避して正しいレポートを取得するには、このノードを個別テストするのではなく、**「ワークフロー全体を実行（Execute Workflow）」**するか、**前段のAIノードから一連の流れで実行**してください。";
+  } else {
+    rawText = "テキストが見つかりません";
+  }
+}
 
 // 100%確実にエラーなしで添付ファイル用データを作成して出力
 return [{
