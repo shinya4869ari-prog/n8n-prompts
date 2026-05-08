@@ -1,7 +1,7 @@
 // GitHubのRaw URLベースパス
 const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E8%A8%98%E4%BA%8B%E4%BD%9C%E6%88%90_%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E4%BD%BF%E7%94%A8_v2/';
 
-// 同期対象のAIプロンプトファイル（コードノードはn8n直接管理のため除外）
+// 同期対象のAIプロンプトファイル
 const files = {
   researcher1: baseUrl + 'researcher1.md',
   researcher2: baseUrl + 'researcher2.md',
@@ -35,7 +35,6 @@ try {
 
   const evaluateTemplate = (text, data) => {
     if (!text) return "";
-    // {{ $json.a || $json.b || "default" }} のような形式をパースして置換
     return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
       if (expression.includes('$now.toFormat')) return context.now_date;
 
@@ -49,8 +48,6 @@ try {
           return part.slice(1, -1);
         }
       }
-      // 全ての候補が未定義の場合、置換せずに元のタグ {{ ... }} をそのまま返す
-      // これにより、後続の AI ノード側で n8n が変数を評価できるようになる
       return match;
     });
   };
