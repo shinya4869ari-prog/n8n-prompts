@@ -10,7 +10,7 @@
 
 ## 検証対象
 対象国：{{ $json.country }}
-記事本文：{{ $json.article.substring(0, 8000) }}
+記事本文：{{ $json.article }}
 現在日時：{{ $now.toFormat('yyyy年MM月dd日') }}
 
 ## STEP 1（通常モード：日本以外）：行政トップ・基本情報の確認
