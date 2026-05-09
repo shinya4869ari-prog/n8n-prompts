@@ -605,6 +605,16 @@ return $input.all().map(item => {
         meta += ` &nbsp;|&nbsp; 💰 ${d['興行収入']}`;
       }
 
+      const kougyouData2 = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
+      const apiData = kougyouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
+
+      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
+      if (apiData['imdb_id'] && apiData['imdb_id'] !== 'null') {
+        linkHtml = `<div><a href="https://www.imdb.com/title/${apiData['imdb_id']}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb 作品ページ</a></div>`;
+      } else if (apiData['tmdb_id'] && apiData['tmdb_id'] !== 'null') {
+        linkHtml = `<div><a href="https://www.themoviedb.org/movie/${apiData['tmdb_id']}" target="_blank" style="display:inline-block;padding:4px 14px;background:#01b4e4;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ TMDB 作品ページ</a></div>`;
+      }
+
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
@@ -619,7 +629,7 @@ return $input.all().map(item => {
         ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
       </div>
       ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
-      <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
+      ${linkHtml}
     </div>
   </div>
 </div>`;
