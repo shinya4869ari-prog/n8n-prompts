@@ -561,13 +561,20 @@ return $input.all().map(item => {
       const apiData = eizouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
 
+      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
+      if (apiData['imdb_id'] && apiData['imdb_id'] !== 'null') {
+        linkHtml = `<div><a href="https://www.imdb.com/title/${apiData['imdb_id']}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb 作品ページ</a></div>`;
+      } else if (apiData['tmdb_id'] && apiData['tmdb_id'] !== 'null') {
+        linkHtml = `<div><a href="https://www.themoviedb.org/movie/${apiData['tmdb_id']}" target="_blank" style="display:inline-block;padding:4px 14px;background:#01b4e4;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ TMDB 作品ページ</a></div>`;
+      }
+
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
   <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-    <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
+    ${linkHtml}
   </div>
 </div>`;
     });
