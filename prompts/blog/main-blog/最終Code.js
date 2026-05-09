@@ -455,10 +455,10 @@ return $input.all().map(item => {
 
   function formatValueWithCommas(val) {
     if (!val || val === 'データなし') return val;
-    // 数値部分（カンマ・ドット含む）を抽出して、カンマを除去してから再フォーマット
+    // 数値部分（カンマ・ドット含む）を抽出して、カンマを除去してから再フォーマットし、太字化
     return val.replace(/[\d,\.]+/g, (m) => {
       const n = parseFloat(m.replace(/,/g, ''));
-      return isNaN(n) ? m : n.toLocaleString();
+      return isNaN(n) ? m : `<span style="font-weight:900; font-size:15px;">${n.toLocaleString()}</span>`;
     });
   }
 
@@ -474,8 +474,8 @@ return $input.all().map(item => {
         if (numMatch) {
           const num = parseFloat(numMatch[0].replace(/,/g, ''));
           const yen = Math.round(num * currentRate);
-          // 対象国側の通貨表示もカンマを入れる
-          displayP = `${currencySymbol}${num.toLocaleString()} （${yen.toLocaleString()}円）`;
+          // 対象国側の通貨表示もカンマを入れ、メインの数字を太字化
+          displayP = `<span style="font-weight:900; font-size:15px;">${currencySymbol}${num.toLocaleString()}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
         }
       }
 
@@ -484,7 +484,12 @@ return $input.all().map(item => {
 
       return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
-    article += makeTable(['項目', countryLabel, japanLabel], bukkaRows, ['35%', '32%', '33%']);
+    
+    // 5番セクション専用の改行ヘッダー
+    const bukkaCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
+    const bukkaJapanLabel = '日本<br>（東京）';
+    
+    article += makeTable(['項目', bukkaCountryLabel, bukkaJapanLabel], bukkaRows, ['35%', '32%', '33%']);
 
     // 為替レートの注釈表示
     const rateMatch = raw.match(/為替レート[は：]([^\n]+)/);
@@ -553,8 +558,8 @@ return $input.all().map(item => {
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
-  <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
+  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}<a href="#movie-link" style="color:#222; text-decoration:none;">${d['タイトル'] || ''}</a></div>
+  <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${d['監督'] ? ` &nbsp;•&nbsp; 監督：${d['監督']}` : ''}${d['主演'] ? ` &nbsp;•&nbsp; 主演：${d['主演']}` : ''}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
     <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
@@ -596,7 +601,7 @@ return $input.all().map(item => {
     <div style="flex:1;min-width:280px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#111;"><a href="#movie-link" style="color:#111; text-decoration:none;">${d['タイトル'] || ''}</a></span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         ${meta}
