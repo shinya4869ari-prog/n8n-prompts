@@ -553,20 +553,24 @@ return $input.all().map(item => {
   article += `<h2 style="${h2Style}">⑧ 映像で知る${countryName}</h2>\n`;
   const eizouData = parseLines(raw, '映像');
   if (eizouData.length > 0) {
+    const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
+      
+      const apiData = eizouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
+      const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
+
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}<a href="#movie-link" style="color:#222; text-decoration:none;">${d['タイトル'] || ''}</a></div>
-  <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${d['監督'] ? ` &nbsp;•&nbsp; 監督：${d['監督']}` : ''}${d['主演'] ? ` &nbsp;•&nbsp; 主演：${d['主演']}` : ''}</div>
+  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
+  <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
   <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;">
     <div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>
   </div>
 </div>`;
     });
-    const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
     const eizouCites = [...new Set(eizouData2.map(d => d.出典).filter(Boolean))];
     if (eizouCites.length > 0) {
       article += `<p class="citation" style="${citationStyle}">出典：${eizouCites.join(' / ')}</p>\n`;
@@ -601,7 +605,7 @@ return $input.all().map(item => {
     <div style="flex:1;min-width:280px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#111;"><a href="#movie-link" style="color:#111; text-decoration:none;">${d['タイトル'] || ''}</a></span>
+        <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         ${meta}
