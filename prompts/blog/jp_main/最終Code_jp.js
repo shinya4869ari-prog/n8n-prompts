@@ -317,6 +317,7 @@ return $input.all().map(item => {
       article: article + '\n\n' + popupHTML,
       title: "日本",
       country: countryName,
+      countryEn: "Japan",
       capital: capital,
       post_type: "page",
       is_page: true,

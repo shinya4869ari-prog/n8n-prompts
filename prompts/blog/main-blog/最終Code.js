@@ -652,12 +652,14 @@ return $input.all().map(item => {
   };
   const regionName = $('国名変換Code').first().json.region || "その他";
   const categoryId = categoryIdMap[regionName] || 1;
+  const countryEn = $('国名変換Code').first().json.countryEn || "";
 
   return {
     json: {
       article: finalArticleText,
       title: title,
       country: countryName,
+      countryEn: countryEn,
       capital: capital,
       category_name: regionName,
       category_id: categoryId,
