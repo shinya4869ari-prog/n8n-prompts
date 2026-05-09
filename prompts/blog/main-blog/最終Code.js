@@ -286,10 +286,10 @@ return $input.all().map(item => {
     const formatSource = (val) => val.replace(/\s*([（(].*)$/, '<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">$1</span>');
     return [d.項目, formatSource(d[countryName] || 'データなし'), formatSource(d['日本'] || 'データなし')];
   });
-  
+
   const chiAnCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
   const chiAnJapanLabel = '日本<br>（東京）';
-  
+
   article += makeTable(['治安・社会指標', chiAnCountryLabel, chiAnJapanLabel], chiAnRows, ['35%', '32%', '33%']);
 
 
@@ -484,11 +484,11 @@ return $input.all().map(item => {
 
       return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
-    
+
     // 5番セクション専用の改行ヘッダー
     const bukkaCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
     const bukkaJapanLabel = '日本<br>（東京）';
-    
+
     article += makeTable(['項目', bukkaCountryLabel, bukkaJapanLabel], bukkaRows, ['35%', '32%', '33%']);
 
     // 為替レートの注釈表示
@@ -557,16 +557,17 @@ return $input.all().map(item => {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-      
+
       const apiData = eizouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
 
-      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
-      if (apiData['imdb_id'] && apiData['imdb_id'] !== 'null') {
-        linkHtml = `<div><a href="https://www.imdb.com/title/${apiData['imdb_id']}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb 作品ページ</a></div>`;
-      } else if (apiData['tmdb_id'] && apiData['tmdb_id'] !== 'null') {
-        linkHtml = `<div><a href="https://www.themoviedb.org/movie/${apiData['tmdb_id']}" target="_blank" style="display:inline-block;padding:4px 14px;background:#01b4e4;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ TMDB 作品ページ</a></div>`;
-      }
+      const imdbUrl = d['imdb_url'];
+      // IMDbボタン
+      const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
+        ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
+        : '';
+
+      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
@@ -594,7 +595,7 @@ return $input.all().map(item => {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-      
+
       let meta = `📅 ${d['公開年'] || ''}`;
       const showAdmissions = d['動員数'] && d['動員数'] !== '欠測' && d['動員数'] !== 'データなし';
       const showRevenue = d['興行収入'] && d['興行収入'] !== '欠測' && d['興行収入'] !== 'データなし';
@@ -652,11 +653,11 @@ return $input.all().map(item => {
   let deepDiveArticle = '';
   try {
     deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || '';
-  } catch(e) {
+  } catch (e) {
     // リンク挿入ノードが接続されていないか名前が違う場合は整形3から直接取得を試みる
-    try { deepDiveArticle = $('整形3').first().json?.article || ''; } catch(e2) {}
+    try { deepDiveArticle = $('整形3').first().json?.article || ''; } catch (e2) { }
   }
-  
+
   if (deepDiveArticle) {
     // --- Deep Dive セクション仕切り ---
     article += `
