@@ -25,8 +25,8 @@ return $input.all().map(item => {
 
   const capital = $('国名変換Code').first().json.capital ?? '';
   const japanCapital = $('国名変換Code').first().json.japanCapital ?? '';
-  const countryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
-  const japanLabel = '日本<br>（東京）';
+  const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
+  const japanLabel = '日本（東京）';
 
   // --- 2. パイプ区切りデータをパース ---
   function parseLines(text, prefix) {
@@ -56,13 +56,7 @@ return $input.all().map(item => {
     const thead = `<thead><tr>${headers.map((h, i) => `<th style="${thStyle(widths ? widths[i] : '')}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = `<tbody>${rows.map((row, ri) => {
       const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
-      return `<tr style="${bg}">${row.map((cell, ci) => {
-        let fCell = cell;
-        if (ci > 0 && typeof fCell === 'string') {
-          fCell = fCell.replace(/\s*([（(].*)$/, '<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">$1</span>');
-        }
-        return `<td style="${ci === 0 ? tdBoldStyle : tdStyle}">${fCell}</td>`;
-      }).join('')}</tr>`;
+      return `<tr style="${bg}">${row.map((cell, ci) => `<td style="${ci === 0 ? tdBoldStyle : tdStyle}">${cell}</td>`).join('')}</tr>`;
     }).join('')}</tbody>`;
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
   }
@@ -288,8 +282,15 @@ return $input.all().map(item => {
     parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim(); });
     return obj;
   });
-  const chiAnRows = chiAnData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
-  article += makeTable(['治安・社会指標', countryLabel, japanLabel], chiAnRows, ['35%', '32%', '33%']);
+  const chiAnRows = chiAnData.map(d => {
+    const formatSource = (val) => val.replace(/\s*([（(].*)$/, '<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">$1</span>');
+    return [d.項目, formatSource(d[countryName] || 'データなし'), formatSource(d['日本'] || 'データなし')];
+  });
+  
+  const chiAnCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
+  const chiAnJapanLabel = '日本<br>（東京）';
+  
+  article += makeTable(['治安・社会指標', chiAnCountryLabel, chiAnJapanLabel], chiAnRows, ['35%', '32%', '33%']);
 
 
   // 危険レベル警告 (レベル1以上の場合のみ表示)
