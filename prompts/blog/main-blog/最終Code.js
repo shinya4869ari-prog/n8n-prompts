@@ -297,12 +297,24 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">刑務所収容者数の推移</h3>\n`;
 
     const labels = prisonData.map(d => d['年']);
-    const targetData = prisonData.map(d => parseInt(d[`${countryName}総収容者数`]?.replace(/,/g, '')) || 0);
-    const japanData = prisonData.map(d => parseInt(d['日本総収容者数']?.replace(/,/g, '')) || 0);
+    const targetData = prisonData.map(d => {
+      const val = d[`${countryName}総収容者数`]?.replace(/,/g, '').trim();
+      if (!val || val === '-' || val === 'データなし') return null;
+      const num = parseInt(val);
+      return isNaN(num) ? null : num;
+    });
+    const japanData = prisonData.map(d => {
+      const val = d['日本総収容者数']?.replace(/,/g, '').trim();
+      if (!val || val === '-' || val === 'データなし') return null;
+      const num = parseInt(val);
+      return isNaN(num) ? null : num;
+    });
 
-    // 数値の規模にどれくらい差があるか判定 (スマート・チャート・ロジック)
-    const maxTarget = Math.max(...targetData, 1);
-    const maxJapan = Math.max(...japanData, 1);
+    // 数値の規模にどれくらい差があるか判定 (スマート・チャート・ロジック) - nullを除外して最大値を正確に計算
+    const targetDataFiltered = targetData.filter(x => x !== null);
+    const japanDataFiltered = japanData.filter(x => x !== null);
+    const maxTarget = targetDataFiltered.length > 0 ? Math.max(...targetDataFiltered) : 1;
+    const maxJapan = japanDataFiltered.length > 0 ? Math.max(...japanDataFiltered) : 1;
     const ratio = Math.max(maxTarget, maxJapan) / Math.min(maxTarget, maxJapan);
 
     if (ratio > 20) {
@@ -318,7 +330,8 @@ return $input.all().map(item => {
             backgroundColor: 'rgba(0, 188, 212, 0.1)',
             fill: true,
             tension: 0.3,
-            borderWidth: 3
+            borderWidth: 3,
+            spanGaps: true
           }]
         },
         options: { title: { display: true, text: `${countryName}の推移 (小規模)` } }
@@ -335,7 +348,8 @@ return $input.all().map(item => {
             backgroundColor: 'rgba(255, 69, 0, 0.1)',
             fill: true,
             tension: 0.3,
-            borderWidth: 3
+            borderWidth: 3,
+            spanGaps: true
           }]
         },
         options: { title: { display: true, text: '日本の推移 (大規模)' } }
@@ -360,8 +374,8 @@ return $input.all().map(item => {
         data: {
           labels: labels,
           datasets: [
-            { label: `${countryName} (右軸)`, data: targetData, borderColor: '#00bcd4', yAxisID: 'y1', fill: false, tension: 0.3, borderWidth: 3 },
-            { label: '日本 (左軸)', data: japanData, borderColor: '#ff4500', yAxisID: 'y', fill: false, tension: 0.3, borderWidth: 2, borderDash: [5, 5] }
+            { label: `${countryName} (右軸)`, data: targetData, borderColor: '#00bcd4', yAxisID: 'y1', fill: false, tension: 0.3, borderWidth: 3, spanGaps: true },
+            { label: '日本 (左軸)', data: japanData, borderColor: '#ff4500', yAxisID: 'y', fill: false, tension: 0.3, borderWidth: 2, borderDash: [5, 5], spanGaps: true }
           ]
         },
         options: {
