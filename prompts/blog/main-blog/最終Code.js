@@ -588,33 +588,26 @@ return $input.all().map(item => {
   const eizouNeko = getNekoBubbleForSection('⑧');
   article += makeNekoBubble(eizouNeko);
 
-  // --- 14. ⑨ 特別枠：${countryName}映画 歴代ランキング ---
-  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName}映画 歴代ランキング</h2>\n`;
-  const kougyouData = parseLines(raw, '興行').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+  // --- 14. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
+  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
+  const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
 
       let meta = `📅 ${d['公開年'] || ''}`;
-      const showAdmissions = d['動員数'] && d['動員数'] !== '欠測' && d['動員数'] !== 'データなし';
-      const showRevenue = d['興行収入'] && d['興行収入'] !== '欠測' && d['興行収入'] !== 'データなし';
-      if (showAdmissions) {
-        meta += ` &nbsp;|&nbsp; 👥 ${d['動員数']}`;
-      }
-      if (showRevenue) {
-        meta += ` &nbsp;|&nbsp; 💰 ${d['興行収入']}`;
-      }
-
-      const kougyouData2 = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
+      const showEvaluation = d['評価_見どころ'] && d['評価_見どころ'] !== '欠測' && d['評価_見どころ'] !== 'データなし';
+      
+      const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
       const apiData = kougyouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
 
-      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
-      if (apiData['imdb_id'] && apiData['imdb_id'] !== 'null') {
-        linkHtml = `<div><a href="https://www.imdb.com/title/${apiData['imdb_id']}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb 作品ページ</a></div>`;
-      } else if (apiData['tmdb_id'] && apiData['tmdb_id'] !== 'null') {
-        linkHtml = `<div><a href="https://www.themoviedb.org/movie/${apiData['tmdb_id']}" target="_blank" style="display:inline-block;padding:4px 14px;background:#01b4e4;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ TMDB 作品ページ</a></div>`;
-      }
+      const imdbUrl = d['imdb_url'];
+      const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
+        ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
+        : '';
+
+      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
@@ -629,13 +622,14 @@ return $input.all().map(item => {
         ${meta}
         ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
       </div>
+      ${showEvaluation ? `<div style="font-size:13px;color:#d97706;font-weight:bold;margin-bottom:8px;">⭐ ${d['評価_見どころ']}</div>` : ''}
       ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
       ${linkHtml}
     </div>
   </div>
 </div>`;
     });
-    const kougyouData2 = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
+    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
     const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
     if (kougyouCites.length > 0) {
       article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
