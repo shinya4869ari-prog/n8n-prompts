@@ -1,10 +1,10 @@
 const item = $input.first().json;
 
 // ① データ取得（抽出AIの結果からJSONを取得）
-const raw = item.output 
-         ?? item.content?.parts?.[0]?.text 
-         ?? item.message?.content 
-         ?? '{}';
+const raw = item.output
+  ?? item.content?.parts?.[0]?.text
+  ?? item.message?.content
+  ?? '{}';
 
 let places = [], people = [], keywords = [];
 try {
@@ -13,19 +13,19 @@ try {
   places = parsed.places || [];
   people = parsed.people || [];
   keywords = parsed.keywords || [];
-} catch(e) {
+} catch (e) {
   // 解析失敗時は空配列のまま進める
 }
 
 // ② 記事と基本情報の取得
 let mainArticle = '';
-try { mainArticle = $('整形2').first().json.article ?? $('記事集合').first().json.article ?? ''; } catch(e) {}
+try { mainArticle = $('整形2').first().json.article ?? $('記事集合').first().json.article ?? ''; } catch (e) { }
 
 let deepDiveRaw = '';
-try { deepDiveRaw = $('整形3').first().json?.article ?? ''; } catch(e) {}
+try { deepDiveRaw = $('整形3').first().json?.article ?? ''; } catch (e) { }
 
 let country = '不明';
-try { country = $('整形ノード1').first().json.country ?? '不明'; } catch(e) {}
+try { country = $('整形ノード1').first().json.country ?? '不明'; } catch (e) { }
 
 // ③ ポップアップHTML（歴史館リンク表示用）
 const popupHTML = `
@@ -38,7 +38,7 @@ const popupHTML = `
 
 function enc(t) {
   try { return btoa(unescape(encodeURIComponent(t || ''))); }
-  catch(e) { return ''; }
+  catch (e) { return ''; }
 }
 
 // ⑤ バリエーション生成
@@ -55,7 +55,7 @@ function getSearchVariants(name, type) {
       break;
     }
   }
- 　if (type === 'people') {
+  if (type === 'people') {
     const parts = base.split('・');
     const lastName = parts[parts.length - 1];
     if (lastName && lastName.length > 1) {
@@ -68,9 +68,9 @@ function getSearchVariants(name, type) {
 // ⑥ 候補統合
 const flatPatterns = [];
 const allEntities = [
-  ...people.map(p => ({type: 'people', ...p})),
-  ...places.map(p => ({type: 'places', ...p})),
-  ...keywords.map(p => ({type: 'keywords', ...p}))
+  ...people.map(p => ({ type: 'people', ...p })),
+  ...places.map(p => ({ type: 'places', ...p })),
+  ...keywords.map(p => ({ type: 'keywords', ...p }))
 ];
 
 for (const entity of allEntities) {
@@ -89,7 +89,7 @@ for (const entity of allEntities) {
 // 重複パターンを除去（長い方を優先）
 const uniquePatterns = [];
 const seen = new Set();
-for (const cand of flatPatterns.sort((a,b) => b.pattern.length - a.pattern.length)) {
+for (const cand of flatPatterns.sort((a, b) => b.pattern.length - a.pattern.length)) {
   if (!seen.has(cand.pattern)) {
     seen.add(cand.pattern);
     uniquePatterns.push(cand);

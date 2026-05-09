@@ -154,7 +154,7 @@ return $input.all().map(item => {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
     article += makeTable(['順位', '相手国', 'シェア'], partnerRows, ['10%', '60%', '30%']);
-    
+
     // 【動的出典】メイン版と同じくJSONから自動取得
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
     article += `<p style="${citationStyle}">出典：${boekiCite}</p>\n`;
@@ -272,16 +272,16 @@ return $input.all().map(item => {
   let deepDiveArticle = '';
   try {
     deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
-  } catch(e) {
+  } catch (e) {
     try {
       deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || '';
-    } catch(e2) {
+    } catch (e2) {
       try {
         deepDiveArticle = $('整形3_jp').first().json?.article || '';
-      } catch(e3) {
+      } catch (e3) {
         try {
           deepDiveArticle = $('整形3').first().json?.article || '';
-        } catch(e4) {}
+        } catch (e4) { }
       }
     }
   }
@@ -292,7 +292,7 @@ return $input.all().map(item => {
 <div style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
-    
+
     // ディープダイブの「■ 主な出典」セクションのみをピンポイントで薄い色で小さくスタイルする
     let styledDD = deepDiveArticle;
     styledDD = styledDD.replace(/(■\s*主な出典[\s\S]*?)(?=(?:<h[1-4]|<\/div>\s*$|$))/gi, (match) => {

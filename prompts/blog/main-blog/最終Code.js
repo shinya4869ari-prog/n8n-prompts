@@ -655,7 +655,7 @@ return $input.all().map(item => {
 
   return {
     json: {
-      article: promptBody ? `${promptBody}\n\n${finalArticleText}` : finalArticleText,
+      article: finalArticleText,
       title: title,
       country: countryName,
       capital: capital,
