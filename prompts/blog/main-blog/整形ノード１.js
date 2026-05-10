@@ -102,8 +102,8 @@ const adjustPrisonTrend = (trendArray, chiAnObj) => {
   if (latestYear && latestCount && latestCount !== '欠測' && latestCount !== '-') {
     const alreadyExists = trendArray.some(d => cleanYear(d.年) === latestYear);
     if (!alreadyExists) {
-      if (trendArray.length >= 10) {
-        trendArray[trendArray.length - 1] = { 
+      if (trendArray.length === 10) {
+        trendArray[9] = { 
           年: chiAnObj['刑務所総収容者数_年'], 
           総収容者数: chiAnObj['刑務所総収容者数'] 
         };
