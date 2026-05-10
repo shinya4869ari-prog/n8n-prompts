@@ -402,6 +402,24 @@ return $input.all().map(item => {
   }
 
   const shiinData = parseLines(raw, '死因');
+  const crimeData = parseLines(raw, '犯罪');
+
+  // 犯罪トップ5表
+  article += `<h3 style="${h3Style}">犯罪種別ランキング</h3>\n`;
+  if (crimeData.length > 0) {
+    const crimeRows = crimeData.map(d => [
+      d['順位'] || '',
+      d['種別'] || 'データなし'
+    ]);
+    const crimeOutten = crimeData[0]?.['出典'] || '';
+    article += makeTable(['順位', '犯罪種別'], crimeRows, ['15%', '85%']);
+    if (crimeOutten) article += `<p class="citation" style="${citationStyle}">出典：${crimeOutten}</p>\n`;
+  }
+
+  // 犯罪の傾向テキスト
+  const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
+  if (crimeFeature) article += `\n${crimeFeature}\n`;
+
   if (shiinData.length > 0) {
     article += `<h3 style="${h3Style}">主要な死因トップ10</h3>\n`;
     const shiinRows = shiinData.map(d => [d['順位'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
