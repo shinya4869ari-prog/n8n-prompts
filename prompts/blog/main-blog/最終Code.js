@@ -560,22 +560,29 @@ return $input.all().map(item => {
 
       const apiData = eizouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
+      const posterPath = apiData['poster_path'];
+      const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
 
       const imdbUrl = d['imdb_url'];
-      // IMDbボタン
       const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
         ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
         : '';
 
-      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+
+      const posterHtml = posterUrl
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
+        : '';
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-  <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
-  <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
-  <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-    ${linkHtml}
+  <div style="display:flex;gap:16px;align-items:flex-start;">
+    <div style="flex:1;">
+      <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
+      ${linkHtml}
+    </div>
+    ${posterHtml}
   </div>
 </div>`;
     });
@@ -596,36 +603,38 @@ return $input.all().map(item => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
 
-      let meta = `📅 ${d['公開年'] || ''}`;
-      const showEvaluation = d['評価_見どころ'] && d['評価_見どころ'] !== '欠測' && d['評価_見どころ'] !== 'データなし';
-      
       const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
       const apiData = kougyouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
+      const posterPath = apiData['poster_path'];
+      const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
 
       const imdbUrl = d['imdb_url'];
       const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
         ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
         : '';
 
-      let linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+
+      const posterHtml = posterUrl
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
+        : '';
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
-    <div style="flex:1;min-width:280px;">
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
+    <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
         <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
-        ${meta}
+        📅 ${d['公開年'] || ''}
         ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
       </div>
-      ${showEvaluation ? `<div style="font-size:13px;color:#d97706;font-weight:bold;margin-bottom:8px;">⭐ ${d['評価_見どころ']}</div>` : ''}
-      ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
       ${linkHtml}
     </div>
+    ${posterHtml}
   </div>
 </div>`;
     });
