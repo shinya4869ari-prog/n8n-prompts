@@ -93,31 +93,13 @@ const parseOutput = (node, nodeName) => {
 };
 
 const adjustPrisonTrend = (trendArray, chiAnObj) => {
-  const cleanYear = (y) => String(y || '').replace(/年/g, '').trim();
-  const cleanCount = (c) => String(c || '').replace(/[人,]/g, '').trim();
-
-  const latestYear = cleanYear(chiAnObj['刑務所総収容者数_年']);
-  const latestCount = cleanCount(chiAnObj['刑務所総収容者数']);
-
-  if (latestYear && latestCount && latestCount !== '欠測' && latestCount !== '-') {
-    const alreadyExists = trendArray.some(d => cleanYear(d.年) === latestYear);
-    if (!alreadyExists) {
-      if (trendArray.length === 10) {
-        trendArray[9] = { 
-          年: chiAnObj['刑務所総収容者数_年'], 
-          総収容者数: chiAnObj['刑務所総収容者数'] 
-        };
-      } else {
-        trendArray.push({ 
-          年: chiAnObj['刑務所総収容者数_年'], 
-          総収容者数: chiAnObj['刑務所総収容者数'] 
-        });
-      }
-    } else {
-      const idx = trendArray.findIndex(d => cleanYear(d.年) === latestYear);
-      if (idx !== -1) {
-        trendArray[idx].総収容者数 = chiAnObj['刑務所総収容者数'];
-      }
+  const latestCount = chiAnObj['刑務所総収容者数'];
+  if (latestCount && latestCount !== '欠測' && latestCount !== '-') {
+    if (trendArray.length > 0) {
+      trendArray[trendArray.length - 1] = { 
+        年: chiAnObj['刑務所総収容者数_年'], 
+        総収容者数: latestCount 
+      };
     }
   }
   return trendArray;
