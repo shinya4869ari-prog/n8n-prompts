@@ -92,6 +92,37 @@ const parseOutput = (node, nodeName) => {
   } catch (e) { throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}`); }
 };
 
+const adjustPrisonTrend = (trendArray, chiAnObj) => {
+  const cleanYear = (y) => String(y || '').replace(/年/g, '').trim();
+  const cleanCount = (c) => String(c || '').replace(/[人,]/g, '').trim();
+
+  const latestYear = cleanYear(chiAnObj['刑務所総収容者数_年']);
+  const latestCount = cleanCount(chiAnObj['刑務所総収容者数']);
+
+  if (latestYear && latestCount && latestCount !== '欠測' && latestCount !== '-') {
+    const alreadyExists = trendArray.some(d => cleanYear(d.年) === latestYear);
+    if (!alreadyExists) {
+      if (trendArray.length >= 10) {
+        trendArray[trendArray.length - 1] = { 
+          年: chiAnObj['刑務所総収容者数_年'], 
+          総収容者数: chiAnObj['刑務所総収容者数'] 
+        };
+      } else {
+        trendArray.push({ 
+          年: chiAnObj['刑務所総収容者数_年'], 
+          総収容者数: chiAnObj['刑務所総収容者数'] 
+        });
+      }
+    } else {
+      const idx = trendArray.findIndex(d => cleanYear(d.年) === latestYear);
+      if (idx !== -1) {
+        trendArray[idx].総収容者数 = chiAnObj['刑務所総収容者数'];
+      }
+    }
+  }
+  return trendArray;
+};
+
 const r1 = parseOutput(r1Raw, 'researcher1');
 const r2 = parseOutput(r2Raw, 'researcher2');
 
@@ -117,7 +148,7 @@ const jChiAn = $('Japan_②治安指標').first().json;
 const jBukka = $('Japan_③物価').first().json;
 const jBoeki = $('Japan_④貿易').first().json;
 
-const jPrison = [
+const jPrison = adjustPrisonTrend([
   { 年: jChiAn['収容推移1_年'], 総収容者数: jChiAn['収容推移1_総収容者数'] },
   { 年: jChiAn['収容推移2_年'], 総収容者数: jChiAn['収容推移2_総収容者数'] },
   { 年: jChiAn['収容推移3_年'], 総収容者数: jChiAn['収容推移3_総収容者数'] },
@@ -128,7 +159,7 @@ const jPrison = [
   { 年: jChiAn['収容推移8_年'], 総収容者数: jChiAn['収容推移8_総収容者数'] },
   { 年: jChiAn['収容推移9_年'], 総収容者数: jChiAn['収容推移9_総収容者数'] },
   { 年: jChiAn['収容推移10_年'], 総収容者数: jChiAn['収容推移10_総収容者数'] }
-].filter(d => d.年);
+].filter(d => d.年), jChiAn);
 
 const jDeath = [
   { 順位: '1位', 死因: jChiAn['死因1位'] },
@@ -196,7 +227,7 @@ const targetFixed = {
     })),
     外務省危険レベル: { レベル: chiAn['外務省危険レベル'], 出典: chiAn['外務省危険レベル_出典'] }
   },
-  刑務所推移: [
+  刑務所推移: adjustPrisonTrend([
     { 年: chiAn['収容推移1_年'], 総収容者数: chiAn['収容推移1_総収容者数'] },
     { 年: chiAn['収容推移2_年'], 総収容者数: chiAn['収容推移2_総収容者数'] },
     { 年: chiAn['収容推移3_年'], 総収容者数: chiAn['収容推移3_総収容者数'] },
@@ -207,7 +238,7 @@ const targetFixed = {
     { 年: chiAn['収容推移8_年'], 総収容者数: chiAn['収容推移8_総収容者数'] },
     { 年: chiAn['収容推移9_年'], 総収容者数: chiAn['収容推移9_総収容者数'] },
     { 年: chiAn['収容推移10_年'], 総収容者数: chiAn['収容推移10_総収容者数'] }
-  ].filter(d => d.年),
+  ].filter(d => d.年), chiAn),
   死因トップ10: [
     chiAn['死因1位'], chiAn['死因2位'], chiAn['死因3位'], chiAn['死因4位'], chiAn['死因5位'],
     chiAn['死因6位'], chiAn['死因7位'], chiAn['死因8位'], chiAn['死因9位'], chiAn['死因10位']
