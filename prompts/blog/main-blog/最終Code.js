@@ -563,12 +563,7 @@ return $input.all().map(item => {
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
 
-      const imdbUrl = d['imdb_url'];
-      const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
-        ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
-        : '';
-
-      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
 
       const posterHtml = posterUrl
         ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
@@ -608,12 +603,7 @@ return $input.all().map(item => {
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
 
-      const imdbUrl = d['imdb_url'];
-      const imdbBtn = imdbUrl && imdbUrl !== '欠測' && imdbUrl !== ''
-        ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;margin-left:8px;">▶ IMDb</a>`
-        : '';
-
-      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>${imdbBtn}</div>`;
+      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
 
       const posterHtml = posterUrl
         ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
