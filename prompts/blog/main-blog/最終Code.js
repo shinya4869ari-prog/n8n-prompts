@@ -16,6 +16,7 @@ return $input.all().map(item => {
   // --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
   raw = raw.replace(/^[①-⑨] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
+  raw = raw.replace(/^(国家の形と統治機構|行政トップ|立法と選挙制度|司法と法制度|社会保障・医療・年金|教育制度|徴税・財政制度|安全保障と兵役|基本権と価値観)｜.*$/gm, '');
 
   const citation = sheetData.data?.固定データ?.死因出典
     ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}`
@@ -555,7 +556,8 @@ return $input.all().map(item => {
   article += `<h2 style="${h2Style}">⑦ 直近の動向</h2>\n`;
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
-    article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
+    const formattedDoh = dohContent.replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
+    article += `<p>【政治経済社会】</p>\n${formattedDoh}\n`;
     // 【動的出典】直近の動向の出典をシートから取得（ない場合は信頼できるフォールバックを表示）
     let dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
     if (!dohCite || dohCite === '欠測' || dohCite === 'データなし') {
