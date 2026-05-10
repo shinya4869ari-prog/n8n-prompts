@@ -17,6 +17,14 @@ const getPrisonData = (index, field) => {
   return "";
 };
 
+const crime = t["犯罪トップ5"] || [];
+const crimeRows = {};
+for (let i = 0; i < 5; i++) {
+  crimeRows[`犯罪${i+1}位_種別`] = crime[i] ? crime[i]["犯罪種別"] || "" : "";
+  crimeRows[`犯罪${i+1}位_年`] = crime[i] ? crime[i]["年"] || "" : "";
+  crimeRows[`犯罪${i+1}位_出典`] = crime[i] ? crime[i]["出典"] || "" : "";
+}
+
 return [{ json: {
   "国名（日本語）": base.country,
   "国名（英語）": base.countryEn,
@@ -71,5 +79,6 @@ return [{ json: {
   "死因_出典": deathCite,
   "死因1位": death[0]||"", "死因2位": death[1]||"", "死因3位": death[2]||"",
   "死因4位": death[3]||"", "死因5位": death[4]||"", "死因6位": death[5]||"",
-  "死因7位": death[6]||"", "死因8位": death[7]||"", "死因9位": death[8]||"", "死因10位": death[9]||""
+  "死因7位": death[6]||"", "死因8位": death[7]||"", "死因9位": death[8]||"", "死因10位": death[9]||"",
+  ...crimeRows
 }}];

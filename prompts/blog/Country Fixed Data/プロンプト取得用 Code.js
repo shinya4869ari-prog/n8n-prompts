@@ -1,4 +1,4 @@
-const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/%E5%9B%BD%E5%88%A5%E5%9B%BA%E5%AE%9A%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%AB%E3%83%95%E3%83%AD%E3%83%BC/";
+const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/Country%20Fixed%20Data/";
 
 // AIへの指示書のみ取得（コードノードはn8nに直接貼り付けて管理）
 const urls = {
