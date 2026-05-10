@@ -27,6 +27,7 @@
   - imdb_url（その作品のIMDb公式ページのURL。確認できない場合はnull）
   - is_serious（深刻な悲劇的題材ならtrue、それ以外はfalse）
   - 出典（検証した実在のURL）
+  - 最大出力件数は10件
 
 ---
 
