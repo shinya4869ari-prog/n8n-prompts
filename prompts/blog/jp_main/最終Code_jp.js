@@ -214,7 +214,8 @@ return $input.all().map(item => {
   ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">` : ''}
   <div style="flex:1;">
     <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${d['タイトル'] || ''}</div>
-    <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
+    <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:6px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
+    ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<div style="font-size:12px;color:#555;margin-bottom:10px;">🎬 ${d['監督_主演']}</div>` : ''}
     <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
