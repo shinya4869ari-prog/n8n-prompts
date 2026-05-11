@@ -14,9 +14,7 @@ try {
   people = parsed.people || [];
   keywords = parsed.keywords || [];
   movies = parsed.movies || [];
-} catch (e) {
-  // 解析失敗時は空配列のまま進める
-}
+} catch(e) {}
 
 // ② 記事と基本情報の取得
 let mainArticle = '';
