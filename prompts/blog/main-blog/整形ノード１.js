@@ -96,9 +96,9 @@ const adjustPrisonTrend = (trendArray, chiAnObj) => {
   const latestCount = chiAnObj['刑務所総収容者数'];
   if (latestCount && latestCount !== '欠測' && latestCount !== '-') {
     if (trendArray.length > 0) {
-      trendArray[trendArray.length - 1] = { 
-        年: chiAnObj['刑務所総収容者数_年'], 
-        総収容者数: latestCount 
+      trendArray[trendArray.length - 1] = {
+        年: chiAnObj['刑務所総収容者数_年'],
+        総収容者数: latestCount
       };
     }
   }
@@ -114,6 +114,7 @@ const r2Merged = {
   country: r2.country,
   歴史的背景: r2.歴史的背景,
   直近の動向: r2.直近の動向,
+  犯罪の傾向: r2.犯罪の傾向,
   映像作品: r25.映像作品,
   おすすめ映画ランキング: r25.おすすめ映画ランキング
 };
@@ -201,11 +202,11 @@ const targetFixed = {
     刑務所収容率: { 値: chiAn['刑務所収容率'], 年: chiAn['刑務所収容率_年'], 出典: chiAn['刑務所収容率_出典'] },
     刑務所総収容者数: { 値: chiAn['刑務所総収容者数'], 年: chiAn['刑務所総収容者数_年'], 出典: chiAn['刑務所総収容者数_出典'] },
     GPI: { スコア: chiAn['GPIスコア'], 順位: chiAn['GPI順位'], 年: chiAn['GPI年'], 出典: chiAn['GPI出典'] },
-    犯罪トップ5: Array.from({length: 5}, (_, i) => ({
-      順位: `${i+1}位`,
-      犯罪種別: chiAn[`犯罪${i+1}位_種別`] || "欠測",
-      年: chiAn[`犯罪${i+1}位_年`] || "",
-      出典: chiAn[`犯罪${i+1}位_出典`] || ""
+    犯罪トップ5: Array.from({ length: 5 }, (_, i) => ({
+      順位: `${i + 1}位`,
+      犯罪種別: chiAn[`犯罪${i + 1}位_種別`] || "欠測",
+      年: chiAn[`犯罪${i + 1}位_年`] || "",
+      出典: chiAn[`犯罪${i + 1}位_出典`] || ""
     })),
     外務省危険レベル: { レベル: chiAn['外務省危険レベル'], 出典: chiAn['外務省危険レベル_出典'] }
   },
@@ -302,7 +303,7 @@ const japanFixed = {
   死因トップ10: jDeath,
   死因出典: jChiAn['死因_出典'],
   物価: {
-    'ビール（市販500ml）': { '値（円）': jBukka['ビール_円換算'] ? `${jBukka['ビール_円換算']}円` : 'データなし', 出典: jBukka['ビール_出典'] },
+    'ビール（レストラン500ml）': { '値（円）': jBukka['ビール_円換算'] ? `${jBukka['ビール_円換算']}円` : 'データなし', 出典: jBukka['ビール_出典'] },
     'タバコ（マルボロ1箱20本）': { '値（円）': jBukka['タバコ_円換算'] ? `${jBukka['タバコ_円換算']}円` : 'データなし', 出典: jBukka['タバコ_出典'] },
     'ミネラルウォーター（500ml）': { '値（円）': jBukka['水_円換算'] ? `${jBukka['水_円換算']}円` : 'データなし', 出典: jBukka['水_出典'] },
     'ビッグマック（1個）': { '値（円）': jBukka['ビッグマック_円換算'] ? `${jBukka['ビッグマック_円換算']}円` : 'データなし', 出典: jBukka['ビッグマック_出典'] },

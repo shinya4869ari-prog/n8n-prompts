@@ -31,6 +31,7 @@ article = article.replace(
   /border:1px solid #ddd;padding:10px;font-weight:bold;/g,
   'border:1px solid #eee;padding:12px 14px;font-weight:bold;'
 );
+article = article.replace(/(<td[^>]*>)([\d,\.]+(?:\s*(?:%|人|円|km|億|万|兆))?)/g, '$1<strong>$2</strong>');
 return [{
   json: {
     article: article,

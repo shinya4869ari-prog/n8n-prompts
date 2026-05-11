@@ -518,7 +518,9 @@ return $input.all().map(item => {
     }
     article += `<p class="citation" style="${citationStyle}">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
     article += `<div style="height: 10px;"></div>\n`;
-    article += `<p class="citation" style="${citationStyle}">出典：Numbeo / Netflix公式サイト</p>\n`;
+    const bukkaCites = [...new Set(bukkaData.map(d => d['出典']).filter(Boolean))];
+    const bukkaOuten = bukkaCites.length > 0 ? bukkaCites.join(' / ') : 'Numbeo / Netflix公式サイト';
+    article += `<p class="citation" style="${citationStyle}">出典：${bukkaOuten}</p>\n`;
   }
 
   const bukkaNeko = getNekoBubbleForSection('⑤');
