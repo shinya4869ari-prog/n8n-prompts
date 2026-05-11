@@ -6,13 +6,14 @@ const raw = item.output
   ?? item.message?.content
   ?? '{}';
 
-let places = [], people = [], keywords = [];
+let places = [], people = [], keywords = [], movies = [];
 try {
   const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
   const parsed = JSON.parse(cleaned);
   places = parsed.places || [];
   people = parsed.people || [];
   keywords = parsed.keywords || [];
+  movies = parsed.movies || [];
 } catch (e) {
   // 解析失敗時は空配列のまま進める
 }
@@ -68,9 +69,10 @@ function getSearchVariants(name, type) {
 // ⑥ 候補統合
 const flatPatterns = [];
 const allEntities = [
-  ...people.map(p => ({ type: 'people', ...p })),
-  ...places.map(p => ({ type: 'places', ...p })),
-  ...keywords.map(p => ({ type: 'keywords', ...p }))
+  ...people.map(p => ({type: 'people', ...p})),
+  ...places.map(p => ({type: 'places', ...p})),
+  ...keywords.map(p => ({type: 'keywords', ...p})),
+  ...movies.map(p => ({type: 'movies', ...p}))
 ];
 
 for (const entity of allEntities) {
