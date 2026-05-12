@@ -20,7 +20,7 @@
 
 出力構成：
 
-{{ $json.selectedevent }}
+{{ $json.selected_event }}
 
 > **📌 Deep Dive 選定理由：** {{ $json.reason }}
 
