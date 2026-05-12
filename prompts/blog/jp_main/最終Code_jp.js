@@ -1,4 +1,5 @@
 const sheetData = $('整形ノード1_jp').first().json;
+const moviesData = $('リンク挿入_jp').first().json?.movies || [];
 
 return $input.all().map(item => {
   const inputData = item.json;
@@ -206,14 +207,15 @@ return $input.all().map(item => {
   eizouData.forEach((d, i) => {
     const posterPath = eizouList[i]?.poster_path || null;
     const posterUrl = getPosterUrl(posterPath);
+    const movieInfo = (eizouList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/"/g, '&quot;');
     const imdbId = eizouList[i]?.imdb_id || null;
-    const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+    const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
+    const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
     article += `
 <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);display:flex;gap:16px;align-items:flex-start;">
-  ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">` : ''}
   <div style="flex:1;">
-    <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${d['タイトル'] || ''}</div>
+    <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title="${d['タイトル'] || ''}" data-movie-info="${movieInfo}">${d['タイトル'] || ''}</div>
     <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:6px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
     ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<div style="font-size:12px;color:#555;margin-bottom:10px;">🎬 ${d['監督_主演']}</div>` : ''}
     <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
@@ -222,6 +224,7 @@ return $input.all().map(item => {
       ${imdbBtn}
     </div>
   </div>
+  ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0;">` : ''}
 </div>`;
   });
   const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
@@ -238,18 +241,19 @@ return $input.all().map(item => {
     const bg = isSerious ? '#fff3f3' : '#ffffff';
     const posterPath = rankingList[i]?.poster_path || null;
     const posterUrl = getPosterUrl(posterPath);
+    const rankingInfo = (rankingList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/"/g, '&quot;');
     const imdbId = rankingList[i]?.imdb_id || null;
-    const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+    const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
+    const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
     article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>
   <div style="display:flex;gap:16px;align-items:flex-start;">
-    ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);margin-left:8px;">` : ''}
-    <div style="flex:1;">
+    <div style="flex:1;padding-left:8px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title="${d['タイトル'] || ''}" data-movie-info="${rankingInfo}">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}
@@ -261,6 +265,7 @@ return $input.all().map(item => {
         ${imdbBtn}
       </div>
     </div>
+    ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0;">` : ''}
   </div>
 </div>`;
   });
@@ -297,6 +302,20 @@ return $input.all().map(item => {
     article += styledDD;
   }
 
+  const moviePopupScript = `
+<script>
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-movie-title]');
+  if (!el) return;
+  const title = el.getAttribute('data-movie-title');
+  const info = el.getAttribute('data-movie-info');
+  document.getElementById('tenbin-popup-title').textContent = title;
+  document.getElementById('tenbin-popup-info').innerHTML = info;
+  document.getElementById('tenbin-popup').style.display = 'block';
+  document.getElementById('tenbin-overlay').style.display = 'block';
+});
+</script>`;
+
   const popupHTML = `
 <div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
 <div id="tenbin-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;background:#fff;border:1px solid #ddd;border-radius:12px;padding:25px;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,0.3);color:#333;font-family:sans-serif;">
@@ -307,7 +326,7 @@ return $input.all().map(item => {
 
   return {
     json: {
-      article: article + '\n\n' + popupHTML,
+      article: article + '\n\n' + moviePopupScript + '\n\n' + popupHTML,
       title: "日本",
       country: countryName,
       countryEn: "Japan",
