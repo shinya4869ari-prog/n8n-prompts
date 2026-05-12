@@ -310,7 +310,7 @@ document.addEventListener('click', function(e) {
   const title = el.getAttribute('data-movie-title');
   const info = el.getAttribute('data-movie-info');
   document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').innerHTML = info;
+  document.getElementById('tenbin-popup-info').textContent = info;
   document.getElementById('tenbin-popup').style.display = 'block';
   document.getElementById('tenbin-overlay').style.display = 'block';
 });

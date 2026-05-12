@@ -35,7 +35,8 @@ return $input.all().map(item => {
     return text.split('\n')
       .filter(l => l.startsWith(prefix + '｜'))
       .map(l => {
-        const parts = l.replace(prefix + '｜', '').split('｜');
+        const cleanedLine = l.replace(/<\/?[^>]+(>|$)/g, "").trim();
+        const parts = cleanedLine.replace(prefix + '｜', '').split('｜');
         const obj = {};
         parts.forEach(p => {
           const idx = p.indexOf('：');
@@ -709,7 +710,7 @@ document.addEventListener('click', function(e) {
   const title = el.getAttribute('data-movie-title');
   const info = el.getAttribute('data-movie-info');
   document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').innerHTML = info;
+  document.getElementById('tenbin-popup-info').textContent = info;
   document.getElementById('tenbin-popup').style.display = 'block';
   document.getElementById('tenbin-overlay').style.display = 'block';
 });
