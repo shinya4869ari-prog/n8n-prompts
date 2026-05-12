@@ -20,6 +20,8 @@
 
 出力構成：
 
+{{ $json.selectedevent }}
+
 > **📌 Deep Dive 選定理由：** {{ $json.reason }}
 
 ## 【{{ $json.country }}の見解】
