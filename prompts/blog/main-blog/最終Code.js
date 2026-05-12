@@ -3,6 +3,7 @@ const promptBody = $input.first()?.json?.externalPrompt ?? "";
 return $input.all().map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
+  const moviesData = $('リンク挿入').first().json?.movies || [];
   let raw = inputData?.article ?? "";
   const rawLines = raw.split('\n');
 
@@ -579,13 +580,18 @@ return $input.all().map(item => {
     eizouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-
       const apiData = eizouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
+      const movieInfo = (apiData?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+      const imdbId = apiData?.imdb_id || null;
+      const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
-      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
+      const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+        ${imdbBtn}
+      </div>`;
 
       const posterHtml = posterUrl
         ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
@@ -595,7 +601,7 @@ return $input.all().map(item => {
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;color:#222;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
+      <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${movieInfo}'>${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
       ${linkHtml}
     </div>
@@ -616,16 +622,21 @@ return $input.all().map(item => {
   article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
   const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
+    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
-
-      const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
       const apiData = kougyouData2.find(api => api['タイトル_日本語'] === d['タイトル'] || api['原題'] === d['タイトル']) || {};
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
+      const rankingInfo = (apiData?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+      const imdbId = apiData?.imdb_id || null;
+      const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
-      const linkHtml = `<div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a></div>`;
+      const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+        ${imdbBtn}
+      </div>`;
 
       const posterHtml = posterUrl
         ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
@@ -638,7 +649,7 @@ return $input.all().map(item => {
     <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#111;">${d['タイトル'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${rankingInfo}'>${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${d['公開年'] || ''}
@@ -650,7 +661,6 @@ return $input.all().map(item => {
   </div>
 </div>`;
     });
-    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
     const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
     if (kougyouCites.length > 0) {
       article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
@@ -691,6 +701,20 @@ return $input.all().map(item => {
   }
 
   // --- 17. リンクポップアップHTMLの最終挿入（はりボテリンク解消） ---
+  const moviePopupScript = `
+<script>
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-movie-title]');
+  if (!el) return;
+  const title = el.getAttribute('data-movie-title');
+  const info = el.getAttribute('data-movie-info');
+  document.getElementById('tenbin-popup-title').textContent = title;
+  document.getElementById('tenbin-popup-info').innerHTML = info;
+  document.getElementById('tenbin-popup').style.display = 'block';
+  document.getElementById('tenbin-overlay').style.display = 'block';
+});
+</script>`;
+
   const popupHTML = `
 <div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
 <div id="tenbin-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;background:#fff;border:1px solid #ddd;border-radius:12px;padding:25px;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,0.3);color:#333;font-family:sans-serif;">
@@ -699,7 +723,7 @@ return $input.all().map(item => {
   <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
 </div>`;
 
-  const finalArticleText = article + '\n\n' + popupHTML;
+  const finalArticleText = article + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
 
   // --- WordPressカテゴリーID自動振り分け設定 ---
   // ※WordPress側のカテゴリーIDに合わせて右側の数値を変更・調整してください

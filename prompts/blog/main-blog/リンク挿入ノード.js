@@ -153,4 +153,4 @@ const linkedDeepDive = deepDiveRaw ? insertLinks(deepDiveRaw) : '';
 
 const finalArticle = linkedMain + '\n\n' + popupHTML;
 
-return [{ json: { article: finalArticle, deepDiveArticle: linkedDeepDive, country: country } }];
+return [{ json: { article: finalArticle, deepDiveArticle: linkedDeepDive, country: country, movies: movies } }];

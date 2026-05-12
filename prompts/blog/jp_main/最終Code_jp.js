@@ -207,7 +207,7 @@ return $input.all().map(item => {
   eizouData.forEach((d, i) => {
     const posterPath = eizouList[i]?.poster_path || null;
     const posterUrl = getPosterUrl(posterPath);
-    const movieInfo = (eizouList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/"/g, '&quot;');
+    const movieInfo = (eizouList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
     const imdbId = eizouList[i]?.imdb_id || null;
     const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
     const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
@@ -215,7 +215,7 @@ return $input.all().map(item => {
     article += `
 <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);display:flex;gap:16px;align-items:flex-start;">
   <div style="flex:1;">
-    <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title="${d['タイトル'] || ''}" data-movie-info="${movieInfo}">${d['タイトル'] || ''}</div>
+    <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${movieInfo}'>${d['タイトル'] || ''}</div>
     <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:6px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
     ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<div style="font-size:12px;color:#555;margin-bottom:10px;">🎬 ${d['監督_主演']}</div>` : ''}
     <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
@@ -241,7 +241,7 @@ return $input.all().map(item => {
     const bg = isSerious ? '#fff3f3' : '#ffffff';
     const posterPath = rankingList[i]?.poster_path || null;
     const posterUrl = getPosterUrl(posterPath);
-    const rankingInfo = (rankingList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/"/g, '&quot;');
+    const rankingInfo = (rankingList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
     const imdbId = rankingList[i]?.imdb_id || null;
     const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
     const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
@@ -253,7 +253,7 @@ return $input.all().map(item => {
     <div style="flex:1;padding-left:8px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title="${d['タイトル'] || ''}" data-movie-info="${rankingInfo}">${d['タイトル'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${rankingInfo}'>${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}
