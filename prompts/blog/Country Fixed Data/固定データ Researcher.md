@@ -68,6 +68,26 @@
 - 「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
 - 「{{ $json.countryEn }} crime statistics by category official police report latest」
 データが見つからない場合は「欠測」と記載すること。
+**※重要：犯罪トップ5の出典は、配列の最後（5位）のオブジェクトにのみ1つだけ記載すること。**
+
+### 女性・子供安全指標
+優先出典：UNODC → UNICEF → WEF → 各国警察統計
+出力キー名は必ず「女性・子供指標」とすること。
+
+#### 性的暴行
+- 「{{ $json.countryEn }} sexual violence rate per 100,000 UNODC latest」
+- 「{{ $json.countryEn }} rape reported cases annual total UNODC statistics」
+
+#### 人身売買
+- 「{{ $json.countryEn }} human trafficking victims UNODC latest」
+
+#### ジェンダーギャップ指数（GGI）
+- 「Global Gender Gap Index {{ $json.countryEn }} score rank 2025 site:weforum.org」
+
+#### 女性労働参加率・女性議員比率・児童労働率
+- 「{{ $json.countryEn }} female labor force participation rate ILO World Bank latest」
+- 「{{ $json.countryEn }} women parliament seats percentage IPU latest」
+- 「{{ $json.countryEn }} child labor rate ILO UNICEF latest」
 
 ---
 
@@ -139,12 +159,21 @@
     "外務省危険レベル": {"レベル": "", "出典": ""},
     "死因トップ10": {"年": "", "出典": "", "リスト": []},
     "犯罪トップ5": [
-      {"順位": "1", "犯罪種別": "", "年": "", "出典": ""},
-      {"順位": "2", "犯罪種別": "", "年": "", "出典": ""},
-      {"順位": "3", "犯罪種別": "", "年": "", "出典": ""},
-      {"順位": "4", "犯罪種別": "", "年": "", "出典": ""},
+      {"順位": "1", "犯罪種別": "", "年": ""},
+      {"順位": "2", "犯罪種別": "", "年": ""},
+      {"順位": "3", "犯罪種別": "", "年": ""},
+      {"順位": "4", "犯罪種別": "", "年": ""},
       {"順位": "5", "犯罪種別": "", "年": "", "出典": ""}
-    ]
+    ],
+    "女性・子供指標": {
+      "性的暴行届出率":   {"値": "", "年": "", "出典": "UNODC"},
+      "年間性的暴行件数": {"値": "", "年": "", "出典": "UNODC"},
+      "人身売買被害者数": {"値": "", "年": "", "出典": "UNODC"},
+      "GGI": {"スコア": "", "順位": "", "年": "", "出典": "WEF"},
+      "女性労働参加率":   {"値": "", "年": "", "出典": "ILO"},
+      "女性議員比率":     {"値": "", "年": "", "出典": "IPU"},
+      "児童労働率":       {"値": "", "年": "", "出典": "ILO"}
+    }
   },
   "物価": {
     "首都（日本語）": "{{ $json.capital }}",
