@@ -12,8 +12,6 @@
   - 誤：1,500{{ $json.currencySymbol }}（後ろに付けるのは厳禁）
   - **※重要**: 数値の表記は、**小数点はピリオド「.」、桁区切りはカンマ「,」**に完全に統一してください（例：{{ $json.currencySymbol }}5,000 または {{ $json.currencySymbol }}10.50）。ヨーロッパ式の「小数点をカンマにする表記」は絶対に使用しないでください。
 - **出典名の英語表記統一（絶対ルール）**: 出典が「World Bank（世界銀行）」「WHO（世界保健機関）」「ILO（国際労働機関）」「UNODC（国際連合薬物犯罪事務所）」などの主要な国際機関の場合、**絶対に日本語に訳さず、必ずそのまま「World Bank」「WHO」「ILO」「UNODC」等の英語（アルファベット）表記で出力してください。**「世界銀行」などの日本語訳表記は一切使用禁止です。
-
-
 - 挨拶・説明・マークダウン記号・JSON以外の文字を一切出力しないこと。
 - 最後の } の後は何も出力しないこと。
 
@@ -27,35 +25,10 @@
 ## 調査項目と検索クエリ
 
 ## 【② 治安・社会指標】
-優先出典：World Bank API（自動取得） → UNODC → WHO → 各国統計局
-
-### 【WB自動取得済みデータ（絶対ルール）】
-以下の項目はWorld Bank APIで取得済みの値が入力データに含まれている。
-この値を必ずそのまま出力すること。検索・補完・上書き厳禁。
-
-- 殺人率：{{ $json.wb.殺人率.値 }}（{{ $json.wb.殺人率.年 }}）
-- 交通事故死亡率：{{ $json.wb.交通事故死亡率.値 }}（{{ $json.wb.交通事故死亡率.年 }}）
-- 自殺率：{{ $json.wb.自殺率.値 }}（{{ $json.wb.自殺率.年 }}）
-- 失業率：{{ $json.wb.失業率.値 }}（{{ $json.wb.失業率.年 }}）
-- ジニ係数：{{ $json.wb.ジニ係数.値 }}（{{ $json.wb.ジニ係数.年 }}）
-- 女性労働参加率：{{ $json.wb.女性労働参加率.値 }}（{{ $json.wb.女性労働参加率.年 }}）
-- 女性議員比率：{{ $json.wb.女性議員比率.値 }}（{{ $json.wb.女性議員比率.年 }}）
-- 児童労働率：{{ $json.wb.児童労働率.値 }}（{{ $json.wb.児童労働率.年 }}）
-
-（※上記の項目はWorld Bank APIで自動取得済み。WBにデータがない場合のフォールバックとしてのみ以下のクエリを使用すること。WBにデータがある場合は検索・上書きを禁止する）
 （※刑務所関連については下記の個別ルールを最優先すること）
 
-### 殺人率・交通事故死亡率・自殺率（10万人あたり）
-※World Bank APIで自動取得済み。以下はWBにデータがない場合のフォールバック専用。
-- 「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC latest」
-- 「{{ $json.countryEn }} road traffic mortality rate per 100,000 WHO latest」
-- 「{{ $json.countryEn }} suicide mortality rate per 100,000 WHO latest」
-
-### 貧困率・ジニ係数
+### 貧困率
 - 「{{ $json.countryEn }} relative poverty rate official statistics latest data」
-- 「{{ $json.countryEn }} gini index World Bank latest data」
-※ジニ係数は必ず **「0〜100の指数形式」** で出力すること（例：32.3）。0.xxxの形式で見つかった場合は100倍して出力すること。
-
 
 ### 刑務所データ（収容率・総数・推移）の絶対ルール
 **出典は必ず「World Prison Brief」を使用すること。世界銀行、UNODC、各国統計局などのデータは一切使用禁止。**
@@ -73,6 +46,9 @@
 - 「Global Peace Index {{ $json.countryEn }} latest score rank site:visionofhumanity.org」
 - 「外務省 {{ $json.country }} 危険情報 危険レベル {{ $now.toFormat('yyyy') }}」
 
+### 死因トップ10
+- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
+
 ### 犯罪種別ランキング（トップ5）
 優先出典：各国警察の公式統計 → UNODC
 - 「{{ $json.countryEn }} crime statistics by category official police report latest」
@@ -80,9 +56,8 @@
 データが見つからない場合は「欠測」と記載すること。
 **※形式：{"年": "", "出典": "", "リスト": ["1位", "2位", "3位", "4位", "5位"]}**
 
-
 ### 女性・子供安全指標
-優先出典：World Bank API（自動取得） → UNODC → UNICEF → WEF → 各国警察統計
+優先出典：UNODC → UNICEF → WEF → 各国警察統計
 出力キー名は必ず「女性・子供指標」とすること。
 
 #### 性的暴行
@@ -95,15 +70,7 @@
 #### ジェンダーギャップ指数（GGI）
 - 「Global Gender Gap Index {{ $json.countryEn }} score rank 2025 site:weforum.org」
 
-#### 女性労働参加率・女性議員比率・児童労働率
-- 「{{ $json.countryEn }} female labor force participation rate ILO World Bank latest」
-- 「{{ $json.countryEn }} women parliament seats percentage IPU latest」
-- 「{{ $json.countryEn }} child labor rate ILO UNICEF latest」
-
-### 死因トップ10
-- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
-
---
+---
 
 ## 【③ 物価（生活コスト）】
 
@@ -142,7 +109,6 @@
 - **※重要（絶対ルール）**: 韓国ウォン(KRW)やアルジェリアディナール(DZD)などの1単位の価値が極めて小さい通貨であっても、**必ず「1外貨 ＝ 〇〇円」の形式（1単位あたり、例：1 KRW = 0.11 JPY、1 DZD = 1.13 JPY）で、小数点まで正確な最新の為替レート数値**を収集・出力してください。「100ウォン＝〇〇円」や「1000ウォン＝〇〇円」といった100・1000単位のレートをそのまま出力することは絶対に厳禁です。
 - ※対象国が「Japan（日本）」の場合は、為替レートは「1」を出力してください。
 
-
 ---
 
 ## 【④ 貿易】
@@ -150,7 +116,6 @@
 - 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 trading partners share percentage latest」
-
 
 ---
 
@@ -209,10 +174,11 @@
     }
   },
   "貿易": {
-  "主要輸出項目": [{"順位": "1〜10", "品目": ""}],
-  "主要輸入項目": [{"順位": "1〜10", "品目": ""}],
-  "貿易相手国": [
-    {"順位": "1〜10", "国名": "", "シェア": ""},
-    {"順位": "出典", "国名": "", "シェア": "", "出典": "ここに出典名と調査年を記載（例：OEC (2022) / IMF (2023)）"}
-  ]
+    "主要輸出項目": [{"順位": "1〜10", "品目": ""}],
+    "主要輸入項目": [{"順位": "1〜10", "品目": ""}],
+    "貿易相手国": [
+      {"順位": "1〜10", "国名": "", "シェア": ""},
+      {"順位": "出典", "国名": "", "シェア": "", "出典": "ここに出典名と調査年を記載（例：OEC (2022) / IMF (2023)）"}
+    ]
+  }
 }
