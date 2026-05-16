@@ -66,9 +66,9 @@
 ### 犯罪種別ランキング（トップ5）
 出典は必ず UNODC または各国警察の公式統計を使用すること。
 - 「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
-- 「{{ $json.crimeEn }} crime statistics by category official police report latest」
+- 「{{ $json.countryEn }} crime statistics by category official police report latest」
 データが見つからない場合は「欠測」と記載すること。
-**※重要：犯罪トップ5は「年」「出典」「リスト（1位〜5位）」の形式で出力すること。**
+**※形式：{"年": "", "出典": "", "リスト": ["1位", "2位", "3位", "4位", "5位"]}**
 
 ### 女性・子供安全指標
 優先出典：UNODC → UNICEF → WEF → 各国警察統計
@@ -161,7 +161,7 @@
     "犯罪トップ5": {
       "年": "",
       "出典": "",
-      "リスト": ["1位の種別", "2位の種別", "3位の種別", "4位の種別", "5位の種別"]
+      "リスト": ["", "", "", "", ""]
     },
     "女性・子供指標": {
       "性的暴行届出率":   {"値": "", "年": "", "出典": "UNODC"},
