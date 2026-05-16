@@ -77,15 +77,50 @@
 
 ---
 
-### 6. 物価・通貨情報
-- **為替レート**: 米ドル(USD)および日本円(JPY)に対する最新レート。
-  - 「1 USD = [現地通貨]」「1 JPY = [現地通貨]」の形式。
-- **主要な物価例**:
-  - 水(500mlペットボトル)
-  - ビール(350ml缶)
-  - マクドナルド（ビッグマックセット）
-  - 外食（安価なレストランでの1食）
-  - タクシー（初乗りまたは1km）
+### 6. 物価（生活コスト）
+
+### ビール（レストラン500ml）
+「Numbeo Domestic Beer price {{ $json.capital }} latest data」
+
+### タバコ（マルボロ1箱）
+「Numbeo cigarettes Marlboro price {{ $json.capital }} latest data」
+
+### ミネラルウォーター（500ml）
+「Numbeo water bottle 0.5 liter price {{ $json.capital }} latest data」
+
+### ビッグマック
+「Big Mac price {{ $json.countryEn }} latest data official」
+
+### ガソリン（1L）
+「Numbeo gasoline price {{ $json.capital }} latest data」
+
+### 外食（安めの店・1食）
+「Numbeo inexpensive restaurant meal price {{ $json.capital }} latest data」
+
+### 電気・水道・ガス（月額・85㎡）
+「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} latest data」
+
+### 家賃（1LDK・首都圏市内）
+「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} latest data」
+
+### 平均月収（手取り）
+「Numbeo average monthly net salary {{ $json.capital }} latest data」
+
+### Netflix（スタンダード）
+「Netflix standard plan price {{ $json.countryEn }} official latest data」
+
+### 為替レート（対円）
+「{{ $json.countryEn }} currency JPY exchange rate today」
+- **※重要（絶対ルール）**: 必ず「1外貨 ＝ 〇〇円」の形式で出力すること。
+- ※対象国が「Japan（日本）」の場合は、為替レートは「1」を出力してください。
+
+---
+
+### 7. 貿易
+### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
+- 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
+- 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
+- 「{{ $json.countryEn }} top 10 trading partners share percentage latest」
 
 ---
 
@@ -132,12 +167,27 @@
     "通貨記号": "{{ $json.currencySymbol }}",
     "通貨コード": "{{ $json.currencyCode }}",
     "為替レート": "",
-    "アイテムリスト": [
-      {"項目": "水(500ml)", "価格": "", "日本円換算": ""},
-      {"項目": "ビール(350ml)", "価格": "", "日本円換算": ""},
-      {"項目": "ビッグマックセット", "価格": "", "日本円換算": ""},
-      {"項目": "外食(安価な店)", "価格": "", "日本円換算": ""},
-      {"項目": "タクシー(1km)", "価格": "", "日本円換算": ""}
+    "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
+    "各項目": {
+      "ビール": {"現地通貨": ""},
+      "タバコ": {"現地通貨": ""},
+      "水": {"現地通貨": ""},
+      "ビッグマック": {"現地通貨": "", "出典": ""},
+      "ガソリン": {"現地通貨": ""},
+      "外食": {"現地通貨": ""},
+      "光熱費": {"現地通貨": ""},
+      "家賃": {"現地通貨": ""},
+      "月収": {"現地通貨": ""},
+      "物価_出典": "",
+      "Netflix": {"現地通貨": "", "出典": ""}
+    }
+  },
+  "貿易": {
+    "主要輸出項目": [{"順位": "1〜10", "品目": ""}],
+    "主要輸入項目": [{"順位": "1〜10", "品目": ""}],
+    "貿易相手国": [
+      {"順位": "1〜10", "国名": "", "シェア": ""},
+      {"順位": "出典", "国名": "", "シェア": "", "出典": "ここに出典名と調査年を記載"}
     ]
   }
 }

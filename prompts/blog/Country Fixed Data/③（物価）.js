@@ -1,5 +1,5 @@
 const item = $input.first().json;
-const raw = item.output || item.originalData?.output || "";
+const raw = item.originalData?.output || item.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 const fxRaw = b["為替レート"] || "";
@@ -55,6 +55,9 @@ return [{
     "物価_出典": b["各項目"]?.["物価_出典"],
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
     "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
-    "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"]
+    "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"],
+    "最終アップデート日": new Date().toISOString().split('T')[0],
+    "次回アップデート予定日": "",
+    "アップデート状態": "完了",
   }
 }];
