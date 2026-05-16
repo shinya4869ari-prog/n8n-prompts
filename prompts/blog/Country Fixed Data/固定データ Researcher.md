@@ -40,9 +40,6 @@
 - 「{{ $json.countryEn }} gini index World Bank latest data」
 ※ジニ係数は必ず **「0〜100の指数形式」** で出力すること（例：32.3）。0.xxxの形式で見つかった場合は100倍して出力すること。
 
-### 失業率
-- 「{{ $json.countryEn }} unemployment rate official statistics latest」
-- 優先出典：IMF → ILO → 各国統計局
 
 ### 刑務所データ（収容率・総数・推移）の絶対ルール
 **出典は必ず「World Prison Brief」を使用すること。世界銀行、UNODC、各国統計局などのデータは一切使用禁止。**
@@ -64,9 +61,9 @@
 - 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
 
 ### 犯罪種別ランキング（トップ5）
-出典は必ず UNODC または各国警察の公式統計を使用すること。
-- 「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
+優先出典：各国警察の公式統計 → UNODC
 - 「{{ $json.countryEn }} crime statistics by category official police report latest」
+- 「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
 データが見つからない場合は「欠測」と記載すること。
 **※形式：{"年": "", "出典": "", "リスト": ["1位", "2位", "3位", "4位", "5位"]}**
 
@@ -149,7 +146,6 @@
     "殺人率": {"値": "", "年": "", "出典": ""},
     "交通事故死亡率": {"値": "", "年": "", "出典": ""},
     "自殺率": {"値": "", "年": "", "出典": ""},
-    "失業率": {"値": "", "年": "", "出典": ""},
     "貧困率": {"値": "", "年": "", "出典": ""},
     "ジニ係数": {"値": "", "年": "", "出典": ""},
     "刑務所収容率": {"値": "", "年": "", "出典": ""},

@@ -44,18 +44,19 @@ for (let i = 0; i < 5; i++) {
 
 // WB補完ヘルパー（Researcherの値が欠測・空のときWBで補う）
 const wb補完 = (researcherVal, wbKey) => {
-  if (researcherVal && researcherVal !== "" && researcherVal !== "欠測") return researcherVal;
   const wbData = wb[wbKey];
-  if (!wbData) return researcherVal || "";
-  return wbData.値 !== undefined ? String(wbData.値) : researcherVal || "";
+  if (wbData && wbData.値 !== null && wbData.値 !== undefined) return String(wbData.値);
+  return researcherVal || "";
 };
 const wb補完年 = (researcherVal, wbKey) => {
-  if (researcherVal && researcherVal !== "" && researcherVal !== "欠測") return researcherVal;
-  return wb[wbKey]?.年 || researcherVal || "";
+  const wbData = wb[wbKey];
+  if (wbData && wbData.年) return String(wbData.年);
+  return researcherVal || "";
 };
 const wb補完出典 = (researcherVal, wbKey) => {
-  if (researcherVal && researcherVal !== "" && researcherVal !== "欠測") return researcherVal;
-  return wb[wbKey]?.出典 || researcherVal || "";
+  const wbData = wb[wbKey];
+  if (wbData && wbData.出典) return wbData.出典;
+  return researcherVal || "";
 };
 
 // 女性・子供データ（Researcher出力から取得）
@@ -80,9 +81,6 @@ return [{
     "自殺率_年": t["自殺率"]?.["年"] || "",
     "自殺率_出典": t["自殺率"]?.["出典"] || "",
 
-    "失業率": wb補完(t["失業率"]?.["値"], "失業率"),
-    "失業率_年": wb補完年(t["失業率"]?.["年"], "失業率"),
-    "失業率_出典": wb補完出典(t["失業率"]?.["出典"], "失業率"),
 
     "貧困率": wb補完(t["貧困率"]?.["値"], "貧困率"),
     "貧困率_年": wb補完年(t["貧困率"]?.["年"], "貧困率"),
