@@ -88,7 +88,7 @@
 ### 死因トップ10
 - 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
 
----
+--
 
 ## 【③ 物価（生活コスト）】
 
