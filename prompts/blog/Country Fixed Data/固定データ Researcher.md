@@ -28,7 +28,21 @@
 
 ## 【② 治安・社会指標】
 優先出典：World Bank API（自動取得） → UNODC → WHO → 各国統計局
-（※殺人率・交通事故死亡率・自殺率・失業率・貧困率・ジニ係数・女性労働参加率・女性議員比率・児童労働率はWorld Bank APIで自動取得済み。WBにデータがない場合のフォールバックとして以下のクエリで収集すること）
+
+### 【WB自動取得済みデータ（絶対ルール）】
+以下の項目はWorld Bank APIで取得済みの値が入力データに含まれている。
+この値を必ずそのまま出力すること。検索・補完・上書き厳禁。
+
+- 殺人率：{{ $json.wb.殺人率.値 }}（{{ $json.wb.殺人率.年 }}）
+- 交通事故死亡率：{{ $json.wb.交通事故死亡率.値 }}（{{ $json.wb.交通事故死亡率.年 }}）
+- 自殺率：{{ $json.wb.自殺率.値 }}（{{ $json.wb.自殺率.年 }}）
+- 失業率：{{ $json.wb.失業率.値 }}（{{ $json.wb.失業率.年 }}）
+- ジニ係数：{{ $json.wb.ジニ係数.値 }}（{{ $json.wb.ジニ係数.年 }}）
+- 女性労働参加率：{{ $json.wb.女性労働参加率.値 }}（{{ $json.wb.女性労働参加率.年 }}）
+- 女性議員比率：{{ $json.wb.女性議員比率.値 }}（{{ $json.wb.女性議員比率.年 }}）
+- 児童労働率：{{ $json.wb.児童労働率.値 }}（{{ $json.wb.児童労働率.年 }}）
+
+（※上記の項目はWorld Bank APIで自動取得済み。WBにデータがない場合のフォールバックとしてのみ以下のクエリを使用すること。WBにデータがある場合は検索・上書きを禁止する）
 （※刑務所関連については下記の個別ルールを最優先すること）
 
 ### 殺人率・交通事故死亡率・自殺率（10万人あたり）
@@ -82,7 +96,6 @@
 - 「Global Gender Gap Index {{ $json.countryEn }} score rank 2025 site:weforum.org」
 
 #### 女性労働参加率・女性議員比率・児童労働率
-優先出典：World Bank API（自動取得） → UNODC → UNICEF → WEF → 各国警察統計
 - 「{{ $json.countryEn }} female labor force participation rate ILO World Bank latest」
 - 「{{ $json.countryEn }} women parliament seats percentage IPU latest」
 - 「{{ $json.countryEn }} child labor rate ILO UNICEF latest」
