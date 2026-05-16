@@ -82,6 +82,7 @@
 - 「Global Gender Gap Index {{ $json.countryEn }} score rank 2025 site:weforum.org」
 
 #### 女性労働参加率・女性議員比率・児童労働率
+優先出典：World Bank API（自動取得） → UNODC → UNICEF → WEF → 各国警察統計
 - 「{{ $json.countryEn }} female labor force participation rate ILO World Bank latest」
 - 「{{ $json.countryEn }} women parliament seats percentage IPU latest」
 - 「{{ $json.countryEn }} child labor rate ILO UNICEF latest」
