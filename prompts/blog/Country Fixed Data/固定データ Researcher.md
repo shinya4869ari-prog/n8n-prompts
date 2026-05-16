@@ -32,6 +32,7 @@
 （※刑務所関連については下記の個別ルールを最優先すること）
 
 ### 殺人率・交通事故死亡率・自殺率（10万人あたり）
+※World Bank APIで自動取得済み。以下はWBにデータがない場合のフォールバック専用。
 - 「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC latest」
 - 「{{ $json.countryEn }} road traffic mortality rate per 100,000 WHO latest」
 - 「{{ $json.countryEn }} suicide mortality rate per 100,000 WHO latest」
@@ -67,7 +68,7 @@
 
 
 ### 女性・子供安全指標
-優先出典：UNODC → UNICEF → WEF → 各国警察統計
+優先出典：World Bank API（自動取得） → UNODC → UNICEF → WEF → 各国警察統計
 出力キー名は必ず「女性・子供指標」とすること。
 
 #### 性的暴行
