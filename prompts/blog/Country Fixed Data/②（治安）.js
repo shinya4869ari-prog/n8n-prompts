@@ -18,20 +18,28 @@ const getPrisonData = (index, field) => {
   return "";
 };
 
-const crime = t["犯罪トップ5"] || [];
+const crimeRaw = t["犯罪トップ5"] || [];
+const crimeList = Array.isArray(crimeRaw) ? crimeRaw : (crimeRaw["リスト"] || []);
 let crimeCite = "";
-for (let i = 4; i >= 0; i--) {
-  if (crime[i] && crime[i]["出典"]) {
-    crimeCite = crime[i]["出典"];
-    break;
+let crimeYear = "";
+
+if (Array.isArray(crimeRaw)) {
+  for (let i = 4; i >= 0; i--) {
+    if (crimeRaw[i]) {
+      if (!crimeCite && crimeRaw[i]["出典"]) crimeCite = crimeRaw[i]["出典"];
+      if (!crimeYear && crimeRaw[i]["年"]) crimeYear = crimeRaw[i]["年"];
+    }
   }
+} else {
+  crimeCite = crimeRaw["出典"] || "";
+  crimeYear = crimeRaw["年"] || "";
 }
 
 const crimeRows = {};
 for (let i = 0; i < 5; i++) {
-  crimeRows[`犯罪${i + 1}位_種別`] = crime[i] ? crime[i]["犯罪種別"] || "" : "";
-  crimeRows[`犯罪${i + 1}位_年`] = crime[i] ? crime[i]["年"] || "" : "";
-  crimeRows[`犯罪${i + 1}位_出典`] = crime[i] ? (crime[i]["出典"] || crimeCite) : crimeCite;
+  const c = crimeList[i];
+  // 配列形式ならオブジェクトの"犯罪種別"、新形式なら文字列そのまま
+  crimeRows[`犯罪${i + 1}位_種別`] = typeof c === 'string' ? c : (c?.["犯罪種別"] || "");
 }
 
 // WB補完ヘルパー（Researcherの値が欠測・空のときWBで補う）
@@ -117,6 +125,8 @@ return [{
     "死因9位": death[8] || "", "死因10位": death[9] || "",
 
     ...crimeRows,
+    "犯罪_年": crimeYear,
+    "犯罪_出典": crimeCite,
 
     // --- 女性・子供指標（新規追加）---
     "性的暴行届出率": wb補完(w["性的暴行届出率"]?.["値"], "性的暴行届出率"),
