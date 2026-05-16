@@ -66,9 +66,6 @@
 **※形式：{"年": "", "出典": "", "リスト": ["1位", "2位", "3位", "4位", "5位"]}**
 
 
-### 死因トップ10
-- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
-
 ### 女性・子供安全指標
 優先出典：UNODC → UNICEF → WEF → 各国警察統計
 出力キー名は必ず「女性・子供指標」とすること。
@@ -87,6 +84,9 @@
 - 「{{ $json.countryEn }} female labor force participation rate ILO World Bank latest」
 - 「{{ $json.countryEn }} women parliament seats percentage IPU latest」
 - 「{{ $json.countryEn }} child labor rate ILO UNICEF latest」
+
+### 死因トップ10
+- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
 
 ---
 
@@ -161,7 +161,6 @@
       "出典": "",
       "リスト": ["", "", "", "", ""]
     },
-    "死因トップ10": {"年": "", "出典": "", "リスト": []},
     "女性・子供指標": {
       "性的暴行届出率":   {"値": "", "年": "", "出典": ""},
       "年間性的暴行件数": {"値": "", "年": "", "出典": ""},
@@ -170,7 +169,8 @@
       "女性労働参加率":   {"値": "", "年": "", "出典": ""},
       "女性議員比率":     {"値": "", "年": "", "出典": ""},
       "児童労働率":       {"値": "", "年": "", "出典": ""}
-    }
+    },
+    "死因トップ10": {"年": "", "出典": "", "リスト": []}
   },
   "物価": {
     "首都（日本語）": "{{ $json.capital }}",
