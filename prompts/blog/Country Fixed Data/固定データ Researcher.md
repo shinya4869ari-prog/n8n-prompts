@@ -26,11 +26,17 @@
 - ジニ係数：※World Bank APIで自動取得済み。以下はWBにデータがない場合のフォールバック専用。
   - 「{{ $json.countryEn }} gini index World Bank latest data」
 
-### 刑務所統計
-- 最新の刑務所収容率（Occupancy level）
-- 刑務所総収容者数（Total prison population）
-- 直近10年程度の収容者数推移（可能であれば3〜5時点程度）
-- 出典：World Prison Brief (WPB) を最優先。
+### 刑務所データ（収容率・総数・推移）の絶対ルール
+**出典は必ず「World Prison Brief」を使用すること。世界銀行、UNODC、各国統計局などのデータは一切使用禁止。**
+1. **刑務所収容率（Occupancy level）**: 定員に対する収容割合を **「〇〇%」** の形式で収集すること。
+   - 「World Prison Brief {{ $json.countryEn }} occupancy level latest」
+2. **直近の刑務所総収容者数**: 「World Prison Brief」から最新の数値を収集すること。
+   - 「World Prison Brief {{ $json.countryEn }} latest total prison population」
+3. **刑務所収容推移（グラフ用・昇順）**: 
+   - **2000年を起点として、最新年に向かって「古い順（昇順）」で最大10件** 抽出すること。
+   - 間隔は原則 **「2年おき」**（2000, 2002, 2004...）を優先し、10件目は必ず直近の最新値にすること。
+   - 「World Prison Brief {{ $json.countryEn }} historical prison population trend 2000-2026」
+   - **※推移の数値には「人」などの単位を付けず、純粋な数値のみを出力すること。**
 
 ---
 

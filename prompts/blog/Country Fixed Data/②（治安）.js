@@ -2,6 +2,7 @@ const researcherRaw = $('固定データ Researcher').first().json;
 const raw = researcherRaw.originalData?.output || researcherRaw.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const item = $('World Bank API取得Code').first().json;
+const whoData = $('死因トップ10抽出').first().json;
 const hub = $('プロンプト取得用 Code').first().json;
 const base = hub.base;
 const wb = item.wb || {};
@@ -43,11 +44,6 @@ const getPrisonData = (index, field) => {
   if (field === "数") return entry["総収容者数"] || entry["人数"] || entry["値"] || "";
   return "";
 };
-
-// 4. 死因データ
-const deathRaw = t["死因トップ10"] || {};
-const death = Array.isArray(deathRaw) ? deathRaw : (deathRaw["リスト"] || []);
-const deathCite = Array.isArray(deathRaw) ? "" : (deathRaw["出典"] || "");
 
 // WBから直接取る（データがない場合はResearcher出力をフォールバックに使用）
 const wbVal = (key, digits = 2, fallbackVal = "") => {
@@ -157,10 +153,17 @@ return [{
     "収容推移9_年": getPrisonData(8, "年"), "収容推移9_総収容者数": getPrisonData(8, "数"),
     "収容推移10_年": getPrisonData(9, "年"), "収容推移10_総収容者数": getPrisonData(9, "数"),
 
-    "死因_出典": deathCite,
-    "死因1位": death[0] || "", "死因2位": death[1] || "", "死因3位": death[2] || "",
-    "死因4位": death[3] || "", "死因5位": death[4] || "", "死因6位": death[5] || "",
-    "死因7位": death[6] || "", "死因8位": death[7] || "",
-    "死因9位": death[8] || "", "死因10位": death[9] || "",
+    "死因_出典": whoData["死因_出典"] || "",
+    "死因_年": whoData["死因_年"] || "",
+    "死因1位": whoData["死因トップ10"]?.[0] || "",
+    "死因2位": whoData["死因トップ10"]?.[1] || "",
+    "死因3位": whoData["死因トップ10"]?.[2] || "",
+    "死因4位": whoData["死因トップ10"]?.[3] || "",
+    "死因5位": whoData["死因トップ10"]?.[4] || "",
+    "死因6位": whoData["死因トップ10"]?.[5] || "",
+    "死因7位": whoData["死因トップ10"]?.[6] || "",
+    "死因8位": whoData["死因トップ10"]?.[7] || "",
+    "死因9位": whoData["死因トップ10"]?.[8] || "",
+    "死因10位": whoData["死因トップ10"]?.[9] || "",
   }
 }];
