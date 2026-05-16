@@ -58,15 +58,16 @@
 - 「Global Peace Index {{ $json.countryEn }} latest score rank site:visionofhumanity.org」
 - 「外務省 {{ $json.country }} 危険情報 危険レベル {{ $now.toFormat('yyyy') }}」
 
-### 死因トップ10
-- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
-
 ### 犯罪種別ランキング（トップ5）
 優先出典：各国警察の公式統計 → UNODC
 - 「{{ $json.countryEn }} crime statistics by category official police report latest」
 - 「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
 データが見つからない場合は「欠測」と記載すること。
 **※形式：{"年": "", "出典": "", "リスト": ["1位", "2位", "3位", "4位", "5位"]}**
+
+
+### 死因トップ10
+- 「{{ $json.countryEn }} top 10 causes of death WHO GHE latest official data」
 
 ### 女性・子供安全指標
 優先出典：UNODC → UNICEF → WEF → 各国警察統計
@@ -155,6 +156,12 @@
     "収容推移": [{"年": "", "総収容者数": ""}],
     "GPI": {"スコア": "", "順位": "", "年": "", "出典": ""},
     "外務省危険レベル": {"レベル": "", "出典": ""},
+    "犯罪トップ5": {
+      "年": "",
+      "出典": "",
+      "リスト": ["", "", "", "", ""]
+    },
+    "死因トップ10": {"年": "", "出典": "", "リスト": []},
     "女性・子供指標": {
       "性的暴行届出率":   {"値": "", "年": "", "出典": ""},
       "年間性的暴行件数": {"値": "", "年": "", "出典": ""},
@@ -163,12 +170,6 @@
       "女性労働参加率":   {"値": "", "年": "", "出典": ""},
       "女性議員比率":     {"値": "", "年": "", "出典": ""},
       "児童労働率":       {"値": "", "年": "", "出典": ""}
-    },
-    "死因トップ10": {"年": "", "出典": "", "リスト": []},
-    "犯罪トップ5": {
-      "年": "",
-      "出典": "",
-      "リスト": ["", "", "", "", ""]
     }
   },
   "物価": {
