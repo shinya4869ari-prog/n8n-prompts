@@ -3,13 +3,12 @@ const base = hub.base;
 const iso2 = base.countryCode;
 
 const indicators = {
-  // 治安補完用
   殺人率:           'VC.IHR.PSRC.P5',
   自殺率:           'SH.STA.SUIC.P5',
   交通事故死亡率:   'SH.STA.TRAF.P5',
   貧困率:           'SI.POV.NAHC',
   ジニ係数:         'SI.POV.GINI',
-  // 女性・子供
+  失業率:           'SL.UEM.TOTL.ZS',
   女性労働参加率:   'SL.TLF.CACT.FE.ZS',
   女性議員比率:     'SG.GEN.PARL.ZS',
   児童労働率:       'SL.TLF.0714.ZS',
