@@ -1,6 +1,6 @@
 const input = $input.first().json;
 const agentOutput_raw = input.output ?? "";
-const rowData = $('項目検出・国別マージ').first().json.rowData;
+const rowData = input.rowData ?? {};
 const today = new Date().toISOString().split('T')[0];
 
 if (!rowData || !rowData["国名（日本語）"]) {
@@ -10,32 +10,49 @@ if (!rowData || !rowData["国名（日本語）"]) {
 // Agent出力をパース
 let agentOutput = {};
 try {
-    const raw = agentOutput_raw || JSON.stringify(input);
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-
+  const cleaned = agentOutput_raw.replace(/```json|```/g, '').trim();
+  
+  // 行ごとに試す前に全体を1つのJSONとして試す
+  try {
+    agentOutput = JSON.parse(cleaned);
+  } catch(e) {
     // 複数行JSONをマージ
-    const lines = cleaned.split('\n').filter(l => l.trim().startsWith('{'));
+    const lines = cleaned.split('\n');
+    let buffer = '';
+    let depth = 0;
+    
     for (const line of lines) {
+      buffer += line + '\n';
+      for (const ch of line) {
+        if (ch === '{') depth++;
+        if (ch === '}') depth--;
+      }
+      if (depth === 0 && buffer.trim()) {
         try {
-            const obj = JSON.parse(line);
+          const obj = JSON.parse(buffer.trim());
+          if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
             Object.assign(agentOutput, obj);
-        } catch (e) {}
+          }
+        } catch(e2) {}
+        buffer = '';
+      }
     }
-
-    // 全体が1つのJSONの場合のフォールバック
-    if (Object.keys(agentOutput).length === 0) {
-        agentOutput = JSON.parse(cleaned);
-    }
-} catch (e) {
-    agentOutput = {};
+  }
+} catch(e) {
+  agentOutput = {};
 }
+
+console.log("agentOutput keys:", Object.keys(agentOutput));
+console.log("agentOutput_raw length:", agentOutput_raw.length);
 
 const currentYear = new Date().getFullYear();
 
 function shouldUpdate(newYear, existingYear) {
-    if (!existingYear) return true;
-    if (!newYear) return false;
-    return parseInt(newYear) > parseInt(existingYear);
+  if (!existingYear) return true;
+  if (!newYear) return false;
+  const ny = parseInt(String(newYear).replace(/[^0-9]/g, ''));
+  const ey = parseInt(String(existingYear).replace(/[^0-9]/g, ''));
+  return ny > ey;
 }
 
 // 次回アップデート予定日を計算
@@ -185,18 +202,18 @@ if (agentOutput.死因トップ10) {
 }
 
 if (agentOutput.犯罪トップ5) {
-    const list = agentOutput.犯罪トップ5;
-    const existingYear = rowData["犯罪1位_年"];
-    const newYear = list[0]?.年;
-    if (shouldUpdate(newYear, existingYear)) {
-        for (let i = 0; i < 5; i++) {
-            const c = list[i] ?? {};
-            anzen[`犯罪${i + 1}位_種別`] = c.犯罪種別 ?? rowData[`犯罪${i + 1}位_種別`] ?? "";
-            anzen[`犯罪${i + 1}位_年`] = c.年 ?? rowData[`犯罪${i + 1}位_年`] ?? "";
-            anzen[`犯罪${i + 1}位_出典`] = c.出典 ?? rowData[`犯罪${i + 1}位_出典`] ?? "";
-        }
-        anzenUpdated.push("犯罪トップ5");
+  const list = agentOutput.犯罪トップ5;
+  const existingYear = rowData["犯罪_年"];
+  const newYear = list[0]?.年;
+  if (shouldUpdate(newYear, existingYear)) {
+    for (let i = 0; i < 5; i++) {
+      const c = list[i] ?? {};
+      anzen[`犯罪${i + 1}位_種別`] = c.犯罪種別 ?? rowData[`犯罪${i + 1}位_種別`] ?? "";
     }
+    anzen["犯罪_年"] = list[0]?.年 ?? rowData["犯罪_年"] ?? "";
+    anzen["犯罪_出典"] = list[0]?.出典 ?? rowData["犯罪_出典"] ?? "";
+    anzenUpdated.push("犯罪トップ5");
+  }
 }
 
 if (agentOutput.GGI) {
@@ -257,7 +274,9 @@ const bukkaUpdated = [];
 
 if (agentOutput.物価) {
     const d = agentOutput.物価;
-    const rate = parseFloat(d.為替レート) || parseFloat(rowData["為替レート"]) || 1;
+    const rate = rowData["通貨コード"] === "JPY" 
+      ? 1 
+      : parseFloat(String(d.為替レート).replace(/[^0-9.]/g, '')) || parseFloat(rowData["為替レート"]) || 1;
 
     bukka["為替レート"] = d.為替レート ?? rowData["為替レート"];
     bukka["為替取得日"] = d.為替取得日 ?? today;

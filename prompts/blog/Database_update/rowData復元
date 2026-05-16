@@ -1,0 +1,78 @@
+const agentOut = $input.first().json.output ?? "";
+const loopData = $('Loop Over Items').first().json;
+const rowData = loopData.rowData;
+
+// Agent出力をパース
+let agentOutput = {};
+try {
+  const cleaned = agentOut.replace(/```json|```/g, '').trim();
+  const lines = cleaned.split('\n').filter(l => l.trim().startsWith('{'));
+  for (const line of lines) {
+    try {
+      Object.assign(agentOutput, JSON.parse(line));
+    } catch(e) {}
+  }
+  if (Object.keys(agentOutput).length === 0) {
+    agentOutput = JSON.parse(cleaned);
+  }
+} catch(e) {}
+
+// 変更箇所を記録
+const changes = [];
+
+const checkChange = (label, newVal, oldVal) => {
+  if (newVal !== undefined && newVal !== "" && newVal !== "欠測" && String(newVal) !== String(oldVal)) {
+    changes.push({
+      項目: label,
+      変更前: oldVal ?? "",
+      変更後: newVal
+    });
+  }
+};
+
+if (agentOutput.殺人率) checkChange("殺人率", agentOutput.殺人率.値, rowData["殺人率"]);
+if (agentOutput.殺人率) checkChange("殺人率_年", agentOutput.殺人率.年, rowData["殺人率_年"]);
+if (agentOutput.交通事故死亡率) checkChange("交通事故死亡率", agentOutput.交通事故死亡率.値, rowData["交通事故死亡率"]);
+if (agentOutput.交通事故死亡率) checkChange("交通事故死亡率_年", agentOutput.交通事故死亡率.年, rowData["交通事故死亡率_年"]);
+if (agentOutput.自殺率) checkChange("自殺率", agentOutput.自殺率.値, rowData["自殺率"]);
+if (agentOutput.自殺率) checkChange("自殺率_年", agentOutput.自殺率.年, rowData["自殺率_年"]);
+if (agentOutput.失業率) checkChange("失業率", agentOutput.失業率.値, rowData["失業率"]);
+if (agentOutput.失業率) checkChange("失業率_年", agentOutput.失業率.年, rowData["失業率_年"]);
+if (agentOutput.貧困率) checkChange("貧困率", agentOutput.貧困率.値, rowData["貧困率"]);
+if (agentOutput.貧困率) checkChange("貧困率_年", agentOutput.貧困率.年, rowData["貧困率_年"]);
+if (agentOutput.ジニ係数) checkChange("ジニ係数", agentOutput.ジニ係数.値, rowData["ジニ係数"]);
+if (agentOutput.ジニ係数) checkChange("ジニ係数_年", agentOutput.ジニ係数.年, rowData["ジニ係数_年"]);
+if (agentOutput.刑務所収容率) checkChange("刑務所収容率", agentOutput.刑務所収容率.値, rowData["刑務所収容率"]);
+if (agentOutput.刑務所収容率) checkChange("刑務所収容率_年", agentOutput.刑務所収容率.年, rowData["刑務所収容率_年"]);
+if (agentOutput.刑務所総収容者数) checkChange("刑務所総収容者数", agentOutput.刑務所総収容者数.値, rowData["刑務所総収容者数"]);
+if (agentOutput.刑務所総収容者数) checkChange("刑務所総収容者数_年", agentOutput.刑務所総収容者数.年, rowData["刑務所総収容者数_年"]);
+if (agentOutput.GPI) checkChange("GPIスコア", agentOutput.GPI.スコア, rowData["GPIスコア"]);
+if (agentOutput.GPI) checkChange("GPI年", agentOutput.GPI.年, rowData["GPI年"]);
+if (agentOutput.外務省危険レベル) checkChange("外務省危険レベル", agentOutput.外務省危険レベル.レベル, rowData["外務省危険レベル"]);
+if (agentOutput.GGI) checkChange("GGIスコア", agentOutput.GGI.スコア, rowData["GGIスコア"]);
+if (agentOutput.GGI) checkChange("GGI年", agentOutput.GGI.年, rowData["GGI年"]);
+if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agentOutput.女性労働参加率.値, rowData["女性労働参加率"]);
+if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"]);
+if (agentOutput.児童労働率) checkChange("児童労働率", agentOutput.児童労働率.値, rowData["児童労働率"]);
+if (agentOutput.物価) {
+  checkChange("為替レート", agentOutput.物価.為替レート, rowData["為替レート"]);
+  checkChange("ビール", agentOutput.物価.ビール, rowData["ビール_現地通貨"]);
+  checkChange("家賃", agentOutput.物価.家賃, rowData["家賃_現地通貨"]);
+  checkChange("月収", agentOutput.物価.月収, rowData["月収_現地通貨"]);
+}
+if (agentOutput.貿易) {
+  checkChange("輸出1位", agentOutput.貿易.輸出?.[0], rowData["輸出1位_品目"]);
+  checkChange("貿易相手1位", agentOutput.貿易.貿易相手国?.[0]?.国名, rowData["貿易相手1位_国名"]);
+}
+
+return [{ 
+  json: { 
+    output: agentOut, 
+    rowData,
+    変更サマリー: {
+      国名: rowData["国名（日本語）"],
+      変更件数: changes.length,
+      変更内容: changes
+    }
+  } 
+}];

@@ -3,7 +3,6 @@ const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompt
 // AIへの指示書のみ取得（コードノードはn8nに直接貼り付けて管理）
 const urls = {
   researcher: baseUrl + encodeURIComponent("固定データ Researcher.md"),
-  update:     baseUrl + encodeURIComponent("固定データアップデート.md"),
 };
 
 try {
@@ -38,7 +37,6 @@ try {
   return [{
     json: {
       researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
-      updatePrompt:     forceInstruction + evaluateTemplate(raw.update, context),
       base:             base
     }
   }];
