@@ -2,6 +2,11 @@ const agentOut = $input.first().json.output ?? "";
 const loopData = $('Loop Over Items').first().json;
 const rowData = loopData.rowData;
 
+// ツール未使用チェック
+if (!agentOut || agentOut.includes("None of your tools") || agentOut === "") {
+  throw new Error(`ツール未使用エラー: ${rowData["国名（日本語）"]} - Agentが検索ツールを使用しませんでした`);
+}
+
 // Agent出力をパース
 let agentOutput = {};
 try {
