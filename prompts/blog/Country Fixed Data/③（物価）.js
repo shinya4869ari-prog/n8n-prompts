@@ -1,5 +1,5 @@
 const item = $input.first().json;
-const raw = item.originalData?.output || item.output || "";
+const raw = item.output || item.originalData?.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 
