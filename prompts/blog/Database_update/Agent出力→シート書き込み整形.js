@@ -48,10 +48,11 @@ console.log("agentOutput_raw length:", agentOutput_raw.length);
 const currentYear = new Date().getFullYear();
 
 function shouldUpdate(newYear, existingYear) {
-  if (!existingYear) return true;
-  if (!newYear) return false;
+  if (!existingYear || existingYear === "" || existingYear === "欠測") return true;
+  if (!newYear || newYear === "" || newYear === "欠測") return false;
   const ny = parseInt(String(newYear).replace(/[^0-9]/g, ''));
   const ey = parseInt(String(existingYear).replace(/[^0-9]/g, ''));
+  if (isNaN(ny) || isNaN(ey)) return false;
   return ny > ey;
 }
 
