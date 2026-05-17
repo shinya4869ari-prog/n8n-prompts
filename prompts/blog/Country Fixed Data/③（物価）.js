@@ -4,6 +4,9 @@ const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 
 const numbeo = $('Numbeoデータ抽出').first().json;
+const prev = $('プロンプト取得用 Code').first().json;
+const countryJp = prev.country ?? prev.base?.country ?? "";
+const capitalJp = prev.base?.capital ?? "";
 
 const fxRaw = b["為替レート"] || "";
 const fxMatch = fxRaw.match(/[\d.]+/g);
@@ -13,19 +16,15 @@ const fxRate = parseFloat(fx);
 const calcJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
   const cleanVal = String(localVal).replace(/,/g, "");
-  const numMatch = cleanVal.match(/[\d.]+/);
-  if (!numMatch) return "欠測";
-  const val = parseFloat(numMatch[0]);
+  const val = parseFloat(cleanVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
   return Math.round(val * fxRate);
 };
 
-const countryJp = $('国名変換Code').first().json.country;
-
 return [{
   json: {
     "国名（日本語）": countryJp,
-    "首都（日本語）": b["首都（日本語）"] || "",
+    "首都（日本語）": capitalJp || b["首都（日本語）"] || "",
     "通貨コード": numbeo.currencyCode || b["通貨コード"],
     "為替レート": fx,
     "為替取得日": b["為替取得日"],
@@ -37,7 +36,7 @@ return [{
     "水_円換算": calcJpy(numbeo["水"]),
     "ビッグマック_現地通貨": b["各項目"]?.["ビッグマック"]?.["現地通貨"] || "欠測",
     "ビッグマック_円換算": calcJpy(b["各項目"]?.["ビッグマック"]?.["現地通貨"]),
-    "ビッグマック_出典": "",
+    "ビッグマック_出典": b["各項目"]?.["ビッグマック"]?.["出典"] || "",
     "ガソリン_現地通貨": numbeo["ガソリン"] || "欠測",
     "ガソリン_円換算": calcJpy(numbeo["ガソリン"]),
     "外食_現地通貨": numbeo["外食"] || "欠測",
@@ -51,6 +50,6 @@ return [{
     "物価_出典": "Numbeo",
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
     "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
-    "Netflix_出典": "",
+    "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"] || "",
   }
 }];
