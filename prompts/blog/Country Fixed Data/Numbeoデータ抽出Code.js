@@ -16,14 +16,14 @@ function extractPrice(html, label) {
   return match[1].replace(/&[^;]+;/g, '').replace(/[^\d.,]/g, '').trim() || "欠測";
 }
 
-const beer      = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
-const cigarettes = extractPrice(html, 'Cigarettes 20 Pack (Marlboro)');
-const water     = extractPrice(html, 'Water (0.33 liter bottle)');
-const gasoline  = extractPrice(html, 'Gasoline (1 liter)');
-const meal      = extractPrice(html, 'Meal at an Inexpensive Restaurant');
-const utilities = extractPrice(html, 'Basic (Electricity, Heating, Cooling, Water, Garbage) for 85m2 Apartment');
-const rent      = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
-const salary    = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
+const beer       = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
+const cigarettes = extractPrice(html, 'Cigarettes (Pack of 20, Marlboro)');
+const water      = extractPrice(html, 'Bottled Water (50 oz)');
+const gasoline   = extractPrice(html, 'Gasoline (1 liter)');
+const meal       = extractPrice(html, 'Meal at an Inexpensive Restaurant');
+const utilities  = extractPrice(html, 'Basic (Electricity, Heating, Cooling, Water, Garbage) for 85m2 Apartment');
+const rent       = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
+const salary     = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 
 return [{
   json: {
