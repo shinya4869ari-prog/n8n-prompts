@@ -26,7 +26,8 @@ const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
 
 const addSymbol = (val) => {
   if (!val || val === "欠測") return "欠測";
-  return symbol + val;
+  const clean = String(val).replace(/[^\d.,]/g, "");
+  return symbol + clean;
 };
 
 return [{
