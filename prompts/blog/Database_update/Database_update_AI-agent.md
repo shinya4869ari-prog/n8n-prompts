@@ -81,7 +81,8 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"死因トップ10": {"年": "", "出典": "WHO GHE", "リスト": ["1位", "2位", "3位", "4位", "5位", "6位", "7位", "8位", "9位", "10位"]}}
 
 ### 犯罪トップ5
-検索：「{{ $json.countryEn }} most common crimes by type UNODC statistics latest」
+検索：「{{ $json.countryEn }} most reported crime types by volume official police statistics latest」
+※必ず件数が多い順に並べること。推測で並べ替え禁止。公式統計の順位をそのまま使うこと。
 出力：{"犯罪トップ5": [
   {"順位": "1", "犯罪種別": "", "年": "", "出典": ""},
   {"順位": "2", "犯罪種別": ""},

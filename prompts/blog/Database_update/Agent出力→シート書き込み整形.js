@@ -264,9 +264,9 @@ const anzenMissingFields = [
     "死因1位", "犯罪1位_種別", "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
 ].filter(f => !anzen[f] && !rowData[f]);
 
-anzen["最終アップデート日"] = anzenUpdated.length > 0 ? today : (rowData["最終アップデート日"] ?? "");
-anzen["次回アップデート予定日"] = anzenUpdated.length > 0 ? calcNextUpdate(anzenUpdated, thresholds) : (rowData["次回アップデート予定日"] ?? "");
-anzen["アップデート状態"] = anzenMissingFields.length > 0 ? "⚠️未取得" : anzenUpdated.length > 0 ? "✅完了" : "🔄要更新";
+anzen["最終アップデート日"] = today;
+anzen["次回アップデート予定日"] = anzenUpdated.length > 0 ? calcNextUpdate(anzenUpdated, thresholds) : (rowData["次回アップデート予定日"] || calcNextUpdate(Object.keys(thresholds), thresholds));
+anzen["アップデート状態"] = anzenMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
 // ========== 物価シート ==========
 const bukka = { "国名（日本語）": rowData["国名（日本語）"] };
@@ -328,9 +328,9 @@ const bukkaMissingFields = [
     "光熱費_現地通貨", "家賃_現地通貨", "月収_現地通貨"
 ].filter(f => !bukka[f] && !rowData[f]);
 
-bukka["最終アップデート日"] = bukkaUpdated.length > 0 ? today : (rowData["最終アップデート日"] ?? "");
-bukka["次回アップデート予定日"] = bukkaUpdated.length > 0 ? calcNextUpdate(bukkaUpdated, thresholds) : (rowData["次回アップデート予定日"] ?? "");
-bukka["アップデート状態"] = bukkaMissingFields.length > 0 ? "⚠️未取得" : bukkaUpdated.length > 0 ? "✅完了" : "🔄要更新";
+bukka["最終アップデート日"] = today;
+bukka["次回アップデート予定日"] = bukkaUpdated.length > 0 ? calcNextUpdate(bukkaUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
+bukka["アップデート状態"] = bukkaMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
 // ========== 貿易シート ==========
 const boeki = { "国名（日本語）": rowData["国名（日本語）"] };
@@ -358,9 +358,9 @@ const boekiMissingFields = [
     "輸出1位_品目", "輸入1位_品目", "貿易相手1位_国名"
 ].filter(f => !boeki[f] && !rowData[f]);
 
-boeki["最終アップデート日"] = boekiUpdated.length > 0 ? today : (rowData["最終アップデート日"] ?? "");
-boeki["次回アップデート予定日"] = boekiUpdated.length > 0 ? calcNextUpdate(boekiUpdated, thresholds) : (rowData["次回アップデート予定日"] ?? "");
-boeki["アップデート状態"] = boekiMissingFields.length > 0 ? "⚠️未取得" : boekiUpdated.length > 0 ? "✅完了" : "🔄要更新";
+boeki["最終アップデート日"] = today;
+boeki["次回アップデート予定日"] = boekiUpdated.length > 0 ? calcNextUpdate(boekiUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
+boeki["アップデート状態"] = boekiMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
 return [{
     json: {
