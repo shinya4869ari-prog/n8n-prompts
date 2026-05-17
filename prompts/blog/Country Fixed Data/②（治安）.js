@@ -46,22 +46,22 @@ const getPrisonData = (index, field) => {
 };
 
 // WBから直接取る（データがない場合はResearcher出力をフォールバックに使用）
-const wbVal = (key, digits = 2, fallbackVal = "") => {
+const wbVal = (key, digits = 2, fallbackVal = "欠測") => {
   const d = wb[key];
   if (d && d.値 !== null && d.値 !== undefined) {
     return String(Math.round(d.値 * Math.pow(10, digits)) / Math.pow(10, digits));
   }
-  return fallbackVal || "";
+  return fallbackVal !== undefined && fallbackVal !== "" ? fallbackVal : "欠測";
 };
-const wbYear = (key, fallbackYear = "") => {
+const wbYear = (key, fallbackYear = "欠測") => {
   const d = wb[key];
   if (d && d.年) return String(d.年);
-  return fallbackYear || "";
+  return fallbackYear !== undefined && fallbackYear !== "" ? fallbackYear : "欠測";
 };
-const wbCite = (key, fallbackCite = "") => {
+const wbCite = (key, fallbackCite = "欠測") => {
   const d = wb[key];
   if (d && d.出典) return d.出典;
-  return fallbackCite || "";
+  return fallbackCite !== undefined && fallbackCite !== "" ? fallbackCite : "欠測";
 };
 
 return [{
@@ -154,7 +154,6 @@ return [{
     "収容推移10_年": getPrisonData(9, "年"), "収容推移10_総収容者数": getPrisonData(9, "数"),
 
     "死因_出典": whoData["死因_出典"] || "",
-    "死因_年": whoData["死因_年"] || "",
     "死因1位": whoData["死因トップ10"]?.[0] || "",
     "死因2位": whoData["死因トップ10"]?.[1] || "",
     "死因3位": whoData["死因トップ10"]?.[2] || "",
@@ -165,8 +164,5 @@ return [{
     "死因8位": whoData["死因トップ10"]?.[7] || "",
     "死因9位": whoData["死因トップ10"]?.[8] || "",
     "死因10位": whoData["死因トップ10"]?.[9] || "",
-    "最終アップデート日": new Date().toISOString().split('T')[0],
-    "次回アップデート予定日": "",
-    "アップデート状態": "完了",
   }
 }];

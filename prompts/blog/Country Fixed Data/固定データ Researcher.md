@@ -118,6 +118,7 @@
 
 ### 7. 貿易
 ### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
+表記は日本語のみ。
 - 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 trading partners share percentage latest」

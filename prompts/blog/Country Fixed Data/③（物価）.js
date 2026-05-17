@@ -56,8 +56,5 @@ return [{
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
     "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
     "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"],
-    "最終アップデート日": new Date().toISOString().split('T')[0],
-    "次回アップデート予定日": "",
-    "アップデート状態": "完了",
   }
 }];
