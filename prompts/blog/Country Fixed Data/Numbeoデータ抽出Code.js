@@ -1,4 +1,9 @@
 const html = $input.first().json.data;
+const prev = $('プロンプト取得用 Code').first().json;
+const country = prev.country ?? prev.base?.country ?? "";
+const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
+const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
+
 const hasBeer = html.includes('Domestic Beer');
 const hasGasoline = html.includes('Gasoline');
 console.log("Beer found:", hasBeer, "Gasoline found:", hasGasoline);
@@ -23,13 +28,11 @@ const utilities = extractPrice(html, 'Basic (Electricity, Heating, Cooling, Wate
 const rent = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
 const salary = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 
-const item = $input.first().json;
-
 return [{
     json: {
-        "国名（日本語）": item.country ?? "",
-        currencyCode: item.currencyCode ?? "",
-        currencySymbol: item.currencySymbol ?? "",
+        "国名（日本語）": country,
+        currencyCode: currencyCode,
+        currencySymbol: currencySymbol,
         ビール: beer,
         タバコ: cigarettes,
         水: water,
