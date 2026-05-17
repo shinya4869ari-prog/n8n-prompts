@@ -15,7 +15,8 @@ const fxRate = parseFloat(fx);
 
 const calcJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
-  const cleanVal = String(localVal).replace(/,/g, "");
+  const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
+  if (!cleanVal) return "欠測";
   const val = parseFloat(cleanVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
   return Math.round(val * fxRate);
@@ -36,7 +37,7 @@ return [{
     "水_円換算": calcJpy(numbeo["水"]),
     "ビッグマック_現地通貨": b["各項目"]?.["ビッグマック"]?.["現地通貨"] || "欠測",
     "ビッグマック_円換算": calcJpy(b["各項目"]?.["ビッグマック"]?.["現地通貨"]),
-    "ビッグマック_出典": "",
+    "ビッグマック_出典": b["各項目"]?.["ビッグマック"]?.["出典"] || "",
     "ガソリン_現地通貨": numbeo["ガソリン"] || "欠測",
     "ガソリン_円換算": calcJpy(numbeo["ガソリン"]),
     "外食_現地通貨": numbeo["外食"] || "欠測",
@@ -50,6 +51,6 @@ return [{
     "物価_出典": "Numbeo",
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
     "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
-    "Netflix_出典": "",
+    "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"] || "",
   }
 }];
