@@ -26,17 +26,22 @@ try {
 const changes = [];
 
 const checkChange = (label, newVal, oldVal, newYear, oldYear) => {
-  if (newVal !== undefined && newVal !== "" && newVal !== "欠測") {
-    const hasYear = arguments.length >= 4;
-    const beforeStr = hasYear ? `${oldVal ?? ""}（${oldYear ?? "不明"}年）` : `${oldVal ?? ""}`;
-    const afterStr = hasYear ? `${newVal}（${newYear ?? "不明"}年）` : `${newVal}`;
-    changes.push({
-      項目: label,
-      変更前: beforeStr,
-      変更後: afterStr,
-      変更あり: String(newVal) !== String(oldVal)
-    });
-  }
+  if (newVal === undefined || newVal === "" || newVal === "欠測") return;
+  
+  const ny = newYear ? parseInt(String(newYear).replace(/[^0-9]/g, '')) : null;
+  const ey = oldYear ? parseInt(String(oldYear).replace(/[^0-9]/g, '')) : null;
+  const isOlder = ny && ey && ny < ey;
+  const isSame = ny && ey && ny === ey;
+  
+  const beforeStr = oldYear ? `${oldVal ?? ""}（${oldYear}年）` : `${oldVal ?? ""}`;
+  const afterStr = newYear ? `${newVal}（${newYear}年）` : `${newVal}`;
+  
+  changes.push({
+    項目: label,
+    変更前: beforeStr,
+    変更後: afterStr,
+    結果: isOlder ? "⛔却下（古いデータ）" : isSame ? "➡同年度" : String(newVal) !== String(oldVal) ? "✅更新" : "➡変化なし"
+  });
 };
 
 if (agentOutput.殺人率) checkChange("殺人率", agentOutput.殺人率.値, rowData["殺人率"], agentOutput.殺人率.年, rowData["殺人率_年"]);
