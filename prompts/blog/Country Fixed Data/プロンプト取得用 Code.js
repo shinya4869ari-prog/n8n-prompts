@@ -37,7 +37,11 @@ try {
   return [{
     json: {
       researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
-      base:             base
+      base: base,
+      capitalEn: base.capitalEn || "",
+      country: base.country || "",
+      currencyCode: base.currencyCode || "",
+      currencySymbol: base.currencySymbol || "",
     }
   }];
 } catch (error) {
