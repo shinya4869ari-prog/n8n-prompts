@@ -24,8 +24,7 @@
 - GGI：World Economic Forum
 - 女性労働参加率：World Bank → ILO
 - 女性議員比率：World Bank → IPU（列国議会同盟）
-- 児童労働率：ILO
-- 物価系：Numbeo
+- 児童労働率：World Bank → ILO
 - ビッグマック：The Economist
 - Netflix：Netflix公式サイト
 - 貿易：OEC World
@@ -35,18 +34,22 @@
 staleItemsに含まれる項目のみ調査し、該当フィールドのみ出力すること。
 
 ### 殺人率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC latest」
-出力：{"殺人率": {"値": "", "年": "", "出典": "UNODC"}}
+出力：{"殺人率": {"値": "", "年": "", "出典": ""}}
 
 ### 交通事故死亡率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} road traffic mortality rate per 100,000 WHO latest」
-出力：{"交通事故死亡率": {"値": "", "年": "", "出典": "WHO"}}
+出力：{"交通事故死亡率": {"値": "", "年": "", "出典": ""}}
 
 ### 自殺率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} suicide mortality rate per 100,000 WHO latest」
-出力：{"自殺率": {"値": "", "年": "", "出典": "WHO"}}
+出力：{"自殺率": {"値": "", "年": "", "出典": ""}}
 
 ### 失業率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} unemployment rate IMF ILO latest」
 出力：{"失業率": {"値": "", "年": "", "出典": ""}}
 
@@ -55,6 +58,7 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"貧困率": {"値": "", "年": "", "出典": ""}}
 
 ### ジニ係数
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} gini index World Bank latest」
 ※0〜100の指数形式で出力。0.xxx形式で見つかった場合は100倍すること。
 出力：{"ジニ係数": {"値": "", "年": "", "出典": "World Bank"}}
@@ -75,26 +79,38 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 検索：「外務省 {{ $json.countryJa }} 危険情報 危険レベル」
 出力：{"外務省危険レベル": {"レベル": "", "出典": "外務省"}}
 
-
-
 ### GGI
 検索：「{{ $json.countryEn }} Global Gender Gap Index WEF latest score rank」
 出力：{"GGI": {"スコア": "", "順位": "", "年": "", "出典": "WEF"}}
 
 ### 女性労働参加率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} female labour force participation rate ILO latest」
-出力：{"女性労働参加率": {"値": "", "年": "", "出典": "ILO"}}
+出力：{"女性労働参加率": {"値": "", "年": "", "出典": ""}}
 
 ### 女性議員比率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} women in parliament percentage IPU latest」
-出力：{"女性議員比率": {"値": "", "年": "", "出典": "IPU"}}
+出力：{"女性議員比率": {"値": "", "年": "", "出典": ""}}
 
 ### 児童労働率
+※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
 検索：「{{ $json.countryEn }} child labour rate percentage ILO latest」
 ※データが存在しない先進国等は「対象外」と返すこと。
 出力：{"児童労働率": {"値": "", "年": "", "出典": ""}}
 
+### ビッグマック
+検索：「Big Mac price {{ $json.countryEn }} The Economist latest」
+出力：{"ビッグマック": {"現地通貨": "", "出典": "The Economist"}}
 
+### Netflix
+検索：「Netflix standard plan price {{ $json.countryEn }} official latest」
+出力：{"Netflix": {"現地通貨": "", "出典": "Netflix公式"}}
+
+### 為替レート
+検索：「{{ $json.countryEn }} currency JPY exchange rate today」
+※必ず「1外貨 ＝ 〇〇円」の形式で出力。日本の場合は「1」を出力。
+出力：{"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}
 
 ### 貿易
 検索：
