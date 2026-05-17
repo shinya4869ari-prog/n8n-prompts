@@ -4,9 +4,6 @@ const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 
 const numbeo = $('Numbeoデータ抽出').first().json;
-const prev = $('プロンプト取得用 Code').first().json;
-const countryJp = prev.country ?? prev.base?.country ?? "";
-const capitalJp = prev.base?.capital ?? "";
 
 const fxRaw = b["為替レート"] || "";
 const fxMatch = fxRaw.match(/[\d.]+/g);
@@ -23,10 +20,12 @@ const calcJpy = (localVal) => {
   return Math.round(val * fxRate);
 };
 
+const countryJp = $('国名変換Code').first().json.country;
+
 return [{
   json: {
     "国名（日本語）": countryJp,
-    "首都（日本語）": capitalJp || b["首都（日本語）"] || "",
+    "首都（日本語）": b["首都（日本語）"] || "",
     "通貨コード": numbeo.currencyCode || b["通貨コード"],
     "為替レート": fx,
     "為替取得日": b["為替取得日"],
