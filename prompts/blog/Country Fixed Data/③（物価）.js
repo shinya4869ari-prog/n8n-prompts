@@ -26,8 +26,13 @@ const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
 
 const addSymbol = (val) => {
   if (!val || val === "欠測") return "欠測";
-  const clean = String(val).replace(/[^\d.,]/g, "");
-  return symbol + clean;
+  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
+  if (!cleanVal) return "欠測";
+  const num = parseFloat(cleanVal);
+  if (isNaN(num)) return "欠測";
+  const rounded = Math.round(num);
+  const formatted = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return symbol + formatted;
 };
 
 return [{
