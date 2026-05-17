@@ -57,14 +57,15 @@ function shouldUpdate(newYear, existingYear) {
 
 // 次回アップデート予定日を計算
 function calcNextUpdate(updatedFields, thresholds) {
-    let minDays = Infinity;
-    for (const field of updatedFields) {
-        const days = (thresholds[field] ?? 365) * 30;
-        if (days < minDays) minDays = days;
-    }
-    const next = new Date();
-    next.setDate(next.getDate() + (minDays === Infinity ? 365 : minDays));
-    return next.toISOString().split('T')[0];
+  let minDays = Infinity;
+  for (const field of updatedFields) {
+    const years = thresholds[field] ?? 1;
+    const days = years * 365;
+    if (days < minDays) minDays = days;
+  }
+  const next = new Date();
+  next.setDate(next.getDate() + (minDays === Infinity ? 365 : Math.ceil(minDays)));
+  return next.toISOString().split('T')[0];
 }
 
 const thresholds = {
