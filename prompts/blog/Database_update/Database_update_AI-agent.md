@@ -110,6 +110,7 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 検索：
 - 「{{ $json.countryEn }} currency JPY exchange rate {{ $now.toFormat('yyyy/MM/dd') }} today」
 ※為替取得日は必ず今日の日付（{{ $now.toFormat('yyyy/MM/dd') }}）を出力すること。
+- 「Numbeo cost of living {{ $json.capital }} {{ $now.year }}」
 - 「Numbeo Domestic Beer price {{ $json.capital }} {{ $now.year }} latest data」
 - 「Numbeo cigarettes Marlboro price {{ $json.capital }} {{ $now.year }} latest data」
 - 「Numbeo water bottle 0.5 liter price {{ $json.capital }} {{ $now.year }} latest data」
