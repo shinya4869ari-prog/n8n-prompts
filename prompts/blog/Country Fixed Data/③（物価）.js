@@ -3,7 +3,7 @@ const raw = item.output || item.originalData?.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 
-const numbeo = $('Numbeoデータ抽出Code').first().json;
+const numbeo = $('Numbeoデータ抽出').first().json;
 const prev = $('プロンプト取得用 Code').first().json;
 const countryJp = prev.country ?? prev.base?.country ?? "";
 const capitalJp = prev.base?.capital ?? "";
