@@ -77,17 +77,6 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 
 
 
-### 犯罪トップ5
-検索：「{{ $json.countryEn }} most reported crime types by volume official police statistics latest」
-※必ず件数が多い順に並べること。推測で並べ替え禁止。公式統計の順位をそのまま使うこと。
-出力：{"犯罪トップ5": [
-  {"順位": "1", "犯罪種別": "", "年": "", "出典": ""},
-  {"順位": "2", "犯罪種別": ""},
-  {"順位": "3", "犯罪種別": ""},
-  {"順位": "4", "犯罪種別": ""},
-  {"順位": "5", "犯罪種別": ""}
-]}
-
 ### GGI
 検索：「{{ $json.countryEn }} Global Gender Gap Index WEF latest score rank」
 出力：{"GGI": {"スコア": "", "順位": "", "年": "", "出典": "WEF"}}
@@ -105,39 +94,6 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ※データが存在しない先進国等は「対象外」と返すこと。
 出力：{"児童労働率": {"値": "", "年": "", "出典": ""}}
 
-
-### 為替レート・物価各項目
-検索：
-- 「{{ $json.countryEn }} currency JPY exchange rate {{ $now.toFormat('yyyy/MM/dd') }} today」
-※為替取得日は必ず今日の日付（{{ $now.toFormat('yyyy/MM/dd') }}）を出力すること。
-- 「Numbeo cost of living {{ $json.capital }} {{ $now.year }}」
-- 「Numbeo Domestic Beer price {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo cigarettes Marlboro price {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo water bottle 0.5 liter price {{ $json.capital }} {{ $now.year }} latest data」
-- 「Big Mac price {{ $json.countryEn }} {{ $now.year }} latest data official」
-- 「Numbeo gasoline price {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo inexpensive restaurant meal price {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} {{ $now.year }} latest data」
-- 「Numbeo average monthly net salary {{ $json.capital }} {{ $now.year }} latest data」
-- 「Netflix standard plan price {{ $json.countryEn }} {{ $now.year }} official latest data」
-出力：{"物価": {
-  "為替レート": "",
-  "為替取得日": "",
-  "ビール": "", // ビール（レストラン500ml）
-  "タバコ": "", // タバコ（マルボロ1箱）
-  "水": "", // ミネラルウォーター（500ml）
-  "ビッグマック": "", // ビッグマック
-  "ビッグマック_出典": "",
-  "ガソリン": "", // ガソリン（1L）
-  "外食": "", // 外食（安めの店・1食）
-  "光熱費": "", // 電気・水道・ガス（月額・85㎡）
-  "家賃": "", // 家賃（1LDK・首都圏市内）
-  "月収": "", // 平均月収（手取り）
-  "Netflix": "", // Netflix（スタンダード）
-  "Netflix_出典": "",
-  "物価_出典": ""
-}}
 
 
 ### 貿易

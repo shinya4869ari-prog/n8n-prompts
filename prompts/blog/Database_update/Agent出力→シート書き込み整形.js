@@ -81,13 +81,10 @@ const thresholds = {
     "刑務所総収容者数": 2,
     "GPI": 1,
     "外務省危険レベル": 1,
-    "犯罪トップ5": 3,
     "GGI": 2,
     "女性労働参加率": 2,
     "女性議員比率": 2,
     "児童労働率": 3,
-    "為替レート": 0.033,
-    "物価各項目": 1,
     "貿易": 12,
 };
 
@@ -194,22 +191,6 @@ if (agentOutput.外務省危険レベル) {
 }
 
 
-
-if (agentOutput.犯罪トップ5) {
-  const list = agentOutput.犯罪トップ5;
-  const existingYear = rowData["犯罪_年"];
-  const newYear = list[0]?.年;
-  if (shouldUpdate(newYear, existingYear, list[0]?.犯罪種別, rowData["犯罪1位_種別"])) {
-    for (let i = 0; i < 5; i++) {
-      const c = list[i] ?? {};
-      anzen[`犯罪${i + 1}位_種別`] = c.犯罪種別 ?? rowData[`犯罪${i + 1}位_種別`] ?? "";
-    }
-    anzen["犯罪_年"] = list[0]?.年 ?? rowData["犯罪_年"] ?? "";
-    anzen["犯罪_出典"] = list[0]?.出典 ?? rowData["犯罪_出典"] ?? "";
-    anzenUpdated.push("犯罪トップ5");
-  }
-}
-
 if (agentOutput.GGI) {
     const d = agentOutput.GGI;
     if (shouldUpdate(d.年, rowData["GGI年"], d.スコア, rowData["GGIスコア"])) {
@@ -255,7 +236,7 @@ if (agentOutput.児童労働率) {
 const anzenMissingFields = [
     "殺人率", "交通事故死亡率", "自殺率", "失業率", "貧困率", "ジニ係数",
     "刑務所収容率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
-    "犯罪1位_種別", "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
+    "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
 ].filter(f => {
     const val = anzen[f] ?? rowData[f];
     return val === undefined || val === null || val === "" || val === "欠測";
@@ -264,73 +245,6 @@ const anzenMissingFields = [
 anzen["最終アップデート日"] = today;
 anzen["次回アップデート予定日"] = anzenUpdated.length > 0 ? calcNextUpdate(anzenUpdated, thresholds) : (rowData["次回アップデート予定日"] || calcNextUpdate(Object.keys(thresholds), thresholds));
 anzen["アップデート状態"] = anzenMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
-
-// ========== 物価シート ==========
-const bukka = { "国名（日本語）": rowData["国名（日本語）"] };
-const bukkaUpdated = [];
-
-if (agentOutput.物価) {
-    const d = agentOutput.物価;
-    const rate = rowData["通貨コード"] === "JPY"
-      ? 1
-      : parseFloat(String(d.為替レート).replace(/[^0-9.]/g, '')) || parseFloat(String(rowData["為替レート"]).replace(/[^0-9.]/g, '')) || 1;
-
-    bukka["為替レート"] = rowData["通貨コード"] === "JPY" ? 1 : (d.為替レート ?? rowData["為替レート"]);
-    bukka["為替取得日"] = rowData["通貨コード"] === "JPY" ? rowData["為替取得日"] : today;
-    bukka["物価_出典"] = d.物価_出典 ?? rowData["物価_出典"];
-    bukkaUpdated.push("為替レート");
-
-    const priceFields = ["ビール", "タバコ", "水", "ガソリン", "外食", "光熱費", "家賃", "月収"];
-    for (const col of priceFields) {
-        const val = d[col];
-        if (val !== undefined && val !== "" && val !== "欠測") {
-            const num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
-            bukka[`${col}_現地通貨`] = val;
-            bukka[`${col}_円換算`] = isNaN(num) ? "" : Math.round(num * rate).toString();
-            bukkaUpdated.push(col);
-        } else {
-            bukka[`${col}_現地通貨`] = rowData[`${col}_現地通貨`] ?? "";
-            bukka[`${col}_円換算`] = rowData[`${col}_円換算`] ?? "";
-        }
-    }
-
-    if (d.ビッグマック !== undefined && d.ビッグマック !== "" && d.ビッグマック !== "欠測") {
-        const num = parseFloat(String(d.ビッグマック).replace(/[^0-9.]/g, ''));
-        bukka["ビッグマック_現地通貨"] = d.ビッグマック;
-        bukka["ビッグマック_円換算"] = isNaN(num) ? "" : Math.round(num * rate).toString();
-        bukka["ビッグマック_出典"] = d.ビッグマック_出典 ?? rowData["ビッグマック_出典"];
-        bukkaUpdated.push("ビッグマック");
-    } else {
-        bukka["ビッグマック_現地通貨"] = rowData["ビッグマック_現地通貨"] ?? "";
-        bukka["ビッグマック_円換算"] = rowData["ビッグマック_円換算"] ?? "";
-        bukka["ビッグマック_出典"] = rowData["ビッグマック_出典"] ?? "";
-    }
-
-    if (d.Netflix !== undefined && d.Netflix !== "" && d.Netflix !== "欠測") {
-        const num = parseFloat(String(d.Netflix).replace(/[^0-9.]/g, ''));
-        bukka["Netflix_現地通貨"] = d.Netflix;
-        bukka["Netflix_円換算"] = isNaN(num) ? "" : Math.round(num * rate).toString();
-        bukka["Netflix_出典"] = d.Netflix_出典 ?? rowData["Netflix_出典"];
-        bukkaUpdated.push("Netflix");
-    } else {
-        bukka["Netflix_現地通貨"] = rowData["Netflix_現地通貨"] ?? "";
-        bukka["Netflix_円換算"] = rowData["Netflix_円換算"] ?? "";
-        bukka["Netflix_出典"] = rowData["Netflix_出典"] ?? "";
-    }
-}
-
-const bukkaMissingFields = [
-    "為替レート", "ビール_現地通貨", "タバコ_現地通貨", "水_現地通貨",
-    "ビッグマック_現地通貨", "ガソリン_現地通貨", "外食_現地通貨",
-    "光熱費_現地通貨", "家賃_現地通貨", "月収_現地通貨"
-].filter(f => {
-    const val = bukka[f] ?? rowData[f];
-    return val === undefined || val === null || val === "" || val === "欠測";
-});
-
-bukka["最終アップデート日"] = today;
-bukka["次回アップデート予定日"] = bukkaUpdated.length > 0 ? calcNextUpdate(bukkaUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
-bukka["アップデート状態"] = bukkaMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
 // ========== 貿易シート ==========
 const boeki = { "国名（日本語）": rowData["国名（日本語）"] };
@@ -369,7 +283,6 @@ return [{
     json: {
         countryJa: rowData["国名（日本語）"],
         anzen,
-        bukka,
         boeki,
     }
 }];

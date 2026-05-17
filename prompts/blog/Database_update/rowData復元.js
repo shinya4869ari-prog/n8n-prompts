@@ -69,12 +69,7 @@ if (agentOutput.GGI) checkChange("GGIスコア", agentOutput.GGI.スコア, rowD
 if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agentOutput.女性労働参加率.値, rowData["女性労働参加率"], agentOutput.女性労働参加率.年, rowData["女性労働参加率_年"], agentOutput.女性労働参加率.出典, rowData["女性労働参加率_出典"]);
 if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"], agentOutput.女性議員比率.年, rowData["女性議員比率_年"], agentOutput.女性議員比率.出典, rowData["女性議員比率_出典"]);
 if (agentOutput.児童労働率) checkChange("児童労働率", agentOutput.児童労働率.値, rowData["児童労働率"], agentOutput.児童労働率.年, rowData["児童労働率_年"], agentOutput.児童労働率.出典, rowData["児童労働率_出典"]);
-if (agentOutput.物価) {
-  checkChange("為替レート", agentOutput.物価.為替レート, rowData["為替レート"]);
-  checkChange("ビール", agentOutput.物価.ビール, rowData["ビール_現地通貨"], undefined, undefined, "Numbeo", "Numbeo");
-  checkChange("家賃", agentOutput.物価.家賃, rowData["家賃_現地通貨"], undefined, undefined, "Numbeo", "Numbeo");
-  checkChange("月収", agentOutput.物価.月収, rowData["月収_現地通貨"], undefined, undefined, "Numbeo", "Numbeo");
-}
+
 if (agentOutput.貿易) {
   checkChange("輸出1位", agentOutput.貿易.輸出?.[0], rowData["輸出1位_品目"], undefined, undefined, agentOutput.貿易.出典, rowData["貿易統計_出典"]);
   checkChange("貿易相手1位", agentOutput.貿易.貿易相手国?.[0]?.国名, rowData["貿易相手1位_国名"], undefined, undefined, agentOutput.貿易.出典, rowData["貿易統計_出典"]);

@@ -13,14 +13,10 @@ const thresholds = {
     "刑務所総収容者数": 2,
     "GPI": 1,
     "外務省危険レベル": 1,
-    "死因トップ10": 4,
-    "犯罪トップ5": 3,
     "GGI": 2,
     "女性労働参加率": 2,
     "女性議員比率": 2,
     "児童労働率": 3,
-    "為替レート": 0.033,
-    "物価各項目": 1,
     "貿易": 12,
 };
 
@@ -90,13 +86,7 @@ for (const [name, row] of Object.entries(countryMap)) {
             continue;
         }
 
-        // 為替・物価は日数で判定
-        if (label === "為替レート" || label === "物価各項目") {
-            const taken = new Date(raw);
-            const diffDays = (today - taken) / (1000 * 60 * 60 * 24);
-            if (diffDays >= threshold * 30) staleItems.push(label);
-            continue;
-        }
+
 
         // 年度で判定
         const year = parseInt(raw);
