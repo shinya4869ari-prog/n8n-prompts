@@ -1,4 +1,4 @@
-const html = $('HTTP Request').first().json.data;
+const html = $('Numbeoデータ抽出').first().json.data;
 const prev = $('プロンプト取得用 Code').first().json;
 const country = prev.country ?? prev.base?.country ?? "";
 const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
@@ -16,14 +16,14 @@ function extractPrice(html, label) {
   return match[1].replace(/&[^;]+;/g, '').replace(/[^\d.,]/g, '').trim() || "欠測";
 }
 
-const beer       = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
+const beer = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
 const cigarettes = extractPrice(html, 'Cigarettes (Pack of 20, Marlboro)');
-const water      = extractPrice(html, 'Bottled Water (50 oz)');
-const gasoline   = extractPrice(html, 'Gasoline (1 Liter)');
-const meal       = extractPrice(html, 'Meal at an Inexpensive Restaurant');
-const utilities  = extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)');
-const rent       = extractPrice(html, '1 Bedroom Apartment in City Centre');
-const salary     = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
+const water = extractPrice(html, 'Bottled Water (50 oz)');
+const gasoline = extractPrice(html, 'Gasoline (1 Liter)');
+const meal = extractPrice(html, 'Meal at an Inexpensive Restaurant');
+const utilities = extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)');
+const rent = extractPrice(html, '1 Bedroom Apartment in City Centre');
+const salary = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 
 return [{
   json: {
