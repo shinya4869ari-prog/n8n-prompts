@@ -49,7 +49,7 @@ return [{
     "家賃_円換算": calcJpy(numbeo["家賃"]),
     "月収_現地通貨": numbeo["月収"] || "欠測",
     "月収_円換算": calcJpy(numbeo["月収"]),
-    "物価_出典": "Numbeo",
+    "物価_出典": b["各項目"]?.["物価_出典"] || "",
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
     "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
     "Netflix_出典": "",
