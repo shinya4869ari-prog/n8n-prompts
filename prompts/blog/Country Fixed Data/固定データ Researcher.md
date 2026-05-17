@@ -73,32 +73,8 @@
 
 ### 5. 物価（生活コスト）
 
-### ビール（レストラン500ml）
-「Numbeo Domestic Beer price {{ $json.capital }} latest data」
-
-### タバコ（マルボロ1箱）
-「Numbeo cigarettes Marlboro price {{ $json.capital }} latest data」
-
-### ミネラルウォーター（500ml）
-「Numbeo water bottle 0.5 liter price {{ $json.capital }} latest data」
-
 ### ビッグマック
 「Big Mac price {{ $json.countryEn }} latest data official」
-
-### ガソリン（1L）
-「Numbeo gasoline price {{ $json.capital }} latest data」
-
-### 外食（安めの店・1食）
-「Numbeo inexpensive restaurant meal price {{ $json.capital }} latest data」
-
-### 電気・水道・ガス（月額・85㎡）
-「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} latest data」
-
-### 家賃（1LDK・首都圏市内）
-「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} latest data」
-
-### 平均月収（手取り）
-「Numbeo average monthly net salary {{ $json.capital }} latest data」
 
 ### Netflix（スタンダード）
 「Netflix standard plan price {{ $json.countryEn }} official latest data」
@@ -163,16 +139,7 @@
     "為替レート": "",
     "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
     "各項目": {
-      "ビール": {"現地通貨": ""},
-      "タバコ": {"現地通貨": ""},
-      "水": {"現地通貨": ""},
       "ビッグマック": {"現地通貨": "", "出典": ""},
-      "ガソリン": {"現地通貨": ""},
-      "外食": {"現地通貨": ""},
-      "光熱費": {"現地通貨": ""},
-      "家賃": {"現地通貨": ""},
-      "月収": {"現地通貨": ""},
-      "物価_出典": "",
       "Netflix": {"現地通貨": "", "出典": ""}
     }
   },
