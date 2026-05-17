@@ -22,7 +22,7 @@ const water      = extractPrice(html, 'Bottled Water (50 oz)');
 const gasoline   = extractPrice(html, 'Gasoline (1 Liter)');
 const meal       = extractPrice(html, 'Meal at an Inexpensive Restaurant');
 const utilities  = extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)');
-const rent       = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
+const rent       = extractPrice(html, '1 Bedroom Apartment in City Centre');
 const salary     = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 
 return [{
