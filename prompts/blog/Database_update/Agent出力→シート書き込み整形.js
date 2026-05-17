@@ -276,7 +276,7 @@ if (agentOutput.物価) {
       : parseFloat(String(d.為替レート).replace(/[^0-9.]/g, '')) || parseFloat(String(rowData["為替レート"]).replace(/[^0-9.]/g, '')) || 1;
 
     bukka["為替レート"] = rowData["通貨コード"] === "JPY" ? 1 : (d.為替レート ?? rowData["為替レート"]);
-    bukka["為替取得日"] = rowData["通貨コード"] === "JPY" ? rowData["為替取得日"] : (d.為替取得日 ?? today);
+    bukka["為替取得日"] = rowData["通貨コード"] === "JPY" ? rowData["為替取得日"] : today;
     bukka["物価_出典"] = d.物価_出典 ?? rowData["物価_出典"];
     bukkaUpdated.push("為替レート");
 
