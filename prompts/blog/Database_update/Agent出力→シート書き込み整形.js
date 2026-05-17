@@ -321,7 +321,10 @@ const bukkaMissingFields = [
     "為替レート", "ビール_現地通貨", "タバコ_現地通貨", "水_現地通貨",
     "ビッグマック_現地通貨", "ガソリン_現地通貨", "外食_現地通貨",
     "光熱費_現地通貨", "家賃_現地通貨", "月収_現地通貨"
-].filter(f => !bukka[f] && !rowData[f]);
+].filter(f => {
+    const val = bukka[f] ?? rowData[f];
+    return val === undefined || val === null || val === "" || val === "欠測";
+});
 
 bukka["最終アップデート日"] = today;
 bukka["次回アップデート予定日"] = bukkaUpdated.length > 0 ? calcNextUpdate(bukkaUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
@@ -351,7 +354,10 @@ if (agentOutput.貿易) {
 
 const boekiMissingFields = [
     "輸出1位_品目", "輸入1位_品目", "貿易相手1位_国名"
-].filter(f => !boeki[f] && !rowData[f]);
+].filter(f => {
+    const val = boeki[f] ?? rowData[f];
+    return val === undefined || val === null || val === "" || val === "欠測";
+});
 
 boeki["最終アップデート日"] = today;
 boeki["次回アップデート予定日"] = boekiUpdated.length > 0 ? calcNextUpdate(boekiUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
