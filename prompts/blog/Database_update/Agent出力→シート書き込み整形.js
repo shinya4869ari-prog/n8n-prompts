@@ -78,7 +78,6 @@ const thresholds = {
     "刑務所総収容者数": 2,
     "GPI": 1,
     "外務省危険レベル": 1,
-    "死因トップ10": 4,
     "犯罪トップ5": 3,
     "GGI": 2,
     "女性労働参加率": 2,
@@ -191,15 +190,7 @@ if (agentOutput.外務省危険レベル) {
     anzenUpdated.push("外務省危険レベル");
 }
 
-if (agentOutput.死因トップ10) {
-    const d = agentOutput.死因トップ10;
-    anzen["死因_出典"] = d.出典 ?? rowData["死因_出典"];
-    const list = d.リスト ?? [];
-    for (let i = 0; i < 10; i++) {
-        anzen[`死因${i + 1}位`] = list[i] ?? rowData[`死因${i + 1}位`] ?? "";
-    }
-    anzenUpdated.push("死因トップ10");
-}
+
 
 if (agentOutput.犯罪トップ5) {
   const list = agentOutput.犯罪トップ5;
@@ -261,7 +252,7 @@ if (agentOutput.児童労働率) {
 const anzenMissingFields = [
     "殺人率", "交通事故死亡率", "自殺率", "失業率", "貧困率", "ジニ係数",
     "刑務所収容率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
-    "死因1位", "犯罪1位_種別", "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
+    "犯罪1位_種別", "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
 ].filter(f => !anzen[f] && !rowData[f]);
 
 anzen["最終アップデート日"] = today;

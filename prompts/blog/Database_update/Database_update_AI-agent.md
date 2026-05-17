@@ -20,7 +20,6 @@
 - ジニ係数：World Bank
 - 刑務所系：World Prison Brief のみ（他ソース禁止）
 - GPI：Vision of Humanity（visionofhumanity.org）
-- 死因トップ10：WHO GHE
 - 犯罪トップ5：UNODC または各国警察公式統計
 - GGI：World Economic Forum
 - 女性労働参加率：ILO
@@ -76,9 +75,7 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 検索：「外務省 {{ $json.countryJa }} 危険情報 危険レベル」
 出力：{"外務省危険レベル": {"レベル": "", "出典": "外務省"}}
 
-### 死因トップ10
-検索：「{{ $json.countryEn }} top 10 causes of death WHO GHE latest」
-出力：{"死因トップ10": {"年": "", "出典": "WHO GHE", "リスト": ["1位", "2位", "3位", "4位", "5位", "6位", "7位", "8位", "9位", "10位"]}}
+
 
 ### 犯罪トップ5
 検索：「{{ $json.countryEn }} most reported crime types by volume official police statistics latest」
