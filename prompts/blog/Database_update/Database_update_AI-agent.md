@@ -107,21 +107,30 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ### 為替レート・物価各項目
 検索：
 - 「{{ $json.countryEn }} currency JPY exchange rate today」
-- 「Numbeo cost of living {{ $json.capital }} latest」
+- 「Numbeo Domestic Beer price {{ $json.capital }} latest data」
+- 「Numbeo cigarettes Marlboro price {{ $json.capital }} latest data」
+- 「Numbeo water bottle 0.5 liter price {{ $json.capital }} latest data」
+- 「Big Mac price {{ $json.countryEn }} latest data official」
+- 「Numbeo gasoline price {{ $json.capital }} latest data」
+- 「Numbeo inexpensive restaurant meal price {{ $json.capital }} latest data」
+- 「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} latest data」
+- 「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} latest data」
+- 「Numbeo average monthly net salary {{ $json.capital }} latest data」
+- 「Netflix standard plan price {{ $json.countryEn }} official latest data」
 出力：{"物価": {
   "為替レート": "",
   "為替取得日": "",
-  "ビール": "",
-  "タバコ": "",
-  "水": "",
-  "ビッグマック": "",
+  "ビール": "", // ビール（レストラン500ml）
+  "タバコ": "", // タバコ（マルボロ1箱）
+  "水": "", // ミネラルウォーター（500ml）
+  "ビッグマック": "", // ビッグマック
   "ビッグマック_出典": "",
-  "ガソリン": "",
-  "外食": "",
-  "光熱費": "",
-  "家賃": "",
-  "月収": "",
-  "Netflix": "",
+  "ガソリン": "", // ガソリン（1L）
+  "外食": "", // 外食（安めの店・1食）
+  "光熱費": "", // 電気・水道・ガス（月額・85㎡）
+  "家賃": "", // 家賃（1LDK・首都圏市内）
+  "月収": "", // 平均月収（手取り）
+  "Netflix": "", // Netflix（スタンダード）
   "Netflix_出典": "",
   "物価_出典": "Numbeo"
 }}
