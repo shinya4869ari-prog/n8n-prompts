@@ -22,6 +22,13 @@ const calcJpy = (localVal) => {
   return Math.round(val * fxRate);
 };
 
+const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
+
+const addSymbol = (val) => {
+  if (!val || val === "欠測") return "欠測";
+  return symbol + val;
+};
+
 return [{
   json: {
     "国名（日本語）": countryJp,
@@ -29,24 +36,24 @@ return [{
     "通貨コード": numbeo.currencyCode || b["通貨コード"],
     "為替レート": fx,
     "為替取得日": b["為替取得日"],
-    "ビール_現地通貨": numbeo["ビール"] || "欠測",
+    "ビール_現地通貨": addSymbol(numbeo["ビール"]),
     "ビール_円換算": calcJpy(numbeo["ビール"]),
-    "タバコ_現地通貨": numbeo["タバコ"] || "欠測",
+    "タバコ_現地通貨": addSymbol(numbeo["タバコ"]),
     "タバコ_円換算": calcJpy(numbeo["タバコ"]),
-    "水_現地通貨": numbeo["水"] || "欠測",
+    "水_現地通貨": addSymbol(numbeo["水"]),
     "水_円換算": calcJpy(numbeo["水"]),
     "ビッグマック_現地通貨": b["各項目"]?.["ビッグマック"]?.["現地通貨"] || "欠測",
     "ビッグマック_円換算": calcJpy(b["各項目"]?.["ビッグマック"]?.["現地通貨"]),
     "ビッグマック_出典": b["各項目"]?.["ビッグマック"]?.["出典"] || "",
-    "ガソリン_現地通貨": numbeo["ガソリン"] || "欠測",
+    "ガソリン_現地通貨": addSymbol(numbeo["ガソリン"]),
     "ガソリン_円換算": calcJpy(numbeo["ガソリン"]),
-    "外食_現地通貨": numbeo["外食"] || "欠測",
+    "外食_現地通貨": addSymbol(numbeo["外食"]),
     "外食_円換算": calcJpy(numbeo["外食"]),
-    "光熱費_現地通貨": numbeo["光熱費"] || "欠測",
+    "光熱費_現地通貨": addSymbol(numbeo["光熱費"]),
     "光熱費_円換算": calcJpy(numbeo["光熱費"]),
-    "家賃_現地通貨": numbeo["家賃"] || "欠測",
+    "家賃_現地通貨": addSymbol(numbeo["家賃"]),
     "家賃_円換算": calcJpy(numbeo["家賃"]),
-    "月収_現地通貨": numbeo["月収"] || "欠測",
+    "月収_現地通貨": addSymbol(numbeo["月収"]),
     "月収_円換算": calcJpy(numbeo["月収"]),
     "物価_出典": "Numbeo",
     "Netflix_現地通貨": b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測",
