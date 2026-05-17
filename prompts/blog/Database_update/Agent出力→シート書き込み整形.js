@@ -254,7 +254,10 @@ const anzenMissingFields = [
     "殺人率", "交通事故死亡率", "自殺率", "失業率", "貧困率", "ジニ係数",
     "刑務所収容率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
     "犯罪1位_種別", "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
-].filter(f => !anzen[f] && !rowData[f]);
+].filter(f => {
+    const val = anzen[f] ?? rowData[f];
+    return val === undefined || val === null || val === "" || val === "欠測";
+});
 
 anzen["最終アップデート日"] = today;
 anzen["次回アップデート予定日"] = anzenUpdated.length > 0 ? calcNextUpdate(anzenUpdated, thresholds) : (rowData["次回アップデート予定日"] || calcNextUpdate(Object.keys(thresholds), thresholds));
