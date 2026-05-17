@@ -108,18 +108,18 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 
 ### 為替レート・物価各項目
 検索：
-- 「{{ $json.countryEn }} currency JPY exchange rate today」
+- 「{{ $json.countryEn }} currency JPY exchange rate {{ $now.toFormat('yyyy/MM/dd') }} today」
 ※為替取得日は必ず今日の日付（{{ $now.toFormat('yyyy/MM/dd') }}）を出力すること。
-- 「Numbeo Domestic Beer price {{ $json.capital }} latest data」
-- 「Numbeo cigarettes Marlboro price {{ $json.capital }} latest data」
-- 「Numbeo water bottle 0.5 liter price {{ $json.capital }} latest data」
-- 「Big Mac price {{ $json.countryEn }} latest data official」
-- 「Numbeo gasoline price {{ $json.capital }} latest data」
-- 「Numbeo inexpensive restaurant meal price {{ $json.capital }} latest data」
-- 「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} latest data」
-- 「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} latest data」
-- 「Numbeo average monthly net salary {{ $json.capital }} latest data」
-- 「Netflix standard plan price {{ $json.countryEn }} official latest data」
+- 「Numbeo Domestic Beer price {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo cigarettes Marlboro price {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo water bottle 0.5 liter price {{ $json.capital }} {{ $now.year }} latest data」
+- 「Big Mac price {{ $json.countryEn }} {{ $now.year }} latest data official」
+- 「Numbeo gasoline price {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo inexpensive restaurant meal price {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo utilities monthly cost 85m2 apartment {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo apartment rent 1 bedroom city centre {{ $json.capital }} {{ $now.year }} latest data」
+- 「Numbeo average monthly net salary {{ $json.capital }} {{ $now.year }} latest data」
+- 「Netflix standard plan price {{ $json.countryEn }} {{ $now.year }} official latest data」
 出力：{"物価": {
   "為替レート": "",
   "為替取得日": "",
