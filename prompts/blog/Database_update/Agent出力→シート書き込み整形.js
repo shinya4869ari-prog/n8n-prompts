@@ -57,14 +57,13 @@ function shouldUpdate(newYear, existingYear) {
 
 // 次回アップデート予定日を計算
 function calcNextUpdate(updatedFields, thresholds) {
-  let minDays = Infinity;
+  let minYears = Infinity;
   for (const field of updatedFields) {
     const years = thresholds[field] ?? 1;
-    const days = years * 365;
-    if (days < minDays) minDays = days;
+    if (years < minYears) minYears = years;
   }
   const next = new Date();
-  next.setDate(next.getDate() + (minDays === Infinity ? 365 : Math.ceil(minDays)));
+  next.setFullYear(next.getFullYear() + (minYears === Infinity ? 1 : Math.ceil(minYears)));
   return next.toISOString().split('T')[0];
 }
 
@@ -275,12 +274,12 @@ const bukkaUpdated = [];
 
 if (agentOutput.物価) {
     const d = agentOutput.物価;
-    const rate = rowData["通貨コード"] === "JPY" 
-      ? 1 
-      : parseFloat(String(d.為替レート).replace(/[^0-9.]/g, '')) || parseFloat(rowData["為替レート"]) || 1;
+    const rate = rowData["通貨コード"] === "JPY"
+      ? 1
+      : parseFloat(String(d.為替レート).replace(/[^0-9.]/g, '')) || parseFloat(String(rowData["為替レート"]).replace(/[^0-9.]/g, '')) || 1;
 
-    bukka["為替レート"] = d.為替レート ?? rowData["為替レート"];
-    bukka["為替取得日"] = d.為替取得日 ?? today;
+    bukka["為替レート"] = rowData["通貨コード"] === "JPY" ? 1 : (d.為替レート ?? rowData["為替レート"]);
+    bukka["為替取得日"] = rowData["通貨コード"] === "JPY" ? rowData["為替取得日"] : (d.為替取得日 ?? today);
     bukka["物価_出典"] = d.物価_出典 ?? rowData["物価_出典"];
     bukkaUpdated.push("為替レート");
 
