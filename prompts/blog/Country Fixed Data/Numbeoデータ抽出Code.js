@@ -3,43 +3,41 @@ const prev = $('プロンプト取得用 Code').first().json;
 const country = prev.country ?? prev.base?.country ?? "";
 const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
 const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
-
-const hasBeer = html.includes('Domestic Beer');
-const hasGasoline = html.includes('Gasoline');
-console.log("Beer found:", hasBeer, "Gasoline found:", hasGasoline);
+const today = new Date().toISOString().split('T')[0];
 
 function extractPrice(html, label) {
-    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escaped + '[^<]*<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]+)<\\/span>', 'i');
-    const match = html.match(regex);
-    if (!match) return "欠測";
-    return match[1].replace(/[&#\d;]+|[^\d.,]/g, (m) => {
-        if (/^[0-9.,]+$/.test(m)) return m;
-        return '';
-    }).trim() || "欠測";
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(
+    escaped + '[^<]*<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]+)<\\/span>',
+    'i'
+  );
+  const match = html.match(regex);
+  if (!match) return "欠測";
+  return match[1].replace(/&[^;]+;/g, '').replace(/[^\d.,]/g, '').trim() || "欠測";
 }
 
-const beer = extractPrice(html, 'Domestic Beer (0.5 liter draught)');
+const beer      = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
 const cigarettes = extractPrice(html, 'Cigarettes 20 Pack (Marlboro)');
-const water = extractPrice(html, 'Water (0.33 liter bottle)');
-const gasoline = extractPrice(html, 'Gasoline (1 Liter)');
-const meal = extractPrice(html, 'Meal, Inexpensive Restaurant');
+const water     = extractPrice(html, 'Water (0.33 liter bottle)');
+const gasoline  = extractPrice(html, 'Gasoline (1 liter)');
+const meal      = extractPrice(html, 'Meal at an Inexpensive Restaurant');
 const utilities = extractPrice(html, 'Basic (Electricity, Heating, Cooling, Water, Garbage) for 85m2 Apartment');
-const rent = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
-const salary = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
+const rent      = extractPrice(html, 'Apartment (1 bedroom) in City Centre');
+const salary    = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 
 return [{
-    json: {
-        "国名（日本語）": country,
-        currencyCode: currencyCode,
-        currencySymbol: currencySymbol,
-        ビール: beer,
-        タバコ: cigarettes,
-        水: water,
-        ガソリン: gasoline,
-        外食: meal,
-        光熱費: utilities,
-        家賃: rent,
-        月収: salary,
-    }
+  json: {
+    "国名（日本語）": country,
+    currencyCode,
+    currencySymbol,
+    取得日: today,
+    ビール: beer,
+    タバコ: cigarettes,
+    水: water,
+    ガソリン: gasoline,
+    外食: meal,
+    光熱費: utilities,
+    家賃: rent,
+    月収: salary,
+  }
 }];
