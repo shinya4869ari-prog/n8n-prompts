@@ -12,18 +12,18 @@
 - 最後の } の後は何も出力しないこと。
 
 ## 出典優先順位（絶対遵守）
-- 殺人率：UNODC
-- 交通事故死亡率：WHO
-- 自殺率：WHO
-- 失業率：IMF → ILO → 各国統計局
+- 殺人率：World Bank → UNODC
+- 交通事故死亡率：World Bank → WHO
+- 自殺率：World Bank → WHO
+- 失業率：World Bank → IMF → ILO → 各国統計局
 - 貧困率：相対的貧困率のみ（World Bankの絶対的貧困率は使用禁止）
 - ジニ係数：World Bank
 - 刑務所系：World Prison Brief のみ（他ソース禁止）
 - GPI：Vision of Humanity（visionofhumanity.org）
 - 犯罪トップ5：UNODC または各国警察公式統計
 - GGI：World Economic Forum
-- 女性労働参加率：ILO
-- 女性議員比率：IPU（列国議会同盟）
+- 女性労働参加率：World Bank → ILO
+- 女性議員比率：World Bank → IPU（列国議会同盟）
 - 児童労働率：ILO
 - 物価系：Numbeo
 - ビッグマック：The Economist
