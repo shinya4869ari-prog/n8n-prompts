@@ -47,13 +47,15 @@ console.log("agentOutput_raw length:", agentOutput_raw.length);
 
 const currentYear = new Date().getFullYear();
 
-function shouldUpdate(newYear, existingYear) {
+function shouldUpdate(newYear, existingYear, newVal, existingVal) {
   if (!existingYear || existingYear === "" || existingYear === "欠測") return true;
   if (!newYear || newYear === "" || newYear === "欠測") return false;
   const ny = parseInt(String(newYear).replace(/[^0-9]/g, ''));
   const ey = parseInt(String(existingYear).replace(/[^0-9]/g, ''));
   if (isNaN(ny) || isNaN(ey)) return false;
-  return ny > ey;
+  if (ny > ey) return true;
+  if (ny === ey && newVal !== undefined && String(newVal) !== String(existingVal)) return true;
+  return false;
 }
 
 // 次回アップデート予定日を計算
@@ -95,7 +97,7 @@ const anzenUpdated = [];
 
 if (agentOutput.殺人率) {
     const d = agentOutput.殺人率;
-    if (shouldUpdate(d.年, rowData["殺人率_年"])) {
+    if (shouldUpdate(d.年, rowData["殺人率_年"], d.値, rowData["殺人率"])) {
         anzen["殺人率"] = d.値 ?? rowData["殺人率"];
         anzen["殺人率_年"] = d.年 ?? rowData["殺人率_年"];
         anzen["殺人率_出典"] = d.出典 ?? rowData["殺人率_出典"];
@@ -105,7 +107,7 @@ if (agentOutput.殺人率) {
 
 if (agentOutput.交通事故死亡率) {
     const d = agentOutput.交通事故死亡率;
-    if (shouldUpdate(d.年, rowData["交通事故死亡率_年"])) {
+    if (shouldUpdate(d.年, rowData["交通事故死亡率_年"], d.値, rowData["交通事故死亡率"])) {
         anzen["交通事故死亡率"] = d.値 ?? rowData["交通事故死亡率"];
         anzen["交通事故死亡率_年"] = d.年 ?? rowData["交通事故死亡率_年"];
         anzen["交通事故死亡率_出典"] = d.出典 ?? rowData["交通事故死亡率_出典"];
@@ -115,7 +117,7 @@ if (agentOutput.交通事故死亡率) {
 
 if (agentOutput.自殺率) {
     const d = agentOutput.自殺率;
-    if (shouldUpdate(d.年, rowData["自殺率_年"])) {
+    if (shouldUpdate(d.年, rowData["自殺率_年"], d.値, rowData["自殺率"])) {
         anzen["自殺率"] = d.値 ?? rowData["自殺率"];
         anzen["自殺率_年"] = d.年 ?? rowData["自殺率_年"];
         anzen["自殺率_出典"] = d.出典 ?? rowData["自殺率_出典"];
@@ -125,7 +127,7 @@ if (agentOutput.自殺率) {
 
 if (agentOutput.失業率) {
     const d = agentOutput.失業率;
-    if (shouldUpdate(d.年, rowData["失業率_年"])) {
+    if (shouldUpdate(d.年, rowData["失業率_年"], d.値, rowData["失業率"])) {
         anzen["失業率"] = d.値 ?? rowData["失業率"];
         anzen["失業率_年"] = d.年 ?? rowData["失業率_年"];
         anzen["失業率_出典"] = d.出典 ?? rowData["失業率_出典"];
@@ -135,7 +137,7 @@ if (agentOutput.失業率) {
 
 if (agentOutput.貧困率) {
     const d = agentOutput.貧困率;
-    if (shouldUpdate(d.年, rowData["貧困率_年"])) {
+    if (shouldUpdate(d.年, rowData["貧困率_年"], d.値, rowData["貧困率"])) {
         anzen["貧困率"] = d.値 ?? rowData["貧困率"];
         anzen["貧困率_年"] = d.年 ?? rowData["貧困率_年"];
         anzen["貧困率_出典"] = d.出典 ?? rowData["貧困率_出典"];
@@ -145,7 +147,7 @@ if (agentOutput.貧困率) {
 
 if (agentOutput.ジニ係数) {
     const d = agentOutput.ジニ係数;
-    if (shouldUpdate(d.年, rowData["ジニ係数_年"])) {
+    if (shouldUpdate(d.年, rowData["ジニ係数_年"], d.値, rowData["ジニ係数"])) {
         anzen["ジニ係数"] = d.値 ?? rowData["ジニ係数"];
         anzen["ジニ係数_年"] = d.年 ?? rowData["ジニ係数_年"];
         anzen["ジニ係数_出典"] = d.出典 ?? rowData["ジニ係数_出典"];
@@ -155,7 +157,7 @@ if (agentOutput.ジニ係数) {
 
 if (agentOutput.刑務所収容率) {
     const d = agentOutput.刑務所収容率;
-    if (shouldUpdate(d.年, rowData["刑務所収容率_年"])) {
+    if (shouldUpdate(d.年, rowData["刑務所収容率_年"], d.値, rowData["刑務所収容率"])) {
         anzen["刑務所収容率"] = d.値 ?? rowData["刑務所収容率"];
         anzen["刑務所収容率_年"] = d.年 ?? rowData["刑務所収容率_年"];
         anzen["刑務所収容率_出典"] = d.出典 ?? rowData["刑務所収容率_出典"];
@@ -165,7 +167,7 @@ if (agentOutput.刑務所収容率) {
 
 if (agentOutput.刑務所総収容者数) {
     const d = agentOutput.刑務所総収容者数;
-    if (shouldUpdate(d.年, rowData["刑務所総収容者数_年"])) {
+    if (shouldUpdate(d.年, rowData["刑務所総収容者数_年"], d.値, rowData["刑務所総収容者数"])) {
         anzen["刑務所総収容者数"] = d.値 ?? rowData["刑務所総収容者数"];
         anzen["刑務所総収容者数_年"] = d.年 ?? rowData["刑務所総収容者数_年"];
         anzen["刑務所総収容者数_出典"] = d.出典 ?? rowData["刑務所総収容者数_出典"];
@@ -175,7 +177,7 @@ if (agentOutput.刑務所総収容者数) {
 
 if (agentOutput.GPI) {
     const d = agentOutput.GPI;
-    if (shouldUpdate(d.年, rowData["GPI年"])) {
+    if (shouldUpdate(d.年, rowData["GPI年"], d.スコア, rowData["GPIスコア"])) {
         anzen["GPIスコア"] = d.スコア ?? rowData["GPIスコア"];
         anzen["GPI順位"] = d.順位 ?? rowData["GPI順位"];
         anzen["GPI年"] = d.年 ?? rowData["GPI年"];
@@ -197,7 +199,7 @@ if (agentOutput.犯罪トップ5) {
   const list = agentOutput.犯罪トップ5;
   const existingYear = rowData["犯罪_年"];
   const newYear = list[0]?.年;
-  if (shouldUpdate(newYear, existingYear)) {
+  if (shouldUpdate(newYear, existingYear, list[0]?.犯罪種別, rowData["犯罪1位_種別"])) {
     for (let i = 0; i < 5; i++) {
       const c = list[i] ?? {};
       anzen[`犯罪${i + 1}位_種別`] = c.犯罪種別 ?? rowData[`犯罪${i + 1}位_種別`] ?? "";
@@ -210,7 +212,7 @@ if (agentOutput.犯罪トップ5) {
 
 if (agentOutput.GGI) {
     const d = agentOutput.GGI;
-    if (shouldUpdate(d.年, rowData["GGI年"])) {
+    if (shouldUpdate(d.年, rowData["GGI年"], d.スコア, rowData["GGIスコア"])) {
         anzen["GGIスコア"] = d.スコア ?? rowData["GGIスコア"];
         anzen["GGI順位"] = d.順位 ?? rowData["GGI順位"];
         anzen["GGI年"] = d.年 ?? rowData["GGI年"];
@@ -221,7 +223,7 @@ if (agentOutput.GGI) {
 
 if (agentOutput.女性労働参加率) {
     const d = agentOutput.女性労働参加率;
-    if (shouldUpdate(d.年, rowData["女性労働参加率_年"])) {
+    if (shouldUpdate(d.年, rowData["女性労働参加率_年"], d.値, rowData["女性労働参加率"])) {
         anzen["女性労働参加率"] = d.値 ?? rowData["女性労働参加率"];
         anzen["女性労働参加率_年"] = d.年 ?? rowData["女性労働参加率_年"];
         anzen["女性労働参加率_出典"] = d.出典 ?? rowData["女性労働参加率_出典"];
@@ -231,7 +233,7 @@ if (agentOutput.女性労働参加率) {
 
 if (agentOutput.女性議員比率) {
     const d = agentOutput.女性議員比率;
-    if (shouldUpdate(d.年, rowData["女性議員比率_年"])) {
+    if (shouldUpdate(d.年, rowData["女性議員比率_年"], d.値, rowData["女性議員比率"])) {
         anzen["女性議員比率"] = d.値 ?? rowData["女性議員比率"];
         anzen["女性議員比率_年"] = d.年 ?? rowData["女性議員比率_年"];
         anzen["女性議員比率_出典"] = d.出典 ?? rowData["女性議員比率_出典"];
@@ -241,7 +243,7 @@ if (agentOutput.女性議員比率) {
 
 if (agentOutput.児童労働率) {
     const d = agentOutput.児童労働率;
-    if (shouldUpdate(d.年, rowData["児童労働率_年"])) {
+    if (shouldUpdate(d.年, rowData["児童労働率_年"], d.値, rowData["児童労働率"])) {
         anzen["児童労働率"] = d.値 ?? rowData["児童労働率"];
         anzen["児童労働率_年"] = d.年 ?? rowData["児童労働率_年"];
         anzen["児童労働率_出典"] = d.出典 ?? rowData["児童労働率_出典"];
