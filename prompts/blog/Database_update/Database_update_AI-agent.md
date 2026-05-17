@@ -104,6 +104,7 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 検索：「{{ $json.countryEn }} child labour rate percentage ILO latest」
 出力：{"児童労働率": {"値": "", "年": "", "出典": "ILO"}}
 
+
 ### 為替レート・物価各項目
 検索：
 - 「{{ $json.countryEn }} currency JPY exchange rate today」
@@ -132,8 +133,9 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
   "月収": "", // 平均月収（手取り）
   "Netflix": "", // Netflix（スタンダード）
   "Netflix_出典": "",
-  "物価_出典": "Numbeo"
+  "物価_出典": ""
 }}
+
 
 ### 貿易
 検索：
