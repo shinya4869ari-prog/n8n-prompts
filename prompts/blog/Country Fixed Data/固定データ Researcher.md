@@ -56,12 +56,19 @@
 「Big Mac price {{ $json.countryEn }} latest data official」
 
 ### Netflix（スタンダード）
-「Netflix standard plan price {{ $json.countryEn }} official latest data」
+「Netflix standard plan price {{ $json.countryEn }} official latest」
+- **※絶対ルール**: 現地通貨建ての価格が存在する場合は現地通貨で出力し、「通貨コード」にその通貨コード（例：KRW）を記載すること。
+- Netflixが現地通貨非対応の国（例：アフガニスタン等）はUSD建ての価格を出力し、「通貨コード」に「USD」を記載すること。
+- 価格が全く見つからない場合は「欠測」と記載すること。
 
 ### 為替レート（対円）
 「{{ $json.countryEn }} currency JPY exchange rate today」
 - **※重要（絶対ルール）**: 必ず「1外貨 ＝ 〇〇円」の形式で出力すること。
 - ※対象国が「Japan（日本）」の場合は、為替レートは「1」を出力してください。
+
+### USD/JPY レート
+「USD JPY exchange rate today」
+- 必ず「1USD ＝ 〇〇円」の形式で出力すること。
 
 ---
 
@@ -107,11 +114,12 @@
     "通貨名": "{{ $json.currency }}",
     "通貨記号": "{{ $json.currencySymbol }}",
     "通貨コード": "{{ $json.currencyCode }}",
+    "USD/JPY": "",
     "為替レート": "",
     "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
     "各項目": {
       "ビッグマック": {"現地通貨": "", "出典": ""},
-      "Netflix": {"現地通貨": "", "出典": ""}
+      "Netflix": {"現地通貨": "", "通貨コード": "", "出典": ""}
     }
   },
   "貿易": {

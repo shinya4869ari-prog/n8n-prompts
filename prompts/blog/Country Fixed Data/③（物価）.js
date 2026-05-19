@@ -13,6 +13,10 @@ const fxMatch = fxRaw.match(/[\d.]+/g);
 const fx = fxMatch ? fxMatch[fxMatch.length - 1] : fxRaw;
 const fxRate = parseFloat(fx);
 
+const usdJpyRaw = b["USD/JPY"] || "";
+const usdJpyMatch = usdJpyRaw.match(/[\d.]+/g);
+const usdJpy = usdJpyMatch ? parseFloat(usdJpyMatch[usdJpyMatch.length - 1]) : NaN;
+
 const calcJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
   const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
@@ -20,6 +24,16 @@ const calcJpy = (localVal) => {
   const val = parseFloat(cleanVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
   return Math.round(val * fxRate);
+};
+
+const calcNetflixJpy = (val, code) => {
+  if (!val || val === "欠測") return "欠測";
+  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
+  if (!cleanVal) return "欠測";
+  const num = parseFloat(cleanVal);
+  if (isNaN(num)) return "欠測";
+  if (code === "USD") return isNaN(usdJpy) ? "欠測" : Math.round(num * usdJpy);
+  return isNaN(fxRate) ? "欠測" : Math.round(num * fxRate);
 };
 
 const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
@@ -34,6 +48,9 @@ const addSymbol = (val) => {
   const formatted = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return symbol + formatted;
 };
+
+const netflixVal = b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測";
+const netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
 
 return [{
   json: {
@@ -62,8 +79,8 @@ return [{
     "月収_現地通貨": addSymbol(numbeo["月収"]),
     "月収_円換算": calcJpy(numbeo["月収"]),
     "物価_出典": "Numbeo",
-    "Netflix_現地通貨": addSymbol(b["各項目"]?.["Netflix"]?.["現地通貨"]),
-    "Netflix_円換算": calcJpy(b["各項目"]?.["Netflix"]?.["現地通貨"]),
+    "Netflix_現地通貨": netflixCode === "USD" ? "$" + String(netflixVal).replace(/[^\d.]/g, "") : addSymbol(netflixVal),
+    "Netflix_円換算": calcNetflixJpy(netflixVal, netflixCode),
     "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"] || "",
   }
 }];
