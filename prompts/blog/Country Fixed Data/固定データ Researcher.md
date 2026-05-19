@@ -66,9 +66,10 @@
 - **※重要（絶対ルール）**: 必ず「1外貨 ＝ 〇〇円」の形式で出力すること。
 - ※対象国が「Japan（日本）」の場合は、為替レートは「1」を出力してください。
 
-### USD/JPY レート
+### USD/JPY・EUR/JPY
 「USD JPY exchange rate today」
-- 必ず「1USD ＝ 〇〇円」の形式で出力すること。
+「EUR JPY exchange rate today」
+- 必ず「1USD ＝ 〇〇円」「1EUR ＝ 〇〇円」の形式で数値のみ出力すること。
 
 ---
 
@@ -114,8 +115,9 @@
     "通貨名": "{{ $json.currency }}",
     "通貨記号": "{{ $json.currencySymbol }}",
     "通貨コード": "{{ $json.currencyCode }}",
-    "USD/JPY": "",
     "為替レート": "",
+    "USD/JPY": "",
+    "EUR/JPY": "",
     "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}",
     "各項目": {
       "ビッグマック": {"現地通貨": "", "出典": ""},
