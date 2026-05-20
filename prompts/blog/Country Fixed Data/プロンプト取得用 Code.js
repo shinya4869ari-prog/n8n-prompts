@@ -39,6 +39,7 @@ try {
       researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
       base: base,
       capitalEn: base.capitalEn || "",
+      capitalEnNumbeo: base.capitalEnNumbeo || "",
       country: base.country || "",
       currencyCode: base.currencyCode || "",
       currencySymbol: base.currencySymbol || "",
