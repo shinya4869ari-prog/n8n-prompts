@@ -3,21 +3,21 @@ const today = new Date();
 const isManual = $execution.mode === 'manual';
 
 const thresholds = {
-    "殺人率": 3,
-    "交通事故死亡率": 3,
-    "自殺率": 3,
-    "失業率": 2,
-    "貧困率": 4,
-    "ジニ係数": 4,
-    "刑務所収容率": 2,
-    "刑務所総収容者数": 2,
+    "殺人率": 1,
+    "交通事故死亡率": 1,
+    "自殺率": 1,
+    "失業率": 1,
+    "貧困率": 1,
+    "ジニ係数": 1,
+    "刑務所収容率": 1,
+    "刑務所総収容者数": 1,
     "GPI": 1,
     "外務省危険レベル": 1,
-    "GGI": 2,
-    "女性労働参加率": 2,
-    "女性議員比率": 2,
-    "児童労働率": 3,
-    "貿易": 12,
+    "GGI": 1,
+    "女性労働参加率": 1,
+    "女性議員比率": 1,
+    "児童労働率": 1,
+    "貿易": 1,
 };
 
 const yearColMap = {
@@ -35,7 +35,7 @@ const yearColMap = {
     "女性労働参加率": "女性労働参加率_年",
     "女性議員比率": "女性議員比率_年",
     "児童労働率": "児童労働率_年",
-    "貿易": null,
+    "貿易": "貿易統計_年",
 };
 
 // 全シートのデータを国名でマージ
@@ -63,12 +63,6 @@ for (const [name, row] of Object.entries(countryMap)) {
     const staleItems = [];
 
     for (const [label, yearCol] of Object.entries(yearColMap)) {
-
-        // 手動実行は全項目強制対象
-        if (isManual) {
-            staleItems.push(label);
-            continue;
-        }
 
         const threshold = thresholds[label];
 
