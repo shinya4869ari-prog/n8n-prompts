@@ -58,6 +58,7 @@
 ### Netflix（スタンダード）
 「Netflix standard plan price {{ $json.countryEn }} official latest」
 「Netflix price {{ $json.countryEn }} site:help.netflix.com」
+- **※絶対ルール**: 必ずNetflix公式サイト（netflix.com または help.netflix.com）から取得すること。比較サイト・ブログ・レビューサイトからの取得は禁止。
 - **※絶対ルール**: 現地通貨建ての価格が存在する場合は現地通貨で出力し、「通貨コード」にその通貨コード（例：KRW）を記載すること。
 - Netflixが現地通貨非対応の国（例：アフガニスタン等）はUSD建ての価格を出力し、「通貨コード」に「USD」を記載すること。
 - 価格が全く見つからない場合は「欠測」と記載すること。
