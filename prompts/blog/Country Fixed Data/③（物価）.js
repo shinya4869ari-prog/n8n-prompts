@@ -3,7 +3,7 @@ const raw = item.output || item.originalData?.output || "";
 const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
 const b = data["物価"];
 
-const numbeo = $('Numbeoデータ抽出Code').first().json;
+const numbeo = $('Numbeoデータ抽出').first().json;
 const prev = $('プロンプト取得用 Code').first().json;
 const countryJp = prev.country ?? prev.base?.country ?? "";
 const capitalJp = prev.base?.capital ?? "";
@@ -13,9 +13,22 @@ const fxMatch = fxRaw.match(/[\d.]+/g);
 const fx = fxMatch ? fxMatch[fxMatch.length - 1] : fxRaw;
 const fxRate = parseFloat(fx);
 
-const usdJpyRaw = b["USD/JPY"] || "";
-const usdJpyMatch = usdJpyRaw.match(/[\d.]+/g);
-const usdJpy = usdJpyMatch ? parseFloat(usdJpyMatch[usdJpyMatch.length - 1]) : NaN;
+const usdJpy = parseFloat((b["USD/JPY"] || "0").toString().replace(/[^\d.]/g, ""));
+const eurJpy = parseFloat((b["EUR/JPY"] || "0").toString().replace(/[^\d.]/g, ""));
+
+const currencyCode = numbeo.currencyCode;
+const actualCode = numbeo.actualCurrencyCode || currencyCode;
+const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
+
+// NumbeoがEUR/USDで返している場合、現地通貨に変換するレート
+const getNumbeoToLocalRate = () => {
+  if (actualCode === currencyCode) return 1;
+  if (actualCode === "EUR" && eurJpy && fxRate) return eurJpy / fxRate;
+  if (actualCode === "USD" && usdJpy && fxRate) return usdJpy / fxRate;
+  return 1;
+};
+
+const numbeoToLocal = getNumbeoToLocalRate();
 
 const calcJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
@@ -23,20 +36,9 @@ const calcJpy = (localVal) => {
   if (!cleanVal) return "欠測";
   const val = parseFloat(cleanVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
-  return Math.round(val * fxRate);
+  // Numbeoの値をまず現地通貨に変換してからJPYへ
+  return Math.round(val * numbeoToLocal * fxRate);
 };
-
-const calcNetflixJpy = (val, code) => {
-  if (!val || val === "欠測") return "欠測";
-  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const num = parseFloat(cleanVal);
-  if (isNaN(num)) return "欠測";
-  if (code === "USD") return isNaN(usdJpy) ? "欠測" : Math.round(num * usdJpy);
-  return isNaN(fxRate) ? "欠測" : Math.round(num * fxRate);
-};
-
-const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
 
 const addSymbol = (val) => {
   if (!val || val === "欠測") return "欠測";
@@ -44,19 +46,29 @@ const addSymbol = (val) => {
   if (!cleanVal) return "欠測";
   const num = parseFloat(cleanVal);
   if (isNaN(num)) return "欠測";
-  const rounded = Math.round(num);
-  const formatted = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const converted = Math.round(num * numbeoToLocal);
+  const formatted = String(converted).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return symbol + formatted;
 };
 
 const netflixVal = b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測";
 const netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
+const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
+
+const calcNetflixJpy = (val) => {
+  if (!val || val === "欠測") return "欠測";
+  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
+  if (!cleanVal) return "欠測";
+  const num = parseFloat(cleanVal);
+  if (isNaN(num) || isNaN(netflixRate)) return "欠測";
+  return Math.round(num * netflixRate);
+};
 
 return [{
   json: {
     "国名（日本語）": countryJp,
     "首都（日本語）": capitalJp || b["首都（日本語）"] || "",
-    "通貨コード": numbeo.currencyCode || b["通貨コード"],
+    "通貨コード": currencyCode,
     "為替レート": fx,
     "為替取得日": b["為替取得日"],
     "ビール_現地通貨": addSymbol(numbeo["ビール"]),
@@ -79,8 +91,8 @@ return [{
     "月収_現地通貨": addSymbol(numbeo["月収"]),
     "月収_円換算": calcJpy(numbeo["月収"]),
     "物価_出典": "Numbeo",
-    "Netflix_現地通貨": netflixCode === "USD" ? "$" + String(netflixVal).replace(/[^\d.]/g, "") : addSymbol(netflixVal),
-    "Netflix_円換算": calcNetflixJpy(netflixVal, netflixCode),
+    "Netflix_現地通貨": netflixVal,
+    "Netflix_円換算": calcNetflixJpy(netflixVal),
     "Netflix_出典": b["各項目"]?.["Netflix"]?.["出典"] || "",
   }
 }];

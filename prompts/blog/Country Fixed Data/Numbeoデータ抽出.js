@@ -5,13 +5,21 @@ const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
 const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
 const today = new Date().toISOString().split('T')[0];
 
-// Numbeoが実際に使っている通貨記号をHTMLから抽出
-const currencyMatch = html.match(/class="first_currency_symbol">([^<]+)<\/span>/);
-const actualSymbol = currencyMatch ? currencyMatch[1].trim() : currencySymbol;
-
-// Numbeoが実際に使っている通貨コードをURLから抽出
-const currencyCodeMatch = html.match(/currency=([A-Z]{3})/);
-const actualCurrencyCode = currencyCodeMatch ? currencyCodeMatch[1] : currencyCode;
+const htmlCurrencyMap = {
+  '&#8364;': 'EUR',
+  '&euro;': 'EUR',
+  '&#36;': 'USD',
+  '&dollar;': 'USD',
+  '&#163;': 'GBP',
+  '&pound;': 'GBP',
+};
+let actualCurrencyCode = currencyCode;
+for (const [entity, code] of Object.entries(htmlCurrencyMap)) {
+  if (html.includes(entity)) {
+    actualCurrencyCode = code;
+    break;
+  }
+}
 
 function extractPrice(html, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -36,10 +44,9 @@ const salary = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
 return [{
   json: {
     "国名（日本語）": country,
-    currencyCode: actualCurrencyCode,
-    currencySymbol: actualSymbol,
+    currencyCode,
+    currencySymbol,
     actualCurrencyCode,
-    actualSymbol,
     取得日: today,
     ビール: beer,
     タバコ: cigarettes,
