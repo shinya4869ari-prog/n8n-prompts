@@ -134,28 +134,45 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"物価": {"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}}
 
 ### 貿易
-検索優先順位：
-1. 対象国の政府・中央銀行・税関の公式貿易統計
-2. JETRO（jetro.go.jp）
-3. IMF Direction of Trade Statistics
-4. OEC World、Lloyds Bank Trade Profile 等
+### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
+表記は日本語のみ。データはhttps://oec.world/en/profile/country/{{ $json.code3 }} の最新値を厳密に使用。シェアは「〇〇%」形式で必ず記載。
 
-検索クエリ例：
-- 「{{ $json.countryEn }} top 10 export products official statistics latest」
-- 「{{ $json.countryEn }} top 10 import products official statistics latest」
-- 「{{ $json.countryEn }} top trading partners share percentage official statistics latest」
-- 「JETRO {{ $json.countryEn }} trade statistics」
-- 「{{ $json.countryEn }} top trading partners export import official statistics latest」
+**主要輸出品目トップ10（日本語名）**:
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
 
-※特にアンゴラ（Angola）を調査する場合は、テスト用に以下の検索クエリを最優先で使用すること：
-  - 輸出トップ10: 「Angola top exports 2024 OR 2023 OEC」または「Angola exports OEC.world」
-  - 輸入トップ10: 「Angola top imports 2024 OR 2023 OEC」
-  - 貿易相手国（輸出先・輸入元）: 「Angola top trading partners OEC 2024」または「Angola export destinations OEC」
+**主要輸入品目トップ10（日本語名）**:
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
 
-※品目名・貿易相手国名は必ず**日本語**で出力すること。
-※シェア（%）は必ず数値で出力すること（例：「18.5%」）。見つからない場合のみ「欠測」。
-* **※重要（絶対ルール）**: 必ず統計年度を出典に含めること（例：「OEC World（2023年）」、「JETRO（2024年）」）。
-* **※重要（絶対ルール）**: 年度が不明な場合も「欠測」とせず、判明している最新年度を必ず記載すること。
+**主要輸出相手国トップ10（シェア%付き）**:
+1. （国名）（〇〇%）
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+
 出力：{"貿易": {
   "輸出": ["1位品目名（日本語）", "2位", "3位", "4位", "5位", "6位", "7位", "8位", "9位", "10位"],
   "輸入": ["1位品目名（日本語）", "2位", "3位", "4位", "5位", "6位", "7位", "8位", "9位", "10位"],
