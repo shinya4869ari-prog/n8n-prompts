@@ -1,4 +1,5 @@
-const base = $('国名変換Code').first().json;
+const hub = $('プロンプト取得用 Code').first().json;
+const base = hub.base;
 const iso2 = base.countryCode;
 
 const indicators = {

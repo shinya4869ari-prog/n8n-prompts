@@ -34,9 +34,9 @@ if (!numbeo || Object.keys(numbeo).length === 0) {
   throw new Error("物価計算: Numbeo抽出データが空です。");
 }
 
-const prev = $('国名変換Code').first().json;
-const countryJp = prev.country || "";
-const capitalJp = prev.capital || "";
+const prev = $('プロンプト取得用 Code').first().json;
+const countryJp = prev.country ?? prev.base?.country ?? "";
+const capitalJp = prev.base?.capital ?? "";
 
 const fxRaw = b["為替レート"] || "";
 const fxMatch = fxRaw.match(/[\d.]+/g);

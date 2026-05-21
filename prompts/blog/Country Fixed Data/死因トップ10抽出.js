@@ -1,5 +1,6 @@
 const rows = $input.all().map(i => i.json);
-const base = $('国名変換Code').first().json;
+const hub = $('プロンプト取得用 Code').first().json;
+const base = hub.base;
 const iso3 = base.code3;
 
 const isoRow = rows.find(r => r.row_number === 8);
