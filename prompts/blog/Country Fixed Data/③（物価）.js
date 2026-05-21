@@ -13,8 +13,14 @@ const fxMatch = fxRaw.match(/[\d.]+/g);
 const fx = fxMatch ? fxMatch[fxMatch.length - 1] : fxRaw;
 const fxRate = parseFloat(fx);
 
-const usdJpy = parseFloat((b["USD/JPY"] || "0").toString().replace(/[^\d.]/g, ""));
-const eurJpy = parseFloat((b["EUR/JPY"] || "0").toString().replace(/[^\d.]/g, ""));
+const parseRate = (val) => {
+  const raw = (val || "").toString();
+  const match = raw.match(/[\d.]+/g);
+  return match ? parseFloat(match[match.length - 1]) : 0;
+};
+
+const usdJpy = parseRate(b["USD/JPY"]);
+const eurJpy = parseRate(b["EUR/JPY"]);
 
 const currencyCode = numbeo.currencyCode;
 const actualCode = numbeo.actualCurrencyCode || currencyCode;

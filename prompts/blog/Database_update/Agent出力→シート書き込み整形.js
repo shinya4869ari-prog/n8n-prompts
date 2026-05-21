@@ -279,10 +279,37 @@ boeki["最終アップデート日"] = today;
 boeki["次回アップデート予定日"] = boekiUpdated.length > 0 ? calcNextUpdate(boekiUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
 boeki["アップデート状態"] = boekiMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
+// ========== 物価シート ==========
+const bukka = { "国名（日本語）": rowData["国名（日本語）"] };
+
+const bukkaFields = [
+  "ビール_現地通貨", "ビール_円換算",
+  "タバコ_現地通貨", "タバコ_円換算",
+  "水_現地通貨", "水_円換算",
+  "ビッグマック_現地通貨", "ビッグマック_円換算", "ビッグマック_出典",
+  "ガソリン_現地通貨", "ガソリン_円換算",
+  "外食_現地通貨", "外食_円換算",
+  "光熱費_現地通貨", "光熱費_円換算",
+  "家賃_現地通貨", "家賃_円換算",
+  "月収_現地通貨", "月収_円換算",
+  "Netflix_現地通貨", "Netflix_円換算", "Netflix_出典",
+  "物価_出典",
+  "為替レート", "為替取得日"
+];
+
+for (const f of bukkaFields) {
+  bukka[f] = rowData[f] ?? "";
+}
+
+bukka["最終アップデート日"] = today;
+bukka["次回アップデート予定日"] = calcNextUpdate(["物価"], { "物価": 1 });
+bukka["アップデート状態"] = "✅完了";
+
 return [{
     json: {
         countryJa: rowData["国名（日本語）"],
         anzen,
         boeki,
+        bukka,
     }
 }];
