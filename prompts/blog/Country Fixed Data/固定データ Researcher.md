@@ -54,7 +54,8 @@
 ### 5. 物価（生活コスト）
 
 ### ビッグマック
-「Big Mac price {{ $json.countryEn }} latest data official」
+「Big Mac price {{ $json.countryEn }} {{ $now.toFormat('yyyy') }} OR {{ $now.minus({ years: 1 }).toFormat('yyyy') }} latest data official」
+- ※必ず最新年度（{{ $now.toFormat('yyyy') }}年または{{ $now.minus({ years: 1 }).toFormat('yyyy') }}年）のデータを優先して取得してください。データ内の年号を必ず確認し、出典にも年度を記載すること。
 
 ### Netflix（スタンダード）
 「Netflix standard plan price {{ $json.countryEn }} official latest」

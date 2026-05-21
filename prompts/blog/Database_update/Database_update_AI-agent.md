@@ -120,7 +120,8 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"児童労働率": {"値": "", "年": "", "出典": ""}}
 
 ### ビッグマック
-検索：「Big Mac price {{ $json.countryEn }} The Economist latest」
+検索：「Big Mac price {{ $json.countryEn }} The Economist {{ $now.toFormat('yyyy') }} OR {{ $now.minus({ years: 1 }).toFormat('yyyy') }}」
+- ※必ず最新年度（{{ $now.toFormat('yyyy') }}年または{{ $now.minus({ years: 1 }).toFormat('yyyy') }}年）のデータを優先して取得してください。
 出力：{"ビッグマック": {"現地通貨": "", "出典": "The Economist"}}
 
 ### Netflix
