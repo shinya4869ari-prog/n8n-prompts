@@ -1,7 +1,7 @@
-const prev = $('プロンプト取得用 Code').first().json;
-const country = prev.country ?? prev.base?.country ?? "";
-const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
-const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
+const prev = $('国名変換Code').first().json;
+const country = prev.country || "";
+const currencyCode = prev.currencyCode || "";
+const currencySymbol = prev.currencySymbol || "";
 const today = new Date().toISOString().split('T')[0];
 
 let html = "";

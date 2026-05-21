@@ -22,8 +22,7 @@ try {
 }
 const item = $('World Bank API取得Code').first().json;
 const whoData = $('死因トップ10抽出').first().json;
-const hub = $('プロンプト取得用 Code').first().json;
-const base = hub.base;
+const base = $('国名変換Code').first().json;
 const wb = item.wb || {};
 
 const t = data["治安・社会指標"] || {};

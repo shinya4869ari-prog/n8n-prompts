@@ -1,7 +1,6 @@
 // 一括処理モードを想定した軽量・高速版
 const allItems = $input.all();
-const hub = $('プロンプト取得用 Code').first().json;
-const base = hub.base;
+const base = $('国名変換Code').first().json;
 
 if (!base) {
   throw new Error("ハブノードに国名情報（base）が見当たりません。");
