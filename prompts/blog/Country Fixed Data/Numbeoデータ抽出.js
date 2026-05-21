@@ -4,7 +4,6 @@ const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
 const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
 const today = new Date().toISOString().split('T')[0];
 
-// htmlの取得（直前ノードからの入力または名前指定で安全にフォールバック）
 let html = "";
 try {
   html = $input.first().json.data || "";
@@ -20,24 +19,26 @@ if (!html) {
   throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
 }
 
-const htmlCurrencyMap = {
-  '&#8364;': 'EUR',
-  '&euro;': 'EUR',
-  '&#36;': 'USD',
-  '&dollar;': 'USD',
-  '&#163;': 'GBP',
-  '&pound;': 'GBP',
-};
-let actualCurrencyCode = currencyCode;
+// 価格セルから実際に使われている通貨記号を抽出して判定
+function detectActualCurrency(html, currencyCode) {
+  // first_currencyスパンの直前にある通貨記号を取得
+  const cellMatch = html.match(/<span class="first_currency">([^<]+)<\/span>/);
+  if (!cellMatch) return currencyCode;
 
-if (html) {
-  for (const [entity, code] of Object.entries(htmlCurrencyMap)) {
-    if (html.includes(entity)) {
-      actualCurrencyCode = code;
-      break;
-    }
-  }
+  const cellContent = cellMatch[1];
+
+  // EUR記号
+  if (cellContent.includes('€') || cellContent.includes('&#8364;') || cellContent.includes('&euro;')) return 'EUR';
+  // USD記号（数字のみの場合はUSDの可能性があるが、現地通貨優先）
+  if (cellContent.includes('$') || cellContent.includes('&#36;') || cellContent.includes('&dollar;')) return 'USD';
+  // GBP記号
+  if (cellContent.includes('£') || cellContent.includes('&#163;') || cellContent.includes('&pound;')) return 'GBP';
+
+  // 記号がない or 現地通貨記号 → currencyCodeをそのまま返す
+  return currencyCode;
 }
+
+const actualCurrencyCode = detectActualCurrency(html, currencyCode);
 
 function extractPrice(html, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

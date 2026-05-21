@@ -79,17 +79,7 @@
 
 ### 6. 貿易
 検索優先順位：
-1. 対象国の政府・中央銀行・税関の公式貿易統計
-2. JETRO（jetro.go.jp）
-3. IMF Direction of Trade Statistics
-4. OEC World、Lloyds Bank Trade Profile 等
 
-検索クエリ例：
-- 「{{ $json.countryEn }} top 10 export products official statistics latest」
-- 「{{ $json.countryEn }} top 10 import products official statistics latest」
-- 「{{ $json.countryEn }} top trading partners share percentage official statistics latest」
-- 「JETRO {{ $json.countryEn }} trade statistics」
-- 「{{ $json.countryEn }} top trading partners export import official statistics latest」
 
 ※特にアンゴラ（Angola）を調査する場合は、テスト用に以下の検索クエリを最優先で使用すること：
   - 輸出トップ10: 「Angola top exports 2024 OR 2023 OEC」または「Angola exports OEC.world」
