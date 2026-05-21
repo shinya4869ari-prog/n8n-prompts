@@ -37,13 +37,6 @@ const formatShare = (val) => {
   return val;
 };
 
-const today = new Date().toISOString().split('T')[0];
-const nextUpdate = (() => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 12); // 貿易は12年周期
-  return d.toISOString().split('T')[0];
-})();
-
 return [{ json: {
   "国名（日本語）": data["国名（日本語）"] || data.country_jp || "",
   "貿易統計_出典": tradeCite,
@@ -64,8 +57,5 @@ return [{ json: {
   "貿易相手7位_国名": partnerList[6]?.国名||"", "貿易相手7位_シェア%": formatShare(partnerList[6]?.シェア),
   "貿易相手8位_国名": partnerList[7]?.国名||"", "貿易相手8位_シェア%": formatShare(partnerList[7]?.シェア),
   "貿易相手9位_国名": partnerList[8]?.国名||"", "貿易相手9位_シェア%": formatShare(partnerList[8]?.シェア),
-  "貿易相手10位_国名": partnerList[9]?.国名||"", "貿易相手10位_シェア%": formatShare(partnerList[9]?.シェア),
-  "最終アップデート日": today,
-  "次回アップデート予定日": nextUpdate,
-  "アップデート状態": "✅完了"
+  "貿易相手10位_国名": partnerList[9]?.国名||"", "貿易相手10位_シェア%": formatShare(partnerList[9]?.シェア)
 }}];
