@@ -140,11 +140,14 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 4. OEC World、Lloyds Bank Trade Profile 等
 
 検索クエリ例：
-- 「{{ $json.countryEn }} top 10 export products official statistics latest」
-- 「{{ $json.countryEn }} top 10 import products official statistics latest」
-- 「{{ $json.countryEn }} top trading partners share percentage official statistics latest」
-- 「JETRO {{ $json.countryEn }} trade statistics」
-- 「{{ $json.countryEn }} top trading partners export import official statistics latest」
+- 輸出トップ10:
+  - 「{{ $json.countryEn }} top exports 2024 OR 2023 OEC」
+  - 「{{ $json.countryEn }} exports OEC.world」
+- 輸入トップ10:
+  - 「{{ $json.countryEn }} top imports 2024 OR 2023 OEC」
+- 貿易相手国（輸出先・輸入元）:
+  - 「{{ $json.countryEn }} top trading partners OEC 2024」
+  - 「{{ $json.countryEn }} export destinations OEC」
 
 ※品目名・貿易相手国名は必ず**日本語**で出力すること。
 ※シェア（%）は必ず数値で出力すること（例：「18.5%」）。見つからない場合のみ「欠測」。
