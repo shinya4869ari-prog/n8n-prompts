@@ -20,34 +20,24 @@ if (!html) {
   throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
 }
 
-// 表示価格に付随する通貨記号から、Numbeoの表示通貨（EUR, USD, GBP, または現地通貨）を判定する
-function detectActualCurrency(html, fallbackCode) {
-  const checkLabels = [
-    'Domestic Draft Beer (1 Pint)',
-    'Bottled Water (50 oz)',
-    'Gasoline (1 Liter)',
-    'Meal at an Inexpensive Restaurant'
-  ];
-  
-  for (const label of checkLabels) {
-    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(
-      escaped + '[^<]*<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]+)<\\/span>',
-      'i'
-    );
-    const match = html.match(regex);
-    if (match) {
-      const s = match[1];
-      if (s.includes('&#8364;') || s.includes('&euro;') || s.includes('€')) return 'EUR';
-      if (s.includes('&#36;') || s.includes('&dollar;') || s.includes('$')) return 'USD';
-      if (s.includes('&#163;') || s.includes('&pound;') || s.includes('£')) return 'GBP';
-      return fallbackCode;
+const htmlCurrencyMap = {
+  '&#8364;': 'EUR',
+  '&euro;': 'EUR',
+  '&#36;': 'USD',
+  '&dollar;': 'USD',
+  '&#163;': 'GBP',
+  '&pound;': 'GBP',
+};
+let actualCurrencyCode = currencyCode;
+
+if (html) {
+  for (const [entity, code] of Object.entries(htmlCurrencyMap)) {
+    if (html.includes(entity)) {
+      actualCurrencyCode = code;
+      break;
     }
   }
-  return fallbackCode;
 }
-
-const actualCurrencyCode = detectActualCurrency(html, currencyCode);
 
 function extractPrice(html, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

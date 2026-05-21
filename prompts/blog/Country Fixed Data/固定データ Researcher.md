@@ -78,12 +78,23 @@
 ---
 
 ### 6. 貿易
-### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
-表記は日本語のみ。
-- 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
-- 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
-- 「{{ $json.countryEn }} top 10 trading partners share percentage site:oec.world latest」
-- **※絶対ルール**: 貿易相手国の「シェア」は必ず「〇〇%」形式で記載すること。データが存在するにも関わらず省略することは禁止。
+検索優先順位：
+1. 対象国の政府・中央銀行・税関の公式貿易統計
+2. JETRO（jetro.go.jp）
+3. IMF Direction of Trade Statistics
+4. OEC World、Lloyds Bank Trade Profile 等
+
+検索クエリ例：
+- 「{{ $json.countryJa }} 輸出 上位10品目 貿易統計」
+- 「{{ $json.countryJa }} 輸入 上位10品目 貿易統計」
+- 「{{ $json.countryJa }} 貿易相手国 シェア」
+- 「JETRO {{ $json.countryJa }} 貿易統計」
+- 「{{ $json.countryEn }} top trading partners export import official statistics latest」
+
+※品目名・貿易相手国名は必ず**日本語**で出力すること。
+※シェア（%）は必ず数値で出力すること（例：「18.5%」）。見つからない場合のみ「欠測」。
+※必ず統計年度を出典に含めること（例：「OEC World（2023年）」）。
+※年度が不明な場合も「欠測」とせず、判明している最新年度を記載すること。
 
 ---
 
