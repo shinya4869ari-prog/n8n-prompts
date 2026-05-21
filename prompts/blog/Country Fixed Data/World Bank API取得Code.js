@@ -17,7 +17,11 @@ const indicators = {
 const fetchIndicator = async (iso, indicatorId) => {
   try {
     const url = `https://api.worldbank.org/v2/country/${iso}/indicator/${indicatorId}?format=json&mrv=5&per_page=5`;
-    const res = await this.helpers.httpRequest({ method: 'GET', url });
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const text = await response.text();
+    let res;
+    try { res = JSON.parse(text); } catch { return null; }
     const rows = Array.isArray(res) ? res[1] : null;
     if (!rows) return null;
     for (const row of rows) {

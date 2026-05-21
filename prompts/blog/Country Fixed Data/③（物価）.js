@@ -1,6 +1,23 @@
 const item = $input.first().json;
 const raw = item.output || item.originalData?.output || "";
-const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+// LLMが ```json...``` で囲んだり、末尾に余分なテキストを付ける場合のクリーニング
+const cleaned = (() => {
+  const s = String(raw).trim();
+  const fenceMatch = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (fenceMatch) return fenceMatch[1].trim();
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) return s.slice(start, end + 1);
+  return s;
+})();
+
+let data;
+try {
+  data = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;
+} catch (e) {
+  throw new Error(`物価データのパースに失敗: ${e.message}\n先頭200文字: ${String(raw).slice(0, 200)}`);
+}
 const b = data["物価"];
 
 const numbeo = $('Numbeoデータ抽出').first().json;

@@ -82,6 +82,7 @@
 - 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 trading partners share percentage site:oec.world latest」
+- **※絶対ルール**: 貿易相手国の「シェア」は必ず「〇〇%」形式で記載すること。データが存在するにも関わらず省略することは禁止。
 
 ---
 
@@ -131,7 +132,7 @@
     "主要輸出項目": [{"順位": "1〜10", "品目": ""}],
     "主要輸入項目": [{"順位": "1〜10", "品目": ""}],
     "貿易相手国": [
-      {"順位": "1〜10", "国名": "", "シェア": ""},
+      {"順位": "1", "国名": "", "シェア": "〇〇%（必ず%付きで記載。不明な場合のみ空欄可）"},
       {"順位": "出典", "国名": "", "シェア": "", "出典": "ここに出典名と調査年を記載"}
     ]
   }

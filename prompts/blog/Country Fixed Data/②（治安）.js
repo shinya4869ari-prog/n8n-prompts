@@ -1,6 +1,25 @@
 const researcherRaw = $('固定データ Researcher').first().json;
 const raw = researcherRaw.originalData?.output || researcherRaw.output || "";
-const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+// LLMが ```json...``` で囲んだり、末尾に余分なテキストを付ける場合のクリーニング
+const cleaned = (() => {
+  const s = String(raw).trim();
+  // ```json ... ``` パターンを除去
+  const fenceMatch = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (fenceMatch) return fenceMatch[1].trim();
+  // 最初の { から最後の } までを抽出（末尾の余分なテキスト対策）
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) return s.slice(start, end + 1);
+  return s;
+})();
+
+let data;
+try {
+  data = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;
+} catch (e) {
+  throw new Error(`Researcherのデータパースに失敗: ${e.message}\n先頭200文字: ${String(raw).slice(0, 200)}`);
+}
 const item = $('World Bank API取得Code').first().json;
 const whoData = $('死因トップ10抽出').first().json;
 const hub = $('プロンプト取得用 Code').first().json;
