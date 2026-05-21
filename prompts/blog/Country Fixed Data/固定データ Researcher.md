@@ -81,7 +81,7 @@
 表記は日本語のみ。
 - 「{{ $json.countryEn }} top 10 export products site:oec.world latest」
 - 「{{ $json.countryEn }} top 10 import products site:oec.world latest」
-- 「{{ $json.countryEn }} top 10 trading partners share percentage latest」
+- 「{{ $json.countryEn }} top 10 trading partners share percentage site:oec.world latest」
 
 ---
 
