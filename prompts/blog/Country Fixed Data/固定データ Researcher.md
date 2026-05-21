@@ -85,10 +85,10 @@
 4. OEC World、Lloyds Bank Trade Profile 等
 
 検索クエリ例：
-- 「{{ $json.countryJa }} 輸出 上位10品目 貿易統計」
-- 「{{ $json.countryJa }} 輸入 上位10品目 貿易統計」
-- 「{{ $json.countryJa }} 貿易相手国 シェア」
-- 「JETRO {{ $json.countryJa }} 貿易統計」
+- 「{{ $json.countryEn }} top 10 export products official statistics latest」
+- 「{{ $json.countryEn }} top 10 import products official statistics latest」
+- 「{{ $json.countryEn }} top trading partners share percentage official statistics latest」
+- 「JETRO {{ $json.countryEn }} trade statistics」
 - 「{{ $json.countryEn }} top trading partners export import official statistics latest」
 
 ※品目名・貿易相手国名は必ず**日本語**で出力すること。
