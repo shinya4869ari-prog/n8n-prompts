@@ -1,13 +1,17 @@
 const input = $input.first().json;
-let numbeo = {};
+let numbeo = null;
 try {
     numbeo = $('Numbeoデータ抽出Code').first().json;
 } catch (e) {
     try {
         numbeo = $('Numbeoデータ抽出').first().json;
     } catch (err) {
-        console.error("Database_update/物価計算: Numbeo抽出データの取得に失敗しました", err);
+        throw new Error(`Database_update/物価計算: Numbeo抽出データの取得に失敗しました。(${err.message})`);
     }
+}
+
+if (!numbeo || Object.keys(numbeo).length === 0) {
+    throw new Error("Database_update/物価計算: Numbeo抽出データが空です。");
 }
 const agentRaw = $('rowData復元').first().json.output ?? "";
 const today = new Date().toISOString().split('T')[0];

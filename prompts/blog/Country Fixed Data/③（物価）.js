@@ -20,15 +20,19 @@ try {
 }
 const b = data["物価"];
 
-let numbeo = {};
+let numbeo = null;
 try {
   numbeo = $('Numbeoデータ抽出Code').first().json;
 } catch (e) {
   try {
     numbeo = $('Numbeoデータ抽出').first().json;
   } catch (err) {
-    console.error("物価計算: Numbeo抽出データの取得に失敗しました", err);
+    throw new Error(`物価計算: Numbeo抽出データの取得に失敗しました。(${err.message})`);
   }
+}
+
+if (!numbeo || Object.keys(numbeo).length === 0) {
+  throw new Error("物価計算: Numbeo抽出データが空です。");
 }
 const prev = $('プロンプト取得用 Code').first().json;
 const countryJp = prev.country ?? prev.base?.country ?? "";

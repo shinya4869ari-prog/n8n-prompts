@@ -12,8 +12,12 @@ try {
   try {
     html = $('Numbeoデータ抽出').first().json.data || "";
   } catch (err) {
-    console.error("Numbeoデータ抽出: HTMLデータの取得に失敗しました", err);
+    throw new Error(`Numbeoデータ抽出: HTMLデータの取得に失敗しました。(${err.message})`);
   }
+}
+
+if (!html) {
+  throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
 }
 
 const htmlCurrencyMap = {
