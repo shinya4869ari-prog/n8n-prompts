@@ -1,5 +1,14 @@
 const input = $input.first().json;
-const numbeo = $('Numbeoデータ抽出Code').first().json;
+let numbeo = {};
+try {
+    numbeo = $('Numbeoデータ抽出Code').first().json;
+} catch (e) {
+    try {
+        numbeo = $('Numbeoデータ抽出').first().json;
+    } catch (err) {
+        console.error("Database_update/物価計算: Numbeo抽出データの取得に失敗しました", err);
+    }
+}
 const agentRaw = $('rowData復元').first().json.output ?? "";
 const today = new Date().toISOString().split('T')[0];
 

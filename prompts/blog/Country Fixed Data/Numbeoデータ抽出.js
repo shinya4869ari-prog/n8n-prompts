@@ -1,9 +1,20 @@
-const html = $('Numbeoデータ抽出').first().json.data;
 const prev = $('プロンプト取得用 Code').first().json;
 const country = prev.country ?? prev.base?.country ?? "";
 const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
 const currencySymbol = prev.currencySymbol ?? prev.base?.currencySymbol ?? "";
 const today = new Date().toISOString().split('T')[0];
+
+// htmlの取得（直前ノードからの入力または名前指定で安全にフォールバック）
+let html = "";
+try {
+  html = $input.first().json.data || "";
+} catch (e) {
+  try {
+    html = $('Numbeoデータ抽出').first().json.data || "";
+  } catch (err) {
+    console.error("Numbeoデータ抽出: HTMLデータの取得に失敗しました", err);
+  }
+}
 
 const htmlCurrencyMap = {
   '&#8364;': 'EUR',
@@ -14,10 +25,13 @@ const htmlCurrencyMap = {
   '&pound;': 'GBP',
 };
 let actualCurrencyCode = currencyCode;
-for (const [entity, code] of Object.entries(htmlCurrencyMap)) {
-  if (html.includes(entity)) {
-    actualCurrencyCode = code;
-    break;
+
+if (html) {
+  for (const [entity, code] of Object.entries(htmlCurrencyMap)) {
+    if (html.includes(entity)) {
+      actualCurrencyCode = code;
+      break;
+    }
   }
 }
 
