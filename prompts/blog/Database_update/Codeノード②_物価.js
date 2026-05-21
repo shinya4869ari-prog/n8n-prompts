@@ -88,7 +88,7 @@ const bukka = {
     "首都（日本語）": numbeo["首都（日本語）"] || b["首都（日本語）"] || "",
     "通貨コード": currencyCode,
     "為替レート": fxRate || "",
-    "為替取得日": b["為替取得日"] || today,
+    "為替取得日": b["為替取得日"] || agentData["為替取得日"] || new Date().toISOString().split('T')[0].replace(/-/g, '/'),
     "ビール_現地通貨": addSymbol(numbeo["ビール"]),
     "ビール_円換算": calcJpy(numbeo["ビール"]),
     "タバコ_現地通貨": addSymbol(numbeo["タバコ"]),

@@ -131,7 +131,7 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ### 為替レート
 検索：「{{ $json.countryEn }} currency JPY exchange rate today」
 ※必ず「1外貨 ＝ 〇〇円」の形式で出力。日本の場合は「1」を出力。
-出力：{"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}
+出力：{"物価": {"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}}
 
 ### 貿易
 検索優先順位：
