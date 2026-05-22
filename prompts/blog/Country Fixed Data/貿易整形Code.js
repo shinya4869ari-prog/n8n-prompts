@@ -122,6 +122,7 @@ return [{
         "貿易相手国": partnerList,
         "出典": `BBVA / Santander Trade / INDEC（${useYear}年）`
       }
-    })
+    }),
+    "出典": `BBVA / Santander Trade / INDEC（${useYear}年）`
   }
 }];

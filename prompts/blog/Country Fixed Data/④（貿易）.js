@@ -26,7 +26,7 @@ const getItemName = (item) => {
 };
 
 // 出典情報を取得
-const tradeCite = t.出典 || t.source || partners.find(p => p.順位 === "出典" || p.rank === "Source")?.出典 || partners.find(p => p.出典)?.出典 || "OEC.world";
+const tradeCite = t.出典 || partners.find(p => p.順位 === "出典")?.出典 || "IMF / Trade Map";
 
 // 出典から年度（西暦4桁）を抽出
 const yearMatch = tradeCite.match(/\b(20\d{2})\b/);
