@@ -1,16 +1,4 @@
-const currentYear = new Date().getFullYear();
-const today = new Date();
-const isManual = $execution.mode === 'manual';
-
-const thresholds = {
-    "貿易": 1,
-};
-
-const yearColMap = {
-    "貿易": "貿易統計_年",
-};
-
-const masterCountryMap = {
+const countryMap = {
     "アフガニスタン": { en: "Afghanistan", code: "AF", code3: "AFG", capital: "カブール", capitalEn: "Kabul", currency: "アフガニ", currencyCode: "AFN", currencySymbol: "؋" },
     "アルバニア": { en: "Albania", code: "AL", code3: "ALB", capital: "ティラナ", capitalEn: "Tirana", currency: "レク", currencyCode: "ALL", currencySymbol: "L" },
     "アルジェリア": { en: "Algeria", code: "DZ", code3: "DZA", capital: "アルジェ", capitalEn: "Algiers", currency: "アルジェリア・ディナール", currencyCode: "DZD", currencySymbol: "د.ج" },
@@ -104,7 +92,7 @@ const masterCountryMap = {
     "キルギス": { en: "Kyrgyzstan", code: "KG", code3: "KGZ", capital: "ビシュケク", capitalEn: "Bishkek", currency: "ソム", currencyCode: "KGS", currencySymbol: "с" },
     "ラオス": { en: "Laos", code: "LA", code3: "LAO", capital: "ビエンチャン", capitalEn: "Vientiane", currency: "キップ", currencyCode: "LAK", currencySymbol: "₭" },
     "ラトビア": { en: "Latvia", code: "LV", code3: "LVA", capital: "リガ", capitalEn: "Riga", currency: "ユーロ", currencyCode: "EUR", currencySymbol: "€" },
-    "レバノン": { en: "Lebanon", code: "LB", code3: "LBN", capital: "ベイルート", capitalEn: "Beirut", currency: "レバノン・ポンド", currencyCode: "LBP", currencySymbol: "ل.防" },
+    "レバノン": { en: "Lebanon", code: "LB", code3: "LBN", capital: "ベイルート", capitalEn: "Beirut", currency: "レバノン・ポンド", currencyCode: "LBP", currencySymbol: "ل.ل" },
     "レソト": { en: "Lesotho", code: "LS", code3: "LSO", capital: "マセル", capitalEn: "Maseru", currency: "ロチ", currencyCode: "LSL", currencySymbol: "L" },
     "リベリア": { en: "Liberia", code: "LR", code3: "LBR", capital: "モンロビア", capitalEn: "Monrovia", currency: "リベリア・ドル", currencyCode: "LRD", currencySymbol: "$" },
     "リビア": { en: "Libya", code: "LY", code3: "LBY", capital: "トリポリ", capitalEn: "Tripoli", currency: "リビア・ディナール", currencyCode: "LYD", currencySymbol: "ل.د" },
@@ -160,7 +148,7 @@ const masterCountryMap = {
     "サモア": { en: "Samoa", code: "WS", code3: "WSM", capital: "アピア", capitalEn: "Apia", currency: "タラ", currencyCode: "WST", currencySymbol: "T" },
     "サンマリノ": { en: "San Marino", code: "SM", code3: "SMR", capital: "サンマリノ", capitalEn: "San Marino", currency: "ユーロ", currencyCode: "EUR", currencySymbol: "€" },
     "サントメ・プリンシペ": { en: "Sao Tome and Principe", code: "ST", code3: "STP", capital: "サントメ", capitalEn: "Sao Tome", currency: "ドブラ", currencyCode: "STN", currencySymbol: "Db" },
-    "サウジアラビア": { en: "Saudi Arabia", code: "SA", code3: "SAU", capital: "リヤド", capitalEn: "Riyadh", currency: "サウジ・リアル", currencyCode: "SAR", currencySymbol: "ر.ス" },
+    "サウジアラビア": { en: "Saudi Arabia", code: "SA", code3: "SAU", capital: "リヤド", capitalEn: "Riyadh", currency: "サウジ・リアル", currencyCode: "SAR", currencySymbol: "ر.س" },
     "セネガル": { en: "Senegal", code: "SN", code3: "SEN", capital: "ダカール", capitalEn: "Dakar", currency: "CFAフラン", currencyCode: "XOF", currencySymbol: "Fr" },
     "セルビア": { en: "Serbia", code: "RS", code3: "SRB", capital: "ベオグラード", capitalEn: "Belgrade", currency: "セルビア・ディナール", currencyCode: "RSD", currencySymbol: "дин." },
     "セーシェル": { en: "Seychelles", code: "SC", code3: "SYC", capital: "ビクトリア", capitalEn: "Victoria", currency: "セーシェル・ルピー", currencyCode: "SCR", currencySymbol: "₨" },
@@ -208,87 +196,65 @@ const masterCountryMap = {
     "ジンバブエ": { en: "Zimbabwe", code: "ZW", code3: "ZWE", capital: "ハラレ", capitalEn: "Harare", currency: "ジンバブエ・ドル", currencyCode: "ZWL", currencySymbol: "$" }
 };
 
-// 全シートのデータを国名でマージ
-const countryMap = {};
-for (const item of $input.all()) {
-    const row = item.json;
-    let name = row["国名（日本語）"] || row["country"] || row["countryJa"];
+let japaneseCountry = $input.first().json.countryJa || $input.first().json['国名（日本語）'] || $input.first().json.rowData?.['国名（日本語）'];
+const inputCode3 = $input.first().json.code3 || $input.first().json.countryCode || "";
 
-    // コードから日本語国名を逆引き
-    if (!name) {
-        const code = row["code3"] || row["countryCode"] || row["国コード"];
-        if (code) {
-            const upperCode = String(code).toUpperCase().trim();
-            for (const [jaName, data] of Object.entries(masterCountryMap)) {
-                if (data.code3 === upperCode || data.code === upperCode) {
-                    name = jaName;
-                    // row に必要なマスタ情報をセットする（後続処理のエラー回避）
-                    row["国名（日本語）"] = jaName;
-                    row["国名（英語）"] = row["国名（英語）"] || data.en;
-                    row["国コード"] = row["国コード"] || data.code;
-                    row["首都（日本語）"] = row["首都（日本語）"] || data.capital;
-                    row["通貨コード"] = row["通貨コード"] || data.currencyCode;
-                    break;
-                }
-            }
+let entry = null;
+
+if (japaneseCountry) {
+    entry = countryMap[japaneseCountry];
+} else if (inputCode3) {
+    // code3から逆引き
+    const upperCode3 = String(inputCode3).toUpperCase().trim();
+    for (const [jaName, data] of Object.entries(countryMap)) {
+        if (data.code3 === upperCode3 || data.code === upperCode3) {
+            japaneseCountry = jaName;
+            entry = data;
+            break;
         }
-    }
-
-    if (!name) {
-        name = row["code3"] || row["countryCode"] || row["国コード"];
-    }
-
-    if (!name) continue;
-    if (!countryMap[name]) countryMap[name] = {};
-    Object.assign(countryMap[name], row);
-}
-
-const results = [];
-
-for (const [name, row] of Object.entries(countryMap)) {
-
-    // 自動実行時：次回アップデート予定日が今日以前の国だけ処理
-    if (!isManual) {
-        const nextUpdate = row["次回アップデート予定日"];
-        if (nextUpdate && new Date(nextUpdate) > today) {
-            continue; // スキップ
-        }
-    }
-
-    const staleItems = [];
-
-    for (const [label, yearCol] of Object.entries(yearColMap)) {
-
-        const threshold = thresholds[label];
-
-        const raw = row[yearCol];
-
-        // 値がない→対象
-        if (!raw) {
-            staleItems.push(label);
-            continue;
-        }
-
-        // 年度で判定
-        const year = parseInt(raw);
-        if (!year || currentYear - year >= threshold) {
-            staleItems.push(label);
-        }
-    }
-
-    if (staleItems.length > 0) {
-        results.push({
-            json: {
-                rowData: row,
-                staleItems,
-                countryJa: row["国名（日本語）"] || name,
-                countryEn: row["国名（英語）"],
-                countryCode: row["国コード"],
-                capital: row["首都（日本語）"],
-                currency: row["通貨コード"],
-            }
-        });
     }
 }
 
-return results;
+if (!entry) {
+    throw new Error(`国名変換できませんでした: ${japaneseCountry || inputCode3}`);
+}
+
+const getRegion = (code3) => {
+    const asia = ["AFG", "BGD", "BTN", "BRN", "KHM", "CHN", "IND", "IDN", "JPN", "KAZ", "KGZ", "LAO", "MYS", "MDV", "MNG", "MMR", "NPL", "PAK", "PHL", "SGP", "KOR", "LKA", "TWN", "TJK", "THA", "TLS", "UZB", "VNM"];
+    const middleEast = ["BHR", "IRN", "IRQ", "ISR", "JOR", "KWT", "LBN", "OMN", "QAT", "SAU", "SYR", "TUR", "ARE", "YEM"];
+    const europe = ["ALB", "AND", "ARM", "AUT", "AZE", "BLR", "BEL", "BIH", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "GEO", "DEU", "GRC", "HUN", "ISL", "IRL", "ITA", "LVA", "LIE", "LTU", "LUX", "MLT", "MDA", "MCO", "MNE", "NLD", "MKD", "NOR", "POL", "PRT", "ROU", "RUS", "SMR", "SRB", "SVK", "SVN", "ESP", "SWE", "CHE", "UKR", "GBR", "VAT"];
+    const africa = ["DZA", "AGO", "BEN", "BWA", "BFA", "BDI", "CPV", "CMR", "CAF", "TCD", "COM", "COG", "COD", "CIV", "DJI", "EGY", "GNQ", "ERI", "SWZ", "ETH", "GAB", "GMB", "GHA", "GIN", "GNB", "KEN", "LSO", "LBR", "LBY", "MDG", "MWI", "MLI", "MRT", "MUS", "MAR", "MOZ", "NAM", "NER", "NGA", "RWA", "STP", "SEN", "SYC", "SLE", "SOM", "ZAF", "SSD", "SDN", "TZA", "TGO", "TUN", "UGA", "ESH", "ZMB", "ZWE"];
+    const oceania = ["AUS", "FJI", "KIR", "MHL", "FSM", "NRU", "NZL", "PLW", "PNG", "WSM", "SLB", "TON", "TUV", "VUT"];
+    const northAmerica = ["ATG", "BHS", "BRB", "BLZ", "CAN", "CRC", "CUB", "DMA", "DOM", "SLV", "GRD", "GTM", "HTI", "HND", "JAM", "MEX", "NIC", "PAN", "KNA", "LCA", "VCT", "USA"];
+    const southAmerica = ["ARG", "BOL", "BRA", "CHL", "COL", "ECU", "GUY", "PRY", "PER", "SUR", "URY", "VEN"];
+
+    if (middleEast.includes(code3)) return "中東";
+    if (asia.includes(code3)) return "アジア";
+    if (europe.includes(code3)) return "ヨーロッパ";
+    if (africa.includes(code3)) return "アフリカ";
+    if (oceania.includes(code3)) return "オセアニア";
+    if (northAmerica.includes(code3)) return "北米";
+    if (southAmerica.includes(code3)) return "南米";
+    return "その他";
+};
+
+const countryRegion = getRegion(entry.code3 || "");
+
+return [{
+    json: {
+        ...$input.first().json,
+        country: japaneseCountry,
+        countryEn: entry.en,
+        countryCode: entry.code,
+        code3: entry.code3 || "",
+        capital: entry.capital || "",
+        capitalEn: entry.capitalEn || "",
+        capitalEnNumbeo: entry.capitalEnNumbeo || "",
+        isJapan: entry.isJapan === true,
+        currency: entry.currency || "",
+        currencyCode: entry.currencyCode || "",
+        currencySymbol: entry.currencySymbol || "",
+        region: countryRegion,
+        "地域": countryRegion
+    }
+}];
