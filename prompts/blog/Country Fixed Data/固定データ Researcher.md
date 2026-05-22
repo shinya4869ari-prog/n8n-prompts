@@ -82,11 +82,11 @@
 ### 主要輸出入品目・貿易相手国（それぞれ必ず1位〜10位まで抽出すること）
 表記は日本語のみ。
 
-**必ずこのURLの最新データを参照**：
-https://oec.world/en/profile/country/{{ $json.code3 }}
+**重要ルール**:
+- 必ず**最も新しい年**のデータ（latest → 2025 → 2024の優先順）を探して使用
+- 2022年は極力避ける（最新データが存在する場合）
 
-上記URLを直接開いて、2024年または最新年のExports / Imports / Trading Partnersのデータを厳密に使用。
-シェアは「〇〇%」形式で必ず記載。データがない場合は上位までで止めて「-」と記入。
+検索ツールを使って https://oec.world/en/profile/country/{{ $json.code3 }} を優先的に参照。
 
 **主要輸出品目トップ10（日本語名）**:
 1. 
@@ -124,7 +124,7 @@ https://oec.world/en/profile/country/{{ $json.code3 }}
 9. 
 10. 
 
-出典: OEC.world {{ $json.countryEn }} Profile ({{ $json.code3 }}) 最新データ
+出典: OEC.world {{ $json.countryEn }} ({{ $json.code3 }}) 最新データ
 ---
 
 # 出力形式 (JSON)
