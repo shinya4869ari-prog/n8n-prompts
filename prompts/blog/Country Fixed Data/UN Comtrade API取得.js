@@ -40,8 +40,8 @@ if (!numCode) throw new Error(`M49コードが見つかりません: ${code3}`);
 const year = new Date().getFullYear() - 1;
 
 const fetchJson = async (url) => {
-  const res = await $http.request({ url, method: 'GET' });
-  return res;
+  const res = await axios.get(url);
+  return res.data;
 };
 
 const base = `https://comtradeapi.un.org/public/v1/preview/C/A/HS`;
