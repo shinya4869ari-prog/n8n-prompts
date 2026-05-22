@@ -196,27 +196,11 @@ const countryMap = {
   "ジンバブエ": { en: "Zimbabwe", code: "ZW", code3: "ZWE", capital: "ハラレ", capitalEn: "Harare", currency: "ジンバブエ・ドル", currencyCode: "ZWL", currencySymbol: "$" }
 };
 
-let japaneseCountry = $input.first().json.countryJa || $input.first().json['国名（日本語）'] || $input.first().json.rowData?.['国名（日本語）'];
-const inputCode3 = $input.first().json.code3 || $input.first().json.countryCode || "";
-
-let entry = null;
-
-if (japaneseCountry) {
-  entry = countryMap[japaneseCountry];
-} else if (inputCode3) {
-  // code3から逆引き
-  const upperCode3 = String(inputCode3).toUpperCase().trim();
-  for (const [jaName, data] of Object.entries(countryMap)) {
-    if (data.code3 === upperCode3 || data.code === upperCode3) {
-      japaneseCountry = jaName;
-      entry = data;
-      break;
-    }
-  }
-}
+const japaneseCountry = $input.first().json.countryJa || $input.first().json['国名（日本語）'] || $input.first().json.rowData?.['国名（日本語）'];
+const entry = countryMap[japaneseCountry];
 
 if (!entry) {
-  throw new Error(`国名変換できませんでした: ${japaneseCountry || inputCode3}`);
+  throw new Error(`国名変換できませんでした: ${japaneseCountry}`);
 }
 
 const getRegion = (code3) => {
