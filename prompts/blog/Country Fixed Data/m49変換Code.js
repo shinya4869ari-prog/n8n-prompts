@@ -36,4 +36,4 @@ if (!m49) throw new Error(`M49コードが見つかりません: ${code3}`);
 
 const year = String(new Date().getFullYear() - 1);
 
-return [{ json: { m49, code3, year, countryJa: prev.base?.country || "" } }];
+return [{ json: { m49: String(m49), code3, year: String(year), countryJa: prev.base?.country || "" } }];
