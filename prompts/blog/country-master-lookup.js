@@ -196,7 +196,7 @@ const countryMap = {
   "ジンバブエ": { en: "Zimbabwe", code: "ZW", code3: "ZWE", capital: "ハラレ", capitalEn: "Harare", currency: "ジンバブエ・ドル", currencyCode: "ZWL", currencySymbol: "$" }
 };
 
-const japaneseCountry = $input.first().json['国名（日本語）'];
+const japaneseCountry = $input.first().json.countryJa || $input.first().json['国名（日本語）'] || $input.first().json.rowData?.['国名（日本語）'];
 const entry = countryMap[japaneseCountry];
 
 if (!entry) {
