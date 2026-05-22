@@ -14,7 +14,7 @@ const yearColMap = {
 const countryMap = {};
 for (const item of $input.all()) {
     const row = item.json;
-    const name = row["国名（日本語）"] || row["code3"];
+    const name = row["国名（日本語）"];
     if (!name) continue;
     if (!countryMap[name]) countryMap[name] = {};
     Object.assign(countryMap[name], row);
@@ -58,11 +58,11 @@ for (const [name, row] of Object.entries(countryMap)) {
             json: {
                 rowData: row,
                 staleItems,
-                countryJa: row["国名（日本語）"] || row["code3"] || "",
-                countryEn: row["国名（英語）"] || "",
-                countryCode: row["国コード"] || row["code3"] || "",
-                capital: row["首都（日本語）"] || "",
-                currency: row["通貨コード"] || "",
+                countryJa: row["国名（日本語）"],
+                countryEn: row["国名（英語）"],
+                countryCode: row["国コード"],
+                capital: row["首都（日本語）"],
+                currency: row["通貨コード"],
             }
         });
     }
