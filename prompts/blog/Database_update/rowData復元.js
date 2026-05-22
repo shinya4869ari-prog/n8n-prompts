@@ -1,6 +1,17 @@
 const agentOut = $input.first().json.output ?? "";
-const loopData = $('Loop Over Items').first().json;
-const rowData = loopData.rowData;
+const runIndex = $runIndex;
+
+let rowData;
+try {
+  const mergeData = $('項目検出・国別マージ').all()[runIndex].json;
+  rowData = mergeData.rowData;
+} catch (e) {
+  throw new Error(`ノード参照エラー: 「項目検出・国別マージ」ノードからデータを取得できませんでした。n8n上のノード名が「項目検出・国別マージ」になっているか確認してください。エラー: ${e.message}`);
+}
+
+if (!rowData) {
+  throw new Error(`データエラー: 「項目検出・国別マージ」の出力に rowData が存在しません。`);
+}
 
 // ツール未使用チェック
 if (!agentOut || agentOut === "") {
