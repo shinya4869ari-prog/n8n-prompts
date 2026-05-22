@@ -12,11 +12,26 @@ const prev = $('プロンプト取得用 Code').first().json;
 const code3 = prev.base?.code3 || "";
 
 const t = data.貿易 || data.trade || {};
-const exports = t.主要輸出項目 || t.exports || [];
-const imports = t.主要輸入項目 || t.imports || [];
+const exports = t.輸出 || t.主要輸出項目 || t.exports || [];
+const imports = t.輸入 || t.主要輸入項目 || t.imports || [];
 const partners = t.貿易相手国 || t.partners || [];
 
-const tradeCite = partners.find(p => p.順位 === "出典" || p.rank === "Source")?.出典 || partners.find(p => p.出典)?.出典 || "IMF / Trade Map";
+// 品目名を安全に取得する
+const getItemName = (item) => {
+  if (!item) return "";
+  if (typeof item === 'object') {
+    return item.品目 || item.name || item.item || "";
+  }
+  return String(item);
+};
+
+// 出典情報を取得
+const tradeCite = t.出典 || t.source || partners.find(p => p.順位 === "出典" || p.rank === "Source")?.出典 || partners.find(p => p.出典)?.出典 || "OEC.world";
+
+// 出典から年度（西暦4桁）を抽出
+const yearMatch = tradeCite.match(/\b(20\d{2})\b/);
+const tradeYear = yearMatch ? yearMatch[1] : "";
+
 const partnerList = partners.filter(p => p.順位 !== "出典" && p.rank !== "Source");
 
 // 全体のシェアデータから、すべての値が1未満（小数表記フォーマット）かどうかを判定
@@ -43,15 +58,16 @@ const formatShare = (val) => {
 return [{ json: {
   "国名（日本語）": data["国名（日本語）"] || data.country_jp || "",
   "code3": code3,
+  "貿易統計_年": tradeYear, // 抽出した年度をセット
   "貿易統計_出典": tradeCite,
-  "輸出1位_品目": exports[0]?.品目||"", "輸出2位_品目": exports[1]?.品目||"", "輸出3位_品目": exports[2]?.品目||"",
-  "輸出4位_品目": exports[3]?.品目||"", "輸出5位_品目": exports[4]?.品目||"", "輸出6位_品目": exports[5]?.品目||"",
-  "輸出7位_品目": exports[6]?.品目||"", "輸出8位_品目": exports[7]?.品目||"", "輸出9位_品目": exports[8]?.品目||"",
-  "輸出10位_品目": exports[9]?.品目||"",
-  "輸入1位_品目": imports[0]?.品目||"", "輸入2位_品目": imports[1]?.品目||"", "輸入3位_品目": imports[2]?.品目||"",
-  "輸入4位_品目": imports[3]?.品目||"", "輸入5位_品目": imports[4]?.品目||"", "輸入6位_品目": imports[5]?.品目||"",
-  "輸入7位_品目": imports[6]?.品目||"", "輸入8位_品目": imports[7]?.品目||"", "輸入9位_品目": imports[8]?.品目||"",
-  "輸入10位_品目": imports[9]?.品目||"",
+  "輸出1位_品目": getItemName(exports[0]), "輸出2位_品目": getItemName(exports[1]), "輸出3位_品目": getItemName(exports[2]),
+  "輸出4位_品目": getItemName(exports[3]), "輸出5位_品目": getItemName(exports[4]), "輸出6位_品目": getItemName(exports[5]),
+  "輸出7位_品目": getItemName(exports[6]), "輸出8位_品目": getItemName(exports[7]), "輸出9位_品目": getItemName(exports[8]),
+  "輸出10位_品目": getItemName(exports[9]),
+  "輸入1位_品目": getItemName(imports[0]), "輸入2位_品目": getItemName(imports[1]), "輸入3位_品目": getItemName(imports[2]),
+  "輸入4位_品目": getItemName(imports[3]), "輸入5位_品目": getItemName(imports[4]), "輸入6位_品目": getItemName(imports[5]),
+  "輸入7位_品目": getItemName(imports[6]), "輸入8位_品目": getItemName(imports[7]), "輸入9位_品目": getItemName(imports[8]),
+  "輸入10位_品目": getItemName(imports[9]),
   "貿易相手1位_国名": partnerList[0]?.国名||"", "貿易相手1位_シェア%": formatShare(partnerList[0]?.シェア),
   "貿易相手2位_国名": partnerList[1]?.国名||"", "貿易相手2位_シェア%": formatShare(partnerList[1]?.シェア),
   "貿易相手3位_国名": partnerList[2]?.国名||"", "貿易相手3位_シェア%": formatShare(partnerList[2]?.シェア),

@@ -226,6 +226,7 @@ const countryRegion = getRegion(entry.code3 || "");
 
 return [{
   json: {
+    ...$input.first().json,
     country: japaneseCountry,
     countryEn: entry.en,
     countryCode: entry.code,

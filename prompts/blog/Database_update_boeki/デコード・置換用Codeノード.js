@@ -12,9 +12,9 @@ if (binaryKeys.length > 0) {
 }
 
 // 2. 変数置換用のコンテキストを用意
-// ※紐付けエラーを防ぐため、$runIndex を使って安全に対象アイテムを取得します
-const runIndex = $runIndex;
-const base = $('Loop Over Items').all()[runIndex].json; 
+// 前段の国名変換ノード（マスタ）の出力（すべての変数が引き継がれています）
+const base = $input.first().json; 
+
 const now = new Date();
 const context = {
   ...base,
@@ -47,6 +47,7 @@ const finalPrompt = evaluateTemplate(rawPrompt, context);
 return [{
   json: {
     tradePrompt: finalPrompt,
+    base: base,
     ...context
   }
 }];
