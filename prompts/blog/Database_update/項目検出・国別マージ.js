@@ -1,6 +1,5 @@
 const currentYear = new Date().getFullYear();
 const today = new Date();
-const isManual = $execution.mode === 'manual';
 
 const thresholds = {
     "殺人率": 1,
@@ -38,7 +37,7 @@ const yearColMap = {
 
 // フォームトリガーから指定された国名を取得（On Home Trigger, Form Trigger 等から安全に取得）
 let specifiedCountry = "";
-const possibleTriggers = ["On Home Trigger", "Form Trigger", "Form", "Webhook"];
+const possibleTriggers = ["国名入力", "On Home Trigger", "Form Trigger", "Form", "Webhook"];
 for (const triggerName of possibleTriggers) {
     try {
         const data = $(triggerName).first().json;
