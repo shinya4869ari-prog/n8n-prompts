@@ -18,9 +18,9 @@ if (!countryEn) {
 // 例外的な国名スラグのマッピング
 const wpbSlugMap = {
   "united-states": "united-states-america",
-  "republic-of-korea": "republic-korea",
-  "korea,-south": "republic-korea",
-  "south-korea": "republic-korea",
+  "republic-of-korea": "republic-south-korea",
+  "korea,-south": "republic-south-korea",
+  "south-korea": "republic-south-korea",
   "russia": "russian-federation",
   "russian-federation": "russian-federation",
   "cote-d'ivoire": "cote-divoire",
@@ -31,10 +31,26 @@ const wpbSlugMap = {
   "congo,-republic-of": "congo-republic",
   "republic-of-the-congo": "congo-republic",
   "congo-republic": "congo-republic",
-  "cape-verde": "cabo-verde",
-  "eswatini": "eswatini-formerly-swaziland",
-  "swaziland": "eswatini-formerly-swaziland",
-  "czech-republic": "czech-republic-czechia"
+  "cape-verde": "cape-verde-cabo-verde",
+  "eswatini": "eswatiniswaziland",
+  "swaziland": "eswatiniswaziland",
+  "czech-republic": "czech-republic",
+  "united-kingdom": "united-kingdom-england-wales",
+  "moldova": "moldova-republic",
+  "myanmar": "myanmar-formerly-burma",
+  "north-korea": "democratic-peoples-republic-north-korea",
+  "brunei": "brunei-darussalam",
+  "micronesia": "micronesia-federated-states",
+  "bosnia-and-herzegovina": "bosnia-herzegovina-federation",
+  "timor-leste": "timor-leste-formerly-east-timor",
+  "antigua-and-barbuda": "antigua-barbuda",
+  "congo": "congo-republic",
+  "cyprus": "cyprus-republic",
+  "guinea": "guinea-republic",
+  "ireland": "ireland-republic",
+  "saint-kitts-and-nevis": "st-kitts-nevis",
+  "saint-vincent-and-the-grenadines": "st-vincent-grenadines",
+  "saint-lucia": "st-lucia"
 };
 
 let slug = countryEn.toLowerCase()

@@ -5,8 +5,7 @@ const countryJa = item.countryJa || item.base?.country || "";
 
 return [{
   json: {
-    query: `${countryEn} (top exports OR top imports OR "major exports" OR "major imports" OR "trading partners" OR "export partners" OR "import partners") (2023 OR 2024 OR 2025) 
-    (OEC OR "Observatory of Economic Complexity" OR TrendEconomy OR "UN Comtrade" OR WITS OR "World Bank" OR Eurostat OR "national statistics" OR IMF)`,
+    query: `${countryEn} top exports imports trading partners share 2024 OR 2025 site:santandertrade.com OR site:comercioexterior.bbva.es OR site:lloydsbanktrade.com OR site:wikipedia.org`,
     countryEn,
     code3,
     countryJa
