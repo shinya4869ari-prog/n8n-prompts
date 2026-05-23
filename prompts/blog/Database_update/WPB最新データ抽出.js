@@ -31,17 +31,26 @@ if (totalMatch) {
   if (fallbackTotal) totalVal = fallbackTotal[1].trim().replace(/,/g, '');
 }
 
+// 過去の「項目検出・国別マージ」のデータをすべてコピーして引き継ぐ
+let mergedData = {};
+try {
+  mergedData = Object.assign({}, $('項目検出・国別マージ').first().json);
+} catch (e) {
+  mergedData = { countryEn };
+}
+
+// 刑務所データをマージ
+mergedData["刑務所稼働率"] = {
+  "値": occupancyVal,
+  "年": occupancyYear,
+  "出典": "World Prison Brief"
+};
+mergedData["刑務所総収容者数"] = {
+  "値": totalVal,
+  "年": totalYear,
+  "出典": "World Prison Brief"
+};
+
 return [{
-  json: {
-    "刑務所稼働率": {
-      "値": occupancyVal,
-      "年": occupancyYear,
-      "出典": "World Prison Brief"
-    },
-    "刑務所総収容者数": {
-      "値": totalVal,
-      "年": totalYear,
-      "出典": "World Prison Brief"
-    }
-  }
+  json: mergedData
 }];
