@@ -36,6 +36,22 @@ const yearColMap = {
     "児童労働率": "児童労働率_年",
 };
 
+// フォームトリガーから指定された国名を取得（On Home Trigger, Form Trigger 等から安全に取得）
+let specifiedCountry = "";
+const possibleTriggers = ["On Home Trigger", "Form Trigger", "Form", "Webhook"];
+for (const triggerName of possibleTriggers) {
+    try {
+        const data = $(triggerName).first().json;
+        const val = (data?.targetCountry ?? data?.country ?? data?.countryName ?? "").trim();
+        if (val) {
+            specifiedCountry = val;
+            break;
+        }
+    } catch (e) {
+        // ノードが存在しない、または取得に失敗した場合はスキップ
+    }
+}
+
 // 全シートのデータを国名でマージ
 const countryMap = {};
 for (const item of $input.all()) {
@@ -50,11 +66,16 @@ const results = [];
 
 for (const [name, row] of Object.entries(countryMap)) {
 
-    // 自動実行時：次回アップデート予定日が今日以前の国だけ処理
-    if (!isManual) {
+    if (specifiedCountry) {
+        // ① 特定の国が指定されている場合：その国だけを強制処理（予定日は無視）
+        if (name !== specifiedCountry) {
+            continue;
+        }
+    } else {
+        // ② 国名が指定されていない場合（自動実行、または空欄での手動実行）：予定日が未来ならスキップ
         const nextUpdate = row["次回アップデート予定日"];
         if (nextUpdate && new Date(nextUpdate) > today) {
-            continue; // スキップ
+            continue;
         }
     }
 
