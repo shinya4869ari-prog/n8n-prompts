@@ -41,7 +41,7 @@ const possibleTriggers = ["国名入力", "On Home Trigger", "Form Trigger", "Fo
 for (const triggerName of possibleTriggers) {
     try {
         const data = $(triggerName).first().json;
-        const val = (data?.targetCountry ?? data?.country ?? data?.countryName ?? "").trim();
+        const val = (data?.["国名（日本語）"] ?? data?.targetCountry ?? data?.country ?? data?.countryName ?? "").trim();
         if (val) {
             specifiedCountry = val;
             break;
