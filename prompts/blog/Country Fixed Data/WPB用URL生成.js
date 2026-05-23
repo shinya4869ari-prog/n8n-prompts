@@ -1,6 +1,16 @@
 // WPB (World Prison Brief) の国別URLを生成するコード
 
-const countryEn = $input.first().json.countryEn || $input.first().json.rowData?.["国名（英語）"] || "";
+let countryEn = "";
+try {
+  countryEn = $('country-master-lookup').first().json.countryEn;
+} catch (e) {
+  try {
+    countryEn = $('項目検出・国別マージ').first().json.countryEn;
+  } catch (err) {
+    countryEn = $input.first().json.countryEn || $input.first().json.rowData?.["国名（英語）"] || "";
+  }
+}
+
 if (!countryEn) {
   throw new Error("英語の国名が取得できませんでした。");
 }
