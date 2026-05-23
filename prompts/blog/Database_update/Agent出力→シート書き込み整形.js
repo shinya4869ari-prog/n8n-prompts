@@ -42,6 +42,21 @@ try {
   agentOutput = {};
 }
 
+// WPBからHTTP Requestで直接取得した最新データをマージ
+try {
+  const wpb = $("WPB最新データ抽出").first().json;
+  if (wpb) {
+    if (wpb.刑務所稼働率) {
+      agentOutput.刑務所稼働率 = wpb.刑務所稼働率;
+    }
+    if (wpb.刑務所総収容者数) {
+      agentOutput.刑務所総収容者数 = wpb.刑務所総収容者数;
+    }
+  }
+} catch (e) {
+  console.log("WPB最新データ抽出ノードの参照に失敗、またはデータが存在しません:", e.message);
+}
+
 console.log("agentOutput keys:", Object.keys(agentOutput));
 console.log("agentOutput_raw length:", agentOutput_raw.length);
 

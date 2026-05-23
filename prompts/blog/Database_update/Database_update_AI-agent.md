@@ -12,8 +12,6 @@
 - 失業率：{{ $json.rowData["失業率_年"] || "未登録" }}
 - 貧困率：{{ $json.rowData["貧困率_年"] || "未登録" }}
 - ジニ係数：{{ $json.rowData["ジニ係数_年"] || "未登録" }}
-- 刑務所稼働率：{{ $json.rowData["刑務所稼働率_年"] || "未登録" }}
-- 刑務所総収容者数：{{ $json.rowData["刑務所総収容者数_年"] || "未登録" }}
 - GPI：{{ $json.rowData["GPI年"] || "未登録" }}
 - GGI：{{ $json.rowData["GGI年"] || "未登録" }}
 - 女性労働参加率：{{ $json.rowData["女性労働参加率_年"] || "未登録" }}
@@ -37,7 +35,6 @@
 - 失業率：World Bank → IMF → ILO → 各国統計局
 - 貧困率：相対的貧困率のみ（World Bankの絶対的貧困率は使用禁止）
 - ジニ係数：World Bank
-- 刑務所系：World Prison Brief のみ（他ソース禁止）。必ず個別国ページ（prisonstudies.org/country/...）にアクセスし、そこに記載されている最も新しい日付・年度のデータを採用すること。
 - GPI：Vision of Humanity（visionofhumanity.org）
 - 犯罪トップ5：UNODC または各国警察公式統計
 - GGI：World Economic Forum
@@ -80,16 +77,6 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 検索：「{{ $json.countryEn }} gini index World Bank latest」
 ※0〜100の指数形式で出力。0.xxx形式で見つかった場合は100倍すること。
 出力：{"ジニ係数": {"値": "", "年": "", "出典": "World Bank"}}
-
-### 刑務所稼働率
-検索：「World Prison Brief "{{ $json.countryEn }}" "occupancy level" 2025 OR 2026」
-※検索結果のテキストから、最も新しい日付・年度のデータ（例：「78.8% (31.1.2025)」など）を取得してください。
-出力：{"刑務所稼働率": {"値": "", "年": "", "出典": "World Prison Brief"}}
-
-### 刑務所総収容者数
-検索：「World Prison Brief "{{ $json.countryEn }}" "total prison population" 2025 OR 2026」
-※検索結果のテキストから、最も新しい日付・年度のデータ（例：「4,394 at March 2026」など）を取得してください。
-出力：{"刑務所総収容者数": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### GPI
 検索：「Global Peace Index {{ $json.countryEn }} latest score rank site:visionofhumanity.org」
