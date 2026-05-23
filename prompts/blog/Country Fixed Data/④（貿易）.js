@@ -16,13 +16,26 @@ const exports = t.輸出 || t.主要輸出項目 || t.exports || [];
 const imports = t.輸入 || t.主要輸入項目 || t.imports || [];
 const partners = t.貿易相手国 || t.partners || [];
 
+// 括弧とその中身を取り除く関数
+const cleanBrackets = (str) => {
+  if (!str) return "";
+  return str
+    .replace(/\([^)]*\)/g, '')
+    .replace(/（[^）]*）/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // 品目名を安全に取得する
 const getItemName = (item) => {
   if (!item) return "";
+  let name = "";
   if (typeof item === 'object') {
-    return item.品目 || item.name || item.item || "";
+    name = item.品目 || item.name || item.item || "";
+  } else {
+    name = String(item);
   }
-  return String(item);
+  return cleanBrackets(name);
 };
 
 // 出典情報を取得
@@ -68,14 +81,14 @@ return [{ json: {
   "輸入4位_品目": getItemName(imports[3]), "輸入5位_品目": getItemName(imports[4]), "輸入6位_品目": getItemName(imports[5]),
   "輸入7位_品目": getItemName(imports[6]), "輸入8位_品目": getItemName(imports[7]), "輸入9位_品目": getItemName(imports[8]),
   "輸入10位_品目": getItemName(imports[9]),
-  "貿易相手1位_国名": partnerList[0]?.国名||"", "貿易相手1位_シェア%": formatShare(partnerList[0]?.シェア),
-  "貿易相手2位_国名": partnerList[1]?.国名||"", "貿易相手2位_シェア%": formatShare(partnerList[1]?.シェア),
-  "貿易相手3位_国名": partnerList[2]?.国名||"", "貿易相手3位_シェア%": formatShare(partnerList[2]?.シェア),
-  "貿易相手4位_国名": partnerList[3]?.国名||"", "貿易相手4位_シェア%": formatShare(partnerList[3]?.シェア),
-  "貿易相手5位_国名": partnerList[4]?.国名||"", "貿易相手5位_シェア%": formatShare(partnerList[4]?.シェア),
-  "貿易相手6位_国名": partnerList[5]?.国名||"", "貿易相手6位_シェア%": formatShare(partnerList[5]?.シェア),
-  "貿易相手7位_国名": partnerList[6]?.国名||"", "貿易相手7位_シェア%": formatShare(partnerList[6]?.シェア),
-  "貿易相手8位_国名": partnerList[7]?.国名||"", "貿易相手8位_シェア%": formatShare(partnerList[7]?.シェア),
-  "貿易相手9位_国名": partnerList[8]?.国名||"", "貿易相手9位_シェア%": formatShare(partnerList[8]?.シェア),
-  "貿易相手10位_国名": partnerList[9]?.国名||"", "貿易相手10位_シェア%": formatShare(partnerList[9]?.シェア)
+  "貿易相手1位_国名": cleanBrackets(partnerList[0]?.国名||""), "貿易相手1位_シェア%": formatShare(partnerList[0]?.シェア),
+  "貿易相手2位_国名": cleanBrackets(partnerList[1]?.国名||""), "貿易相手2位_シェア%": formatShare(partnerList[1]?.シェア),
+  "貿易相手3位_国名": cleanBrackets(partnerList[2]?.国名||""), "貿易相手3位_シェア%": formatShare(partnerList[2]?.シェア),
+  "貿易相手4位_国名": cleanBrackets(partnerList[3]?.国名||""), "貿易相手4位_シェア%": formatShare(partnerList[3]?.シェア),
+  "貿易相手5位_国名": cleanBrackets(partnerList[4]?.国名||""), "貿易相手5位_シェア%": formatShare(partnerList[4]?.シェア),
+  "貿易相手6位_国名": cleanBrackets(partnerList[5]?.国名||""), "貿易相手6位_シェア%": formatShare(partnerList[5]?.シェア),
+  "貿易相手7位_国名": cleanBrackets(partnerList[6]?.国名||""), "貿易相手7位_シェア%": formatShare(partnerList[6]?.シェア),
+  "貿易相手8位_国名": cleanBrackets(partnerList[7]?.国名||""), "貿易相手8位_シェア%": formatShare(partnerList[7]?.シェア),
+  "貿易相手9位_国名": cleanBrackets(partnerList[8]?.国名||""), "貿易相手9位_シェア%": formatShare(partnerList[8]?.シェア),
+  "貿易相手10位_国名": cleanBrackets(partnerList[9]?.国名||""), "貿易相手10位_シェア%": formatShare(partnerList[9]?.シェア)
 }}];
