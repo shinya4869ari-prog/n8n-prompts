@@ -37,7 +37,7 @@
 - 失業率：World Bank → IMF → ILO → 各国統計局
 - 貧困率：相対的貧困率のみ（World Bankの絶対的貧困率は使用禁止）
 - ジニ係数：World Bank
-- 刑務所系：World Prison Brief のみ（他ソース禁止）
+- 刑務所系：World Prison Brief のみ（他ソース禁止）。必ず個別国ページ（prisonstudies.org/country/...）にアクセスし、そこに記載されている最も新しい日付・年度のデータを採用すること。
 - GPI：Vision of Humanity（visionofhumanity.org）
 - 犯罪トップ5：UNODC または各国警察公式統計
 - GGI：World Economic Forum
@@ -82,11 +82,13 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"ジニ係数": {"値": "", "年": "", "出典": "World Bank"}}
 
 ### 刑務所稼働率
-検索：「World Prison Brief {{ $json.countryEn }} occupancy level latest」
+検索：「site:prisonstudies.org/country/{{ $json.countryEn }} occupancy level」
+※検索結果の個別国ページに記載されている最も新しい日付・年度のデータ（例：「78.8% (31.1.2025)」など）を取得してください。
 出力：{"刑務所稼働率": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### 刑務所総収容者数
-検索：「World Prison Brief {{ $json.countryEn }} latest total prison population」
+検索：「site:prisonstudies.org/country/{{ $json.countryEn }} total prison population」
+※検索結果の個別国ページに記載されている最も新しい日付・年度のデータ（例：「4,394 at March 2026」など）を取得してください。
 出力：{"刑務所総収容者数": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### GPI
