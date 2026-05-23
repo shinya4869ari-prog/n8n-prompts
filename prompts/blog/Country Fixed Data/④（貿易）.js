@@ -1,4 +1,4 @@
-const raw = $input.first().json.output ?? $input.first().json.text ?? '';
+const raw = $input.first().json.content?.parts?.[0]?.text ?? $input.first().json.output ?? $input.first().json.text ?? '';
 const cleaned = raw.replace(/```json|```/g, '').trim();
 let data;
 

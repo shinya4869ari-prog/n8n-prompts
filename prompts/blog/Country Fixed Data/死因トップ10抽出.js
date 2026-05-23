@@ -34,6 +34,7 @@ const causeJaMap = {
   'Tuberculosis': '結核',
   'HIV/AIDS': 'HIV/エイズ',
   'Diarrhoeal diseases': '下痢性疾患',
+  'Childhood-cluster diseases': '主な小児感染症',
   'Whooping cough': '百日咳',
   'Diphtheria': 'ジフテリア',
   'Measles': '麻疹',
@@ -128,7 +129,9 @@ const causeJaMap = {
   // 新生児・母体
   'Neonatal conditions': '新生児疾患',
   'Preterm birth complications': '早産合併症',
+  'Preterm birth': '早産合併症',
   'Birth asphyxia and birth trauma': '出生時仮死・出生外傷',
+  'Birth asphyxia': '出生時仮死',
   'Neonatal sepsis and infections': '新生児敗血症・感染症',
   'Maternal conditions': '母体疾患',
   // その他
