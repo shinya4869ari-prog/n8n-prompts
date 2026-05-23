@@ -4,8 +4,8 @@
 {{ $input.first().json.results.map(r => r.snippet || '').join('\n') }}
 
 ## データ優先順位（必ずこの順で使用すること）
-1. 輸出品目：Wikipediaの「Export goods」欄（最新年）を最優先。なければSantander Trade / Lloyds Bank。
-2. 輸入品目：Wikipediaの「Import goods」欄（最新年）を最優先。なければSantander Trade / Lloyds Bank。
+1. 輸出品目：Santander Trade / Lloyds Bank（最新年）を最優先。なければWikipedia。
+2. 輸入品目：Santander Trade / Lloyds Bank（最新年）を最優先。なければWikipedia。
 3. 貿易相手国：BBVAの表（最新年）を最優先。なければSantander Trade。
 4. 年度：最新年度のデータのみ使用。複数年度がある場合は必ず最新を選ぶこと。
 
