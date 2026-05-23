@@ -168,46 +168,39 @@ if (agentOutput.ジニ係数) {
 
 if (agentOutput.刑務所稼働率) {
     const d = agentOutput.刑務所稼働率;
-    const newOccupancy = d.値 ?? rowData["刑務所稼働率"];
-    const newOccupancyYear = d.年 ?? rowData["刑務所稼働率_年"];
-    const newOccupancyCite = d.出典 ?? rowData["刑務所稼働率_出典"];
-    
-    // 値・年・出典のいずれかが既存データと異なる場合は必ず上書きする
-    if (newOccupancy && newOccupancy !== "欠測" && 
-        (String(newOccupancy) !== String(rowData["刑務所稼働率"]) || 
-         String(newOccupancyYear) !== String(rowData["刑務所稼働率_年"]) || 
-         String(newOccupancyCite) !== String(rowData["刑務所稼働率_出典"]))) {
+    if (d.値 && d.値 !== "欠測") {
+        anzen["刑務所稼働率"] = d.値;
+        anzen["刑務所稼働率_年"] = d.年;
+        anzen["刑務所稼働率_出典"] = d.出典;
         
-        anzen["刑務所稼働率"] = newOccupancy;
-        anzen["刑務所稼働率_年"] = newOccupancyYear;
-        anzen["刑務所稼働率_出典"] = newOccupancyCite;
-        anzenUpdated.push("刑務所稼働率");
+        // 既存値との差分チェック（更新フラグのため）
+        if (String(d.値) !== String(rowData["刑務所稼働率"]) || 
+            String(d.年) !== String(rowData["刑務所稼働率_年"]) || 
+            String(d.出典) !== String(rowData["刑務所稼働率_出典"])) {
+            anzenUpdated.push("刑務所稼働率");
+        }
     }
 }
 
 if (agentOutput.刑務所総収容者数) {
     const d = agentOutput.刑務所総収容者数;
-    const newTotal = d.値 ?? rowData["刑務所総収容者数"];
-    const newYear = d.年 ?? rowData["刑務所総収容者数_年"];
-    const newCite = d.出典 ?? rowData["刑務所総収容者数_出典"];
-    
-    // 1. 最新の総収容者数（単体カラム）の更新（値・年・出典のいずれかが異なれば上書き）
-    if (newTotal && newTotal !== "欠測" && 
-        (String(newTotal) !== String(rowData["刑務所総収容者数"]) || 
-         String(newYear) !== String(rowData["刑務所総収容者数_年"]) || 
-         String(newCite) !== String(rowData["刑務所総収容者数_出典"]))) {
+    if (d.値 && d.値 !== "欠測") {
+        anzen["刑務所総収容者数"] = d.値;
+        anzen["刑務所総収容者数_年"] = d.年;
+        anzen["刑務所総収容者数_出典"] = d.出典;
         
-        anzen["刑務所総収容者数"] = newTotal;
-        anzen["刑務所総収容者数_年"] = newYear;
-        anzen["刑務所総収容者数_出典"] = newCite;
-        anzenUpdated.push("刑務所総収容者数");
+        // 既存値との差分チェック（更新フラグのため）
+        if (String(d.値) !== String(rowData["刑務所総収容者数"]) || 
+            String(d.年) !== String(rowData["刑務所総収容者数_年"]) || 
+            String(d.出典) !== String(rowData["刑務所総収容者数_出典"])) {
+            anzenUpdated.push("刑務所総収容者数");
+        }
     }
     
     // 2. 収容推移10番目の更新
-    if (newTotal && newTotal !== "欠測" && 
-        (String(newTotal) !== String(rowData["収容推移10_総収容者数"]) || 
-         String(newYear) !== String(rowData["収容推移10_年"]))) {
-        
+    const newTotal = d.値 ?? rowData["刑務所総収容者数"];
+    const newYear = d.年 ?? rowData["刑務所総収容者数_年"];
+    if (newTotal && newTotal !== "欠測") {
         anzen["収容推移10_総収容者数"] = newTotal;
         anzen["収容推移10_年"] = newYear;
         
