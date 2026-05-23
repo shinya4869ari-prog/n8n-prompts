@@ -1,7 +1,15 @@
 const input = $input.first().json;
 const agentOutput_raw = input.output ?? "";
 const rowData = input.rowData ?? {};
-const today = new Date().toISOString().split('T')[0];
+const now = new Date();
+const jstDate = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60 * 1000);
+const yyyy = jstDate.getFullYear();
+const mm = String(jstDate.getMonth() + 1).padStart(2, '0');
+const dd = String(jstDate.getDate()).padStart(2, '0');
+const hh = String(jstDate.getHours()).padStart(2, '0');
+const min = String(jstDate.getMinutes()).padStart(2, '0');
+const ss = String(jstDate.getSeconds()).padStart(2, '0');
+const today = `${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
 
 if (!rowData || !rowData["国名（日本語）"]) {
     return [{ json: { error: "rowDataなし", input } }];
