@@ -43,27 +43,36 @@ const checkChange = (label, newVal, oldVal, newYear, oldYear, newSource, oldSour
   const ey = oldYear ? parseInt(String(oldYear).replace(/[^0-9]/g, '')) : null;
   const isOlder = ny && ey && ny < ey;
   const isSame = ny && ey && ny === ey;
+  const isNewer = ny && (!ey || ny > ey); // 新年度かどうか
   const isChanged = String(newVal) !== String(oldVal);
   
   const beforeStr = oldYear ? `${oldVal ?? ""}（${oldYear}年）` : `${oldVal ?? ""}`;
   const afterStr = newYear ? `${newVal}（${newYear}年）` : `${newVal}`;
   
   let result, 出典;
+  let isLogged = false; // 変更サマリーログに載せるかどうかのフラグ
+  
   if (isOlder) {
     result = "⛔却下（古いデータ）";
     出典 = oldSource ?? "";
+    isLogged = true; // 却下ログは残す
+  } else if (isNewer || isChanged) {
+    result = "✅更新";
+    出典 = newSource ?? oldSource ?? "";
+    isLogged = true; // 更新ログは残す
   } else if (isSame && !isChanged) {
     result = "➡同年度・変化なし";
     出典 = oldSource ?? "";
-  } else if (isChanged) {
-    result = "✅更新";
-    出典 = newSource ?? "";
+    isLogged = false; // 変化なしはログに載せない
   } else {
     result = "➡変化なし";
     出典 = oldSource ?? "";
+    isLogged = false; // 変化なしはログに載せない
   }
   
-  changes.push({ 項目: label, 変更前: beforeStr, 変更後: afterStr, 結果: result, 出典 });
+  if (isLogged) {
+    changes.push({ 項目: label, 変更前: beforeStr, 変更後: afterStr, 結果: result, 出典 });
+  }
 };
 
 if (agentOutput.殺人率) checkChange("殺人率", agentOutput.殺人率.値, rowData["殺人率"], agentOutput.殺人率.年, rowData["殺人率_年"], agentOutput.殺人率.出典, rowData["殺人率_出典"]);
