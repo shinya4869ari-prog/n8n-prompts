@@ -35,26 +35,56 @@ const yearColMap = {
     "児童労働率": "児童労働率_年",
 };
 
-// フォームトリガーから指定された国名を取得（On Home Trigger, Form Trigger 等から安全に取得）
+// フォームトリガーから指定された国名を取得
 let specifiedCountry = "";
-const possibleTriggers = ["国名入力", "On Home Trigger", "Form Trigger", "Form", "Webhook"];
-for (const triggerName of possibleTriggers) {
-    try {
-        const data = $(triggerName).first().json;
-        const val = (data?.["国名（日本語）"] ?? data?.targetCountry ?? data?.country ?? data?.countryName ?? "").trim();
+
+// 1. 直前のインプット ($input) からフォーム入力を探す（マージ等で結合されて流れてきた場合）
+const allInputs = $input.all();
+for (const item of allInputs) {
+    const data = item.json;
+    if (data && (data.submittedAt || data.formMode)) {
+        const val = (data["国名（日本語）"] ?? data.targetCountry ?? data.country ?? "").trim();
         if (val) {
             specifiedCountry = val;
             break;
         }
-    } catch (e) {
-        // ノードが存在しない、または取得に失敗した場合はスキップ
     }
 }
 
-// 全シートのデータを国名でマージ
+// 2. $input に見つからない場合は、$("ノード名") の静的参照で取得を試みる
+if (!specifiedCountry) {
+    const getCountryFromNode = (nodeName) => {
+        try {
+            // 変数を直接 $() に渡すと n8n が静的解析で依存関係を検出できずエラーになる場合があるため、
+            // 文字列リテラルを直接渡して安全に評価する
+            let nodeData;
+            if (nodeName === "国名入力") nodeData = $("国名入力").first().json;
+            else if (nodeName === "On Home Trigger") nodeData = $("On Home Trigger").first().json;
+            else if (nodeName === "Form Trigger") nodeData = $("Form Trigger").first().json;
+            else if (nodeName === "Form") nodeData = $("Form").first().json;
+            else if (nodeName === "Webhook") nodeData = $("Webhook").first().json;
+            
+            return (nodeData?.["国名（日本語）"] ?? nodeData?.targetCountry ?? nodeData?.country ?? nodeData?.countryName ?? "").trim();
+        } catch (e) {
+            return "";
+        }
+    };
+    
+    specifiedCountry = getCountryFromNode("国名入力") ||
+                       getCountryFromNode("On Home Trigger") ||
+                       getCountryFromNode("Form Trigger") ||
+                       getCountryFromNode("Form") ||
+                       getCountryFromNode("Webhook");
+}
+
+// 全シートのデータを国名でマージ（フォーム入力のデータ行はマージ対象から除外）
 const countryMap = {};
-for (const item of $input.all()) {
+for (const item of allInputs) {
     const row = item.json;
+    // フォーム入力データはスキップ
+    if (row && (row.submittedAt || row.formMode)) {
+        continue;
+    }
     const name = row["国名（日本語）"];
     if (!name) continue;
     if (!countryMap[name]) countryMap[name] = {};
