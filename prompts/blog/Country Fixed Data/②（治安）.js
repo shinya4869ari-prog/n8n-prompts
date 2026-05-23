@@ -55,7 +55,12 @@ for (let i = 0; i < 5; i++) {
 // 2. 女性・子供データ
 const w = t["女性・子供指標"] || {};
 
-const wpb = $('ワールドプリズンブリーフデータ抽出').first().json;
+let wpb = {};
+try {
+  wpb = $('ワールドプリズンブリーフデータ抽出').first().json || {};
+} catch (e) {
+  console.log("WPBデータ抽出ノードの参照に失敗:", e.message);
+}
 
 // 3. 刑務所データ
 const prison = wpb["収容推移"] || [];
