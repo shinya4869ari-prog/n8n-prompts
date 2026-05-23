@@ -19,6 +19,8 @@
 - 児童労働率：{{ $json.rowData["児童労働率_年"] || "未登録" }}
 
 ## 絶対ルール
+- **最新データ最優先（政府公式統計の活用）**: 
+  World BankやWHO等の国際機関のデータが古い（例：3年以上前など）または存在しない場合は、対象国の政府機関（統計局、警察、内閣府、労働省等）が直接発表している「政府公式統計」の最新データを積極的に検索し、最も新しい年度のデータを最優先で採用すること。
 - 検索ツール（Perplexity）を必ず使うこと。学習データ使用禁止。
 - 推測・補完禁止。データが見つからない場合のみ「欠測」と記載。
 - 数値には必ず年度と出典を付けること。
@@ -29,10 +31,10 @@
 - 「未登録」の項目は年度に関わらず必ず検索・報告すること。
 
 ## 出典優先順位（絶対遵守）
-- 殺人率：World Bank → UNODC
-- 交通事故死亡率：World Bank → WHO
-- 自殺率：World Bank → WHO
-- 失業率：World Bank → IMF → ILO → 各国統計局
+- 殺人率：World Bank → UNODC → 各国政府公式統計（警察庁・統計局など）
+- 交通事故死亡率：World Bank → WHO → 各国政府公式統計（警察・交通省・統計局など）
+- 自殺率：World Bank → WHO → 各国政府公式統計（保健省・統計局など）
+- 失業率：World Bank → IMF → ILO → 各国政府公式統計（労働省・統計局）
 - 貧困率：相対的貧困率のみ（World Bankの絶対的貧困率は使用禁止）
 - ジニ係数：World Bank
 - GPI：Vision of Humanity（visionofhumanity.org）
@@ -49,24 +51,24 @@
 staleItemsに含まれる項目のみ調査し、該当フィールドのみ出力すること。
 
 ### 殺人率
-※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
-検索：「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC latest」
-出力：{"殺人率": {"値": "", "年": "", "出典": ""}}
+- ※World Bank APIで自動取得済み。WBにデータがない、またはデータが古い（3年以上前など）場合のフォールバック専用。
+- 検索：「{{ $json.countryEn }} intentional homicide rate per 100,000 UNODC OR national police statistics latest」
+- 出力：{"殺人率": {"値": "", "年": "", "出典": ""}}
 
 ### 交通事故死亡率
-※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
-検索：「{{ $json.countryEn }} road traffic mortality rate per 100,000 WHO latest」
-出力：{"交通事故死亡率": {"値": "", "年": "", "出典": ""}}
+- ※World Bank APIで自動取得済み。WBにデータがない、またはデータが古い場合のフォールバック専用。
+- 検索：「{{ $json.countryEn }} road traffic mortality rate per 100,000 WHO OR national official police statistics latest」
+- 出力：{"交通事故死亡率": {"値": "", "年": "", "出典": ""}}
 
 ### 自殺率
-※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
-検索：「{{ $json.countryEn }} suicide mortality rate per 100,000 WHO latest」
-出力：{"自殺率": {"値": "", "年": "", "出典": ""}}
+- ※World Bank APIで自動取得済み。WBにデータがない、またはデータが古い場合のフォールバック専用。
+- 検索：「{{ $json.countryEn }} suicide mortality rate per 100,000 WHO OR national government official statistics latest」
+- 出力：{"自殺率": {"値": "", "年": "", "出典": ""}}
 
 ### 失業率
-※World Bank APIで自動取得済み。WBにデータがない場合のフォールバック専用。
-検索：「{{ $json.countryEn }} unemployment rate IMF ILO latest」
-出力：{"失業率": {"値": "", "年": "", "出典": ""}}
+- ※World Bank APIで自動取得済み。WBにデータがない、またはデータが古い場合のフォールバック専用。
+- 検索：「{{ $json.countryEn }} unemployment rate IMF ILO OR national official government statistics latest」
+- 出力：{"失業率": {"値": "", "年": "", "出典": ""}}
 
 ### 貧困率
 検索：「{{ $json.countryEn }} relative poverty rate official statistics latest」
