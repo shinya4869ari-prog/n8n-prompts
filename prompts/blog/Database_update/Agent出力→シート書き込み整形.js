@@ -178,14 +178,29 @@ if (agentOutput.刑務所稼働率) {
 
 if (agentOutput.刑務所総収容者数) {
     const d = agentOutput.刑務所総収容者数;
+    
+    // 1. 最新の総収容者数（単体カラム）の更新
     if (shouldUpdate(d.年, rowData["刑務所総収容者数_年"], d.値, rowData["刑務所総収容者数"])) {
         anzen["刑務所総収容者数"] = d.値 ?? rowData["刑務所総収容者数"];
         anzen["刑務所総収容者数_年"] = d.年 ?? rowData["刑務所総収容者数_年"];
         anzen["刑務所総収容者数_出典"] = d.出典 ?? rowData["刑務所総収容者数_出典"];
-        // 収容推移グラフの最新枠（10番目）を最新値で更新
-        anzen["収容推移10_総収容者数"] = d.値 ?? rowData["刑務所総収容者数"];
-        anzen["収容推移10_年"] = d.年 ?? rowData["刑務所総収容者数_年"];
         anzenUpdated.push("刑務所総収容者数");
+    }
+    
+    // 2. 収容推移10番目の更新（単体の更新判定とは独立して必ずチェックする）
+    const newTotal = d.値 ?? rowData["刑務所総収容者数"];
+    const newYear = d.年 ?? rowData["刑務所総収容者数_年"];
+    
+    if (newTotal && newTotal !== "欠測" && 
+        (String(newTotal) !== String(rowData["収容推移10_総収容者数"]) || 
+         String(newYear) !== String(rowData["収容推移10_年"]))) {
+        
+        anzen["収容推移10_総収容者数"] = newTotal;
+        anzen["収容推移10_年"] = newYear;
+        
+        if (!anzenUpdated.includes("刑務所総収容者数")) {
+            anzenUpdated.push("刑務所総収容者数");
+        }
     }
 }
 
