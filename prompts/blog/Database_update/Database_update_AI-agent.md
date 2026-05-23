@@ -12,7 +12,7 @@
 - 失業率：{{ $json.rowData["失業率_年"] || "未登録" }}
 - 貧困率：{{ $json.rowData["貧困率_年"] || "未登録" }}
 - ジニ係数：{{ $json.rowData["ジニ係数_年"] || "未登録" }}
-- 刑務所収容率：{{ $json.rowData["刑務所収容率_年"] || "未登録" }}
+- 刑務所稼働率：{{ $json.rowData["刑務所稼働率_年"] || "未登録" }}
 - 刑務所総収容者数：{{ $json.rowData["刑務所総収容者数_年"] || "未登録" }}
 - GPI：{{ $json.rowData["GPI年"] || "未登録" }}
 - GGI：{{ $json.rowData["GGI年"] || "未登録" }}
@@ -81,9 +81,9 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ※0〜100の指数形式で出力。0.xxx形式で見つかった場合は100倍すること。
 出力：{"ジニ係数": {"値": "", "年": "", "出典": "World Bank"}}
 
-### 刑務所収容率
+### 刑務所稼働率
 検索：「World Prison Brief {{ $json.countryEn }} occupancy level latest」
-出力：{"刑務所収容率": {"値": "", "年": "", "出典": "World Prison Brief"}}
+出力：{"刑務所稼働率": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### 刑務所総収容者数
 検索：「World Prison Brief {{ $json.countryEn }} latest total prison population」

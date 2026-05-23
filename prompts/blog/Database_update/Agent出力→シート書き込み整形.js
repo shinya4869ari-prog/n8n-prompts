@@ -77,7 +77,7 @@ const thresholds = {
     "失業率": 1,
     "貧困率": 1,
     "ジニ係数": 1,
-    "刑務所収容率": 1,
+    "刑務所稼働率": 1,
     "刑務所総収容者数": 1,
     "GPI": 1,
     "外務省危険レベル": 1,
@@ -151,13 +151,13 @@ if (agentOutput.ジニ係数) {
     }
 }
 
-if (agentOutput.刑務所収容率) {
-    const d = agentOutput.刑務所収容率;
-    if (shouldUpdate(d.年, rowData["刑務所収容率_年"], d.値, rowData["刑務所収容率"])) {
-        anzen["刑務所収容率"] = d.値 ?? rowData["刑務所収容率"];
-        anzen["刑務所収容率_年"] = d.年 ?? rowData["刑務所収容率_年"];
-        anzen["刑務所収容率_出典"] = d.出典 ?? rowData["刑務所収容率_出典"];
-        anzenUpdated.push("刑務所収容率");
+if (agentOutput.刑務所稼働率) {
+    const d = agentOutput.刑務所稼働率;
+    if (shouldUpdate(d.年, rowData["刑務所稼働率_年"], d.値, rowData["刑務所稼働率"])) {
+        anzen["刑務所稼働率"] = d.値 ?? rowData["刑務所稼働率"];
+        anzen["刑務所稼働率_年"] = d.年 ?? rowData["刑務所稼働率_年"];
+        anzen["刑務所稼働率_出典"] = d.出典 ?? rowData["刑務所稼働率_出典"];
+        anzenUpdated.push("刑務所稼働率");
     }
 }
 
@@ -237,7 +237,7 @@ if (agentOutput.児童労働率) {
 // 治安ステータス
 const anzenMissingFields = [
     "殺人率", "交通事故死亡率", "自殺率", "失業率", "貧困率", "ジニ係数",
-    "刑務所収容率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
+    "刑務所稼働率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
     "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
 ].filter(f => {
     const val = anzen[f] ?? rowData[f];
