@@ -81,10 +81,7 @@ if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agen
 if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"], agentOutput.女性議員比率.年, rowData["女性議員比率_年"], agentOutput.女性議員比率.出典, rowData["女性議員比率_出典"]);
 if (agentOutput.児童労働率) checkChange("児童労働率", agentOutput.児童労働率.値, rowData["児童労働率"], agentOutput.児童労働率.年, rowData["児童労働率_年"], agentOutput.児童労働率.出典, rowData["児童労働率_出典"]);
 
-if (agentOutput.貿易) {
-  checkChange("輸出1位", agentOutput.貿易.輸出?.[0], rowData["輸出1位_品目"], undefined, undefined, agentOutput.貿易.出典, rowData["貿易統計_出典"]);
-  checkChange("貿易相手1位", agentOutput.貿易.貿易相手国?.[0]?.国名, rowData["貿易相手1位_国名"], undefined, undefined, agentOutput.貿易.出典, rowData["貿易統計_出典"]);
-}
+
 
 return [{ 
   json: { 

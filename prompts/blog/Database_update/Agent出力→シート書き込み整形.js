@@ -85,7 +85,6 @@ const thresholds = {
     "女性労働参加率": 1,
     "女性議員比率": 1,
     "児童労働率": 1,
-    "貿易": 1,
 };
 
 // ========== 治安シート ==========
@@ -249,38 +248,6 @@ anzen["最終アップデート日"] = today;
 anzen["次回アップデート予定日"] = anzenUpdated.length > 0 ? calcNextUpdate(anzenUpdated, thresholds) : (rowData["次回アップデート予定日"] || calcNextUpdate(Object.keys(thresholds), thresholds));
 anzen["アップデート状態"] = anzenMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
-// ========== 貿易シート ==========
-const boeki = { "国名（日本語）": rowData["国名（日本語）"] };
-const boekiUpdated = [];
-
-if (agentOutput.貿易) {
-    const d = agentOutput.貿易;
-
-    for (let i = 0; i < 10; i++) {
-        boeki[`輸出${i + 1}位_品目`] = d.輸出?.[i] ?? rowData[`輸出${i + 1}位_品目`] ?? "";
-        boeki[`輸入${i + 1}位_品目`] = d.輸入?.[i] ?? rowData[`輸入${i + 1}位_品目`] ?? "";
-    }
-
-    for (let i = 0; i < 10; i++) {
-        const p = d.貿易相手国?.[i] ?? {};
-        boeki[`貿易相手${i + 1}位_国名`] = p.国名 ?? rowData[`貿易相手${i + 1}位_国名`] ?? "";
-        boeki[`貿易相手${i + 1}位_シェア%`] = p.シェア ?? rowData[`貿易相手${i + 1}位_シェア%`] ?? "";
-    }
-
-    boeki["貿易統計_出典"] = d.出典 ?? rowData["貿易統計_出典"] ?? "";
-    boekiUpdated.push("貿易");
-}
-
-const boekiMissingFields = [
-    "輸出1位_品目", "輸入1位_品目", "貿易相手1位_国名"
-].filter(f => {
-    const val = boeki[f] ?? rowData[f];
-    return val === undefined || val === null || val === "" || val === "欠測";
-});
-
-boeki["最終アップデート日"] = today;
-boeki["次回アップデート予定日"] = boekiUpdated.length > 0 ? calcNextUpdate(boekiUpdated, thresholds) : (rowData["次回アップデート予定日"] || today);
-boeki["アップデート状態"] = boekiMissingFields.length > 0 ? "⚠️未取得" : "✅完了";
 
 // ========== 物価シート ==========
 const bukka = { "国名（日本語）": rowData["国名（日本語）"] };
@@ -312,7 +279,6 @@ return [{
     json: {
         countryJa: rowData["国名（日本語）"],
         anzen,
-        boeki,
         bukka,
     }
 }];
