@@ -82,13 +82,13 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 出力：{"ジニ係数": {"値": "", "年": "", "出典": "World Bank"}}
 
 ### 刑務所稼働率
-検索：「site:prisonstudies.org/country/{{ $json.countryEn }} occupancy level」
-※検索結果の個別国ページに記載されている最も新しい日付・年度のデータ（例：「78.8% (31.1.2025)」など）を取得してください。
+検索：「World Prison Brief "{{ $json.countryEn }}" "occupancy level" 2025 OR 2026」
+※検索結果のテキストから、最も新しい日付・年度のデータ（例：「78.8% (31.1.2025)」など）を取得してください。
 出力：{"刑務所稼働率": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### 刑務所総収容者数
-検索：「site:prisonstudies.org/country/{{ $json.countryEn }} total prison population」
-※検索結果の個別国ページに記載されている最も新しい日付・年度のデータ（例：「4,394 at March 2026」など）を取得してください。
+検索：「World Prison Brief "{{ $json.countryEn }}" "total prison population" 2025 OR 2026」
+※検索結果のテキストから、最も新しい日付・年度のデータ（例：「4,394 at March 2026」など）を取得してください。
 出力：{"刑務所総収容者数": {"値": "", "年": "", "出典": "World Prison Brief"}}
 
 ### GPI
