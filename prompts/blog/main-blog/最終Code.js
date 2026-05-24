@@ -478,6 +478,7 @@ return [articleItem].map(item => {
 
     // shiin解説テキストの追加
     if (shiinKaisetu) {
+      article += `<h3 style="${h3Style}">📰 最新情報：死因・健康統計</h3>\n`;
       const { formatted, citeText } = formatKaisetu(shiinKaisetu);
       article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
       if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
@@ -485,6 +486,7 @@ return [articleItem].map(item => {
   }
 
   if (hanzaiKaisetu) {
+    article += `<h3 style="${h3Style}">📰 最新情報：犯罪傾向</h3>\n`;
     const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
@@ -516,6 +518,7 @@ return [articleItem].map(item => {
 
   // boeki解説テキストの追加
   if (boekiKaisetu) {
+    article += `<h3 style="${h3Style}">📰 最新情報：貿易動向</h3>\n`;
     const { formatted, citeText } = formatKaisetu(boekiKaisetu);
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
