@@ -126,6 +126,8 @@ return [articleItem].map(item => {
     const citeText = citeMatch ? citeMatch[1].trim() : '';
     
     const formatted = mainText
+      .replace(/\n—+\n/g, '\n')
+      .replace(/\n##\s*\n/g, '\n')
       .replace(/^—+$/gm, '')
       .replace(/^##\s*$/gm, '')
       .replace(/^：(.+)$/gm, '<p style="font-size:15px;font-weight:700;color:#555;margin:0 0 16px;padding:8px 12px;background:#f0f7f7;border-radius:6px;">$1</p>')
