@@ -126,6 +126,7 @@ return [articleItem].map(item => {
     const citeText = citeMatch ? citeMatch[1].trim() : '';
     
     const formatted = mainText
+      .replace(/^### (.+)$/gm, '<h4 style="font-size:14px;font-weight:900;color:#333;margin:20px 0 6px;padding-left:10px;border-left:3px solid #b2ebf2;">$1</h4>')
       .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:900;color:#20B2AA;margin:24px 0 8px;border-left:4px solid #20B2AA;padding-left:10px;">$1</h3>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
