@@ -8,7 +8,10 @@ const raw = item.output
 
 let places = [], people = [], keywords = [], movies = [];
 try {
-  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+  const cleaned = raw
+    .replace(/```json/g, '').replace(/```/g, '')
+    .trim()
+    .replace(/}\s*}$/, '}');
   const parsed = JSON.parse(cleaned);
   places = parsed.places || [];
   people = parsed.people || [];

@@ -1,6 +1,8 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
-return $input.all().map(item => {
+const allItems = $input.all();
+const articleItem = allItems.find(i => i.json?.article != null) ?? allItems[0];
+return [articleItem].map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
   const moviesData = $('リンク挿入').first().json?.movies || [];
@@ -99,9 +101,11 @@ return $input.all().map(item => {
     return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
   }
 
-  function makeArticleCards(perplexityJson) {
+  function makeArticleCards(perplexityJson, max = 3) {
     if (!perplexityJson?.results) return '';
-    const validResults = perplexityJson.results.filter(r => r.title && r.snippet && r.url);
+    const validResults = perplexityJson.results
+      .filter(r => r.title && r.snippet && r.url)
+      .slice(0, max);
     if (validResults.length === 0) return '';
     
     return validResults.map(r => `
@@ -122,6 +126,16 @@ return $input.all().map(item => {
     const val = line ? line.replace(item + '：', '').trim() : 'データなし';
     return { 項目: item, 値: val };
   });
+
+  let boekiKaisetu = '';
+  let shiinKaisetu = '';
+  try {
+    const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
+    const boekiMatch = aiText.match(/\[貿易解説\]([\s\S]*?)(?=\[死因解説\]|$)/);
+    const shiinMatch = aiText.match(/\[死因解説\]([\s\S]*?)$/);
+    boekiKaisetu = boekiMatch ? boekiMatch[1].trim() : '';
+    shiinKaisetu = shiinMatch ? shiinMatch[1].trim() : '';
+  } catch(e) {}
 
   let article = '';
 
@@ -445,11 +459,10 @@ return $input.all().map(item => {
     article += makeTable(['順位', countryName, '日本'], shiinRows);
     if (citation) article += `<p class="citation" style="${citationStyle}">${citation}</p>\n`;
 
-    // shiinテーブルの直後に追加
-    let shiinPerplexity = null;
-    try { shiinPerplexity = $('死因記事Perplexity').first().json; } catch(e) {}
-    const shiinCards = makeArticleCards(shiinPerplexity);
-    if (shiinCards) article += shiinCards;
+    // shiin解説テキストの追加
+    if (shiinKaisetu) {
+      article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${shiinKaisetu.replace(/\n/g,'<br>')}</div>\n`;
+    }
   }
 
   const chianNeko = getNekoBubbleForSection('③');
@@ -476,11 +489,10 @@ return $input.all().map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：${boekiCiteStr}</p>\n`;
   }
 
-  // 既存のboekiExplanation部分を以下に差し替え
-  let boekiPerplexity = null;
-  try { boekiPerplexity = $('貿易記事Perplexity').first().json; } catch(e) {}
-  const boekiCards = makeArticleCards(boekiPerplexity);
-  if (boekiCards) article += boekiCards;
+  // boeki解説テキストの追加
+  if (boekiKaisetu) {
+    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${boekiKaisetu.replace(/\n/g,'<br>')}</div>\n`;
+  }
 
   const boekiNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(boekiNeko);
