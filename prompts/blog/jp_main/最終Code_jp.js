@@ -309,8 +309,10 @@ document.addEventListener('click', function(e) {
   if (!el) return;
   const title = el.getAttribute('data-movie-title');
   const info = el.getAttribute('data-movie-info');
+  const mapUrl = 'https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=' + encodeURIComponent(title);
+  const linkHTML = '<br><br><a href="' + mapUrl + '" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>';
   document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').textContent = info;
+  document.getElementById('tenbin-popup-info').innerHTML = info + linkHTML;
   document.getElementById('tenbin-popup').style.display = 'block';
   document.getElementById('tenbin-overlay').style.display = 'block';
 });
