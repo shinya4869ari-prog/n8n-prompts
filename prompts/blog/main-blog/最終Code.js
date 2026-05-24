@@ -119,6 +119,13 @@ return [articleItem].map(item => {
 </div>`).join('\n');
   }
 
+  const formatKaisetu = (text) => {
+    return text
+      .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:900;color:#20B2AA;margin:24px 0 8px;border-left:4px solid #20B2AA;padding-left:10px;">$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  };
+
   // --- データ事前抽出（ヘッダーで使用するため） ---
   const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
   const geoData = geoItems.map(item => {
@@ -461,7 +468,7 @@ return [articleItem].map(item => {
 
     // shiin解説テキストの追加
     if (shiinKaisetu) {
-      article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${shiinKaisetu.replace(/\n/g,'<br>')}</div>\n`;
+      article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatKaisetu(shiinKaisetu)}</div>\n`;
     }
   }
 
@@ -491,7 +498,7 @@ return [articleItem].map(item => {
 
   // boeki解説テキストの追加
   if (boekiKaisetu) {
-    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${boekiKaisetu.replace(/\n/g,'<br>')}</div>\n`;
+    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatKaisetu(boekiKaisetu)}</div>\n`;
   }
 
   const boekiNeko = getNekoBubbleForSection('④');
