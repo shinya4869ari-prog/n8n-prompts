@@ -470,6 +470,13 @@ return [articleItem].map(item => {
   const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
   if (crimeFeature) article += `\n${crimeFeature}\n`;
 
+  if (hanzaiKaisetu) {
+    article += `<h3 style="${h3Style}">📰 最新情報：犯罪傾向</h3>\n`;
+    const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
+    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
+    if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
+  }
+
   if (shiinData.length > 0) {
     article += `<h3 style="${h3Style}">主要な死因トップ10</h3>\n`;
     const shiinRows = shiinData.map(d => [d['順位'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
@@ -483,13 +490,6 @@ return [articleItem].map(item => {
       article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
       if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
     }
-  }
-
-  if (hanzaiKaisetu) {
-    article += `<h3 style="${h3Style}">📰 最新情報：犯罪傾向</h3>\n`;
-    const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
-    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
-    if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
   }
 
   const chianNeko = getNekoBubbleForSection('③');
