@@ -143,12 +143,15 @@ return [articleItem].map(item => {
 
   let boekiKaisetu = '';
   let shiinKaisetu = '';
+  let hanzaiKaisetu = '';
   try {
     const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
-    const boekiMatch = aiText.match(/\[貿易解説\]([\s\S]*?)(?=\[死因解説\]|$)/);
-    const shiinMatch = aiText.match(/\[死因解説\]([\s\S]*?)$/);
+    const boekiMatch = aiText.match(/\[貿易解説\]([\s\S]*?)(?=\[死因解説\]|\[犯罪解説\]|$)/);
+    const shiinMatch = aiText.match(/\[死因解説\]([\s\S]*?)(?=\[犯罪解説\]|$)/);
+    const hanzaiMatch = aiText.match(/\[犯罪解説\]([\s\S]*?)$/);
     boekiKaisetu = boekiMatch ? boekiMatch[1].trim() : '';
     shiinKaisetu = shiinMatch ? shiinMatch[1].trim() : '';
+    hanzaiKaisetu = hanzaiMatch ? hanzaiMatch[1].trim() : '';
   } catch(e) {}
 
   let article = '';
@@ -479,6 +482,12 @@ return [articleItem].map(item => {
       article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
       if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
     }
+  }
+
+  if (hanzaiKaisetu) {
+    const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
+    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
+    if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
   }
 
   const chianNeko = getNekoBubbleForSection('③');
