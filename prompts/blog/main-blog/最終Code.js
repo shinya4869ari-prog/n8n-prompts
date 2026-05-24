@@ -630,6 +630,12 @@ return [articleItem].map(item => {
     });
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
+    article += `
+<div style="text-align:center;margin:30px 0;">
+  <a href="#deep-dive" style="display:inline-block;padding:12px 30px;background:#1a237e;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:14px;box-shadow:0 4px 12px rgba(26,35,126,0.3);">
+    ✦ Deep Dive で深掘りする
+  </a>
+</div>\n`;
 
   }
 
@@ -764,7 +770,7 @@ return [articleItem].map(item => {
   if (deepDiveArticle) {
     // --- Deep Dive セクション仕切り ---
     article += `
-<div style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
+<div id="deep-dive" style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
 
