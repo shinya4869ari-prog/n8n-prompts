@@ -8,8 +8,8 @@ try {
   throw new Error("貿易データのJSON解析に失敗しました。AIの回答が不正な形式です。");
 }
 
-const prev = $('プロンプト取得用 Code').first().json;
-const code3 = prev.base?.code3 || "";
+const loopItem = $('貿易クエリCode').first().json;
+const code3 = loopItem.code3 || "";
 
 const t = data.貿易 || data.trade || {};
 const exports = t.輸出 || t.主要輸出項目 || t.exports || [];
