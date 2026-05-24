@@ -12,8 +12,17 @@ const cleaned = raw
   .split('\\t').join('\t')
   .trim();
 
-const titleMatch = cleaned.match(/^#{1,3}\s*(.+)/m);
-const title = titleMatch ? titleMatch[1].trim() : "Deep Dive";
+// 最初の行をタイトルとして抽出
+const lines = cleaned.split('\n');
+let title = "Deep Dive";
+let bodyMd = cleaned;
+if (lines.length > 0) {
+  const firstLine = lines[0].trim();
+  if (firstLine) {
+    title = firstLine.replace(/^#+\s*/, '');
+    bodyMd = lines.slice(1).join('\n').trim();
+  }
+}
 
 function markdownToHtml(md) {
   return md
@@ -38,13 +47,19 @@ function markdownToHtml(md) {
 
 // Mermaidブロックを退避してから変換し、最後に復元する
 const mermaidPlaceholders = [];
-const withoutMermaid = cleaned.replace(/```mermaid[\s\S]*?```/g, (match) => {
+const withoutMermaid = bodyMd.replace(/```mermaid[\s\S]*?```/g, (match) => {
   const idx = mermaidPlaceholders.length;
   mermaidPlaceholders.push(match);
   return `%%MERMAID_${idx}%%`;
 });
 
-let html = `<div style="font-size:14px;line-height:1.9;color:#333;">${markdownToHtml(withoutMermaid)}</div>`;
+const titleHtml = `
+<div style="margin: 25px 0 20px 0; padding: 16px 20px; background: linear-gradient(135deg, #f5f7fa 0%, #e2e8f0 100%); border-left: 6px solid #1a237e; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+  <h3 style="margin: 0; font-size: 18px; font-weight: 900; color: #1a237e; letter-spacing: -0.3px; line-height: 1.4;">${title}</h3>
+</div>
+`;
+
+let html = `<div style="font-size:14px;line-height:1.9;color:#333;">${titleHtml}${markdownToHtml(withoutMermaid)}</div>`;
 
 // Mermaidブロックを元に戻す
 mermaidPlaceholders.forEach((block, idx) => {

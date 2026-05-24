@@ -99,6 +99,22 @@ return $input.all().map(item => {
     return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
   }
 
+  function makeArticleCards(perplexityJson) {
+    if (!perplexityJson?.results) return '';
+    const validResults = perplexityJson.results.filter(r => r.title && r.snippet && r.url);
+    if (validResults.length === 0) return '';
+    
+    return validResults.map(r => `
+<div style="background:#f9fafa;border:1px solid #e0eeee;border-radius:10px;padding:16px;margin:10px 0;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+  <div style="font-weight:bold;font-size:14px;color:#20B2AA;margin-bottom:8px;">📰 ${r.title}</div>
+  <div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:10px;">${r.snippet.replace(/\n/g, '<br>').substring(0, 300)}...</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <a href="${r.url}" target="_blank" style="font-size:12px;color:#20B2AA;text-decoration:none;">🔗 元記事を読む</a>
+    <span style="font-size:11px;color:#aaa;">${r.last_updated || ''}</span>
+  </div>
+</div>`).join('\n');
+  }
+
   // --- データ事前抽出（ヘッダーで使用するため） ---
   const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
   const geoData = geoItems.map(item => {
@@ -428,6 +444,12 @@ return $input.all().map(item => {
     const shiinRows = shiinData.map(d => [d['順位'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
     article += makeTable(['順位', countryName, '日本'], shiinRows);
     if (citation) article += `<p class="citation" style="${citationStyle}">${citation}</p>\n`;
+
+    // shiinテーブルの直後に追加
+    let shiinPerplexity = null;
+    try { shiinPerplexity = $('死因記事Perplexity').first().json; } catch(e) {}
+    const shiinCards = makeArticleCards(shiinPerplexity);
+    if (shiinCards) article += shiinCards;
   }
 
   const chianNeko = getNekoBubbleForSection('③');
@@ -454,8 +476,11 @@ return $input.all().map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：${boekiCiteStr}</p>\n`;
   }
 
-  const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
-  if (boekiExplanation) article += `\n${boekiExplanation}\n`;
+  // 既存のboekiExplanation部分を以下に差し替え
+  let boekiPerplexity = null;
+  try { boekiPerplexity = $('貿易記事Perplexity').first().json; } catch(e) {}
+  const boekiCards = makeArticleCards(boekiPerplexity);
+  if (boekiCards) article += boekiCards;
 
   const boekiNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(boekiNeko);
@@ -521,7 +546,9 @@ return $input.all().map(item => {
     article += `<p class="citation" style="${citationStyle}">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
     article += `<div style="height: 10px;"></div>\n`;
     const bukkaCites = [...new Set(bukkaData.map(d => d['出典']).filter(Boolean))];
-    const bukkaOuten = bukkaCites.length > 0 ? bukkaCites.join(' / ') : 'Numbeo / Netflix公式サイト';
+    const netflixSheetCite = sheetData.data?.固定データ?.物価?.Netflix_出典 || 'Netflix公式サイト';
+    const numbeoBase = 'Numbeo';
+    const bukkaOuten = bukkaCites.length > 0 ? bukkaCites.join(' / ') : `${numbeoBase} / ${netflixSheetCite}`;
     article += `<p class="citation" style="${citationStyle}">出典：${bukkaOuten}</p>\n`;
   }
 
@@ -548,7 +575,7 @@ return $input.all().map(item => {
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['年'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['事象名'] || ''}</td>`;
       rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;font-size:11px;">${type}</td>`;
-      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['概要'] || ''}</td>`;
+      rekishiHtml += `<td style="border:1px solid #eee;padding:12px 14px;">${d['概要'] || ''}${d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : ''}</td>`;
       rekishiHtml += `</tr>`;
     });
     rekishiHtml += `</tbody></table>`;
