@@ -126,6 +126,9 @@ return [articleItem].map(item => {
     const citeText = citeMatch ? citeMatch[1].trim() : '';
     
     const formatted = mainText
+      .replace(/^##\s*\[貿易解説\][：:]?\s*/gm, '')
+      .replace(/^##\s*\[死因解説\][：:]?\s*/gm, '')
+      .replace(/^##\s*\[犯罪解説\][：:]?\s*/gm, '')
       .replace(/\n—+\n/g, '\n')
       .replace(/\n##\s*\n/g, '\n')
       .replace(/^—+$/gm, '')
