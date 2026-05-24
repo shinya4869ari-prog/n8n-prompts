@@ -276,7 +276,7 @@ return $input.all().map(item => {
 
   // --- 8. ③ 治安と平和の衡量 ---
   article += `<h2 style="${h2Style}">③ 治安と平和の衡量</h2>\n`;
-  const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所収容率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
+  const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所稼働率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
     if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };

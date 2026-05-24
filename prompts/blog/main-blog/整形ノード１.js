@@ -199,7 +199,7 @@ const targetFixed = {
     失業率: { 値: chiAn['失業率'], 年: chiAn['失業率_年'], 出典: chiAn['失業率_出典'] },
     貧困率: { 値: chiAn['貧困率'], 年: chiAn['貧困率_年'], 出典: chiAn['貧困率_出典'] },
     ジニ係数: { 値: chiAn['ジニ係数'], 年: chiAn['ジニ係数_年'], 出典: chiAn['ジニ係数_出典'] },
-    刑務所収容率: { 値: chiAn['刑務所収容率'], 年: chiAn['刑務所収容率_年'], 出典: chiAn['刑務所収容率_出典'] },
+    刑務所稼働率: { 値: chiAn['刑務所収容率'], 年: chiAn['刑務所収容率_年'], 出典: chiAn['刑務所収容率_出典'] },
     刑務所総収容者数: { 値: chiAn['刑務所総収容者数'], 年: chiAn['刑務所総収容者数_年'], 出典: chiAn['刑務所総収容者数_出典'] },
     GPI: { スコア: chiAn['GPIスコア'], 順位: chiAn['GPI順位'], 年: chiAn['GPI年'], 出典: chiAn['GPI出典'] },
     犯罪トップ5: Array.from({ length: 5 }, (_, i) => ({
@@ -294,7 +294,7 @@ const japanFixed = {
     '失業率': { 値: jChiAn['失業率'], '出典・年': `${jChiAn['失業率_出典']} ${getCleanYearString(jChiAn['失業率_年'])}`.trim() },
     '貧困率': { 値: jChiAn['貧困率'], '出典・年': `${jChiAn['貧困率_出典']} ${getCleanYearString(jChiAn['貧困率_年'])}`.trim() },
     'ジニ係数': { 値: jChiAn['ジニ係数'], '出典・年': `${jChiAn['ジニ係数_出典']} ${getCleanYearString(jChiAn['ジニ係数_年'])}`.trim() },
-    '刑務所収容率': { 値: jChiAn['刑務所収容率'], '出典・年': `${jChiAn['刑務所収容率_出典']} ${getCleanYearString(jChiAn['刑務所収容率_年'])}`.trim() },
+    '刑務所稼働率': { 値: jChiAn['刑務所収容率'], '出典・年': `${jChiAn['刑務所収容率_出典']} ${getCleanYearString(jChiAn['刑務所収容率_年'])}`.trim() },
     '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典']} ${getCleanYearString(jChiAn['刑務所総収容者数_年'])}`.trim() },
     'GPIスコア': { 値: jChiAn['GPIスコア'], '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() },
     'GPI順位': { 値: jChiAn['GPI順位'], '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() }
