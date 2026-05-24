@@ -471,6 +471,8 @@ return [articleItem].map(item => {
   const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
   if (crimeFeature) article += `\n${crimeFeature}\n`;
 
+  article += `<div style="border-top:1px solid #b2ebf2;margin:30px 0;"></div>\n`;
+
   if (hanzaiKaisetu) {
     article += `<h3 style="${h3Style}">📰 最新情報：犯罪傾向</h3>\n`;
     const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
