@@ -1,7 +1,9 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-const articleItem = allItems.find(i => i.json?.article != null) ?? allItems[0];
+const articleItem = allItems.find(i => i.json?.article != null && i.json?.movies != null) 
+  ?? allItems.find(i => i.json?.article != null) 
+  ?? allItems[0];
 return [articleItem].map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
@@ -735,11 +737,18 @@ return [articleItem].map(item => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
-      const apiData = eizouData2.find(api => api['タイトル_日本語'] === cleanTitle || api['原題'] === cleanTitle) || {};
+      const apiData = eizouData2.find(api => 
+        (api['タイトル_日本語'] && (api['タイトル_日本語'] === cleanTitle || api['タイトル_日本語'].includes(cleanTitle) || cleanTitle.includes(api['タイトル_日本語']))) || 
+        (api['原題'] && (api['原題'] === cleanTitle || api['原題'].includes(cleanTitle) || cleanTitle.includes(api['原題'])))
+      ) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
-      const movieInfo = (apiData?.概要 || moviesData.find(m => m.name === cleanTitle)?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+      const movieInfo = (
+        apiData?.概要 || 
+        moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
+        ''
+      ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
       const imdbId = apiData?.imdb_id || null;
       const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
@@ -782,10 +791,17 @@ return [articleItem].map(item => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
-      const apiData = kougyouData2.find(api => api['タイトル_日本語'] === cleanTitle || api['原題'] === cleanTitle) || {};
+      const apiData = kougyouData2.find(api => 
+        (api['タイトル_日本語'] && (api['タイトル_日本語'] === cleanTitle || api['タイトル_日本語'].includes(cleanTitle) || cleanTitle.includes(api['タイトル_日本語']))) || 
+        (api['原題'] && (api['原題'] === cleanTitle || api['原題'].includes(cleanTitle) || cleanTitle.includes(api['原題'])))
+      ) || {};
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
-      const rankingInfo = (apiData?.概要 || moviesData.find(m => m.name === cleanTitle)?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+      const rankingInfo = (
+        apiData?.概要 || 
+        moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
+        ''
+      ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
       const imdbId = apiData?.imdb_id || null;
       const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
