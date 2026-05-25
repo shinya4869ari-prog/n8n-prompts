@@ -2,6 +2,14 @@ const r1Raw = $('researcher1').first().json;
 const r2Raw = $('researcher2').first().json;
 const r25Raw = $('researcher25').first().json;
 
+// Agent停止チェック
+for (const [raw, name] of [[r1Raw, 'researcher1'], [r2Raw, 'researcher2'], [r25Raw, 'researcher25']]) {
+  const out = raw.output ?? '';
+  if (out.includes('Agent stopped') || out.includes('max iterations')) {
+    throw new Error(`【${name}】Agentがmax iterationsで停止しました。再実行してください。`);
+  }
+}
+
 const parseOutput = (node, nodeName) => {
   try {
     const raw = node.output ?? node.json ?? '{}';
