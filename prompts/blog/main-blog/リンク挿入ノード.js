@@ -6,7 +6,7 @@ const raw = item.output
   ?? item.message?.content
   ?? '{}';
 
-let places = [], people = [], keywords = [], movies = [], crimes = [];
+let places = [], people = [], keywords = [], movies = [];
 try {
   const cleaned = raw
     .replace(/```json/g, '').replace(/```/g, '')
@@ -17,7 +17,6 @@ try {
   people = parsed.people || [];
   keywords = parsed.keywords || [];
   movies = parsed.movies || [];
-  crimes = parsed.crimes || [];
 } catch(e) {}
 
 // ② 記事と基本情報の取得
@@ -65,10 +64,6 @@ function getSearchVariants(name, type) {
       jpn.push(lastName);
     }
   }
-  if (type === 'crimes') {
-    const noParens = base.replace(/（[^）]*）/g, '').trim();
-    if (noParens && noParens !== base) jpn.push(noParens);
-  }
   return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
@@ -78,8 +73,7 @@ const allEntities = [
   ...people.map(p => ({type: 'people', ...p})),
   ...places.map(p => ({type: 'places', ...p})),
   ...keywords.map(p => ({type: 'keywords', ...p})),
-  ...movies.map(p => ({type: 'movies', ...p})),
-  ...crimes.map(p => ({type: 'crimes', ...p}))
+  ...movies.map(p => ({type: 'movies', ...p}))
 ];
 
 for (const entity of allEntities) {
@@ -119,8 +113,6 @@ function insertLinks(articleText) {
 
     let mapUrl;
     if (cand.entity.type === 'keywords') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
-    } else if (cand.entity.type === 'crimes') {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'people') {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
