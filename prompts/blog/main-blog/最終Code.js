@@ -662,8 +662,8 @@ return [articleItem].map(item => {
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
     article += `
-<div style="text-align:center;margin:30px 0;">
-  <a href="#deep-dive" style="display:inline-block;padding:12px 30px;background:#1a237e;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:14px;box-shadow:0 4px 12px rgba(26,35,126,0.3);">
+<div style="text-align:right;margin:10px 0 30px;">
+  <a href="#deep-dive" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.35);color:#fff;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;opacity:0.6;">
     ✦ Deep Dive で深掘りする
   </a>
 </div>\n`;
