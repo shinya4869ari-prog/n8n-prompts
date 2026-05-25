@@ -1,7 +1,9 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-const articleItem = allItems.find(i => i.json?.article != null) ?? allItems[0];
+const articleItem = allItems.find(i => i.json?.article != null && i.json?.movies != null) 
+  ?? allItems.find(i => i.json?.article != null) 
+  ?? allItems[0];
 return [articleItem].map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
