@@ -89,13 +89,16 @@
 
 ## 【重大犯罪事件】
 対象国「{{ $json.countryEn }}」で2000年以降に発生した、連続殺人・女性または子供が被害者となった重大犯罪事件を収集すること。最大10件。
+★必ず10件に達するまで様々なクエリで検索を繰り返すこと。5件以下など途中で止めることは厳禁です。
 
 - 検索クエリ：「{{ $json.countryEn }} serial killer 2000s women children victims case Wikipedia」
 - 検索クエリ：「{{ $json.countryEn }} notorious murder case women children victims 2000s」
 - 検索クエリ：「{{ $json.countryEn }} true crime serial murder official news」
+- 検索クエリ：「{{ $json.countryEn }} murder case convicted sentenced women children 2010s 2020s」
+- 検索クエリ：「{{ $json.countryEn }} femicide child murder case court verdict 2000s 2020s」
 - 出典は警察・検察・裁判所の公式発表・AFP・Reuters・AP・Wikipedia（一次情報リンクあり）に限定すること。
 - SNS・個人ブログ・推測記事は使用禁止。
-- 映像化作品が存在する場合は記載。存在しない場合は「映像化なし」と記載。
+- 映像化作品が存在する場合は記載.存在しない場合は「映像化なし」と記載。
 
 ---
 
