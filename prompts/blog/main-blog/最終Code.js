@@ -611,7 +611,7 @@ return [articleItem].map(item => {
       const rateText = rateMatch[1].trim().replace('現在', '').replace(/^は/, '');
       article += `<p class="citation" style="${citationStyle}">※為替レートは${rateText}時点のレートを使用</p>\n`;
     }
-    article += `<p class="citation" style="${citationStyle}">※アルコール禁止の国においては、ノンアルコールビールの価格を記載しています。<br>※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
+    article += `<p class="citation" style="${citationStyle}">※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
     article += `<div style="height: 10px;"></div>\n`;
     const bukkaCites = [...new Set(bukkaData.map(d => d['出典']).filter(Boolean))];
     const netflixSheetCite = sheetData.data?.固定データ?.物価?.Netflix_出典 || 'Netflix公式サイト';
