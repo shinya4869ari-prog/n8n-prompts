@@ -110,11 +110,9 @@ function insertLinks(articleText) {
   const lines = articleText.split('\n');
   const linkedInThisArticle = new Set();
 
-  const processedLines = lines.map(line => {
-    // データ行（パイプ記号を含む行）は置換をスキップしてデータの破損を防ぐ
-    if (line.includes('｜')) return line;
-
-    let linkTokens = [{ type: 'text', text: line }];
+  // 単一のプレーンテキストに対してリンクを挿入する内部関数
+  function insertToPlainText(text) {
+    let linkTokens = [{ type: 'text', text: text }];
 
     for (const cand of uniquePatterns) {
       if (linkedInThisArticle.has(cand.entity.name)) continue;
@@ -159,6 +157,35 @@ function insertLinks(articleText) {
       linkTokens = newTokens;
     }
     return linkTokens.map(t => t.text).join('');
+  }
+
+  const processedLines = lines.map(line => {
+    // データ行（パイプ記号を含む行）の場合
+    if (line.includes('｜')) {
+      const parts = line.split('｜');
+      // parts[0] は項目名（例：行政トップ、国家の形と統治機構など）。ここはそのまま。
+      const processedParts = [parts[0]];
+      
+      for (let i = 1; i < parts.length; i++) {
+        const part = parts[i];
+        const colonIdx = part.indexOf('：');
+        if (colonIdx !== -1) {
+          // 例："韓国：大統領：李在明" -> key: "韓国", val: "大統領：李在明"
+          const key = part.substring(0, colonIdx);
+          const val = part.substring(colonIdx + 1);
+          // 値の部分にのみリンクを挿入
+          const linkedVal = insertToPlainText(val);
+          processedParts.push(key + '：' + linkedVal);
+        } else {
+          // コロンがない場合は値として処理
+          processedParts.push(insertToPlainText(part));
+        }
+      }
+      return processedParts.join('｜');
+    }
+
+    // 通常の地の文の場合
+    return insertToPlainText(line);
   });
 
   return processedLines.join('\n');
