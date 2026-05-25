@@ -19,38 +19,44 @@ if (!html) {
   throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
 }
 
-// 価格セルから実際に使われている通貨記号を抽出して判定
-function detectActualCurrency(html, currencyCode) {
-  // first_currencyスパンの直前にある通貨記号を取得
-  const cellMatch = html.match(/<span class="first_currency">([^<]+)<\/span>/);
-  if (!cellMatch) return currencyCode;
-
-  const cellContent = cellMatch[1];
-
-  // EUR記号
-  if (cellContent.includes('€') || cellContent.includes('&#8364;') || cellContent.includes('&euro;')) return 'EUR';
-  // USD記号（数字のみの場合はUSDの可能性があるが、現地通貨優先）
-  if (cellContent.includes('$') || cellContent.includes('&#36;') || cellContent.includes('&dollar;')) return 'USD';
-  // GBP記号
-  if (cellContent.includes('£') || cellContent.includes('&#163;') || cellContent.includes('&pound;')) return 'GBP';
-
-  // 記号がない or 現地通貨記号 → currencyCodeをそのまま返す
+// 通貨記号をよりロバストに検出
+function detectActualCurrency(html) {
+  const matches = html.match(/<span class="first_currency">([^<]+?)<\/span>/g);
+  if (!matches) return currencyCode;
+  
+  // 最初の価格セルから通貨記号を抽出
+  const firstCell = matches[0];
+  if (firstCell.includes('EC$') || firstCell.includes('EC &#36;')) return 'XCD';
+  if (firstCell.includes('€')) return 'EUR';
+  if (firstCell.includes('$') && !firstCell.includes('EC$')) return 'USD';
+  if (firstCell.includes('£')) return 'GBP';
   return currencyCode;
 }
 
-const actualCurrencyCode = detectActualCurrency(html, currencyCode);
+const actualCurrencyCode = detectActualCurrency(html);
 
+// より柔軟な価格抽出関数（EC$対応強化）
 function extractPrice(html, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // より広いパターンでマッチさせる（通貨記号 + 数字）
   const regex = new RegExp(
-    escaped + '[^<]*<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]+)<\\/span>',
+    escaped + '[^<]*?<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]*?)<\\/span>\\s*([\\d.,]+)',
     'i'
   );
+  
   const match = html.match(regex);
-  if (!match) return "欠測";
-  return match[1].replace(/&[^;]+;/g, '').replace(/[^\d.,]/g, '').trim() || "欠測";
+  if (!match || !match[2]) return "欠測";
+  
+  // 数字部分だけ抽出
+  let price = match[2].replace(/[^\d.,]/g, '').trim();
+  // カンマをドットに統一（必要なら）
+  price = price.replace(',', '.');
+  
+  return price || "欠測";
 }
 
+// 抽出実行
 const beer = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
 const cigarettes = extractPrice(html, 'Cigarettes (Pack of 20, Marlboro)');
 const water = extractPrice(html, 'Bottled Water (50 oz)');

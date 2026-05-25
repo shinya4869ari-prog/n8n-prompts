@@ -65,6 +65,12 @@ if (filteredTrends.length > 10) {
   result.push(last);
   filteredTrends = result;
 }
+// 総収容者数が欠測の場合、収容推移の最新値をフォールバックとして使用
+if (totalVal === "欠測" && filteredTrends.length > 0) {
+  const latest = filteredTrends[filteredTrends.length - 1];
+  totalVal = latest.総収容者数;
+  totalYear = latest.年;
+}
 
 return [{
   json: {
