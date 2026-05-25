@@ -49,7 +49,7 @@ return [articleItem].map(item => {
   }
 
   // --- 3. HTML生成ヘルパー ---
-  const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #b2ebf2;font-size:16px;font-weight:900;color:#111;`;
+  const h2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
   const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
 
@@ -240,7 +240,7 @@ return [articleItem].map(item => {
   }
 
   // --- 6. ① 制度の9つの皿 ---
-  article += `<h2 style="${h2Style}">① 制度の9つの皿</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">①</span> 制度の9つの皿</h2>\n`;
   const seidoItems = ['国家の形と統治機構', '行政トップ', '立法と選挙制度', '司法と法制度', '社会保障・医療・年金', '教育制度', '徴税・財政制度', '安全保障と兵役', '基本権と価値観'];
   const seidoData = seidoItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
@@ -260,7 +260,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(seidoNeko);
 
   // --- 7. ② 地理と経済の衡量 ---
-  article += `<h2 style="${h2Style}">② 地理と経済の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">②</span> 地理と経済の衡量</h2>\n`;
   // geoData は上で事前抽出済み
   const geoRows = [
     ...geoData.map(d => [d.項目, d.値]),
@@ -346,7 +346,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(econNeko);
 
   // --- 8. ③ 治安と平和の衡量 ---
-  article += `<h2 style="${h2Style}">③ 治安と平和の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">③</span> 治安と平和の衡量</h2>\n`;
   const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所稼働率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
@@ -522,7 +522,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(chianNeko);
 
   // --- 9. ④ 貿易の衡量 ---
-  article += `<h2 style="${h2Style}">④ 貿易の衡量</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">④</span> 貿易の衡量</h2>\n`;
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
   if (yushutsuData.length > 0 || yunyuData.length > 0) {
@@ -554,7 +554,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(boekiNeko);
 
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
-  article += `<h2 style="${h2Style}">⑤ 生活・価値の衡量（物価比較）</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑤</span> 生活・価値の衡量（物価比較）</h2>\n`;
 
   // 為替レートをsheetData（整形ノード1）から直接取得、なければ国名変換Codeの値を使用
   const sheetRate = parseFloat(sheetData.data?.固定データ?.物価?.為替レート) || 0;
@@ -637,7 +637,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(bukkaNeko);
 
   // --- 11. ⑥ 歴史的背景 ---
-  article += `<h2 style="${h2Style}">⑥ 歴史的背景（近代100年）</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑥</span> 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
@@ -671,7 +671,7 @@ return [articleItem].map(item => {
   }
 
   // --- 12. ⑦ 直近の動向 ---
-  article += `<h2 style="${h2Style}">⑦ 直近の動向</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>\n`;
   const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
   if (dohContent) {
     const formattedDoh = dohContent.replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
@@ -688,7 +688,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(dohNeko);
 
   // --- 13. ⑧ 映像で知る${countryName} ---
-  article += `<h2 style="${h2Style}">⑧ 映像で知る${countryName}</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
   const eizouData = parseLines(raw, '映像');
   if (eizouData.length > 0) {
     const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
@@ -734,7 +734,7 @@ return [articleItem].map(item => {
   article += makeNekoBubble(eizouNeko);
 
   // --- 14. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
-  article += `<h2 style="${h2Style}">⑨ 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
+  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
   const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
     const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
