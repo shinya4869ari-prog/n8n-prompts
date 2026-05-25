@@ -69,7 +69,7 @@ function getSearchVariants(name, type) {
     const noParens = base.replace(/（[^）]*）/g, '').trim();
     if (noParens && noParens !== base) jpn.push(noParens);
   }
-  return [...new Set([stripped, ...jpn, inside])].filter(v => v && v.length >= 2);
+  return [...new Set([name, stripped, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
 // ⑥ 候補統合
