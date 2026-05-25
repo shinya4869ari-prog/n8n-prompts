@@ -4,6 +4,7 @@ const boekiRaw = $('貿易記事Perplexity').first().json;
 const shiinRaw = $('死因記事Perplexity').first().json;
 const hanzaiRaw = $('犯罪記事Perplexity').first().json;
 const chirigeiRaw = $('地理・経済記事Perplexity').first().json;
+const bukkaArticleRaw = $('物価記事Perplexity').first().json;
 
 const extractTexts = (raw) => ({
   texts: (raw.results || []).filter(r => r.title && r.snippet).slice(0, 3).map(r => `【${r.title}】\n${r.snippet}`).join('\n\n'),
@@ -14,6 +15,7 @@ const boeki = extractTexts(boekiRaw);
 const shiin = extractTexts(shiinRaw);
 const hanzai = extractTexts(hanzaiRaw);
 const chirigei = extractTexts(chirigeiRaw);
+const bukkaArticle = extractTexts(bukkaArticleRaw);
 
 return [{
   json: {
@@ -22,9 +24,11 @@ return [{
     shiinTexts: shiin.texts,
     hanzaiTexts: hanzai.texts,
     chirigeiTexts: chirigei.texts,
+    bukkaArticleTexts: bukkaArticle.texts,
     boekiUrls: boeki.urls,
     shiinUrls: shiin.urls,
     hanzaiUrls: hanzai.urls,
-    chirigeiUrls: chirigei.urls
+    chirigeiUrls: chirigei.urls,
+    bukkaArticleUrls: bukkaArticle.urls
   }
 }];
