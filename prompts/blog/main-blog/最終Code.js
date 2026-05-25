@@ -129,8 +129,6 @@ return [articleItem].map(item => {
       .replace(/^##\s*\[貿易解説\][：:]?\s*/gm, '')
       .replace(/^##\s*\[死因解説\][：:]?\s*/gm, '')
       .replace(/^##\s*\[犯罪解説\][：:]?\s*/gm, '')
-      .replace(/^##\s*\[地理・経済解説\][：:]?\s*/gm, '')
-      .replace(/^##\s*\[物価解説\][：:]?\s*/gm, '')
       .replace(/\n—+\n/g, '\n')
       .replace(/\n##\s*\n/g, '\n')
       .replace(/^—+$/gm, '')
@@ -157,20 +155,14 @@ return [articleItem].map(item => {
   let boekiKaisetu = '';
   let shiinKaisetu = '';
   let hanzaiKaisetu = '';
-  let chirigeiKaisetu = '';
-  let bukkaKaisetu = '';
   try {
     const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
-    const boekiMatch = aiText.match(/\[貿易解説\]([\s\S]*?)(?=\[[^\]]+解説\]|$)/);
-    const shiinMatch = aiText.match(/\[死因解説\]([\s\S]*?)(?=\[[^\]]+解説\]|$)/);
-    const hanzaiMatch = aiText.match(/\[犯罪解説\]([\s\S]*?)(?=\[[^\]]+解説\]|$)/);
-    const chirigeiMatch = aiText.match(/\[地理・経済解説\]([\s\S]*?)(?=\[[^\]]+解説\]|$)/);
-    const bukkaMatch = aiText.match(/\[物価解説\]([\s\S]*?)(?=\[[^\]]+解説\]|$)/);
+    const boekiMatch = aiText.match(/\[貿易解説\]([\s\S]*?)(?=\[死因解説\]|\[犯罪解説\]|$)/);
+    const shiinMatch = aiText.match(/\[死因解説\]([\s\S]*?)(?=\[犯罪解説\]|$)/);
+    const hanzaiMatch = aiText.match(/\[犯罪解説\]([\s\S]*?)$/);
     boekiKaisetu = boekiMatch ? boekiMatch[1].trim() : '';
     shiinKaisetu = shiinMatch ? shiinMatch[1].trim() : '';
     hanzaiKaisetu = hanzaiMatch ? hanzaiMatch[1].trim() : '';
-    chirigeiKaisetu = chirigeiMatch ? chirigeiMatch[1].trim() : '';
-    bukkaKaisetu = bukkaMatch ? bukkaMatch[1].trim() : '';
   } catch(e) {}
 
   let article = '';
@@ -336,7 +328,12 @@ return [articleItem].map(item => {
 
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
   if (econExplanation) article += `\n${econExplanation}\n`;
-
+  let chirigeiKaisetu = '';
+  try {
+    const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
+    const chirigeiMatch = aiText.match(/\[地理・経済解説\]([\s\S]*?)(?=\[貿易解説\]|\[死因解説\]|\[犯罪解説\]|$)/);
+    chirigeiKaisetu = chirigeiMatch ? chirigeiMatch[1].trim() : '';
+  } catch(e) {}
 
   if (chirigeiKaisetu) {
     article += `<h3 style="${h3Style}">📰 地理・経済トピック</h3>\n`;
@@ -623,8 +620,14 @@ return [articleItem].map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：${bukkaOuten}</p>\n`;
   }
 
+  let bukkaKaisetu = '';
+  try {
+    const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
+    const bukkaMatch = aiText.match(/\[物価解説\]([\s\S]*?)(?=\[貿易解説\]|\[死因解説\]|\[犯罪解説\]|$)/);
+    bukkaKaisetu = bukkaMatch ? bukkaMatch[1].trim() : '';
+  } catch(e) {}
+
   if (bukkaKaisetu) {
-    article += `<h3 style="${h3Style}">📰 物価トピック</h3>\n`;
     const { formatted, citeText } = formatKaisetu(bukkaKaisetu);
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
