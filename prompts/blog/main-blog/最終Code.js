@@ -50,7 +50,9 @@ return [articleItem].map(item => {
 
   // --- 3. HTML生成ヘルパー ---
   const h2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
-  const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
+  const h3Style = `font-size:14px;font-weight:500;color:#e67e22;margin-top:30px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #e67e22;display:inline-block;`;
+  const h3NewsStyle = `font-size:14px;font-weight:500;color:#6f42c1;margin-top:30px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #6f42c1;display:inline-block;`;
+  const h3NewsBadge = `<span style="background:#6f42c1;color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;margin-right:8px;vertical-align:middle;font-weight:bold;">Perplexity</span>`;
   const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
 
   function makeTable(headers, rows, widths) {
@@ -130,12 +132,13 @@ return [articleItem].map(item => {
       .replace(/^##\s*\[死因解説\][：:]?\s*/gm, '')
       .replace(/^##\s*\[犯罪解説\][：:]?\s*/gm, '')
       .replace(/\n—+\n/g, '\n')
+      .replace(/\n-{3,}\n/g, '\n')
       .replace(/\n##\s*\n/g, '\n')
       .replace(/^—+$/gm, '')
       .replace(/^##\s*$/gm, '')
       .replace(/^：(.+)$/gm, '<p style="font-size:15px;font-weight:700;color:#555;margin:0 0 16px;padding:8px 12px;background:#f0f7f7;border-radius:6px;">$1</p>')
       .replace(/^### (.+)$/gm, '<h4 style="font-size:14px;font-weight:900;color:#333;margin:20px 0 6px;padding-left:10px;border-left:3px solid #b2ebf2;">$1</h4>')
-      .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:900;color:#20B2AA;margin:24px 0 8px;border-left:4px solid #20B2AA;padding-left:10px;">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:900;color:#e67e22;margin:24px 0 8px;border-left:4px solid #e67e22;padding-left:10px;">$1</h3>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>')
       .replace(/<br>—+<br>/g, '<br>')
@@ -262,6 +265,24 @@ return [articleItem].map(item => {
   const seidoExplanation = extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：');
   if (seidoExplanation) article += `\n${seidoExplanation}\n`;
 
+  const spotlight = sheetData.data?.対象国データ?.制度の9つの皿?.制度スポットライト || null;
+
+  // 整形ノード1経由で取得
+  const spotlightData = $('整形ノード1').first().json?.data?.対象国データ?.制度の9つの皿?.制度スポットライト || null;
+
+  if (spotlightData?.記事) {
+    article += `<h3 style="font-size:14px;font-weight:500;color:#e67e22;margin-top:30px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #e67e22;display:inline-block;">📌 制度スポットライト：${spotlightData.選定項目 || ''}</h3>\n`;
+    const _sentences = spotlightData.記事.split('。').map(s => s.trim()).filter(Boolean).map(s => s + '。');
+    const _paras = [];
+    for (let i = 0; i < _sentences.length; i += 2) {
+      _paras.push(_sentences.slice(i, i + 2).join(''));
+    }
+    const spotlightText = _paras
+      .map(p => `<p style="font-size:14px;line-height:1.9;color:#333;margin:0 0 14px;">${p}</p>`)
+      .join('');
+    article += `<div style="margin:20px 0;padding:16px;background:var(--color-background-secondary,#f5f5f5);border-left:3px solid #00bcd4;border-radius:0 8px 8px 0;">${spotlightText}</div>\n`;
+  }
+
   const seidoNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(seidoNeko);
 
@@ -337,7 +358,7 @@ return [articleItem].map(item => {
   // ② エラー猫の直前
   if (chirigeiKaisetu) {
     const { formatted, citeText } = formatKaisetu(chirigeiKaisetu);
-    article += `<h3 style="${h3Style}">📰 地理・経済トピック</h3>\n`;
+    article += `<h3 style="${h3NewsStyle}">${h3NewsBadge} 地理・経済トピック</h3>\n`;
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
   }
@@ -497,7 +518,7 @@ return [articleItem].map(item => {
   article += `<div style="border-top:1px solid #b2ebf2;margin:30px 0;"></div>\n`;
 
   if (hanzaiKaisetu) {
-    article += `<h3 style="${h3Style}">📰 最新情報：犯罪傾向</h3>\n`;
+    article += `<h3 style="${h3NewsStyle}">${h3NewsBadge} 最新情報：犯罪傾向</h3>\n`;
     const { formatted, citeText } = formatKaisetu(hanzaiKaisetu);
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
@@ -511,7 +532,7 @@ return [articleItem].map(item => {
 
     // shiin解説テキストの追加
     if (shiinKaisetu) {
-      article += `<h3 style="${h3Style}">📰 最新情報：死因・健康統計</h3>\n`;
+      article += `<h3 style="${h3NewsStyle}">${h3NewsBadge} 最新情報：死因・健康統計</h3>\n`;
       const { formatted, citeText } = formatKaisetu(shiinKaisetu);
       article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
       if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
@@ -544,7 +565,7 @@ return [articleItem].map(item => {
 
   // boeki解説テキストの追加
   if (boekiKaisetu) {
-    article += `<h3 style="${h3Style}">📰 最新情報：貿易動向</h3>\n`;
+    article += `<h3 style="${h3NewsStyle}">${h3NewsBadge} 最新情報：貿易動向</h3>\n`;
     const { formatted, citeText } = formatKaisetu(boekiKaisetu);
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
@@ -623,7 +644,7 @@ return [articleItem].map(item => {
   // ⑤ エラー猫の直前
   if (bukkaKaisetu) {
     const { formatted, citeText } = formatKaisetu(bukkaKaisetu);
-    article += `<h3 style="${h3Style}">📰 物価・生活コストトピック</h3>\n`;
+    article += `<h3 style="${h3NewsStyle}">${h3NewsBadge} 物価・生活コストトピック</h3>\n`;
     article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
     if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
   }
@@ -835,7 +856,15 @@ document.addEventListener('click', function(e) {
   <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
 </div>`;
 
-  const finalArticleText = article + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
+  const wpTitleStyle = `
+<style>
+/* WordPressの自動生成タイトル（上の韓国）を非表示にする */
+.entry-title, .post-title, .entry-header h1, .page-title, h1.entry-title {
+  display: none !important;
+}
+</style>\n`;
+
+  const finalArticleText = wpTitleStyle + article + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
 
   // --- WordPressカテゴリーID自動振り分け設定 ---
   // ※WordPress側のカテゴリーIDに合わせて右側の数値を変更・調整してください
