@@ -46,9 +46,9 @@ function enc(t) {
 
 // ⑤ バリエーション生成
 function getSearchVariants(name, type) {
-  name = name.replace(/(前大統領|元大統領|大統領|前首相|元首相|首相|前大臣|元大臣|大臣|氏|前|元)$/, '').trim();
-  const base = name.replace(/[（\(\[［].*?[）\)］]/g, '').trim();
-  const insideMatch = name.match(/[（\(［](.*?)[）\)］]/);
+  const stripped = name.replace(/(前大統領|元大統領|大統領|前首相|元首相|首相|前大臣|元大臣|大臣|氏|前|元)$/, '').trim();
+  const base = stripped.replace(/[（\(\[［].*?[）\)］]/g, '').trim();
+  const insideMatch = stripped.match(/[（\(［](.*?)[）\)］]/);
   const inside = insideMatch ? insideMatch[1].trim() : "";
   let jpn = [base];
   const suffixes = ['王国', '共和国', '連邦共和国', '連邦', '合衆国', '民主共和国', '社会主義共和国', '公国'];
@@ -69,7 +69,7 @@ function getSearchVariants(name, type) {
     const noParens = base.replace(/（[^）]*）/g, '').trim();
     if (noParens && noParens !== base) jpn.push(noParens);
   }
-  return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
+  return [...new Set([stripped, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
 // ⑥ 候補統合
