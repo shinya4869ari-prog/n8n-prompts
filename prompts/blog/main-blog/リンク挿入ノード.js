@@ -65,6 +65,10 @@ function getSearchVariants(name, type) {
       jpn.push(lastName);
     }
   }
+  if (type === 'crimes') {
+    const noParens = base.replace(/（[^）]*）/g, '').trim();
+    if (noParens && noParens !== base) jpn.push(noParens);
+  }
   return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
