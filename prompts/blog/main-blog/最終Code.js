@@ -512,8 +512,31 @@ return [articleItem].map(item => {
   }
 
   // 犯罪の傾向テキスト
-  const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
-  if (crimeFeature) article += `\n${crimeFeature}\n`;
+  const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '重大犯罪｜');
+  if (crimeFeature) {
+    article += `\n${crimeFeature}\n`;
+  } else {
+    const fallbackCrimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
+    if (fallbackCrimeFeature) article += `\n${fallbackCrimeFeature}\n`;
+  }
+
+  // 重大犯罪事件テーブル
+  const majorCrimeData = parseLines(raw, '重大犯罪');
+  if (majorCrimeData.length > 0) {
+    article += `<h3 style="${h3Style}">国内の重大犯罪事件（2000年以降）</h3>\n`;
+    const majorCrimeRows = majorCrimeData.map(d => [
+      d['発生年'] || '不明',
+      `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:11.5px;color:#666;">犯人：' + d['犯人名'] + '</span>' : ''}`,
+      d['被害者属性'] || '不明',
+      `${d['概要'] || ''}${d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : ''}`,
+      d['映像化作品'] || '映像化なし'
+    ]);
+    const crimeCites = [...new Set(majorCrimeData.map(d => d['出典']).filter(Boolean))];
+    article += makeTable(['発生年', '事件名', '被害者属性', '概要・判決', '映像化'], majorCrimeRows, ['10%', '25%', '20%', '35%', '10%']);
+    if (crimeCites.length > 0) {
+      article += `<p class="citation" style="${citationStyle}">出典：${crimeCites.join(' / ')}</p>\n`;
+    }
+  }
 
   article += `<div style="border-top:1px solid #b2ebf2;margin:30px 0;"></div>\n`;
 
