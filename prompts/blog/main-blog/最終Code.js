@@ -328,6 +328,19 @@ return [articleItem].map(item => {
 
   const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
   if (econExplanation) article += `\n${econExplanation}\n`;
+  let chirigeiKaisetu = '';
+  try {
+    const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
+    const chirigeiMatch = aiText.match(/\[地理・経済解説\]([\s\S]*?)(?=\[貿易解説\]|\[死因解説\]|\[犯罪解説\]|$)/);
+    chirigeiKaisetu = chirigeiMatch ? chirigeiMatch[1].trim() : '';
+  } catch(e) {}
+
+  if (chirigeiKaisetu) {
+    article += `<h3 style="${h3Style}">📰 地理・経済トピック</h3>\n`;
+    const { formatted, citeText } = formatKaisetu(chirigeiKaisetu);
+    article += `<div style="font-size:14px;line-height:1.9;color:#333;margin:20px 0;">${formatted}</div>\n`;
+    if (citeText) article += `<p class="citation" style="${citationStyle}">出典：${citeText.replace(/\n/g,'<br>')}</p>\n`;
+  }
 
   const econNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(econNeko);
