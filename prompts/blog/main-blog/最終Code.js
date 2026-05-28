@@ -1,14 +1,14 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-const articleItem = allItems.find(i => i.json?.article != null && i.json?.movies != null) 
-  ?? allItems.find(i => i.json?.article != null) 
+const articleItem = allItems.find(i => i.json?.article != null && i.json?.deepDiveArticle != null)
+  ?? allItems.find(i => i.json?.article != null && typeof i.json.article === 'string' && i.json.article.length > 100)
   ?? allItems[0];
 return [articleItem].map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
-  const moviesData = $('リンク挿入').first().json?.movies || [];
-  let raw = inputData?.article ?? "";
+  const moviesData = [];
+  let raw = inputData?.article ?? inputData?.output ?? "";
   const rawLines = raw.split('\n');
 
   // --- 1. 見出しの重複削除（AIが出したプレーンな見出しを消す） ---
@@ -848,12 +848,8 @@ return [articleItem].map(item => {
 
   // --- 16. Deep-Dive ---
   let deepDiveArticle = '';
-  try {
-    deepDiveArticle = $('リンク挿入').first().json?.deepDiveArticle || '';
-  } catch (e) {
-    // リンク挿入ノードが接続されていないか名前が違う場合は整形3から直接取得を試みる
-    try { deepDiveArticle = $('整形3').first().json?.article || ''; } catch (e2) { }
-  }
+  try { deepDiveArticle = articleItem.json?.deepDiveArticle || ''; } catch(e) {}
+  console.log('deepDiveArticle length:', deepDiveArticle.length);
 
   if (deepDiveArticle) {
     // --- Deep Dive セクション仕切り ---
@@ -872,40 +868,7 @@ return [articleItem].map(item => {
     article += styledDD;
   }
 
-  // --- 17. リンクポップアップHTMLの最終挿入（はりボテリンク解消） ---
-  const moviePopupScript = `
-<script>
-document.addEventListener('click', function(e) {
-  const el = e.target.closest('[data-movie-title]');
-  if (!el) return;
-  const title = el.getAttribute('data-movie-title');
-  const info = el.getAttribute('data-movie-info');
-  const mapUrl = 'https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=' + encodeURIComponent(title);
-  const linkHTML = '<br><br><a href="' + mapUrl + '" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>';
-  document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').innerHTML = info + linkHTML;
-  document.getElementById('tenbin-popup').style.display = 'block';
-  document.getElementById('tenbin-overlay').style.display = 'block';
-});
-</script>`;
-
-  const popupHTML = `
-<div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
-<div id="tenbin-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;background:#fff;border:1px solid #ddd;border-radius:12px;padding:25px;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,0.3);color:#333;font-family:sans-serif;">
-  <div onclick="document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none'" style="position:absolute;top:10px;right:15px;cursor:pointer;font-size:20px;color:#999;">✕</div>
-  <div id="tenbin-popup-title" style="font-weight:bold;color:#20B2AA;margin-bottom:10px;font-size:18px;border-bottom:1px solid #eee;padding-bottom:10px;"></div>
-  <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
-</div>`;
-
-  const wpTitleStyle = `
-<style>
-/* WordPressの自動生成タイトル（上の韓国）を非表示にする */
-.entry-title, .post-title, .entry-header h1, .page-title, h1.entry-title {
-  display: none !important;
-}
-</style>\n`;
-
-  const finalArticleText = wpTitleStyle + article + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
+  const finalArticleText = article;
 
   // --- WordPressカテゴリーID自動振り分け設定 ---
   // ※WordPress側のカテゴリーIDに合わせて右側の数値を変更・調整してください

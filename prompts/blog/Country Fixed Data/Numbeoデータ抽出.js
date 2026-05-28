@@ -15,56 +15,76 @@ try {
   }
 }
 
-if (!html) {
-  throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
+if (!html) throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
+
+// HTMLエンティティを数値に変換
+function decodeEntities(str) {
+  return str
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
 }
 
-// 通貨記号をよりロバストに検出
-function detectActualCurrency(html) {
-  const matches = html.match(/<span class="first_currency">([^<]+?)<\/span>/g);
-  if (!matches) return currencyCode;
-  
-  // 最初の価格セルから通貨記号を抽出
-  const firstCell = matches[0];
-  if (firstCell.includes('EC$') || firstCell.includes('EC &#36;')) return 'XCD';
-  if (firstCell.includes('€')) return 'EUR';
-  if (firstCell.includes('$') && !firstCell.includes('EC$')) return 'USD';
-  if (firstCell.includes('£')) return 'GBP';
-  return currencyCode;
-}
-
-const actualCurrencyCode = detectActualCurrency(html);
-
-// より柔軟な価格抽出関数（EC$対応強化）
+// <span class="first_currency">&#8364;5.00</span> のような構造から数値だけ抽出
 function extractPrice(html, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  
-  // より広いパターンでマッチさせる（通貨記号 + 数字）
   const regex = new RegExp(
-    escaped + '[^<]*?<\\/td>\\s*<td[^>]*>\\s*<span class="first_currency">([^<]*?)<\\/span>\\s*([\\d.,]+)',
+    escaped + '[^<]*?<\\/td>[\\s\\S]*?<span class="first_currency">([^<]+?)<\\/span>',
     'i'
   );
-  
   const match = html.match(regex);
-  if (!match || !match[2]) return "欠測";
-  
-  // 数字部分だけ抽出
-  let price = match[2].replace(/[^\d.,]/g, '').trim();
-  // カンマをドットに統一（必要なら）
-  price = price.replace(',', '.');
-  
-  return price || "欠測";
+  if (!match || !match[1]) return "欠測";
+
+  const decoded = decodeEntities(match[1]);
+  // 通貨記号・スペースを除去して数値だけ残す
+  const numStr = decoded.replace(/[^\d.,]/g, '').trim();
+  if (!numStr) return "欠測";
+
+  // カンマが小数点の場合（欧州式）と桁区切りの場合を判別
+  // ピリオドとカンマが両方ある → ピリオドが小数点（例: 1,234.56）または カンマが小数点（例: 1.234,56）
+  const hasDot = numStr.includes('.');
+  const hasComma = numStr.includes(',');
+
+  let normalized;
+  if (hasDot && hasComma) {
+    // 最後の区切り文字が小数点
+    const lastDot = numStr.lastIndexOf('.');
+    const lastComma = numStr.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      // 欧州式: 1.234,56 → 1234.56
+      normalized = numStr.replace(/\./g, '').replace(',', '.');
+    } else {
+      // 英語式: 1,234.56 → 1234.56
+      normalized = numStr.replace(/,/g, '');
+    }
+  } else if (hasComma && !hasDot) {
+    // カンマのみ: 小数点として扱う（例: 8,36 → 8.36）
+    // ただし3桁区切りの場合もある（例: 1,234）→ 小数点とみなす
+    const parts = numStr.split(',');
+    if (parts.length === 2 && parts[1].length <= 2) {
+      normalized = numStr.replace(',', '.');
+    } else {
+      normalized = numStr.replace(/,/g, '');
+    }
+  } else {
+    // ドットのみまたは何もなし
+    normalized = numStr.replace(/,/g, '');
+  }
+
+  return normalized || "欠測";
 }
 
-// 抽出実行
-const beer = extractPrice(html, 'Domestic Draft Beer (1 Pint)');
-const cigarettes = extractPrice(html, 'Cigarettes (Pack of 20, Marlboro)');
-const water = extractPrice(html, 'Bottled Water (50 oz)');
-const gasoline = extractPrice(html, 'Gasoline (1 Liter)');
-const meal = extractPrice(html, 'Meal at an Inexpensive Restaurant');
-const utilities = extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)');
-const rent = extractPrice(html, '1 Bedroom Apartment in City Centre');
-const salary = extractPrice(html, 'Average Monthly Net Salary (After Tax)');
+const actualCurrencyCode = (() => {
+  const match = html.match(/<span class="first_currency">([^<]+?)<\/span>/);
+  if (!match) return currencyCode;
+  const decoded = decodeEntities(match[1]);
+  if (decoded.includes('€')) return 'EUR';
+  if (decoded.includes('EC$') || decoded.includes('EC ')) return 'XCD';
+  if (decoded.includes('$')) return 'USD';
+  if (decoded.includes('£')) return 'GBP';
+  return currencyCode;
+})();
 
 return [{
   json: {
@@ -73,13 +93,13 @@ return [{
     currencySymbol,
     actualCurrencyCode,
     取得日: today,
-    ビール: beer,
-    タバコ: cigarettes,
-    水: water,
-    ガソリン: gasoline,
-    外食: meal,
-    光熱費: utilities,
-    家賃: rent,
-    月収: salary,
+    ビール: extractPrice(html, 'Domestic Draft Beer (1 Pint)'),
+    タバコ: extractPrice(html, 'Cigarettes (Pack of 20, Marlboro)'),
+    水: extractPrice(html, 'Bottled Water (50 oz)'),
+    ガソリン: extractPrice(html, 'Gasoline (1 Liter)'),
+    外食: extractPrice(html, 'Meal at an Inexpensive Restaurant'),
+    光熱費: extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)'),
+    家賃: extractPrice(html, '1 Bedroom Apartment in City Centre'),
+    月収: extractPrice(html, 'Average Monthly Net Salary (After Tax)'),
   }
 }];

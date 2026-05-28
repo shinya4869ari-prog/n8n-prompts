@@ -1,11 +1,14 @@
-const item = $input.first().json;
+// ① エンティティ抽出ノード「response_extraction1」からJSONを取得
+let raw = '{}';
+try {
+  const extNode = $('response_extraction1').first().json;
+  raw = extNode.output
+    ?? extNode.content?.parts?.[0]?.text
+    ?? extNode.message?.content
+    ?? '{}';
+} catch(e) {}
 
-const raw = item.output
-  ?? item.content?.parts?.[0]?.text
-  ?? item.message?.content
-  ?? '{}';
-
-let places = [], people = [], keywords = [], movies = [];
+let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
   const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
   const parsed = JSON.parse(cleaned);
@@ -13,16 +16,43 @@ try {
   people   = parsed.people   || [];
   keywords = parsed.keywords || [];
   movies   = parsed.movies   || [];
+  crimes   = parsed.crimes   || [];
 } catch(e) {}
 
 let mainArticle = '';
-try { mainArticle = $('整形2').first().json.article ?? $('整形2').first().json.output ?? ''; } catch (e) {}
+try { mainArticle = $('最終Code').first().json.article ?? ''; } catch (e) {}
 
 let deepDiveRaw = '';
-try { deepDiveRaw = $('整形3').first().json?.article ?? ''; } catch (e) {}
+try { deepDiveRaw = $('最終Code').first().json?.deepDiveArticle ?? $('整形3').first().json?.article ?? ''; } catch (e) {}
 
 let country = '不明';
 try { country = $('整形ノード1').first().json.country ?? '不明'; } catch (e) {}
+
+// ポップアップHTML（歴史館リンク表示用）
+const popupHTML = `
+<div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
+<div id="tenbin-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;background:#fff;border:1px solid #ddd;border-radius:12px;padding:25px;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,0.3);color:#333;font-family:sans-serif;">
+  <div onclick="document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none'" style="position:absolute;top:10px;right:15px;cursor:pointer;font-size:20px;color:#999;">✕</div>
+  <div id="tenbin-popup-title" style="font-weight:bold;color:#20B2AA;margin-bottom:10px;font-size:18px;border-bottom:1px solid #eee;padding-bottom:10px;"></div>
+  <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
+</div>`;
+
+// 映画用ポップアップ動的処理
+const moviePopupScript = `
+<script>
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-movie-title]');
+  if (!el) return;
+  const title = el.getAttribute('data-movie-title');
+  const info = el.getAttribute('data-movie-info');
+  const mapUrl = 'https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=' + encodeURIComponent(title);
+  const linkHTML = '<br><br><a href="' + mapUrl + '" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>';
+  document.getElementById('tenbin-popup-title').textContent = title;
+  document.getElementById('tenbin-popup-info').innerHTML = info + linkHTML;
+  document.getElementById('tenbin-popup').style.display = 'block';
+  document.getElementById('tenbin-overlay').style.display = 'block';
+});
+</script>`;
 
 function enc(t) {
   try { return btoa(unescape(encodeURIComponent(t || ''))); }
@@ -55,7 +85,8 @@ const allEntities = [
   ...people.map(p   => ({type: 'people',   ...p})),
   ...places.map(p   => ({type: 'places',   ...p})),
   ...keywords.map(p => ({type: 'keywords', ...p})),
-  ...movies.map(p   => ({type: 'movies',   ...p}))
+  ...movies.map(p   => ({type: 'movies',   ...p})),
+  ...crimes.map(p   => ({type: 'keywords', ...p}))
 ];
 
 for (const entity of allEntities) {
@@ -92,6 +123,8 @@ function insertLinks(articleText) {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'people') {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
+    } else if (cand.entity.type === 'movies') {
+      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=${encodeURIComponent(cand.entity.name)}`;
     } else {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
     }
@@ -99,8 +132,9 @@ function insertLinks(articleText) {
     const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
     const n = enc(cand.entity.name);
     const i = enc(cand.entity.info + linkHTML);
-
-    const spanHTML = `<span class="tenbin-trigger" data-n="${n}" data-i="${i}" style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;">${cand.pattern}</span>`;
+    
+    const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+    const spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
 
     const tradePartners = ["アメリカ合衆国","中国","台湾","韓国","香港","タイ","シンガポール","インド","ベトナム","ドイツ"];
     const isTradePartner = cand.entity.type === 'places' && tradePartners.includes(cand.pattern);
@@ -149,4 +183,40 @@ function insertLinks(articleText) {
 const linkedMain     = insertLinks(mainArticle);
 const linkedDeepDive = deepDiveRaw ? insertLinks(deepDiveRaw) : '';
 
-return [{ json: { article: linkedMain, deepDiveArticle: linkedDeepDive, country: country } }];
+// 孤立サロゲート文字を除去（WordPress REST API の JSON エラー対策）
+function removeLoneSurrogates(str) {
+  if (!str) return '';
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c >= 0xD800 && c <= 0xDBFF) {
+      const next = i + 1 < str.length ? str.charCodeAt(i + 1) : 0;
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        result += str[i] + str[i + 1];
+        i++;
+      }
+    } else if (c >= 0xDC00 && c <= 0xDFFF) {
+      // 孤立した低サロゲートはスキップ
+    } else {
+      result += str[i];
+    }
+  }
+  return result;
+}
+
+let metaJson = {};
+try { metaJson = $('最終Code').first().json; } catch(e) {}
+
+const finalMain = removeLoneSurrogates(linkedMain) + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
+
+return [{ json: {
+  article:       finalMain,
+  deepDiveArticle: removeLoneSurrogates(linkedDeepDive),
+  country:       country,
+  title:         metaJson.title         || '',
+  countryEn:     metaJson.countryEn     || '',
+  capital:       metaJson.capital       || '',
+  category_name: metaJson.category_name || '',
+  category_id:   metaJson.category_id   || 1,
+  categories:    metaJson.categories    || [1]
+} }];
