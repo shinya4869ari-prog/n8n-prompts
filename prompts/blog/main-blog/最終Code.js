@@ -682,7 +682,7 @@ return [articleItem].map(item => {
       let rawVal = d[countryName] || d['対象国'] || 'データなし';
 
       // 対象国の価格データが欠測・データなしの場合、スプレッドシートデータから直接補完するフォールバック
-      if (rawVal === 'データなし' || rawVal.includes('欠測')) {
+      if (rawVal === 'データなし' || String(rawVal).includes('欠測')) {
         const itemKeyMap = {
           'ビール（レストラン500ml）': 'ビール',
           'タバコ（マルボロ1箱）': 'タバコ',
@@ -698,8 +698,8 @@ return [articleItem].map(item => {
         const sheetItemKey = itemKeyMap[d['項目']];
         if (sheetItemKey) {
           const sheetItem = sheetData.data?.固定データ?.物価?.[sheetItemKey];
-          if (sheetItem && sheetItem.現地通貨 && sheetItem.現地通貨 !== 'データなし' && !sheetItem.現地通貨.includes('欠測')) {
-            rawVal = sheetItem.現地通貨;
+          if (sheetItem && sheetItem.現地通貨 && String(sheetItem.現地通貨) !== 'データなし' && !String(sheetItem.現地通貨).includes('欠測')) {
+            rawVal = String(sheetItem.現地通貨);
           }
         }
       }
@@ -707,18 +707,18 @@ return [articleItem].map(item => {
       let displayP = rawVal;
 
       // ビールが欠測の場合、スプレッドシートの出典（アルコール禁止のため 等）を値として表示する
-      if (d['項目'].includes('ビール') && (rawVal.includes('欠測') || rawVal === 'データなし')) {
+      if (d['項目'].includes('ビール') && (String(rawVal).includes('欠測') || rawVal === 'データなし')) {
         const beerCite = sheetData.data?.固定データ?.物価?.ビール?.出典 || '';
-        if (beerCite && (beerCite.includes('禁止') || beerCite.includes('未進出') || beerCite.includes('prohibited') || beerCite.includes('banned') || beerCite.includes('illegal') || beerCite.includes('no alcohol') || beerCite.includes('販売なし') || beerCite.includes('販売禁止') || beerCite.includes('法律'))) {
-          displayP = beerCite;
+        if (beerCite && (String(beerCite).includes('禁止') || String(beerCite).includes('未進出') || String(beerCite).includes('prohibited') || String(beerCite).includes('banned') || String(beerCite).includes('illegal') || String(beerCite).includes('no alcohol') || String(beerCite).includes('販売なし') || String(beerCite).includes('販売禁止') || String(beerCite).includes('法律'))) {
+          displayP = String(beerCite);
         }
       }
 
       // ビッグマックが欠測の場合、スプレッドシートの出典（マクドナルド未進出のため 等）を値として表示する
-      if (d['項目'].includes('ビッグマック') && (rawVal.includes('欠測') || rawVal === 'データなし')) {
+      if (d['項目'].includes('ビッグマック') && (String(rawVal).includes('欠測') || rawVal === 'データなし')) {
         const bmCite = sheetData.data?.固定データ?.物価?.ビッグマック?.出典 || '';
-        if (bmCite && (bmCite.includes('未進出') || bmCite.includes('店舗なし') || bmCite.includes('not present') || bmCite.includes('not officially') || bmCite.includes('no store') || bmCite.includes('not in') || bmCite.includes('店舗なし'))) {
-          displayP = bmCite;
+        if (bmCite && (String(bmCite).includes('未進出') || String(bmCite).includes('店舗なし') || String(bmCite).includes('not present') || String(bmCite).includes('not officially') || String(bmCite).includes('no store') || String(bmCite).includes('not in') || String(bmCite).includes('店舗なし'))) {
+          displayP = String(bmCite);
         }
       }
 
@@ -726,9 +726,9 @@ return [articleItem].map(item => {
       let isNetflixHandled = false;
       if (d['項目'].includes('Netflix')) {
         const netflixItem = sheetData.data?.固定データ?.物価?.Netflix;
-        if (netflixItem && netflixItem.円換算 && netflixItem.円換算 !== '欠測' && netflixItem.円換算 !== 'データなし') {
-          const yen = Math.round(parseFloat(netflixItem.円換算));
-          const cleanNumStr = displayP.replace(/[^0-9\.]/g, '');
+        if (netflixItem && netflixItem.円換算 && String(netflixItem.円換算) !== '欠測' && String(netflixItem.円換算) !== 'データなし') {
+          const yen = Math.round(parseFloat(String(netflixItem.円換算)));
+          const cleanNumStr = String(displayP).replace(/[^0-9\.]/g, '');
           const valNum = parseFloat(cleanNumStr);
           if (!isNaN(valNum)) {
             const localYen = valNum * currentRate;
@@ -745,10 +745,10 @@ return [articleItem].map(item => {
       }
 
       if (!isNetflixHandled) {
-        const isReason = displayP.includes('禁止') || displayP.includes('未進出') || displayP.includes('店舗なし') || displayP.includes('not') || displayP.includes('ban') || displayP.includes('illegal') || displayP.includes('no ') || displayP.includes('法律') || displayP.includes('販売なし');
+        const isReason = String(displayP).includes('禁止') || String(displayP).includes('未進出') || String(displayP).includes('店舗なし') || String(displayP).includes('not') || String(displayP).includes('ban') || String(displayP).includes('illegal') || String(displayP).includes('no ') || String(displayP).includes('法律') || String(displayP).includes('販売なし');
         if (displayP !== 'データなし' && displayP !== '欠測' && !isReason) {
           // 数字部分（カンマ含む）を抽出
-          const numMatch = displayP.match(/[\d,\.]+/);
+          const numMatch = String(displayP).match(/[\d,\.]+/);
           if (numMatch) {
             const num = parseFloat(numMatch[0].replace(/,/g, ''));
             const yen = Math.round(num * currentRate);
@@ -760,7 +760,7 @@ return [articleItem].map(item => {
 
       // 日本側の価格もカンマを入れる（欠測・データなしの場合はスプレッドシートから補完）
       let japanVal = d['日本'] || 'データなし';
-      if (japanVal === 'データなし' || japanVal.includes('欠測')) {
+      if (japanVal === 'データなし' || String(japanVal).includes('欠測')) {
         const sheetItemKey = {
           'ビール（レストラン500ml）': 'ビール（レストラン500ml）',
           'タバコ（マルボロ1箱）': 'タバコ（マルボロ1箱20本）',
@@ -775,12 +775,12 @@ return [articleItem].map(item => {
         }[d['項目']];
         if (sheetItemKey) {
           const jSheetItem = sheetData.data?.日本固定データ?.物価?.[sheetItemKey];
-          if (jSheetItem && jSheetItem['値（円）'] && jSheetItem['値（円）'] !== 'データなし') {
-            japanVal = jSheetItem['値（円）'];
+          if (jSheetItem && jSheetItem['値（円）'] && String(jSheetItem['値（円）']) !== 'データなし') {
+            japanVal = String(jSheetItem['値（円）']);
           }
         }
       }
-      japanVal = formatValueWithCommas(japanVal);
+      japanVal = formatValueWithCommas(String(japanVal));
 
       return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
@@ -878,8 +878,8 @@ return [articleItem].map(item => {
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
       const apiData = eizouData2.find(api => 
-        (api['タイトル_日本語'] && (api['タイトル_日本語'] === cleanTitle || api['タイトル_日本語'].includes(cleanTitle) || cleanTitle.includes(api['タイトル_日本語']))) || 
-        (api['原題'] && (api['原題'] === cleanTitle || api['原題'].includes(cleanTitle) || cleanTitle.includes(api['原題'])))
+        (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
+        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
       const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
       const posterPath = apiData['poster_path'];
@@ -932,8 +932,8 @@ return [articleItem].map(item => {
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
       const apiData = kougyouData2.find(api => 
-        (api['タイトル_日本語'] && (api['タイトル_日本語'] === cleanTitle || api['タイトル_日本語'].includes(cleanTitle) || cleanTitle.includes(api['タイトル_日本語']))) || 
-        (api['原題'] && (api['原題'] === cleanTitle || api['原題'].includes(cleanTitle) || cleanTitle.includes(api['原題'])))
+        (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
+        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';

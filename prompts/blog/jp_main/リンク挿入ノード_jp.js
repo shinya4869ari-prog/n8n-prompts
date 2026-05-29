@@ -75,6 +75,8 @@ const allEntities = [
 
 for (const entity of allEntities) {
   if (!entity.name || !entity.info) continue;
+  entity.name = String(entity.name);
+  entity.info = String(entity.info);
   if (/語$/.test(entity.name)) continue;
 
   const variants = getSearchVariants(entity.name, entity.type);
