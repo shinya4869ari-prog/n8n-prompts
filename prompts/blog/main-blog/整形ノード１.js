@@ -342,6 +342,18 @@ const japanFixed = {
   },
   貿易出典_日本: jBoeki['貿易統計_出典']
 };
+// --- スプレッドシートのデータ不足バリデーション ---
+const targetCountry = r1.country || "対象国";
+const hasEconomy = keizai && Object.keys(keizai).length > 0 && keizai['総人口'] !== undefined;
+const hasTrade = boeki && Object.keys(boeki).length > 0 && boeki['輸出1位_品目'] !== undefined;
+const hasBukka = bukka && Object.keys(bukka).length > 0 && bukka['通貨コード'] !== undefined;
+
+if (!hasEconomy || !hasTrade || !hasBukka) {
+  throw new Error(`【データ不在エラー】スプレッドシートに対象国「${targetCountry}」の固定データが登録されていません。
+スプレッドシート（①経済、②治安指標、③物価、④貿易シートなど）に「${targetCountry}」の行を正しく手動追加し、データを入力した後に再実行してください。
+（検出状況 -> 経済: ${hasEconomy ? '○' : '×'}, 貿易: ${hasTrade ? '○' : '×'}, 物価: ${hasBukka ? '○' : '×'}）`);
+}
+
 const writerPromptTemplate = $('PromptLoader').first().json.writerPrompt || "";
 // --- データの集約 ---
 const finalData = {
