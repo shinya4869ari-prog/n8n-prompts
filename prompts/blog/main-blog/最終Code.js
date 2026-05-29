@@ -1000,11 +1000,20 @@ return [articleItem].map(item => {
 
     // ディープダイブの「■ 主な出典」セクションのみをピンポイントで薄い色で小さくスタイルする
     let styledDD = deepDiveArticle;
-    styledDD = styledDD.replace(/(■\s*主な出典[\s\S]*?)(?=(?:<h[1-4]|<\/div>\s*$|$))/gi, (match) => {
-      let cleanedMatch = match.replace(/font-size:\s*14px/g, 'font-size:11px');
-      cleanedMatch = cleanedMatch.replace(/color:\s*#333/g, 'color:#aaa');
-      return `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n\n` + cleanedMatch + `\n\n</div>`;
-    });
+    // ■ 主な出典 以降を安全に抽出（壊滅的バックトラッキング回避のため indexOf で分割）
+    const citeMarkerIdx = styledDD.search(/■\s*主な出典/i);
+    if (citeMarkerIdx !== -1) {
+      const beforeCite = styledDD.substring(0, citeMarkerIdx);
+      let citeSection = styledDD.substring(citeMarkerIdx);
+      // 次の <h タグか文末で切り取る
+      const nextHeadingIdx = citeSection.search(/<h[1-4][^>]*>/i);
+      if (nextHeadingIdx !== -1) {
+        citeSection = citeSection.substring(0, nextHeadingIdx);
+        styledDD = beforeCite + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n` + citeSection.replace(/font-size:\s*14px/g, 'font-size:11px').replace(/color:\s*#333/g, 'color:#aaa') + `\n</div>` + styledDD.substring(citeMarkerIdx + nextHeadingIdx);
+      } else {
+        styledDD = beforeCite + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n` + citeSection.replace(/font-size:\s*14px/g, 'font-size:11px').replace(/color:\s*#333/g, 'color:#aaa') + `\n</div>`;
+      }
+    }
     article += styledDD;
   }
 
