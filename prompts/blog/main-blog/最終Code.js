@@ -79,6 +79,23 @@ return [articleItem].map(item => {
     return (endIdx === -1 ? slice : slice.slice(0, endIdx)).join('\n').trim();
   }
 
+  function cleanMarkdown(text) {
+    if (!text) return '';
+    return text
+      .split('\n')
+      .filter(line => {
+        const trimmed = line.trim();
+        if (trimmed === '') return true;
+        if (/^#+\s*$/.test(trimmed)) return false;
+        if (/^[-\u2014\u2015=*_\s]+$/.test(trimmed)) return false;
+        if (/^#*\s*(🐱\s*)?エラーネコ/.test(trimmed)) return false;
+        if (/^#*\s*出典\s*$/.test(trimmed)) return false;
+        return true;
+      })
+      .join('\n')
+      .trim();
+  }
+
   // エラーネコの一言を生成するヘルパー（吹き出しデザイン）
   function makeNekoBubble(text) {
     if (!text || !text.includes('🐱')) return '';
@@ -125,9 +142,9 @@ return [articleItem].map(item => {
 
   const formatKaisetu = (text) => {
     // 出典部分を分離
-    const citeMatch = text.match(/\n出典：([\s\S]*)$/);
-    const mainText = citeMatch ? text.replace(citeMatch[0], '') : text;
-    const citeText = citeMatch ? citeMatch[1].trim() : '';
+    const citeMatch = text.match(/\n出典\s*[:：]\s*([\s\S]*)$/i);
+    const mainText = cleanMarkdown(citeMatch ? text.replace(citeMatch[0], '') : text);
+    const citeText = cleanMarkdown(citeMatch ? citeMatch[1] : '');
     
     const formatted = mainText
       .replace(/^##\s*\[貿易解説\][：:]?\s*/gm, '')
@@ -201,6 +218,9 @@ return [articleItem].map(item => {
   }
 
   article += `
+<style>
+  .entry-title, .post-title, .page-title { display: none !important; }
+</style>
 <div style="background:${headerBg}; border:1px solid #eee; border-left:8px solid ${statusColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
   <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:${statusColor}; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
   <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
@@ -208,7 +228,7 @@ return [articleItem].map(item => {
       <div style="font-size:12px; color:${statusColor}; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">National Profile</div>
       <h1 style="margin:0; font-size:28px; font-weight:900; color:#111; letter-spacing:-0.5px;">${countryName}</h1>
       <div style="margin:8px 0 0; font-size:14px; color:#555; display:flex; gap:12px; align-items:center;">
-        <span>📍 ${capital || '首都不明'}</span>
+        <span style="white-space: nowrap;">📍 ${capital || '首都不明'}</span>
         <span style="color:#ccc;">|</span>
         <span>🌍 ${location}</span>
       </div>
@@ -264,7 +284,7 @@ return [articleItem].map(item => {
   const seidoRows = seidoData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
 
-  const seidoExplanation = extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：');
+  const seidoExplanation = cleanMarkdown(extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：'));
   if (seidoExplanation) article += `\n${seidoExplanation}\n`;
 
   const spotlight = sheetData.data?.対象国データ?.制度の9つの皿?.制度スポットライト || null;
@@ -355,7 +375,7 @@ return [articleItem].map(item => {
   const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
   article += `<p class="citation" style="${citationStyle}">出典：${econCite}</p>\n`;
 
-  const econExplanation = extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：');
+  const econExplanation = cleanMarkdown(extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：'));
   if (econExplanation) article += `\n${econExplanation}\n`;
   // ② エラー猫の直前
   if (chirigeiKaisetu) {
@@ -514,11 +534,11 @@ return [articleItem].map(item => {
   }
 
   // 犯罪の傾向テキスト
-  const crimeFeature = extractTextBetween(raw, '犯罪の傾向', '重大犯罪｜');
+  const crimeFeature = cleanMarkdown(extractTextBetween(raw, '犯罪の傾向', '重大犯罪｜'));
   if (crimeFeature) {
     article += `\n${crimeFeature}\n`;
   } else {
-    const fallbackCrimeFeature = extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位');
+    const fallbackCrimeFeature = cleanMarkdown(extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位'));
     if (fallbackCrimeFeature) article += `\n${fallbackCrimeFeature}\n`;
   }
 
@@ -611,7 +631,7 @@ return [articleItem].map(item => {
   }
 
   const bukkaData = parseLines(raw, '物価');
-  const bukkaEmoji = { 'ビール（レストラン500ml）': '🍺', 'タバコ（マルボロ1箱）': '🚬', 'ミネラルウォーター（500ml）': '💧', 'ビッグマック（1個）': '🍔', 'ガソリン（1L）': '⛽', '外食（安めの店・1食）': '🍜', '電気・水道・ガス（月額）': '💡', '家賃（1LDK・首都圏市内）': '🏠', '平均月収（手取り）': '💴', 'Netflix（スタンダード）': '📺' };
+  const bukkaEmoji = { 'ビール（レストラン500ml）': '🍺', 'タバコ（マルボロ1箱）': '🚬', 'ミネラルウォーター（500ml）': '💧', 'ビッグマック（1個）': '🍔', 'ガソリン（1L）': '⛽', '外食（安めの店・1食）': '🍜', '電気・水道・ガス（月額）': '💡', '家賃1LDK(市中心)': '🏠', '平均月収（手取り）': '💴', 'Netflix（スタンダード）': '📺' };
 
   function formatValueWithCommas(val) {
     if (!val || val === 'データなし') return val;
@@ -624,23 +644,143 @@ return [articleItem].map(item => {
 
   if (bukkaData.length > 0) {
     const bukkaRows = bukkaData.map(d => {
-      const emoji = bukkaEmoji[d['項目']] || '';
-      const rawVal = d[countryName] || d['対象国'] || 'データなし';
-      let displayP = rawVal;
+      // 項目名の表記ゆれを正規化（絵文字除去と代表キーワードによるマッピング）
+      let itemName = d['項目'] || '';
+      // 絵文字を除去
+      itemName = itemName.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim();
+      
+      const canonicalItems = {
+        'ビール': 'ビール（レストラン500ml）',
+        'タバコ': 'タバコ（マルボロ1箱）',
+        'ミネラルウォーター': 'ミネラルウォーター（500ml）',
+        'ビッグマック': 'ビッグマック（1個）',
+        'ガソリン': 'ガソリン（1L）',
+        '外食': '外食（安めの店・1食）',
+        '電気': '電気・水道・ガス（月額）',
+        '光熱費': '電気・水道・ガス（月額）',
+        'ガス': '電気・水道・ガス（月額）',
+        '家賃': '家賃1LDK(市中心)',
+        '賃': '家賃1LDK(市中心)',
+        '月収': '平均月収（手取り）',
+        'Netflix': 'Netflix（スタンダード）'
+      };
 
-      if (rawVal !== 'データなし') {
-        // 数字部分（カンマ含む）を抽出
-        const numMatch = rawVal.match(/[\d,\.]+/);
-        if (numMatch) {
-          const num = parseFloat(numMatch[0].replace(/,/g, ''));
-          const yen = Math.round(num * currentRate);
-          // 対象国側の通貨表示もカンマを入れ、メインの数字を太字化
-          displayP = `<span style="font-weight:900; font-size:15px;">${currencySymbol}${num.toLocaleString()}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
+      let matched = false;
+      for (const [key, canonical] of Object.entries(canonicalItems)) {
+        if (itemName.includes(key)) {
+          d['項目'] = canonical;
+          matched = true;
+          break;
         }
       }
 
-      // 日本側の価格もカンマを入れる
-      const japanVal = formatValueWithCommas(d['日本'] || 'データなし');
+      if (!matched && itemName.includes('水') && !itemName.includes('水道')) {
+        d['項目'] = 'ミネラルウォーター（500ml）';
+      }
+
+      const emoji = bukkaEmoji[d['項目']] || '';
+      let rawVal = d[countryName] || d['対象国'] || 'データなし';
+
+      // 対象国の価格データが欠測・データなしの場合、スプレッドシートデータから直接補完するフォールバック
+      if (rawVal === 'データなし' || rawVal.includes('欠測')) {
+        const itemKeyMap = {
+          'ビール（レストラン500ml）': 'ビール',
+          'タバコ（マルボロ1箱）': 'タバコ',
+          'ミネラルウォーター（500ml）': '水',
+          'ビッグマック（1個）': 'ビッグマック',
+          'ガソリン（1L）': 'ガソリン',
+          '外食（安めの店・1食）': '外食',
+          '電気・水道・ガス（月額）': '光熱費',
+          '家賃1LDK(市中心)': '家賃',
+          '平均月収（手取り）': '月収',
+          'Netflix（スタンダード）': 'Netflix'
+        };
+        const sheetItemKey = itemKeyMap[d['項目']];
+        if (sheetItemKey) {
+          const sheetItem = sheetData.data?.固定データ?.物価?.[sheetItemKey];
+          if (sheetItem && sheetItem.現地通貨 && sheetItem.現地通貨 !== 'データなし' && !sheetItem.現地通貨.includes('欠測')) {
+            rawVal = sheetItem.現地通貨;
+          }
+        }
+      }
+
+      let displayP = rawVal;
+
+      // ビールが欠測の場合、スプレッドシートの出典（アルコール禁止のため 等）を値として表示する
+      if (d['項目'].includes('ビール') && (rawVal.includes('欠測') || rawVal === 'データなし')) {
+        const beerCite = sheetData.data?.固定データ?.物価?.ビール?.出典 || '';
+        if (beerCite && (beerCite.includes('禁止') || beerCite.includes('未進出') || beerCite.includes('prohibited') || beerCite.includes('banned') || beerCite.includes('illegal') || beerCite.includes('no alcohol') || beerCite.includes('販売なし') || beerCite.includes('販売禁止') || beerCite.includes('法律'))) {
+          displayP = beerCite;
+        }
+      }
+
+      // ビッグマックが欠測の場合、スプレッドシートの出典（マクドナルド未進出のため 等）を値として表示する
+      if (d['項目'].includes('ビッグマック') && (rawVal.includes('欠測') || rawVal === 'データなし')) {
+        const bmCite = sheetData.data?.固定データ?.物価?.ビッグマック?.出典 || '';
+        if (bmCite && (bmCite.includes('未進出') || bmCite.includes('店舗なし') || bmCite.includes('not present') || bmCite.includes('not officially') || bmCite.includes('no store') || bmCite.includes('not in') || bmCite.includes('店舗なし'))) {
+          displayP = bmCite;
+        }
+      }
+
+      // Netflixの表示処理（USD/EUR請求の場合の金額・通貨表記ブレを補正）
+      let isNetflixHandled = false;
+      if (d['項目'].includes('Netflix')) {
+        const netflixItem = sheetData.data?.固定データ?.物価?.Netflix;
+        if (netflixItem && netflixItem.円換算 && netflixItem.円換算 !== '欠測' && netflixItem.円換算 !== 'データなし') {
+          const yen = Math.round(parseFloat(netflixItem.円換算));
+          const cleanNumStr = displayP.replace(/[^0-9\.]/g, '');
+          const valNum = parseFloat(cleanNumStr);
+          if (!isNaN(valNum)) {
+            const localYen = valNum * currentRate;
+            let symbol = currencySymbol;
+            let valStr = cleanNumStr;
+            if (Math.abs(yen - localYen) > 100) {
+              // 乖離が大きい場合は米ドル表記
+              symbol = '$';
+            }
+            displayP = `<span style="font-weight:900; font-size:15px;">${symbol}${valStr}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
+            isNetflixHandled = true;
+          }
+        }
+      }
+
+      if (!isNetflixHandled) {
+        const isReason = displayP.includes('禁止') || displayP.includes('未進出') || displayP.includes('店舗なし') || displayP.includes('not') || displayP.includes('ban') || displayP.includes('illegal') || displayP.includes('no ') || displayP.includes('法律') || displayP.includes('販売なし');
+        if (displayP !== 'データなし' && displayP !== '欠測' && !isReason) {
+          // 数字部分（カンマ含む）を抽出
+          const numMatch = displayP.match(/[\d,\.]+/);
+          if (numMatch) {
+            const num = parseFloat(numMatch[0].replace(/,/g, ''));
+            const yen = Math.round(num * currentRate);
+            // 対象国側の通貨表示もカンマを入れ、メインの数字を太字化
+            displayP = `<span style="font-weight:900; font-size:15px;">${currencySymbol}${num.toLocaleString()}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
+          }
+        }
+      }
+
+      // 日本側の価格もカンマを入れる（欠測・データなしの場合はスプレッドシートから補完）
+      let japanVal = d['日本'] || 'データなし';
+      if (japanVal === 'データなし' || japanVal.includes('欠測')) {
+        const sheetItemKey = {
+          'ビール（レストラン500ml）': 'ビール（レストラン500ml）',
+          'タバコ（マルボロ1箱）': 'タバコ（マルボロ1箱20本）',
+          'ミネラルウォーター（500ml）': 'ミネラルウォーター（500ml）',
+          'ビッグマック（1個）': 'ビッグマック（1個）',
+          'ガソリン（1L）': 'ガソリン（1L）',
+          '外食（安めの店・1食）': '外食（安めの店・1食）',
+          '電気・水道・ガス（月額）': '電気・水道・ガス（月額・85㎡）',
+          '家賃1LDK(市中心)': '家賃1LDK(市中心)',
+          '平均月収（手取り）': '平均月収（手取り）',
+          'Netflix（スタンダード）': 'Netflix（スタンダード・広告なし）'
+        }[d['項目']];
+        if (sheetItemKey) {
+          const jSheetItem = sheetData.data?.日本固定データ?.物価?.[sheetItemKey];
+          if (jSheetItem && jSheetItem['値（円）'] && jSheetItem['値（円）'] !== 'データなし') {
+            japanVal = jSheetItem['値（円）'];
+          }
+        }
+      }
+      japanVal = formatValueWithCommas(japanVal);
 
       return [`${emoji} ${d['項目'] || ''}`, displayP, japanVal];
     });
@@ -713,7 +853,7 @@ return [articleItem].map(item => {
 
   // --- 12. ⑦ 直近の動向 ---
   article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>\n`;
-  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
+  const dohContent = cleanMarkdown(extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：'));
   if (dohContent) {
     const formattedDoh = dohContent.replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
     article += `<p>【政治経済社会】</p>\n${formattedDoh}\n`;

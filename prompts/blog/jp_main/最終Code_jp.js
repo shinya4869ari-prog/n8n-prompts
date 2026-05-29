@@ -54,6 +54,23 @@ return $input.all().map(item => {
     return (endIdx === -1 ? slice : slice.slice(0, endIdx)).join('\n').trim();
   }
 
+  function cleanMarkdown(text) {
+    if (!text) return '';
+    return text
+      .split('\n')
+      .filter(line => {
+        const trimmed = line.trim();
+        if (trimmed === '') return true;
+        if (/^#+\s*$/.test(trimmed)) return false;
+        if (/^[-\u2014\u2015=*_\s]+$/.test(trimmed)) return false;
+        if (/^#*\s*(🐱\s*)?エラーネコ/.test(trimmed)) return false;
+        if (/^#*\s*出典\s*$/.test(trimmed)) return false;
+        return true;
+      })
+      .join('\n')
+      .trim();
+  }
+
   function makeNekoBubble(text) {
     if (!text || !text.includes('🐱')) return '';
     const content = text.replace(/🐱\s*エラーネコ：/, '').trim();
@@ -88,6 +105,9 @@ return $input.all().map(item => {
   let article = '';
 
   article += `
+<style>
+  .entry-title, .post-title, .page-title { display: none !important; }
+</style>
 <div style="background:linear-gradient(135deg, #fffafa 0%, #ffebee 100%); border:1px solid #eee; border-left:8px solid #d32f2f; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
   <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:#d32f2f; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
   <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
@@ -95,7 +115,7 @@ return $input.all().map(item => {
       <div style="font-size:12px; color:#d32f2f; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">National Profile</div>
       <h1 style="margin:0; font-size:28px; font-weight:900; color:#111; letter-spacing:-0.5px;">日本</h1>
       <div style="margin:8px 0 0; font-size:14px; color:#555; display:flex; gap:12px; align-items:center;">
-        <span>📍 東京（首都）</span>
+        <span style="white-space: nowrap;">📍 東京（首都）</span>
         <span style="color:#ccc;">|</span>
         <span>🌍 東アジア、太平洋</span>
       </div>
@@ -151,7 +171,7 @@ return $input.all().map(item => {
     const boekiCite = sheetData.data?.固定データ?.貿易出典_日本 || '財務省貿易統計';
     article += `<p style="${citationStyle}">出典：${boekiCite}</p>\n`;
   }
-  const boekiExplanation = extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：');
+  const boekiExplanation = cleanMarkdown(extractTextBetween(raw, '貿易相手｜順位：10位｜', '🐱 エラーネコ：'));
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
   const boekiNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(boekiNeko);
@@ -188,7 +208,7 @@ return $input.all().map(item => {
   article += makeNekoBubble(rekishiNeko);
 
   article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
-  const dohContent = extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：');
+  const dohContent = cleanMarkdown(extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：'));
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
     let dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
