@@ -106,7 +106,7 @@ def fetch_comtrade_data(params, api_key=None, max_retries=5):
 # 3. メイン取得ループ
 # =====================================================================
 def main():
-    parser = argparse.ArgumentParser(description="UN Comtrade API 安定取得ツール")
+    parser = argparse.ArgumentParser(description="UN Comtrade API 安定取得ツール（レジューム機能付き）")
     parser.add_argument("--countries", required=True, help="カンマ区切りの国名コード（例: USA,JPN,DEU）")
     parser.add_argument("--year", type=int, default=2024, help="対象年（西暦4桁）")
     parser.add_argument("--api-key", help="UN Comtrade APIのサブスクリプションキー（指定しない場合はプレビューAPIを使用）")
@@ -118,9 +118,7 @@ def main():
     
     country_list = [c.strip().upper() for c in args.countries.split(',')]
     
-    all_records = []
-    
-    print(f"[*] {len(country_list)} カ国の貿易データを取得します。")
+    print(f"[*] {len(country_list)} カ国の貿易データの処理を開始します。")
     
     for i, country in enumerate(country_list):
         m49_code = ISO3_TO_M49.get(country)
@@ -128,7 +126,16 @@ def main():
             print(f"[!] 国コードが見つかりません。スキップします: {country}")
             continue
             
-        print(f"[*] 国のデータを処理中 ({i+1}/{len(country_list)}): {country} (M49: {m49_code})")
+        # 個別国の保存ファイルパス
+        country_file = os.path.join(args.output_dir, f"{country}_comtrade_{args.year}.csv")
+        
+        # すでにダウンロード済みの場合はスキップ（レジューム）
+        if os.path.exists(country_file):
+            print(f"[*] [{i+1}/{len(country_list)}] {country} は取得済みのためスキップします: {country_file}")
+            continue
+            
+        print(f"[*] [{i+1}/{len(country_list)}] APIからデータを取得中: {country} (M49: {m49_code})")
+        country_records = []
         
         # 1. 輸出データ (品目別: 相手国=0:世界)
         export_params = {
@@ -136,12 +143,12 @@ def main():
             "flowCode": "X",
             "period": args.year,
             "partnerCode": "0",  # World
-            "cmdCode": "AG2",   # HS2桁分類（主要品目特定のため）
+            "cmdCode": "AG2",   # HS2桁分類
             "includeDesc": "true"
         }
         exports = fetch_comtrade_data(export_params, args.api_key)
-        all_records.extend(exports)
-        time.sleep(args.delay) # サーバー負荷防止
+        country_records.extend(exports)
+        time.sleep(args.delay)
         
         # 2. 輸入データ (品目別: 相手国=0:世界)
         import_params = {
@@ -153,24 +160,39 @@ def main():
             "includeDesc": "true"
         }
         imports = fetch_comtrade_data(import_params, args.api_key)
-        all_records.extend(imports)
-        time.sleep(args.delay) # サーバー負荷防止
+        country_records.extend(imports)
+        time.sleep(args.delay)
         
-    # 保存処理
-    if all_records:
-        df = pd.DataFrame(all_records)
-        
-        # 保存用に不要な列を落として軽量化
-        cols_to_keep = ['period', 'reporterCode', 'reporterISO', 'flowCode', 'cmdCode', 'cmdDesc', 'partnerCode', 'partnerISO', 'primaryValue']
-        # 存在する列のみキープ
-        cols_to_keep = [c for c in cols_to_keep if c in df.columns]
-        df = df[cols_to_keep]
-        
-        output_file = os.path.join(args.output_dir, f"comtrade_bulk_{args.year}.csv")
-        df.to_csv(output_file, index=False, encoding='utf-8-sig')
-        print(f"[+] 保存完了: {output_file} (合計 {len(df)} レコード)")
+        # 個別ファイルに保存
+        if country_records:
+            df_country = pd.DataFrame(country_records)
+            cols_to_keep = ['period', 'reporterCode', 'reporterISO', 'flowCode', 'cmdCode', 'cmdDesc', 'partnerCode', 'partnerISO', 'primaryValue']
+            cols_to_keep = [c for c in cols_to_keep if c in df_country.columns]
+            df_country = df_country[cols_to_keep]
+            df_country.to_csv(country_file, index=False, encoding='utf-8-sig')
+            print(f"[+] 保存完了（国別）: {country_file} ({len(df_country)} レコード)")
+        else:
+            print(f"[!] {country} のデータが取得できませんでした（一時スキップ）。")
+            
+    # --- 最終マージ処理 ---
+    print("[*] 国別CSVファイルをマージして最終バルクCSVを生成します...")
+    all_dfs = []
+    for country in country_list:
+        c_file = os.path.join(args.output_dir, f"{country}_comtrade_{args.year}.csv")
+        if os.path.exists(c_file):
+            try:
+                df_c = pd.read_csv(c_file, encoding='utf-8-sig')
+                all_dfs.append(df_c)
+            except Exception as e:
+                print(f"[!] {c_file} の読み込みに失敗しました: {e}")
+                
+    if all_dfs:
+        df_bulk = pd.concat(all_dfs, ignore_index=True)
+        bulk_file = os.path.join(args.output_dir, f"comtrade_bulk_{args.year}.csv")
+        df_bulk.to_csv(bulk_file, index=False, encoding='utf-8-sig')
+        print(f"[++] バルクCSVマージ完了: {bulk_file} (合計 {len(df_bulk)} レコード)")
     else:
-        print("[!] 取得されたデータがありませんでした。")
+        print("[!] マージ対象の国別データが存在しませんでした。")
 
 if __name__ == "__main__":
     main()
