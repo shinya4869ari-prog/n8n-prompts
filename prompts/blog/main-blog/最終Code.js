@@ -682,7 +682,7 @@ return [articleItem].map(item => {
       let rawVal = d[countryName] || d['対象国'] || 'データなし';
 
       // 対象国の価格データが欠測・データなしの場合、スプレッドシートデータから直接補完するフォールバック
-      if (rawVal === 'データなし' || String(rawVal).includes('欠測')) {
+      if (String(rawVal).includes('データなし') || String(rawVal).includes('欠測')) {
         const itemKeyMap = {
           'ビール（レストラン500ml）': 'ビール',
           'タバコ（マルボロ1箱）': 'タバコ',
@@ -706,16 +706,18 @@ return [articleItem].map(item => {
 
       let displayP = rawVal;
 
-      // ビールが欠測の場合、スプレッドシートの出典（アルコール禁止のため 等）を値として表示する
-      if (d['項目'].includes('ビール') && (String(rawVal).includes('欠測') || rawVal === 'データなし')) {
+      // ビールが欠測の場合、スプレッドシートの出典（アルコール禁止のため 等）を値として表示する。なければデフォルトで「アルコール禁止のため」とする
+      if (d['項目'].includes('ビール') && (String(rawVal).includes('欠測') || String(rawVal).includes('データなし'))) {
         const beerCite = sheetData.data?.固定データ?.物価?.ビール?.出典 || '';
         if (beerCite && (String(beerCite).includes('禁止') || String(beerCite).includes('未進出') || String(beerCite).includes('prohibited') || String(beerCite).includes('banned') || String(beerCite).includes('illegal') || String(beerCite).includes('no alcohol') || String(beerCite).includes('販売なし') || String(beerCite).includes('販売禁止') || String(beerCite).includes('法律'))) {
           displayP = String(beerCite);
+        } else {
+          displayP = 'アルコール禁止のため';
         }
       }
 
       // ビッグマックが欠測の場合、スプレッドシートの出典（マクドナルド未進出のため 等）を値として表示する
-      if (d['項目'].includes('ビッグマック') && (String(rawVal).includes('欠測') || rawVal === 'データなし')) {
+      if (d['項目'].includes('ビッグマック') && (String(rawVal).includes('欠測') || String(rawVal).includes('データなし'))) {
         const bmCite = sheetData.data?.固定データ?.物価?.ビッグマック?.出典 || '';
         if (bmCite && (String(bmCite).includes('未進出') || String(bmCite).includes('店舗なし') || String(bmCite).includes('not present') || String(bmCite).includes('not officially') || String(bmCite).includes('no store') || String(bmCite).includes('not in') || String(bmCite).includes('店舗なし'))) {
           displayP = String(bmCite);
@@ -745,6 +747,13 @@ return [articleItem].map(item => {
       }
 
       if (!isNetflixHandled) {
+        // データのクリーンアップ：「データなし（〜円）」や「欠測（〜円）」などのノイズを排除して単一表記に統一
+        if (String(displayP).includes('データなし')) {
+          displayP = 'データなし';
+        } else if (String(displayP).includes('欠測') && !d['項目'].includes('ビール')) {
+          displayP = '欠測';
+        }
+
         const isReason = String(displayP).includes('禁止') || String(displayP).includes('未進出') || String(displayP).includes('店舗なし') || String(displayP).includes('not') || String(displayP).includes('ban') || String(displayP).includes('illegal') || String(displayP).includes('no ') || String(displayP).includes('法律') || String(displayP).includes('販売なし');
         if (displayP !== 'データなし' && displayP !== '欠測' && !isReason) {
           // 数字部分（カンマ含む）を抽出
