@@ -6,14 +6,14 @@ const countryEn = $input.first().json.countryEn || "";
 // 1. 最新稼働率 (Occupancy level) の抽出
 let occupancyVal = "欠測";
 let occupancyYear = "欠測";
-const occupancyMatch = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>\s*([\d.]+%)\s*<div[^>]*>\s*\(([^)]+)\)/i);
+const occupancyMatch = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*?c?\.?\s*([\d.]+%)\s*<div[^>]*>\s*\(([^)]+)\)/i);
 if (occupancyMatch) {
   occupancyVal = occupancyMatch[1].trim();
   const dateStr = occupancyMatch[2];
   const yearMatch = dateStr.match(/\d{4}/);
   occupancyYear = yearMatch ? yearMatch[0] : dateStr.trim();
 } else {
-  const fallbackOccupancy = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>\s*([\d.]+%)/i);
+  const fallbackOccupancy = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*?c?\.?\s*([\d.]+%)/i);
   if (fallbackOccupancy) occupancyVal = fallbackOccupancy[1].trim();
 }
 
