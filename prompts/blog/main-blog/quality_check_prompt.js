@@ -18,7 +18,7 @@ const articleText = articleRaw
   .replace(/&quot;/g, '"')
   .replace(/\s{2,}/g, ' ')
   .trim()
-  .substring(0, 40000); // 制限を40,000文字に緩和して、長大な記事の途切れを防ぐ
+  .substring(0, 20000); // 20,000文字に制限（長すぎによるAIの応答拒否やループ上限を回避）
 
 // PromptLoaderが読み込んだクオリティチェックプロンプトのテンプレートを取得
 let template = '';
