@@ -58,9 +58,11 @@ const prompt = template
   .replace(/\{\{\s*\$json\.countryEn\s*\}\}/g, countryEn)
   .replace(/\{\{\s*\$now\.toFormat\s*\([^)]+\)\s*\}\}/g, today);
 
-// 最終プロンプト（テンプレートに記事本文抜粋の注記を付加）
-const excerptNote = `\n\n---\n⚠️ 注意：以下の記事本文はトークン節約のため先頭${articleText.length.toLocaleString()}文字の抜粋です。実際の記事はすべてのセクション（①〜⑨）が存在します。「記事が途中で切れている」という指摘は不要です。`;
-const finalPrompt = prompt + excerptNote;
+// 最終プロンプト（テンプレート + 記事本文を追記）
+const finalPrompt = prompt
+  + `\n\n---\n## 検証対象の記事本文（HTMLタグ除去済み・先頭${articleText.length.toLocaleString()}文字）\n\n`
+  + articleText
+  + `\n\n⚠️ 注意：実際の記事はすべてのセクション（①〜⑨）が存在します。本文が途中で切れていても「記事が不完全」という指摘は不要です。`;
 
 return [{
   json: {
