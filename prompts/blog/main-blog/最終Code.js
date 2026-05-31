@@ -550,14 +550,10 @@ return [articleItem].map(item => {
       d['発生年'] || '不明',
       `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br>犯人：' + d['犯人名'] : ''}`,
       d['被害者属性'] || '不明',
-      `${d['概要'] || ''}${d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : ''}`,
+      `${d['概要'] || ''}${d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : ''}${d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : ''}`,
       d['映像化作品'] || '映像化なし'
     ]);
-    const crimeCites = [...new Set(majorCrimeData.map(d => d['出典']).filter(Boolean))];
     article += makeTable(['発生年', '事件名', '被害者属性', '概要・判決', '映像化'], majorCrimeRows, ['10%', '25%', '20%', '35%', '10%']);
-    if (crimeCites.length > 0) {
-      article += `<p class="citation" style="${citationStyle}">出典：${crimeCites.join(' / ')}</p>\n`;
-    }
   }
 
   article += `<div style="border-top:1px solid #b2ebf2;margin:30px 0;"></div>\n`;
