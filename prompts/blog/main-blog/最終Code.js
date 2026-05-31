@@ -1,9 +1,9 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-const articleItem = allItems.find(i => i.json?.article != null && i.json?.deepDiveArticle != null)
-  ?? allItems.find(i => i.json?.article != null && typeof i.json.article === 'string' && i.json.article.length > 100)
-  ?? allItems[0];
+const mainItem = allItems.find(i => i.json?.article != null);
+const deepDiveItem = allItems.find(i => i.json?.deepDiveArticle != null);
+const articleItem = mainItem || allItems[0];
 return [articleItem].map(item => {
   const inputData = item.json;
   const sheetData = $('整形ノード1').first().json;
@@ -997,7 +997,7 @@ return [articleItem].map(item => {
 
   // --- 16. Deep-Dive ---
   let deepDiveArticle = '';
-  try { deepDiveArticle = $('記事集合').first().json?.article || ''; } catch(e) {}
+  try { deepDiveArticle = (deepDiveItem || articleItem).json?.deepDiveArticle || ''; } catch(e) {}
   console.log('deepDiveArticle length:', deepDiveArticle.length);
 
   if (deepDiveArticle) {
