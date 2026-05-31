@@ -1,12 +1,18 @@
-// クオリティチェック用プロンプト組み立てノード
-// リンク挿入ノードの直後、AI Agentの直前に配置する
+// クオリティチェック用：HTMLタグ除去・文字数制限のみ
+// AI Agent の System Message に {{ $('PromptLoader').first().json.qualityCheck }} を設定
+// AI Agent の User Message に以下を設定：
+//   対象国：{{ $json.country }}
+//   現在日時：{{ $now.toFormat('yyyy年MM月dd日') }}
+//
+//   ## 検証対象の記事本文
+//   {{ $json.articleText }}
 
 const articleRaw = $input.first().json.article    ?? '';
 const country    = $input.first().json.country    ?? '';
 const countryEn  = $input.first().json.countryEn  ?? '';
 const capital    = $input.first().json.capital     ?? '';
 
-// HTMLタグを除去してプレーンテキスト化（トークン節約）
+// HTMLタグを除去してプレーンテキスト化（8,000文字に制限）
 const articleText = articleRaw
   .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
   .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -18,61 +24,14 @@ const articleText = articleRaw
   .replace(/&quot;/g, '"')
   .replace(/\s{2,}/g, ' ')
   .trim()
-  .substring(0, 8000); // 8,000文字に制限（これ以上増やすとAIが応答を拒否する）
-
-// PromptLoaderが読み込んだクオリティチェックプロンプトのテンプレートを取得
-let template = '';
-let debug = 'OK';
-try {
-  let loaderNode = null;
-  try {
-    loaderNode = $('PromptLoader').first().json;
-    debug = 'Loaded from PromptLoader';
-  } catch (e1) {
-    try {
-      loaderNode = $('PromptLoader_jp').first().json;
-      debug = 'Loaded from PromptLoader_jp';
-    } catch (e2) {
-      debug = `Error: Could not find PromptLoader or PromptLoader_jp. (PromptLoader: ${e1.message}, PromptLoader_jp: ${e2.message})`;
-    }
-  }
-
-  if (loaderNode) {
-    template = loaderNode.qualityCheck ?? '';
-    if (!template) {
-      debug += ' (qualityCheck field is empty)';
-    }
-  }
-} catch(e) {
-  debug = `Unexpected error: ${e.message}`;
-}
-
-// 今日の日付（日本語）
-const now = new Date();
-const today = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日`;
-
-// テンプレート内のプレースホルダーを実際の値に置換
-const prompt = template
-  .replace(/\{\{\s*\$json\.article\s*\}\}/g, articleText)
-  .replace(/\{\{\s*\$json\.country\s*\}\}/g, country)
-  .replace(/\{\{\s*\$json\.countryEn\s*\}\}/g, countryEn)
-  .replace(/\{\{\s*\$now\.toFormat\s*\([^)]+\)\s*\}\}/g, today);
-
-// 最終プロンプト（テンプレート + 記事本文を追記）
-const finalPrompt = prompt
-  + `\n\n---\n## 検証対象の記事本文（HTMLタグ除去済み・先頭${articleText.length.toLocaleString()}文字）\n\n`
-  + articleText
-  + `\n\n⚠️ 注意：実際の記事はすべてのセクション（①〜⑨）が存在します。本文が途中で切れていても「記事が不完全」という指摘は不要です。`;
+  .substring(0, 8000);
 
 return [{
   json: {
-    input: finalPrompt, // n8nのデフォルト入力キーに対応
-    prompt: finalPrompt,
+    articleText,
     article: articleRaw,
     country,
     countryEn,
     capital,
-    debug,
-    templateLength: template.length,
   }
 }];
