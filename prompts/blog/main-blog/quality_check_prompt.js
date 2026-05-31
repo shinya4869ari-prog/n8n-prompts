@@ -22,9 +22,30 @@ const articleText = articleRaw
 
 // PromptLoaderが読み込んだクオリティチェックプロンプトのテンプレートを取得
 let template = '';
+let debug = 'OK';
 try {
-  template = $('PromptLoader').first().json.qualityCheck ?? '';
-} catch(e) {}
+  let loaderNode = null;
+  try {
+    loaderNode = $('PromptLoader').first().json;
+    debug = 'Loaded from PromptLoader';
+  } catch (e1) {
+    try {
+      loaderNode = $('PromptLoader_jp').first().json;
+      debug = 'Loaded from PromptLoader_jp';
+    } catch (e2) {
+      debug = `Error: Could not find PromptLoader or PromptLoader_jp. (PromptLoader: ${e1.message}, PromptLoader_jp: ${e2.message})`;
+    }
+  }
+
+  if (loaderNode) {
+    template = loaderNode.qualityCheck ?? '';
+    if (!template) {
+      debug += ' (qualityCheck field is empty)';
+    }
+  }
+} catch(e) {
+  debug = `Unexpected error: ${e.message}`;
+}
 
 // 今日の日付（日本語）
 const now = new Date();
@@ -47,5 +68,7 @@ return [{
     country,
     countryEn,
     capital,
+    debug,
+    templateLength: template.length,
   }
 }];
