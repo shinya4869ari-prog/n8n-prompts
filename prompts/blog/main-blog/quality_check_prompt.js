@@ -1,10 +1,24 @@
 // クオリティチェック用プロンプト組み立てノード
 // リンク挿入ノードの直後、AI Agentの直前に配置する
 
-const article    = $input.first().json.article    ?? '';
+const articleRaw = $input.first().json.article    ?? '';
 const country    = $input.first().json.country    ?? '';
 const countryEn  = $input.first().json.countryEn  ?? '';
 const capital    = $input.first().json.capital     ?? '';
+
+// HTMLタグを除去してプレーンテキスト化（トークン節約）
+const articleText = articleRaw
+  .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+  .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/\s{2,}/g, ' ')
+  .trim()
+  .substring(0, 12000); // 約12,000文字に制限してトークン超過を防ぐ
 
 // PromptLoaderが読み込んだクオリティチェックプロンプトのテンプレートを取得
 let template = '';
@@ -18,15 +32,18 @@ const today = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')
 
 // テンプレート内のプレースホルダーを実際の値に置換
 const prompt = template
-  .replace(/\{\{\s*\$json\.article\s*\}\}/g,                                 article)
-  .replace(/\{\{\s*\$json\.country\s*\}\}/g,                                 country)
-  .replace(/\{\{\s*\$json\.countryEn\s*\}\}/g,                               countryEn)
-  .replace(/\{\{\s*\$now\.toFormat\s*\([^)]+\)\s*\}\}/g,                     today);
+  .replace(/\{\{\s*\$json\.article\s*\}\}/g, articleText)
+  .replace(/\{\{\s*\$json\.country\s*\}\}/g, country)
+  .replace(/\{\{\s*\$json\.countryEn\s*\}\}/g, countryEn)
+  .replace(/\{\{\s*\$now\.toFormat\s*\([^)]+\)\s*\}\}/g, today);
+
+// 最終プロンプト（テンプレート + 記事本文を末尾に追記）
+const finalPrompt = prompt + `\n\n---\n## 検証対象の記事本文（HTMLタグ除去済み）\n\n${articleText}`;
 
 return [{
   json: {
-    prompt,
-    article,
+    prompt: finalPrompt,
+    article: articleRaw,
     country,
     countryEn,
     capital,
