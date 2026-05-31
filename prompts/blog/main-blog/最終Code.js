@@ -1007,29 +1007,16 @@ return [articleItem].map(item => {
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
 
-    // ディープダイブの「■ 主な出典」セクションをメイン記事の出典スタイルに統一
-    let styledDD = deepDiveArticle;
-    const citeMarkerIdx = styledDD.search(/■\s*主な出典/i);
-    if (citeMarkerIdx !== -1) {
-      const beforeCite = styledDD.substring(0, citeMarkerIdx);
-      let citeSection = styledDD.substring(citeMarkerIdx);
-      // 次の <h タグか文末で切り取る
-      const nextHeadingIdx = citeSection.search(/<h[1-4][^>]*>/i);
-      if (nextHeadingIdx !== -1) {
-        citeSection = citeSection.substring(0, nextHeadingIdx);
-        styledDD = beforeCite + (nextHeadingIdx > 0 ? styledDD.substring(citeMarkerIdx + nextHeadingIdx) : '');
-      } else {
-        styledDD = beforeCite;
-      }
-      // マークダウンリンク [text](url) → <a> タグに変換
-      let citeHtml = citeSection
-        .replace(/■\s*主な出典/gi, '')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
-        .replace(/–\s*/g, '')
+    // ディープダイブの「■ 主な出典」を全箇所まとめてメイン記事の出典スタイルに統一
+    let styledDD = deepDiveArticle.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
+      const citeHtml = citeContent
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
+        .replace(/[-–]\s*/g, '')
         .replace(/\n+/g, '<br>')
         .trim();
-      styledDD = beforeCite + `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n` + (nextHeadingIdx !== -1 ? deepDiveArticle.substring(citeMarkerIdx + nextHeadingIdx) : '');
-    }
+      if (!citeHtml) return '';
+      return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
+    });
     article += styledDD;
   }
 
