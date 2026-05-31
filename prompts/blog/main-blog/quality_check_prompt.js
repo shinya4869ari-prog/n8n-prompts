@@ -63,6 +63,7 @@ const finalPrompt = prompt + `\n\n---\n## 検証対象の記事本文（HTMLタ�
 
 return [{
   json: {
+    input: finalPrompt, // n8nのデフォルト入力キーに対応
     prompt: finalPrompt,
     article: articleRaw,
     country,
