@@ -1007,9 +1007,8 @@ return [articleItem].map(item => {
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
 
-    // ディープダイブの「■ 主な出典」セクションのみをピンポイントで薄い色で小さくスタイルする
+    // ディープダイブの「■ 主な出典」セクションをメイン記事の出典スタイルに統一
     let styledDD = deepDiveArticle;
-    // ■ 主な出典 以降を安全に抽出（壊滅的バックトラッキング回避のため indexOf で分割）
     const citeMarkerIdx = styledDD.search(/■\s*主な出典/i);
     if (citeMarkerIdx !== -1) {
       const beforeCite = styledDD.substring(0, citeMarkerIdx);
@@ -1018,10 +1017,18 @@ return [articleItem].map(item => {
       const nextHeadingIdx = citeSection.search(/<h[1-4][^>]*>/i);
       if (nextHeadingIdx !== -1) {
         citeSection = citeSection.substring(0, nextHeadingIdx);
-        styledDD = beforeCite + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n` + citeSection.replace(/font-size:\s*14px/g, 'font-size:11px').replace(/color:\s*#333/g, 'color:#aaa') + `\n</div>` + styledDD.substring(citeMarkerIdx + nextHeadingIdx);
+        styledDD = beforeCite + (nextHeadingIdx > 0 ? styledDD.substring(citeMarkerIdx + nextHeadingIdx) : '');
       } else {
-        styledDD = beforeCite + `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n` + citeSection.replace(/font-size:\s*14px/g, 'font-size:11px').replace(/color:\s*#333/g, 'color:#aaa') + `\n</div>`;
+        styledDD = beforeCite;
       }
+      // マークダウンリンク [text](url) → <a> タグに変換
+      let citeHtml = citeSection
+        .replace(/■\s*主な出典/gi, '')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
+        .replace(/–\s*/g, '')
+        .replace(/\n+/g, '<br>')
+        .trim();
+      styledDD = beforeCite + `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n` + (nextHeadingIdx !== -1 ? deepDiveArticle.substring(citeMarkerIdx + nextHeadingIdx) : '');
     }
     article += styledDD;
   }
