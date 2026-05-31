@@ -728,21 +728,21 @@ return [articleItem].map(item => {
       let isNetflixHandled = false;
       if (d['項目'].includes('Netflix')) {
         const netflixItem = sheetData.data?.固定データ?.物価?.Netflix;
-        if (netflixItem && netflixItem.円換算 && String(netflixItem.円換算) !== '欠測' && String(netflixItem.円換算) !== 'データなし') {
-          const yen = Math.round(parseFloat(String(netflixItem.円換算)));
-          const cleanNumStr = String(displayP).replace(/[^0-9\.]/g, '');
-          const valNum = parseFloat(cleanNumStr);
-          if (!isNaN(valNum)) {
-            const localYen = valNum * currentRate;
-            let symbol = currencySymbol;
-            let valStr = cleanNumStr;
-            if (Math.abs(yen - localYen) > 100) {
-              // 乖離が大きい場合は米ドル表記
-              symbol = '$';
-            }
-            displayP = `<span style="font-weight:900; font-size:15px;">${symbol}${valStr}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
-            isNetflixHandled = true;
+        if (netflixItem && netflixItem.現地通貨 && String(netflixItem.現地通貨) !== 'データなし') {
+          const localVal = String(netflixItem.現地通貨).trim();
+          const yenVal = netflixItem.円換算 ? Math.round(parseFloat(String(netflixItem.円換算))) : null;
+          
+          let displayLocal = localVal;
+          if (!localVal.startsWith('$') && !localVal.startsWith('€') && !localVal.startsWith('£') && currencySymbol) {
+            displayLocal = currencySymbol + localVal;
           }
+          
+          if (yenVal) {
+            displayP = `<span style="font-weight:900; font-size:15px;">${displayLocal}</span> <span style="font-size:12px; color:#666;">（${yenVal.toLocaleString()}円）</span>`;
+          } else {
+            displayP = `<span style="font-weight:900; font-size:15px;">${displayLocal}</span>`;
+          }
+          isNetflixHandled = true;
         }
       }
 
