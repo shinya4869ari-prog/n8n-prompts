@@ -997,7 +997,7 @@ return [articleItem].map(item => {
 
   // --- 16. Deep-Dive ---
   let deepDiveArticle = '';
-  try { deepDiveArticle = articleItem.json?.deepDiveArticle || ''; } catch(e) {}
+  try { deepDiveArticle = $('記事集合').first().json?.article || ''; } catch(e) {}
   console.log('deepDiveArticle length:', deepDiveArticle.length);
 
   if (deepDiveArticle) {
