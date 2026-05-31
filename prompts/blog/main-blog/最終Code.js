@@ -180,7 +180,7 @@ return [articleItem].map(item => {
   let chirigeiKaisetu = '';
   let bukkaKaisetu = '';
   try {
-    const aiText = $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || '';
+    const aiText = $('検索結果まとめ記事').first().json?.text || $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || $('検索結果まとめ記事').first().json?.output || '';
     const boekiMatch = aiText.match(/(?:\[貿易解説\]|##\s*貿易解説)([\s\S]*?)(?=(?:\[|##\s*)(?:死因解説|犯罪解説|地理・経済解説|物価解説)|$)/);
     const shiinMatch = aiText.match(/(?:\[死因解説\]|##\s*死因解説)([\s\S]*?)(?=(?:\[|##\s*)(?:犯罪解説|地理・経済解説|物価解説)|$)/);
     const hanzaiMatch = aiText.match(/(?:\[犯罪解説\]|##\s*犯罪解説)([\s\S]*?)(?=(?:\[|##\s*)(?:地理・経済解説|物価解説)|$)/);
