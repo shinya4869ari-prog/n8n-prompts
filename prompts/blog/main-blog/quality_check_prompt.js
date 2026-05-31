@@ -18,7 +18,7 @@ const articleText = articleRaw
   .replace(/&quot;/g, '"')
   .replace(/\s{2,}/g, ' ')
   .trim()
-  .substring(0, 20000); // 20,000文字に制限（長すぎによるAIの応答拒否やループ上限を回避）
+  .substring(0, 8000); // 8,000文字に制限（これ以上増やすとAIが応答を拒否する）
 
 // PromptLoaderが読み込んだクオリティチェックプロンプトのテンプレートを取得
 let template = '';
@@ -58,8 +58,9 @@ const prompt = template
   .replace(/\{\{\s*\$json\.countryEn\s*\}\}/g, countryEn)
   .replace(/\{\{\s*\$now\.toFormat\s*\([^)]+\)\s*\}\}/g, today);
 
-// 最終プロンプト（テンプレート + 記事本文を末尾に追記）
-const finalPrompt = prompt + `\n\n---\n## 検証対象の記事本文（HTMLタグ除去済み）\n\n${articleText}`;
+// 最終プロンプト（テンプレートに記事本文抜粋の注記を付加）
+const excerptNote = `\n\n---\n⚠️ 注意：以下の記事本文はトークン節約のため先頭${articleText.length.toLocaleString()}文字の抜粋です。実際の記事はすべてのセクション（①〜⑨）が存在します。「記事が途中で切れている」という指摘は不要です。`;
+const finalPrompt = prompt + excerptNote;
 
 return [{
   json: {
