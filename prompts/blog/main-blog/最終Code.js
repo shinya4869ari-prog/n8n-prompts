@@ -548,7 +548,7 @@ return [articleItem].map(item => {
     article += `<h3 style="${h3Style}">国内の重大犯罪事件（2000年以降）</h3>\n`;
     const majorCrimeRows = majorCrimeData.map(d => [
       d['発生年'] || '不明',
-      `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:11.5px;color:#666;">犯人：' + d['犯人名'] + '</span>' : ''}`,
+      `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:11.5px;color:#333;">犯人：' + d['犯人名'] + '</span>' : ''}`,
       d['被害者属性'] || '不明',
       `${d['概要'] || ''}${d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : ''}`,
       d['映像化作品'] || '映像化なし'
