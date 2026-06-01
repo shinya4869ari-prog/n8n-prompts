@@ -1,3 +1,4 @@
+// GitHubのRaw URLベースパス
 const baseUrlJp = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/jp_main/';
 const baseUrlMain = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/main-blog/';
 
