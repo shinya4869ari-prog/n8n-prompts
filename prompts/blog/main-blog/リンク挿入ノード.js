@@ -16,7 +16,6 @@ try {
       ?? extNode.content?.parts?.[0]?.text
       ?? extNode.message?.content;
     
-    // パターン②: text フィールドがすでにオブジェクトとして入っている
     if (candidate && typeof candidate === 'object') {
       places   = candidate.places   || [];
       people   = candidate.people   || [];
@@ -24,17 +23,66 @@ try {
       movies   = candidate.movies   || [];
       crimes   = candidate.crimes   || [];
     } else if (typeof candidate === 'string') {
-      // パターン③: text フィールドが文字列なのでパースする
-      const cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-      const parsed = JSON.parse(cleaned);
-      places   = parsed.places   || [];
-      people   = parsed.people   || [];
-      keywords = parsed.keywords || [];
-      movies   = parsed.movies   || [];
-      crimes   = parsed.crimes   || [];
+      let cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      
+      // まずそのままパースを試みる
+      let parsed = null;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch(parseErr) {
+        // JSONが途中で切れている場合の修復を試みる
+        let repaired = cleaned;
+        // 途中で切れた文字列を閉じる
+        const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
+        if (dqCount % 2 !== 0) repaired += '"';
+        // 末尾の不完全なオブジェクト/配列項目を削除
+        repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
+        repaired = repaired.replace(/,\s*\{[^}]*$/, '');
+        // 開き括弧と閉じ括弧のバランスを取る
+        const openBrackets = (repaired.match(/\[/g) || []).length;
+        const closeBrackets = (repaired.match(/\]/g) || []).length;
+        const openBraces = (repaired.match(/\{/g) || []).length;
+        const closeBraces = (repaired.match(/\}/g) || []).length;
+        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
+        for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
+        // 末尾のカンマを除去
+        repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+        try {
+          parsed = JSON.parse(repaired);
+        } catch(e2) {
+          // 修復も失敗した場合、各配列をregexで個別抽出
+          const extractArray = (key) => {
+            const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
+            const m = cleaned.match(re);
+            if (!m) return [];
+            const items = [];
+            const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
+            let im;
+            while ((im = itemRe.exec(m[1])) !== null) {
+              items.push({ name: im[1], info: im[2] });
+            }
+            return items;
+          };
+          places   = extractArray('places');
+          people   = extractArray('people');
+          keywords = extractArray('keywords');
+          movies   = extractArray('movies');
+          crimes   = extractArray('crimes');
+        }
+      }
+      
+      if (parsed) {
+        places   = parsed.places   || [];
+        people   = parsed.people   || [];
+        keywords = parsed.keywords || [];
+        movies   = parsed.movies   || [];
+        crimes   = parsed.crimes   || [];
+      }
     }
   }
 } catch(e) {}
+
+
 
 
 // 日本の行政トップ（首相）を固定データから取得してpeopleに追加（LLMの日本除外ルールの誤適用防止）

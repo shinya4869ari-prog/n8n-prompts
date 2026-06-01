@@ -15,20 +15,59 @@ try {
       ?? item.content?.parts?.[0]?.text
       ?? item.message?.content;
     
-    // パターン②: text フィールドがすでにオブジェクトとして入っている
     if (candidate && typeof candidate === 'object') {
       places = candidate.places || [];
       people = candidate.people || [];
       keywords = candidate.keywords || [];
       movies = candidate.movies || [];
     } else if (typeof candidate === 'string') {
-      // パターン③: text フィールドが文字列なのでパースする
-      const cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-      const parsed = JSON.parse(cleaned);
-      places = parsed.places || [];
-      people = parsed.people || [];
-      keywords = parsed.keywords || [];
-      movies = parsed.movies || [];
+      let cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      
+      let parsed = null;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch(parseErr) {
+        // JSONが途中で切れている場合の修復
+        let repaired = cleaned;
+        const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
+        if (dqCount % 2 !== 0) repaired += '"';
+        repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
+        repaired = repaired.replace(/,\s*\{[^}]*$/, '');
+        const openBrackets = (repaired.match(/\[/g) || []).length;
+        const closeBrackets = (repaired.match(/\]/g) || []).length;
+        const openBraces = (repaired.match(/\{/g) || []).length;
+        const closeBraces = (repaired.match(/\}/g) || []).length;
+        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
+        for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
+        repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+        try {
+          parsed = JSON.parse(repaired);
+        } catch(e2) {
+          const extractArray = (key) => {
+            const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
+            const m = cleaned.match(re);
+            if (!m) return [];
+            const items = [];
+            const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
+            let im;
+            while ((im = itemRe.exec(m[1])) !== null) {
+              items.push({ name: im[1], info: im[2] });
+            }
+            return items;
+          };
+          places   = extractArray('places');
+          people   = extractArray('people');
+          keywords = extractArray('keywords');
+          movies   = extractArray('movies');
+        }
+      }
+      
+      if (parsed) {
+        places = parsed.places || [];
+        people = parsed.people || [];
+        keywords = parsed.keywords || [];
+        movies = parsed.movies || [];
+      }
     }
   }
 } catch(e) {}
