@@ -550,7 +550,7 @@ return [articleItem].map(item => {
       d['発生年'] || '不明',
       `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br>犯人：' + d['犯人名'] : ''}`,
       d['被害者属性'] || '不明',
-      `${d['概要'] || ''}${d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : ''}${d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : ''}`,
+      (d['概要'] || '') + (d['判決'] ? '<br><span style="font-weight:bold;color:#d32f2f;">判決：' + d['判決'] + '</span>' : '') + (d['出典'] ? '<br><span style="font-size:11px;color:#aaa;">出典：' + d['出典'] + '</span>' : ''),
       d['映像化作品'] || '映像化なし'
     ]);
     article += makeTable(['発生年', '事件名', '被害者属性', '概要・判決', '映像化'], majorCrimeRows, ['10%', '25%', '20%', '35%', '10%']);
