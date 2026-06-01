@@ -1,10 +1,10 @@
 const item = $input.first().json;
 
-// ① データ取得（抽出AIの結果からJSONを取得）
-let places = [], people = [], keywords = [], movies = [];
+// ① データ取得（抽出AIの結果からテキストを取得してパース）
+let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
-  // パターン①: people/places が直接 item のフィールドになっている
-  if (Array.isArray(item.people) || Array.isArray(item.places)) {
+  // パターン①: people/places が直接 item のフィールドとしてオブジェクトで存在する場合（JSON自動パース時）
+  if (item && (Array.isArray(item.people) || Array.isArray(item.places))) {
     places = item.places || [];
     people = item.people || [];
     keywords = item.keywords || [];
@@ -13,7 +13,8 @@ try {
     const candidate = item.text
       ?? item.output
       ?? item.content?.parts?.[0]?.text
-      ?? item.message?.content;
+      ?? item.message?.content
+      ?? item;
     
     if (candidate && typeof candidate === 'object') {
       places = candidate.places || [];
@@ -21,52 +22,83 @@ try {
       keywords = candidate.keywords || [];
       movies = candidate.movies || [];
     } else if (typeof candidate === 'string') {
-      let cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      const cleaned = candidate.trim();
       
-      let parsed = null;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch(parseErr) {
-        // JSONが途中で切れている場合の修復
-        let repaired = cleaned;
-        const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
-        if (dqCount % 2 !== 0) repaired += '"';
-        repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
-        repaired = repaired.replace(/,\s*\{[^}]*$/, '');
-        const openBrackets = (repaired.match(/\[/g) || []).length;
-        const closeBrackets = (repaired.match(/\]/g) || []).length;
-        const openBraces = (repaired.match(/\{/g) || []).length;
-        const closeBraces = (repaired.match(/\}/g) || []).length;
-        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
-        for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
-        repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
-        try {
-          parsed = JSON.parse(repaired);
-        } catch(e2) {
-          const extractArray = (key) => {
-            const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
-            const m = cleaned.match(re);
-            if (!m) return [];
-            const items = [];
-            const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
-            let im;
-            while ((im = itemRe.exec(m[1])) !== null) {
-              items.push({ name: im[1], info: im[2] });
+      // テキスト形式かどうかを判断（セクションヘッダー "===" が含まれているか）
+      if (cleaned.includes('===places===') || cleaned.includes('===people===') || cleaned.includes('===keywords===')) {
+        let currentSection = '';
+        const lines = cleaned.split('\n');
+        for (let line of lines) {
+          line = line.replace(/```[a-z]*/g, '').replace(/```/g, '').trim();
+          if (!line) continue;
+
+          if (line.startsWith('===') && line.endsWith('===')) {
+            currentSection = line.replace(/===/g, '').trim().toLowerCase();
+            continue;
+          }
+
+          const parts = line.split('|');
+          if (parts.length >= 2) {
+            const name = parts[0].trim();
+            const info = parts.slice(1).join('|').trim();
+            if (name && info) {
+              const itemObj = { name, info };
+              if (currentSection === 'places') places.push(itemObj);
+              else if (currentSection === 'people') people.push(itemObj);
+              else if (currentSection === 'keywords') keywords.push(itemObj);
+              else if (currentSection === 'movies') movies.push(itemObj);
+              else if (currentSection === 'crimes') crimes.push(itemObj);
             }
-            return items;
-          };
-          places   = extractArray('places');
-          people   = extractArray('people');
-          keywords = extractArray('keywords');
-          movies   = extractArray('movies');
+          }
         }
-      }
-      
-      if (parsed) {
-        places = parsed.places || [];
-        people = parsed.people || [];
-        keywords = parsed.keywords || [];
-        movies = parsed.movies || [];
+      } else {
+        // セクションヘッダーがない場合は、JSONとしてパースを試みる（以前の形式のフォールバック）
+        let jsonText = cleaned.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(jsonText);
+        } catch(parseErr) {
+          // JSONが途中で切れている場合の修復
+          let repaired = jsonText;
+          const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
+          if (dqCount % 2 !== 0) repaired += '"';
+          repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
+          repaired = repaired.replace(/,\s*\{[^}]*$/, '');
+          const openBrackets = (repaired.match(/\[/g) || []).length;
+          const closeBrackets = (repaired.match(/\]/g) || []).length;
+          const openBraces = (repaired.match(/\{/g) || []).length;
+          const closeBraces = (repaired.match(/\}/g) || []).length;
+          for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
+          for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
+          repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+          try {
+            parsed = JSON.parse(repaired);
+          } catch(e2) {
+            const extractArray = (key) => {
+              const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
+              const m = jsonText.match(re);
+              if (!m) return [];
+              const items = [];
+              const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
+              let im;
+              while ((im = itemRe.exec(m[1])) !== null) {
+                items.push({ name: im[1], info: im[2] });
+              }
+              return items;
+            };
+            places   = extractArray('places');
+            people   = extractArray('people');
+            keywords = extractArray('keywords');
+            movies   = extractArray('movies');
+          }
+        }
+        
+        if (parsed) {
+          places = parsed.places || [];
+          people = parsed.people || [];
+          keywords = parsed.keywords || [];
+          movies = parsed.movies || [];
+        }
       }
     }
   }

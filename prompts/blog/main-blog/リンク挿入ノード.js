@@ -1,10 +1,10 @@
-// ① エンティティ抽出ノード「response_extraction1」からJSONを取得
+// ① エンティティ抽出ノード「response_extraction1」からテキストを取得してパース
 let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
   const extNode = $('response_extraction1').first().json;
   
-  // パターン①: people/places が直接 extNode のフィールドになっている
-  if (Array.isArray(extNode.people) || Array.isArray(extNode.places)) {
+  // パターン①: people/places が直接 extNode のフィールドとしてオブジェクトで存在する場合（JSON自動パース時）
+  if (extNode && (Array.isArray(extNode.people) || Array.isArray(extNode.places))) {
     places   = extNode.places   || [];
     people   = extNode.people   || [];
     keywords = extNode.keywords || [];
@@ -14,8 +14,9 @@ try {
     const candidate = extNode.text
       ?? extNode.output
       ?? extNode.content?.parts?.[0]?.text
-      ?? extNode.message?.content;
-    
+      ?? extNode.message?.content
+      ?? extNode;
+
     if (candidate && typeof candidate === 'object') {
       places   = candidate.places   || [];
       people   = candidate.people   || [];
@@ -23,60 +24,86 @@ try {
       movies   = candidate.movies   || [];
       crimes   = candidate.crimes   || [];
     } else if (typeof candidate === 'string') {
-      let cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      const cleaned = candidate.trim();
       
-      // まずそのままパースを試みる
-      let parsed = null;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch(parseErr) {
-        // JSONが途中で切れている場合の修復を試みる
-        let repaired = cleaned;
-        // 途中で切れた文字列を閉じる
-        const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
-        if (dqCount % 2 !== 0) repaired += '"';
-        // 末尾の不完全なオブジェクト/配列項目を削除
-        repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
-        repaired = repaired.replace(/,\s*\{[^}]*$/, '');
-        // 開き括弧と閉じ括弧のバランスを取る
-        const openBrackets = (repaired.match(/\[/g) || []).length;
-        const closeBrackets = (repaired.match(/\]/g) || []).length;
-        const openBraces = (repaired.match(/\{/g) || []).length;
-        const closeBraces = (repaired.match(/\}/g) || []).length;
-        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
-        for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
-        // 末尾のカンマを除去
-        repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
-        try {
-          parsed = JSON.parse(repaired);
-        } catch(e2) {
-          // 修復も失敗した場合、各配列をregexで個別抽出
-          const extractArray = (key) => {
-            const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
-            const m = cleaned.match(re);
-            if (!m) return [];
-            const items = [];
-            const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
-            let im;
-            while ((im = itemRe.exec(m[1])) !== null) {
-              items.push({ name: im[1], info: im[2] });
+      // テキスト形式かどうかを判断（セクションヘッダー "===" が含まれているか）
+      if (cleaned.includes('===places===') || cleaned.includes('===people===') || cleaned.includes('===keywords===')) {
+        let currentSection = '';
+        const lines = cleaned.split('\n');
+        for (let line of lines) {
+          line = line.replace(/```[a-z]*/g, '').replace(/```/g, '').trim();
+          if (!line) continue;
+
+          if (line.startsWith('===') && line.endsWith('===')) {
+            currentSection = line.replace(/===/g, '').trim().toLowerCase();
+            continue;
+          }
+
+          const parts = line.split('|');
+          if (parts.length >= 2) {
+            const name = parts[0].trim();
+            const info = parts.slice(1).join('|').trim();
+            if (name && info) {
+              const item = { name, info };
+              if (currentSection === 'places') places.push(item);
+              else if (currentSection === 'people') people.push(item);
+              else if (currentSection === 'keywords') keywords.push(item);
+              else if (currentSection === 'movies') movies.push(item);
+              else if (currentSection === 'crimes') crimes.push(item);
             }
-            return items;
-          };
-          places   = extractArray('places');
-          people   = extractArray('people');
-          keywords = extractArray('keywords');
-          movies   = extractArray('movies');
-          crimes   = extractArray('crimes');
+          }
         }
-      }
-      
-      if (parsed) {
-        places   = parsed.places   || [];
-        people   = parsed.people   || [];
-        keywords = parsed.keywords || [];
-        movies   = parsed.movies   || [];
-        crimes   = parsed.crimes   || [];
+      } else {
+        // セクションヘッダーがない場合は、JSONとしてパースを試みる（以前の形式のフォールバック）
+        let jsonText = cleaned.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(jsonText);
+        } catch(parseErr) {
+          // JSONが途中で切れている場合の修復を試みる
+          let repaired = jsonText;
+          const dqCount = (repaired.match(/(?<!\\)"/g) || []).length;
+          if (dqCount % 2 !== 0) repaired += '"';
+          repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
+          repaired = repaired.replace(/,\s*\{[^}]*$/, '');
+          const openBrackets = (repaired.match(/\[/g) || []).length;
+          const closeBrackets = (repaired.match(/\]/g) || []).length;
+          const openBraces = (repaired.match(/\{/g) || []).length;
+          const closeBraces = (repaired.match(/\}/g) || []).length;
+          for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
+          for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
+          repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+          try {
+            parsed = JSON.parse(repaired);
+          } catch(e2) {
+            // 修復失敗時、regexで個別抽出
+            const extractArray = (key) => {
+              const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)(?:\\]|$)');
+              const m = jsonText.match(re);
+              if (!m) return [];
+              const items = [];
+              const itemRe = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"info"\s*:\s*"([^"]*)"/g;
+              let im;
+              while ((im = itemRe.exec(m[1])) !== null) {
+                items.push({ name: im[1], info: im[2] });
+              }
+              return items;
+            };
+            places   = extractArray('places');
+            people   = extractArray('people');
+            keywords = extractArray('keywords');
+            movies   = extractArray('movies');
+            crimes   = extractArray('crimes');
+          }
+        }
+        
+        if (parsed) {
+          places   = parsed.places   || [];
+          people   = parsed.people   || [];
+          keywords = parsed.keywords || [];
+          movies   = parsed.movies   || [];
+          crimes   = parsed.crimes   || [];
+        }
       }
     }
   }
