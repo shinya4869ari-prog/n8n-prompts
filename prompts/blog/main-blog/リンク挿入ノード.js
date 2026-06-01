@@ -2,7 +2,8 @@
 let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
   const extNode = $('response_extraction1').first().json;
-  // パターン①: Output Content as JSON=ON の場合、n8nがJSONを自動パースして直接フィールドとして展開する
+  
+  // パターン①: people/places が直接 extNode のフィールドになっている
   if (Array.isArray(extNode.people) || Array.isArray(extNode.places)) {
     places   = extNode.places   || [];
     people   = extNode.people   || [];
@@ -10,19 +11,28 @@ try {
     movies   = extNode.movies   || [];
     crimes   = extNode.crimes   || [];
   } else {
-    // パターン②: 文字列として格納されている場合
-    const rawStr = extNode.text
+    const candidate = extNode.text
       ?? extNode.output
       ?? extNode.content?.parts?.[0]?.text
-      ?? extNode.message?.content
-      ?? '{}';
-    const cleaned = rawStr.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-    const parsed = JSON.parse(cleaned);
-    places   = parsed.places   || [];
-    people   = parsed.people   || [];
-    keywords = parsed.keywords || [];
-    movies   = parsed.movies   || [];
-    crimes   = parsed.crimes   || [];
+      ?? extNode.message?.content;
+    
+    // パターン②: text フィールドがすでにオブジェクトとして入っている
+    if (candidate && typeof candidate === 'object') {
+      places   = candidate.places   || [];
+      people   = candidate.people   || [];
+      keywords = candidate.keywords || [];
+      movies   = candidate.movies   || [];
+      crimes   = candidate.crimes   || [];
+    } else if (typeof candidate === 'string') {
+      // パターン③: text フィールドが文字列なのでパースする
+      const cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      const parsed = JSON.parse(cleaned);
+      places   = parsed.places   || [];
+      people   = parsed.people   || [];
+      keywords = parsed.keywords || [];
+      movies   = parsed.movies   || [];
+      crimes   = parsed.crimes   || [];
+    }
   }
 } catch(e) {}
 

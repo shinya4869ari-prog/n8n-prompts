@@ -3,25 +3,33 @@ const item = $input.first().json;
 // ① データ取得（抽出AIの結果からJSONを取得）
 let places = [], people = [], keywords = [], movies = [];
 try {
-  // パターン①: Output Content as JSON=ON の場合、n8nがJSONを自動パースして直接フィールドとして展開する
+  // パターン①: people/places が直接 item のフィールドになっている
   if (Array.isArray(item.people) || Array.isArray(item.places)) {
     places = item.places || [];
     people = item.people || [];
     keywords = item.keywords || [];
     movies = item.movies || [];
   } else {
-    // パターン②: 文字列として格納されている場合
-    const rawStr = item.text
+    const candidate = item.text
       ?? item.output
       ?? item.content?.parts?.[0]?.text
-      ?? item.message?.content
-      ?? '{}';
-    const cleaned = rawStr.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-    const parsed = JSON.parse(cleaned);
-    places = parsed.places || [];
-    people = parsed.people || [];
-    keywords = parsed.keywords || [];
-    movies = parsed.movies || [];
+      ?? item.message?.content;
+    
+    // パターン②: text フィールドがすでにオブジェクトとして入っている
+    if (candidate && typeof candidate === 'object') {
+      places = candidate.places || [];
+      people = candidate.people || [];
+      keywords = candidate.keywords || [];
+      movies = candidate.movies || [];
+    } else if (typeof candidate === 'string') {
+      // パターン③: text フィールドが文字列なのでパースする
+      const cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+      const parsed = JSON.parse(cleaned);
+      places = parsed.places || [];
+      people = parsed.people || [];
+      keywords = parsed.keywords || [];
+      movies = parsed.movies || [];
+    }
   }
 } catch(e) {}
 
