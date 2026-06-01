@@ -1,35 +1,30 @@
 const item = $input.first().json;
 
 // ① データ取得（抽出AIの結果からJSONを取得）
-let raw = '{}';
-let parsed = null;
-const rawNode = item.text
-  ?? item.output
-  ?? item.content?.parts?.[0]?.text
-  ?? item.message?.content
-  ?? item;
-if (rawNode && typeof rawNode === 'object') {
-  parsed = rawNode;
-} else if (typeof rawNode === 'string') {
-  raw = rawNode;
-}
-
 let places = [], people = [], keywords = [], movies = [];
 try {
-  if (parsed) {
+  // パターン①: Output Content as JSON=ON の場合、n8nがJSONを自動パースして直接フィールドとして展開する
+  if (Array.isArray(item.people) || Array.isArray(item.places)) {
+    places = item.places || [];
+    people = item.people || [];
+    keywords = item.keywords || [];
+    movies = item.movies || [];
+  } else {
+    // パターン②: 文字列として格納されている場合
+    const rawStr = item.text
+      ?? item.output
+      ?? item.content?.parts?.[0]?.text
+      ?? item.message?.content
+      ?? '{}';
+    const cleaned = rawStr.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+    const parsed = JSON.parse(cleaned);
     places = parsed.places || [];
     people = parsed.people || [];
     keywords = parsed.keywords || [];
     movies = parsed.movies || [];
-  } else {
-    const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-    const parsedJson = JSON.parse(cleaned);
-    places = parsedJson.places || [];
-    people = parsedJson.people || [];
-    keywords = parsedJson.keywords || [];
-    movies = parsedJson.movies || [];
   }
 } catch(e) {}
+
 
 // ② 記事と基本情報の取得
 let mainArticle = '';

@@ -1,41 +1,31 @@
 // ① エンティティ抽出ノード「response_extraction1」からJSONを取得
-let raw = '{}';
-let parsed = null;
+let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
   const extNode = $('response_extraction1').first().json;
-  const rawNode = extNode.text
-    ?? extNode.output
-    ?? extNode.content?.parts?.[0]?.text
-    ?? extNode.message?.content
-    ?? extNode;
-  if (rawNode && typeof rawNode === 'object') {
-    parsed = rawNode;
-  } else if (typeof rawNode === 'string') {
-    raw = rawNode;
+  // パターン①: Output Content as JSON=ON の場合、n8nがJSONを自動パースして直接フィールドとして展開する
+  if (Array.isArray(extNode.people) || Array.isArray(extNode.places)) {
+    places   = extNode.places   || [];
+    people   = extNode.people   || [];
+    keywords = extNode.keywords || [];
+    movies   = extNode.movies   || [];
+    crimes   = extNode.crimes   || [];
+  } else {
+    // パターン②: 文字列として格納されている場合
+    const rawStr = extNode.text
+      ?? extNode.output
+      ?? extNode.content?.parts?.[0]?.text
+      ?? extNode.message?.content
+      ?? '{}';
+    const cleaned = rawStr.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+    const parsed = JSON.parse(cleaned);
+    places   = parsed.places   || [];
+    people   = parsed.people   || [];
+    keywords = parsed.keywords || [];
+    movies   = parsed.movies   || [];
+    crimes   = parsed.crimes   || [];
   }
 } catch(e) {}
 
-let places = [], people = [], keywords = [], movies = [], crimes = [];
-try {
-  if (parsed) {
-    places   = parsed.places   || [];
-    people   = parsed.people   || [];
-    keywords = parsed.keywords || [];
-    movies   = parsed.movies   || [];
-    crimes   = parsed.crimes   || [];
-  } else {
-    const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
-    parsed = JSON.parse(cleaned);
-    places   = parsed.places   || [];
-    people   = parsed.people   || [];
-    keywords = parsed.keywords || [];
-    movies   = parsed.movies   || [];
-    crimes   = parsed.crimes   || [];
-  }
-} catch(e) {
-  console.error("JSON parsing failed in links node:", e.message);
-  console.log("Raw text was:", raw);
-}
 
 // 日本の行政トップ（首相）を固定データから取得してpeopleに追加（LLMの日本除外ルールの誤適用防止）
 try {
