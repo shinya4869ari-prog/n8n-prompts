@@ -1,19 +1,13 @@
-// ① エンティティ抽出ノードからJSONを取得（複数のノード名の可能性に対応）
+// ① エンティティ抽出ノード「response_extraction1」からJSONを取得
 let raw = '{}';
-const possibleNodes = ['response_extraction1', 'response_extraction', 'Response Extraction', 'responseExtract'];
-for (const nodeName of possibleNodes) {
-  try {
-    const extNode = $(nodeName).first().json;
-    const extracted = extNode.text
-      ?? extNode.output
-      ?? extNode.content?.parts?.[0]?.text
-      ?? extNode.message?.content;
-    if (extracted && extracted !== '{}') {
-      raw = extracted;
-      break;
-    }
-  } catch(e) {}
-}
+try {
+  const extNode = $('response_extraction1').first().json;
+  raw = extNode.text
+    ?? extNode.output
+    ?? extNode.content?.parts?.[0]?.text
+    ?? extNode.message?.content
+    ?? '{}';
+} catch(e) {}
 
 let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
@@ -24,7 +18,10 @@ try {
   keywords = parsed.keywords || [];
   movies   = parsed.movies   || [];
   crimes   = parsed.crimes   || [];
-} catch(e) {}
+} catch(e) {
+  console.error("JSON parsing failed in links node:", e.message);
+  console.log("Raw text was:", raw);
+}
 
 // 日本の行政トップ（首相）を固定データから取得してpeopleに追加（LLMの日本除外ルールの誤適用防止）
 try {
