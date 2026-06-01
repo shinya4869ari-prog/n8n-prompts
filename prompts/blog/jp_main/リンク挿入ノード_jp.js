@@ -1,20 +1,33 @@
 const item = $input.first().json;
 
 // ① データ取得（抽出AIの結果からJSONを取得）
-const raw = item.text
-  ?? item.output
-  ?? item.content?.parts?.[0]?.text
-  ?? item.message?.content
-  ?? '{}';
+let raw = '{}';
+let parsed = null;
+if (item && (item.people || item.places || item.keywords)) {
+  parsed = item;
+} else {
+  raw = item.text
+    ?? item.output
+    ?? item.content?.parts?.[0]?.text
+    ?? item.message?.content
+    ?? '{}';
+}
 
 let places = [], people = [], keywords = [], movies = [];
 try {
-  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-  const parsed = JSON.parse(cleaned);
-  places = parsed.places || [];
-  people = parsed.people || [];
-  keywords = parsed.keywords || [];
-  movies = parsed.movies || [];
+  if (parsed) {
+    places = parsed.places || [];
+    people = parsed.people || [];
+    keywords = parsed.keywords || [];
+    movies = parsed.movies || [];
+  } else {
+    const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+    const parsedJson = JSON.parse(cleaned);
+    places = parsedJson.places || [];
+    people = parsedJson.people || [];
+    keywords = parsedJson.keywords || [];
+    movies = parsedJson.movies || [];
+  }
 } catch(e) {}
 
 // ② 記事と基本情報の取得

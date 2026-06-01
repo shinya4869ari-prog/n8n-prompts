@@ -1,23 +1,36 @@
 // ① エンティティ抽出ノード「response_extraction1」からJSONを取得
 let raw = '{}';
+let parsed = null;
 try {
   const extNode = $('response_extraction1').first().json;
-  raw = extNode.text
-    ?? extNode.output
-    ?? extNode.content?.parts?.[0]?.text
-    ?? extNode.message?.content
-    ?? '{}';
+  if (extNode && (extNode.people || extNode.places || extNode.keywords)) {
+    parsed = extNode;
+  } else {
+    raw = extNode.text
+      ?? extNode.output
+      ?? extNode.content?.parts?.[0]?.text
+      ?? extNode.message?.content
+      ?? '{}';
+  }
 } catch(e) {}
 
 let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
-  const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-  const parsed = JSON.parse(cleaned);
-  places   = parsed.places   || [];
-  people   = parsed.people   || [];
-  keywords = parsed.keywords || [];
-  movies   = parsed.movies   || [];
-  crimes   = parsed.crimes   || [];
+  if (parsed) {
+    places   = parsed.places   || [];
+    people   = parsed.people   || [];
+    keywords = parsed.keywords || [];
+    movies   = parsed.movies   || [];
+    crimes   = parsed.crimes   || [];
+  } else {
+    const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+    parsed = JSON.parse(cleaned);
+    places   = parsed.places   || [];
+    people   = parsed.people   || [];
+    keywords = parsed.keywords || [];
+    movies   = parsed.movies   || [];
+    crimes   = parsed.crimes   || [];
+  }
 } catch(e) {
   console.error("JSON parsing failed in links node:", e.message);
   console.log("Raw text was:", raw);
