@@ -1,13 +1,19 @@
-// ① エンティティ抽出ノード「response_extraction1」からJSONを取得
+// ① エンティティ抽出ノードからJSONを取得（複数のノード名の可能性に対応）
 let raw = '{}';
-try {
-  const extNode = $('response_extraction1').first().json;
-  raw = extNode.text
-    ?? extNode.output
-    ?? extNode.content?.parts?.[0]?.text
-    ?? extNode.message?.content
-    ?? '{}';
-} catch(e) {}
+const possibleNodes = ['response_extraction1', 'response_extraction', 'Response Extraction', 'responseExtract'];
+for (const nodeName of possibleNodes) {
+  try {
+    const extNode = $(nodeName).first().json;
+    const extracted = extNode.text
+      ?? extNode.output
+      ?? extNode.content?.parts?.[0]?.text
+      ?? extNode.message?.content;
+    if (extracted && extracted !== '{}') {
+      raw = extracted;
+      break;
+    }
+  } catch(e) {}
+}
 
 let places = [], people = [], keywords = [], movies = [], crimes = [];
 try {
