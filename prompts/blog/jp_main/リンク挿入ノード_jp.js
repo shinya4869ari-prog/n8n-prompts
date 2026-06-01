@@ -1,7 +1,8 @@
 const item = $input.first().json;
 
 // ① データ取得（抽出AIの結果からJSONを取得）
-const raw = item.output
+const raw = item.text
+  ?? item.output
   ?? item.content?.parts?.[0]?.text
   ?? item.message?.content
   ?? '{}';

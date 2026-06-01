@@ -2,7 +2,8 @@
 let raw = '{}';
 try {
   const extNode = $('response_extraction1').first().json;
-  raw = extNode.output
+  raw = extNode.text
+    ?? extNode.output
     ?? extNode.content?.parts?.[0]?.text
     ?? extNode.message?.content
     ?? '{}';
@@ -17,6 +18,27 @@ try {
   keywords = parsed.keywords || [];
   movies   = parsed.movies   || [];
   crimes   = parsed.crimes   || [];
+} catch(e) {}
+
+// 日本の行政トップ（首相）を固定データから取得してpeopleに追加（LLMの日本除外ルールの誤適用防止）
+try {
+  const japanFixed = $('整形ノード1').first().json?.data?.日本固定データ;
+  if (japanFixed && japanFixed.制度の9つの皿 && japanFixed.制度の9つの皿.行政トップ) {
+    const pmVal = japanFixed.制度の9つの皿.行政トップ.値 || '';
+    let japanPM = '';
+    const match = pmVal.match(/(?:：|:)\s*([^\s（\(\[［]+)/);
+    if (match) {
+      japanPM = match[1].trim();
+    } else {
+      japanPM = pmVal.replace(/[（\(\[［].*?[）\)］]/g, '').trim();
+    }
+    if (japanPM && !people.some(p => p.name === japanPM)) {
+      people.push({
+        name: japanPM,
+        info: "日本の内閣総理大臣。"
+      });
+    }
+  }
 } catch(e) {}
 
 let mainArticle = '';
