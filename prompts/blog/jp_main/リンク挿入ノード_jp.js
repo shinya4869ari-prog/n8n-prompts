@@ -3,14 +3,15 @@ const item = $input.first().json;
 // ① データ取得（抽出AIの結果からJSONを取得）
 let raw = '{}';
 let parsed = null;
-if (item && (item.people || item.places || item.keywords)) {
-  parsed = item;
-} else {
-  raw = item.text
-    ?? item.output
-    ?? item.content?.parts?.[0]?.text
-    ?? item.message?.content
-    ?? '{}';
+const rawNode = item.text
+  ?? item.output
+  ?? item.content?.parts?.[0]?.text
+  ?? item.message?.content
+  ?? item;
+if (rawNode && typeof rawNode === 'object') {
+  parsed = rawNode;
+} else if (typeof rawNode === 'string') {
+  raw = rawNode;
 }
 
 let places = [], people = [], keywords = [], movies = [];

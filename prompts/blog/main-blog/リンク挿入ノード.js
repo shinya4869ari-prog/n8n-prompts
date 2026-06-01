@@ -3,14 +3,15 @@ let raw = '{}';
 let parsed = null;
 try {
   const extNode = $('response_extraction1').first().json;
-  if (extNode && (extNode.people || extNode.places || extNode.keywords)) {
-    parsed = extNode;
-  } else {
-    raw = extNode.text
-      ?? extNode.output
-      ?? extNode.content?.parts?.[0]?.text
-      ?? extNode.message?.content
-      ?? '{}';
+  const rawNode = extNode.text
+    ?? extNode.output
+    ?? extNode.content?.parts?.[0]?.text
+    ?? extNode.message?.content
+    ?? extNode;
+  if (rawNode && typeof rawNode === 'object') {
+    parsed = rawNode;
+  } else if (typeof rawNode === 'string') {
+    raw = rawNode;
   }
 } catch(e) {}
 
