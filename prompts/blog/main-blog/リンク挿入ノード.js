@@ -86,7 +86,22 @@ function getSearchVariants(name, type) {
   const base = name.replace(/[（\(\[［].*?[）\)］]/g, '').trim();
   const insideMatch = name.match(/[（\(［](.*?)[）\)］]/);
   const inside = insideMatch ? insideMatch[1].trim() : '';
+  
   let jpn = [base];
+  
+  // 1. 中黒（・）を除去したパターン
+  if (base.includes('・')) {
+    jpn.push(base.replace(/・/g, ''));
+  }
+  
+  // 2. 長音符（ー）を除去したパターン（「ラー」と「ラ」の揺れ対策など）
+  if (base.includes('ー')) {
+    jpn.push(base.replace(/ー/g, ''));
+    if (base.includes('・')) {
+      jpn.push(base.replace(/・/g, '').replace(/ー/g, ''));
+    }
+  }
+  
   const suffixes = ['王国','共和国','連邦共和国','連邦','合衆国','民主共和国','社会主義共和国','公国'];
   for (const s of suffixes) {
     if (base.endsWith(s) && base.length > s.length) {
@@ -94,11 +109,20 @@ function getSearchVariants(name, type) {
       break;
     }
   }
+  
   if (type === 'people') {
     const parts = base.split('・');
-    const lastName = parts[parts.length - 1];
-    if (lastName && lastName.length > 1) jpn.push(lastName);
+    parts.forEach(part => {
+      const p = part.trim();
+      if (p.length > 1) {
+        jpn.push(p);
+        if (p.includes('ー')) {
+          jpn.push(p.replace(/ー/g, ''));
+        }
+      }
+    });
   }
+  
   return [...new Set([name, ...jpn, inside])].filter(v => v && v.length >= 2);
 }
 
