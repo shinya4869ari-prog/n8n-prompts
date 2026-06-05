@@ -65,7 +65,6 @@ const getNumbeoToLocalRate = () => {
 
 const numbeoToLocal = getNumbeoToLocalRate();
 
-// Numbeoの値（現地通貨またはEUR/USD）→ 円換算
 const calcJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
   const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
@@ -75,7 +74,6 @@ const calcJpy = (localVal) => {
   return Math.round(val * numbeoToLocal * fxRate);
 };
 
-// Numbeoの値 → 現地通貨表示（記号付き）
 const addSymbol = (val) => {
   if (!val || val === "欠測") return "欠測";
   const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
@@ -87,7 +85,6 @@ const addSymbol = (val) => {
   return symbol + formatted;
 };
 
-// ビッグマック専用：エージェントが現地通貨で返すのでnumbeoToLocal不要
 const calcBigMacJpy = (localVal) => {
   if (!localVal || localVal === "欠測") return "欠測";
   const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
@@ -108,17 +105,7 @@ const formatBigMac = (val) => {
 };
 
 const netflixVal = b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測";
-let netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
-
-// 通貨コードが空の場合、値に含まれる記号から通貨を自動推測する
-if (!netflixCode && typeof netflixVal === 'string') {
-  if (netflixVal.includes('$')) {
-    netflixCode = "USD";
-  } else if (netflixVal.includes('€')) {
-    netflixCode = "EUR";
-  }
-}
-
+const netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
 const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
 
 const calcNetflixJpy = (val) => {

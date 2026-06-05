@@ -16,7 +16,6 @@ if (!countryCol) {
   return [{ json: { 死因トップ10: [], 死因_年: "2021", 死因_出典: "WHO GHE 2021" } }];
 }
 
-// Persons行のみ、col_6に英単語の死因名がある行だけ抽出
 const causeRows = rows.filter(r => {
   const causeName = r.col_6;
   const val = parseFloat(r[countryCol]);
@@ -25,12 +24,9 @@ const causeRows = rows.filter(r => {
   return isPerson && isRealCause && !isNaN(val) && val > 0;
 });
 
-// 死亡数降順ソート
 causeRows.sort((a, b) => parseFloat(b[countryCol]) - parseFloat(a[countryCol]));
 
-// 英語→日本語変換
 const causeJaMap = {
-  // 感染症
   'Tuberculosis': '結核',
   'HIV/AIDS': 'HIV/エイズ',
   'Diarrhoeal diseases': '下痢性疾患',
@@ -65,7 +61,6 @@ const causeJaMap = {
   'Rabies': '狂犬病',
   'Typhoid fever': '腸チフス',
   'Cholera': 'コレラ',
-  // 循環器
   'Ischaemic heart disease': '虚血性心疾患',
   'Stroke': '脳卒中',
   'Hypertensive heart disease': '高血圧性心疾患',
@@ -74,24 +69,19 @@ const causeJaMap = {
   'Other circulatory diseases': 'その他の循環器疾患',
   'Atrial fibrillation and flutter': '心房細動・粗動',
   'Peripheral vascular disease': '末梢血管疾患',
-  // 呼吸器
   'Chronic obstructive pulmonary disease': '慢性閉塞性肺疾患',
   'Asthma': '喘息',
   'Pneumoconiosis': '塵肺',
-  // 代謝・内分泌
   'Diabetes mellitus': '糖尿病',
   'Nutritional deficiencies': '栄養不足',
   'Protein-energy malnutrition': 'たんぱく質・エネルギー栄養失調',
   'Vitamin A deficiency': 'ビタミンA欠乏症',
-  // 神経
   'Alzheimer disease and other dementias': 'アルツハイマー病およびその他の認知症',
   "Parkinson's disease": 'パーキンソン病',
   'Epilepsy': 'てんかん',
   'Multiple sclerosis': '多発性硬化症',
-  // 消化器
   'Cirrhosis of the liver': '肝硬変',
   'Kidney diseases': '腎臓疾患',
-  // がん
   'Colon and rectum cancers': '結腸・直腸がん',
   'Trachea, bronchus, lung cancers': '気管・気管支・肺がん',
   'Stomach cancer': '胃がん',
@@ -116,7 +106,6 @@ const causeJaMap = {
   'Non-melanoma skin cancer': '非黒色腫皮膚がん',
   'Uterine cancer': '子宮体がん',
   'Kidney cancer': '腎臓がん',
-  // 外因・傷害
   'Road injury': '交通事故',
   'Poisonings': '中毒',
   'Falls': '転倒・転落',
@@ -126,7 +115,6 @@ const causeJaMap = {
   'Interpersonal violence': '対人暴力',
   'Collective violence and legal intervention': '集団的暴力・司法介入',
   'Natural disasters': '自然災害',
-  // 新生児・母体
   'Neonatal conditions': '新生児疾患',
   'Preterm birth complications': '早産合併症',
   'Preterm birth': '早産合併症',
@@ -134,9 +122,10 @@ const causeJaMap = {
   'Birth asphyxia': '出生時仮死',
   'Neonatal sepsis and infections': '新生児敗血症・感染症',
   'Maternal conditions': '母体疾患',
-  // その他
   'Congenital anomalies': '先天性奇形',
   'Other non-communicable diseases': 'その他の非感染性疾患',
+  'Alcohol use disorders': 'アルコール依存症',
+  'Other malignant neoplasms': 'その他の悪性新生物',
 };
 
 const top10en = causeRows.slice(0, 10).map(r => r.col_6);
