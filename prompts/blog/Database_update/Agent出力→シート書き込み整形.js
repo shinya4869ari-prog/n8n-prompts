@@ -306,6 +306,7 @@ const bukkaFields = [
   "月収_現地通貨", "月収_円換算",
   "Netflix_現地通貨", "Netflix_円換算", "Netflix_出典",
   "物価_出典",
+  "Numbeo表示通貨",
   "為替レート", "為替取得日"
 ];
 

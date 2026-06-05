@@ -149,6 +149,7 @@ return [{
     "国名（日本語）": countryJp,
     "首都（日本語）": capitalJp || b["首都（日本語）"] || "",
     "通貨コード": currencyCode,
+    "Numbeo表示通貨": actualCode,
     "為替レート": fx,
     "為替取得日": b["為替取得日"] || data["為替取得日"] || new Date().toISOString().split('T')[0].replace(/-/g, '/'),
     "ビール_現地通貨": addSymbol(numbeo["ビール"]),
