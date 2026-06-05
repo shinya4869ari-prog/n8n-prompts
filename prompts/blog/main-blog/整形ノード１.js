@@ -12,8 +12,27 @@ for (const [raw, name] of [[r1Raw, 'researcher1'], [r2Raw, 'researcher2'], [r25R
 
 const parseOutput = (node, nodeName) => {
   try {
-    const raw = node.output ?? node.json ?? '{}';
-    if (!raw || raw.trim() === '') throw new Error('outputが空です');
+    const rawVal = node.output ?? node.json ?? '{}';
+    if (typeof rawVal === 'object' && rawVal !== null) {
+      return rawVal;
+    }
+    let raw = String(rawVal).trim();
+    if (!raw || raw === '') throw new Error('outputが空です');
+
+    // 「Calling Perplexity...」などのシステムログが前後に入っている場合を考慮し、
+    // 最初の { から最後の } まで（または [ から ] まで）を切り抜く
+    const startIdx = raw.indexOf('{');
+    const endIdx = raw.lastIndexOf('}');
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      raw = raw.substring(startIdx, endIdx + 1);
+    } else {
+      const arrStart = raw.indexOf('[');
+      const arrEnd = raw.lastIndexOf(']');
+      if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
+        raw = raw.substring(arrStart, arrEnd + 1);
+      }
+    }
+
     let cleaned = raw
       .replace(/```json|```/g, '')
       .replace(/,(\s*[}\]])/g, '$1')
