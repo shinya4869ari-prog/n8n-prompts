@@ -1,5 +1,3 @@
-const rows = $input.all().map(i => i.json);
-const hub = $('プロンプト取得用 Code').first().json;
 const prev = $('プロンプト取得用 Code').first().json;
 const country = prev.country ?? prev.base?.country ?? "";
 const currencyCode = prev.currencyCode ?? prev.base?.currencyCode ?? "";
@@ -66,14 +64,16 @@ function extractPrice(html, label) {
   return normalized || "欠測";
 }
 
+const usdNumbeoCountries = ['AFN', 'IQD', 'SYP', 'YER', 'LYD'];
+
 const actualCurrencyCode = (() => {
   const match = html.match(/<span class="first_currency">([^<]+?)<\/span>/);
   if (!match) return currencyCode;
   const decoded = decodeEntities(match[1]);
   if (decoded.includes('€')) return 'EUR';
   if (decoded.includes('EC$') || decoded.includes('EC ')) return 'XCD';
-  if (decoded.includes('$')) return 'USD';
   if (decoded.includes('£')) return 'GBP';
+  if (decoded.includes('$')) return usdNumbeoCountries.includes(currencyCode) ? 'USD' : currencyCode;
   return currencyCode;
 })();
 

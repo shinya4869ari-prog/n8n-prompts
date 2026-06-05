@@ -53,8 +53,35 @@ const usdJpy = parseRate(b["USD/JPY"]);
 const eurJpy = parseRate(b["EUR/JPY"]);
 
 const currencyCode = numbeo.currencyCode;
+const rawSymbol = numbeo.currencySymbol || b["通貨記号"] || "";
 const actualCode = numbeo.actualCurrencyCode || currencyCode;
-const symbol = numbeo.currencySymbol || b["通貨記号"] || "";
+
+const dollarSymbolMap = {
+  'AUD': 'A$',
+  'CAD': 'C$',
+  'NZD': 'NZ$',
+  'SGD': 'S$',
+  'HKD': 'HK$',
+  'TWD': 'NT$',
+  'BBD': 'Bds$',
+  'BSD': 'B$',
+  'BZD': 'BZ$',
+  'FJD': 'FJ$',
+  'GYD': 'G$',
+  'JMD': 'J$',
+  'LRD': 'L$',
+  'MXN': 'MX$',
+  'NAD': 'N$',
+  'SBD': 'SI$',
+  'SRD': 'Sr$',
+  'TTD': 'TT$',
+  'XCD': 'EC$',
+  'ZWG': 'ZiG',
+};
+
+const symbol = (rawSymbol === '$' && dollarSymbolMap[actualCode])
+  ? dollarSymbolMap[actualCode]
+  : rawSymbol;
 
 const getNumbeoToLocalRate = () => {
   if (actualCode === currencyCode) return 1;
