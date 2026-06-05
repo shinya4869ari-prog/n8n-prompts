@@ -12,25 +12,10 @@ for (const [raw, name] of [[r1Raw, 'researcher1'], [r2Raw, 'researcher2'], [r25R
 
 const parseOutput = (node, nodeName) => {
   try {
-    const targetNode = Array.isArray(node) ? node[0] : node;
-    let rawVal = targetNode?.output;
-    
-    // content.parts[0].text の構造からテキストを優先抽出
-    if (!rawVal && targetNode?.content?.parts?.[0]?.text) {
-      rawVal = targetNode.content.parts[0].text;
-    }
-    if (!rawVal) {
-      rawVal = targetNode?.json ?? targetNode ?? '{}';
-    }
-
+    const rawVal = node.output ?? node.json ?? '{}';
     if (typeof rawVal === 'object' && rawVal !== null) {
-      if (rawVal.content?.parts?.[0]?.text) {
-        rawVal = rawVal.content.parts[0].text;
-      } else {
-        return rawVal;
-      }
+      return rawVal;
     }
-
     let raw = String(rawVal).trim();
     if (!raw || raw === '') throw new Error('outputが空です');
 
