@@ -108,7 +108,17 @@ const formatBigMac = (val) => {
 };
 
 const netflixVal = b["各項目"]?.["Netflix"]?.["現地通貨"] || "欠測";
-const netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
+let netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
+
+// 通貨コードが空の場合、値に含まれる記号から通貨を自動推測する
+if (!netflixCode && typeof netflixVal === 'string') {
+  if (netflixVal.includes('$')) {
+    netflixCode = "USD";
+  } else if (netflixVal.includes('€')) {
+    netflixCode = "EUR";
+  }
+}
+
 const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
 
 const calcNetflixJpy = (val) => {

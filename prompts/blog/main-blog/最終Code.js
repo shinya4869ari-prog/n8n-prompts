@@ -170,7 +170,24 @@ return [articleItem].map(item => {
   const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
   const geoData = geoItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '：'));
-    const val = line ? line.replace(item + '：', '').trim() : 'データなし';
+    let val = line ? line.replace(item + '：', '').trim() : 'データなし';
+    if (item === '面積') {
+      if (val.includes('データなし') || val === 'データなし') {
+        const areaRaw = sheetData.data?.対象国データ?.地理?.面積_km2;
+        if (areaRaw && areaRaw !== 'データなし') {
+          const areaNum = parseFloat(String(areaRaw).replace(/,/g, ''));
+          if (!isNaN(areaNum)) {
+            const ratio = areaNum / 377900;
+            const ratioStr = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
+            if (val === 'データなし') {
+              val = `${areaNum.toLocaleString()}km²（日本の面積の約${ratioStr}倍）`;
+            } else {
+              val = val.replace('データなし', ratioStr);
+            }
+          }
+        }
+      }
+    }
     return { 項目: item, 値: val };
   });
 
@@ -528,9 +545,14 @@ return [articleItem].map(item => {
       d['順位'] || '',
       d['種別'] || 'データなし'
     ]);
-    const crimeOutten = crimeData[0]?.['出典'] || '';
+    let crimeYear = String(sheetData.data?.固定データ?.治安指標?.犯罪_年 || '').trim();
+    if (crimeYear && /^\d+$/.test(crimeYear)) {
+      crimeYear += '年';
+    }
+    const crimeOutten = String(sheetData.data?.固定データ?.治安指標?.犯罪_出典 || '').trim();
+    const displayOutten = (crimeYear ? crimeYear + ' ' : '') + crimeOutten;
     article += makeTable(['順位', '犯罪種別'], crimeRows, ['15%', '85%']);
-    if (crimeOutten) article += `<p class="citation" style="${citationStyle}">出典：${crimeOutten}</p>\n`;
+    if (displayOutten) article += `<p class="citation" style="${citationStyle}">出典：${displayOutten}</p>\n`;
   }
 
   // 犯罪の傾向テキスト

@@ -114,6 +114,20 @@ const adjustPrisonTrend = (trendArray, chiAnObj) => {
 };
 
 const r1 = parseOutput(r1Raw, 'researcher1');
+if (r1 && r1.地理) {
+  const areaRaw = r1.地理.面積_km2;
+  if (areaRaw && areaRaw !== 'データなし') {
+    const areaNum = parseFloat(String(areaRaw).replace(/,/g, ''));
+    if (!isNaN(areaNum)) {
+      const ratio = areaNum / 377900;
+      r1.地理.日本面積比 = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
+    } else {
+      r1.地理.日本面積比 = 'データなし';
+    }
+  } else {
+    r1.地理.日本面積比 = 'データなし';
+  }
+}
 const r2 = parseOutput(r2Raw, 'researcher2');
 
 const r25 = parseOutput(r25Raw, 'researcher25');
@@ -217,6 +231,8 @@ const targetFixed = {
       年: chiAn[`犯罪${i + 1}位_年`] || "",
       出典: chiAn['犯罪_出典'] || ""
     })),
+    犯罪_年: chiAn['犯罪_年'] || "",
+    犯罪_出典: chiAn['犯罪_出典'] || "",
     外務省危険レベル: { レベル: chiAn['外務省危険レベル'], 出典: chiAn['外務省危険レベル_出典'] }
   },
   刑務所推移: adjustPrisonTrend([

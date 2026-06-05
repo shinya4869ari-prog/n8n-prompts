@@ -313,6 +313,83 @@ for (const f of bukkaFields) {
   bukka[f] = rowData[f] ?? "";
 }
 
+// AIエージェントの出力（agentOutput）から物価データを反映
+// 1. 為替レートの更新
+if (agentOutput.物価) {
+  const rawFx = agentOutput.物価.為替レート;
+  if (rawFx) {
+    const fxMatch = String(rawFx).match(/[\d.]+/g);
+    bukka["為替レート"] = fxMatch ? fxMatch[fxMatch.length - 1] : rawFx;
+  }
+  bukka["為替取得日"] = agentOutput.物価.為替取得日 ?? bukka["為替取得日"];
+}
+
+// 2. ビッグマックの更新
+if (agentOutput.ビッグマック) {
+  const bmVal = agentOutput.ビッグマック.現地通貨;
+  if (bmVal && bmVal !== "欠測") {
+    bukka["ビッグマック_現地通貨"] = bmVal;
+    bukka["ビッグマック_出典"] = agentOutput.ビッグマック.出典 ?? bukka["ビッグマック_出典"];
+  }
+}
+
+// 3. Netflixの更新
+if (agentOutput.Netflix) {
+  const nfVal = agentOutput.Netflix.現地通貨;
+  if (nfVal && nfVal !== "欠測") {
+    bukka["Netflix_現地通貨"] = nfVal;
+    bukka["Netflix_出典"] = agentOutput.Netflix.出典 ?? bukka["Netflix_出典"];
+  }
+}
+
+// === 物価データの円換算・自動再計算処理 ===
+// 為替レート数値のパース (例: "1 BDT = 1.29 JPY" から 1.29 を取得)
+const fxRaw = bukka["為替レート"] || "";
+const fxMatch = fxRaw.match(/[\d.]+/g);
+const fxRate = fxMatch ? parseFloat(fxMatch[fxMatch.length - 1]) : NaN;
+
+// USD/JPY, EUR/JPY レート（Netflixやビッグマックのドル・ユーロ換算用）
+const usdJpy = parseFloat(rowData["USD/JPY"]) || 155; 
+const eurJpy = parseFloat(rowData["EUR/JPY"]) || 165;
+
+const parseLocalValue = (val) => {
+  if (!val || val === "欠測") return NaN;
+  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
+  return parseFloat(cleanVal);
+};
+
+// 通常項目の再計算（現地通貨に fxRate を掛ける）
+const itemsToRecalc = [
+  "ビール", "タバコ", "水", "ガソリン", "外食", "光熱費", "家賃1LDK(市中心)", "月収", "ビッグマック"
+];
+
+for (const itemKey of itemsToRecalc) {
+  const localVal = bukka[`${itemKey}_現地通貨`];
+  const valNum = parseLocalValue(localVal);
+  if (!isNaN(valNum) && !isNaN(fxRate)) {
+    bukka[`${itemKey}_円換算`] = Math.round(valNum * fxRate).toString();
+  } else if (localVal === "欠測" || !localVal) {
+    bukka[`${itemKey}_円換算`] = "欠測";
+  }
+}
+
+// Netflix の再計算（ドル・ユーロ自動判定付き）
+const nfVal = bukka["Netflix_現地通貨"];
+const nfNum = parseLocalValue(nfVal);
+if (!isNaN(nfNum)) {
+  let netflixCode = rowData["Netflix_通貨コード"] || "";
+  if (!netflixCode && typeof nfVal === 'string') {
+    if (nfVal.includes('$')) netflixCode = "USD";
+    else if (nfVal.includes('€')) netflixCode = "EUR";
+  }
+  const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
+  if (!isNaN(netflixRate)) {
+    bukka["Netflix_円換算"] = Math.round(nfNum * netflixRate).toString();
+  }
+} else if (nfVal === "欠測" || !nfVal) {
+  bukka["Netflix_円換算"] = "欠測";
+}
+
 bukka["最終アップデート日"] = today;
 bukka["次回アップデート予定日"] = calcNextUpdate(["物価"], { "物価": 1 });
 bukka["アップデート状態"] = "✅完了";
