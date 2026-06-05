@@ -102,12 +102,32 @@ const parseOutput = (node, nodeName) => {
 
 const adjustPrisonTrend = (trendArray, chiAnObj) => {
   const latestCount = chiAnObj['刑務所総収容者数'];
-  if (latestCount && latestCount !== '欠測' && latestCount !== '-') {
-    if (trendArray.length > 0) {
-      trendArray[trendArray.length - 1] = {
-        年: chiAnObj['刑務所総収容者数_年'],
-        総収容者数: latestCount
-      };
+  const latestYear = chiAnObj['刑務所総収容者数_年'];
+  if (latestCount && latestCount !== '欠測' && latestCount !== '-' && latestYear) {
+    const latestYearNum = parseInt(String(latestYear).replace(/[^0-9]/g, ''));
+    if (!isNaN(latestYearNum)) {
+      // すでに同じ年のデータが配列に存在するかチェック
+      const existingIndex = trendArray.findIndex(d => {
+        const y = parseInt(String(d.年).replace(/[^0-9]/g, ''));
+        return y === latestYearNum;
+      });
+      if (existingIndex !== -1) {
+        // すでに存在する場合は、その年のデータを最新の数値で同期・上書きする
+        trendArray[existingIndex].総収容者数 = latestCount;
+      } else {
+        // 配列内の最大年を取得
+        const maxYear = trendArray.reduce((max, d) => {
+          const y = parseInt(String(d.年).replace(/[^0-9]/g, ''));
+          return (!isNaN(y) && y > max) ? y : max;
+        }, 0);
+        // 最新データの年が、既存のどの年よりも新しい場合のみ、末尾のデータを上書きして最新データとする
+        if (latestYearNum > maxYear && trendArray.length > 0) {
+          trendArray[trendArray.length - 1] = {
+            年: latestYear,
+            総収容者数: latestCount
+          };
+        }
+      }
     }
   }
   return trendArray;
@@ -131,6 +151,15 @@ if (r1 && r1.地理) {
 const r2 = parseOutput(r2Raw, 'researcher2');
 
 const r25 = parseOutput(r25Raw, 'researcher25');
+
+// 重大犯罪事件を発生年の新しい順（降順）に強制ソート
+if (r1 && Array.isArray(r1.重大犯罪事件)) {
+  r1.重大犯罪事件.sort((a, b) => {
+    const yearA = parseInt(String(a.発生年).replace(/[^0-9]/g, '')) || 0;
+    const yearB = parseInt(String(b.発生年).replace(/[^0-9]/g, '')) || 0;
+    return yearB - yearA;
+  });
+}
 
 const r2Merged = {
   country: r2.country,
