@@ -545,14 +545,9 @@ return [articleItem].map(item => {
       d['順位'] || '',
       d['種別'] || 'データなし'
     ]);
-    let crimeYear = String(sheetData.data?.固定データ?.治安指標?.犯罪_年 || '').trim();
-    if (crimeYear && /^\d+$/.test(crimeYear)) {
-      crimeYear += '年';
-    }
-    const crimeOutten = String(sheetData.data?.固定データ?.治安指標?.犯罪_出典 || '').trim();
-    const displayOutten = (crimeYear ? crimeYear + ' ' : '') + crimeOutten;
+    const crimeOutten = crimeData[0]?.['出典'] || '';
     article += makeTable(['順位', '犯罪種別'], crimeRows, ['15%', '85%']);
-    if (displayOutten) article += `<p class="citation" style="${citationStyle}">出典：${displayOutten}</p>\n`;
+    if (crimeOutten) article += `<p class="citation" style="${citationStyle}">出典：${crimeOutten}</p>\n`;
   }
 
   // 犯罪の傾向テキスト
@@ -730,7 +725,7 @@ return [articleItem].map(item => {
         if (beerCite && (String(beerCite).includes('禁止') || String(beerCite).includes('未進出') || String(beerCite).includes('prohibited') || String(beerCite).includes('banned') || String(beerCite).includes('illegal') || String(beerCite).includes('no alcohol') || String(beerCite).includes('販売なし') || String(beerCite).includes('販売禁止') || String(beerCite).includes('法律'))) {
           displayP = String(beerCite);
         } else {
-          displayP = 'アルコール禁止のため';
+          displayP = 'アルコール禁止';
         }
       }
 
