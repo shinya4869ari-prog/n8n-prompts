@@ -93,6 +93,5 @@ return [{
     光熱費: extractPrice(html, 'Basic Utilities for 915 Square Feet Apartment (Electricity, Heating, Cooling, Water, Garbage)'),
     家賃: extractPrice(html, '1 Bedroom Apartment in City Centre'),
     月収: extractPrice(html, 'Average Monthly Net Salary (After Tax)'),
-    Netflix: extractPrice(html, 'Netflix (1 month)'),
   }
 }];
