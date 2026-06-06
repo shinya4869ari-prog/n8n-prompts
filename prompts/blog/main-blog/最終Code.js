@@ -902,7 +902,10 @@ return [articleItem].map(item => {
         (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
         (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
-      const directorActorStr = apiData['監督_主演'] ? ` &nbsp;•&nbsp; ${apiData['監督_主演']}` : '';
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['監督_主演'] || '');
+      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      const directorActorStr = director ? ` &nbsp;•&nbsp; 監督：${director}` : '';
+      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：${cast}</div>` : '';
       const posterPath = apiData['poster_path'];
       const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
       const movieInfo = (
@@ -928,6 +931,7 @@ return [articleItem].map(item => {
     <div style="flex:1;">
       <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${movieInfo}'>${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
+      ${castHtml}
       ${linkHtml}
     </div>
     ${posterHtml}
@@ -975,6 +979,11 @@ return [articleItem].map(item => {
         ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
         : '';
 
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
+      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      const directorHtml = director ? `<br><span style="color:#555;font-size:12px;">🎬 監督：${director}</span>` : '';
+      const castHtml = cast ? `<br><span style="color:#555;font-size:12px;">👥 キャスト：${cast}</span>` : '';
+
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
@@ -986,7 +995,7 @@ return [articleItem].map(item => {
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${d['公開年'] || ''}
-        ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
+        ${directorHtml}${castHtml}
       </div>
       ${linkHtml}
     </div>
