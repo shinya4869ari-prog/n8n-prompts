@@ -144,7 +144,8 @@ return [articleItem].map(item => {
     // 出典部分を分離
     const citeMatch = text.match(/\n出典\s*[:：]\s*([\s\S]*)$/i);
     const mainText = cleanMarkdown(citeMatch ? text.replace(citeMatch[0], '') : text);
-    const citeText = cleanMarkdown(citeMatch ? citeMatch[1] : '');
+    const citeText = cleanMarkdown(citeMatch ? citeMatch[1] : '')
+      .replace(/https?:\/\/([^\/\s]+)[^\s]*/g, 'https://$1');
     
     const formatted = mainText
       .replace(/^##\s*\[貿易解説\][：:]?\s*/gm, '')
