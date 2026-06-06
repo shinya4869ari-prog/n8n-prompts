@@ -46,6 +46,7 @@ for (const item of items) {
           cast: movie.cast || "出演者不明",
           origin_title: movie.原題 || "原題不明",
           poster_path: movie.poster_path || "",
+          country: data.country || "",
           overview: "" // 後続のAIノードで生成するため、ここでは一旦空欄にします
         }
       });

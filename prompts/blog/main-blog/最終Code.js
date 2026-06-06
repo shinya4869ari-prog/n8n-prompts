@@ -239,7 +239,7 @@ return [articleItem].map(item => {
 <style>
   .entry-title, .post-title, .page-title { display: none !important; }
 </style>
-<div style="background:${headerBg}; border:1px solid #eee; border-left:8px solid ${statusColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
+<div id="top" style="background:${headerBg}; border:1px solid #eee; border-left:8px solid ${statusColor}; border-radius:12px; padding:24px; margin-bottom:35px; box-shadow:0 4px 15px rgba(0,0,0,0.06); position:relative; overflow:hidden;">
   <div style="position:absolute; top:-20px; right:-20px; font-size:100px; color:${statusColor}; opacity:0.05; transform:rotate(-15deg); font-weight:bold; z-index:0;">FACT</div>
   <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
     <div>
@@ -255,6 +255,24 @@ return [articleItem].map(item => {
       ${statusText}
     </div>
   </div>
+</div>
+`;
+
+  article += `
+<div style="background:#f9fafa;border:1px solid #e0eeee;border-radius:12px;padding:20px 24px;margin:30px 0;">
+  <div style="font-size:13px;font-weight:700;color:#00bcd4;margin-bottom:12px;">📋 目次</div>
+  <ol style="margin:0;padding-left:20px;line-height:2.2;font-size:14px;">
+    <li><a href="#section-1" style="color:#333;text-decoration:none;">制度の9つの皿</a></li>
+    <li><a href="#section-2" style="color:#333;text-decoration:none;">地理と経済の衡量</a></li>
+    <li><a href="#section-3" style="color:#333;text-decoration:none;">治安と平和の衡量</a></li>
+    <li><a href="#section-4" style="color:#333;text-decoration:none;">貿易の衡量</a></li>
+    <li><a href="#section-5" style="color:#333;text-decoration:none;">生活・価値の衡量（物価比較）</a></li>
+    <li><a href="#section-6" style="color:#333;text-decoration:none;">歴史的背景</a></li>
+    <li><a href="#section-7" style="color:#333;text-decoration:none;">直近の動向</a></li>
+    <li><a href="#section-8" style="color:#333;text-decoration:none;">映像で知る${countryName}</a></li>
+    <li><a href="#section-9" style="color:#333;text-decoration:none;">おすすめ映画・映像作品</a></li>
+    <li><a href="#deep-dive" style="color:#333;text-decoration:none;">✦ Deep Dive</a></li>
+  </ol>
 </div>
 `;
 
@@ -289,7 +307,7 @@ return [articleItem].map(item => {
   }
 
   // --- 6. ① 制度の9つの皿 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">①</span> 制度の9つの皿</h2>\n`;
+  article += `<h2 id="section-1" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">①</span> 制度の9つの皿</h2>\n`;
   const seidoItems = ['国家の形と統治機構', '行政トップ', '立法と選挙制度', '司法と法制度', '社会保障・医療・年金', '教育制度', '徴税・財政制度', '安全保障と兵役', '基本権と価値観'];
   const seidoData = seidoItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
@@ -325,9 +343,10 @@ return [articleItem].map(item => {
 
   const seidoNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(seidoNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 7. ② 地理と経済の衡量 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">②</span> 地理と経済の衡量</h2>\n`;
+  article += `<h2 id="section-2" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">②</span> 地理と経済の衡量</h2>\n`;
   // geoData は上で事前抽出済み
   const geoRows = [
     ...geoData.map(d => [d.項目, d.値]),
@@ -405,9 +424,10 @@ return [articleItem].map(item => {
 
   const econNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(econNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 8. ③ 治安と平和の衡量 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">③</span> 治安と平和の衡量</h2>\n`;
+  article += `<h2 id="section-3" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">③</span> 治安と平和の衡量</h2>\n`;
   const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所稼働率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
@@ -603,9 +623,10 @@ return [articleItem].map(item => {
 
   const chianNeko = getNekoBubbleForSection('③');
   article += makeNekoBubble(chianNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 9. ④ 貿易の衡量 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">④</span> 貿易の衡量</h2>\n`;
+  article += `<h2 id="section-4" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">④</span> 貿易の衡量</h2>\n`;
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
   if (yushutsuData.length > 0 || yunyuData.length > 0) {
@@ -635,9 +656,10 @@ return [articleItem].map(item => {
 
   const boekiNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(boekiNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 10. ⑤ 生活・価値の衡量（物価比較） ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑤</span> 生活・価値の衡量（物価比較）</h2>\n`;
+  article += `<h2 id="section-5" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑤</span> 生活・価値の衡量（物価比較）</h2>\n`;
 
   // 為替レートをsheetData（整形ノード1）から直接取得、なければ国名変換Codeの値を使用
   const sheetRate = parseFloat(sheetData.data?.固定データ?.物価?.為替レート) || 0;
@@ -842,9 +864,10 @@ return [articleItem].map(item => {
 
   const bukkaNeko = getNekoBubbleForSection('⑤');
   article += makeNekoBubble(bukkaNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 11. ⑥ 歴史的背景 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑥</span> 歴史的背景（近代100年）</h2>\n`;
+  article += `<h2 id="section-6" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑥</span> 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
@@ -878,7 +901,7 @@ return [articleItem].map(item => {
   }
 
   // --- 12. ⑦ 直近の動向 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>\n`;
+  article += `<h2 id="section-7" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>\n`;
   const dohContent = cleanMarkdown(extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：'));
   if (dohContent) {
     const formattedDoh = dohContent.replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
@@ -893,9 +916,10 @@ return [articleItem].map(item => {
 
   const dohNeko = getNekoBubbleForSection('⑦');
   article += makeNekoBubble(dohNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 13. ⑧ 映像で知る${countryName} ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
+  article += `<h2 id="section-8" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
   const eizouData = parseLines(raw, '映像');
   if (eizouData.length > 0) {
     const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
@@ -951,9 +975,10 @@ return [articleItem].map(item => {
 
   const eizouNeko = getNekoBubbleForSection('⑧');
   article += makeNekoBubble(eizouNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 14. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
-  article += `<h2 style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
+  article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
   const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
     const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
@@ -1016,6 +1041,7 @@ return [articleItem].map(item => {
 
   const kougyouNeko = getNekoBubbleForSection('⑨');
   article += makeNekoBubble(kougyouNeko);
+  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 15. ライブログ ---
   const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);

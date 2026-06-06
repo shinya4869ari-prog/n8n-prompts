@@ -244,21 +244,21 @@ function insertLinks(articleText) {
 
     let mapUrl;
     if (cand.entity.type === 'keywords') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://map.seronworks.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'crimes') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://map.seronworks.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'people') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://map.seronworks.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'movies') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(cand.entity.name)}`;
     } else {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://map.seronworks.dev/?q=${encodeURIComponent(cand.entity.name)}`;
     }
 
     let spanHTML;
     if (cand.entity.type === 'crimes' || cand.entity.type === 'movies') {
       const mode = cand.entity.type === 'crimes' ? 'incident' : 'movie';
-      const mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=${mode}&q=${encodeURIComponent(cand.entity.name)}`;
+      const mapUrl = `https://map.seronworks.dev/?mode=${mode}&q=${encodeURIComponent(cand.entity.name)}`;
       const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const n = enc(cand.entity.name);
       const i = enc(linkHTML);
