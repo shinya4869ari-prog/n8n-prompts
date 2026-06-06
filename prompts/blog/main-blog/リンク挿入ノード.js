@@ -229,7 +229,7 @@ const allEntities = [
 
 for (const entity of allEntities) {
   if (!entity.name) continue;
-  if (entity.type !== 'crimes' && !entity.info) continue;
+  if (entity.type !== 'crimes' && entity.type !== 'movies' && !entity.info) continue;
   entity.name = String(entity.name);
   entity.info = String(entity.info || '');
   if (/語$/.test(entity.name)) continue;
@@ -273,7 +273,7 @@ function insertLinks(articleText) {
     }
 
     let spanHTML;
-    if (cand.entity.type === 'crimes') {
+    if (cand.entity.type === 'crimes' || cand.entity.type === 'movies') {
       spanHTML = `<a href="${mapUrl}" target="_blank" style="color:#20B2AA;border-bottom:1px dashed #20B2AA;font-weight:bold;text-decoration:none;">${cand.pattern}</a>`;
     } else {
       const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
