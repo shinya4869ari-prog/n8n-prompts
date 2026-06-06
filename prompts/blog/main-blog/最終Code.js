@@ -902,7 +902,7 @@ return [articleItem].map(item => {
         (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
         (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
-      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['監督_主演'] || '');
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
       const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
       const directorActorStr = director ? ` &nbsp;•&nbsp; 監督：${director}` : '';
       const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：${cast}</div>` : '';
