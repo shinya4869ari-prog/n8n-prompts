@@ -40,10 +40,10 @@ try {
           }
 
           const parts = line.split('|');
-          if (parts.length >= 2) {
+          if (parts.length >= 1) {
             const name = parts[0].trim();
-            const info = parts.slice(1).join('|').trim();
-            if (name && info) {
+            const info = parts.slice(1).join('|').trim() || '';
+            if (name) {
               const item = { name, info };
               if (currentSection === 'places') places.push(item);
               else if (currentSection === 'people') people.push(item);
