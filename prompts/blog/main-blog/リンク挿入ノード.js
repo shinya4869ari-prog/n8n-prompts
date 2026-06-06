@@ -151,9 +151,6 @@ const popupHTML = `
   <div id="tenbin-popup-info" style="font-size:14px;line-height:1.7;color:#555;margin-top:10px;"></div>
 </div>`;
 
-// 映画用ポップアップ動的処理
-const moviePopupScript = '';
-
 function enc(t) {
   try { return btoa(unescape(encodeURIComponent(t || ''))); }
   catch (e) { return ''; }
@@ -260,7 +257,13 @@ function insertLinks(articleText) {
 
     let spanHTML;
     if (cand.entity.type === 'crimes' || cand.entity.type === 'movies') {
-      spanHTML = `<a href="${mapUrl}" target="_blank" style="color:#20B2AA;border-bottom:1px dashed #20B2AA;font-weight:bold;text-decoration:none;">${cand.pattern}</a>`;
+      const mode = cand.entity.type === 'crimes' ? 'crime' : 'movie';
+      const mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=${mode}&q=${encodeURIComponent(cand.entity.name)}`;
+      const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+      const n = enc(cand.entity.name);
+      const i = enc(linkHTML);
+      const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+      spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
     } else {
       const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const n = enc(cand.entity.name);
@@ -341,7 +344,7 @@ function removeLoneSurrogates(str) {
 let metaJson = {};
 try { metaJson = $('最終Code').first().json; } catch(e) {}
 
-const finalMain = removeLoneSurrogates(linkedMain) + '\n\n' + moviePopupScript + '\n\n' + popupHTML;
+const finalMain = removeLoneSurrogates(linkedMain) + '\n\n' + popupHTML;
 
 return [{ json: {
   article:       finalMain,
