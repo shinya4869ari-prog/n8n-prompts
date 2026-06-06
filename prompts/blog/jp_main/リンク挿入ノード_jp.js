@@ -258,10 +258,21 @@ function insertLinks(articleText) {
 
     let newTokens = [];
     let replaced = false;
+    let insideNoLink = false;
 
     for (let idxToken = 0; idxToken < linkTokens.length; idxToken++) {
       let token = linkTokens[idxToken];
-      if (replaced || token.type === 'tag' || token.text.includes('quickchart.io')) {
+      if (token.type === 'tag') {
+        if (token.text.includes('class="no-link"') || token.text.includes("class='no-link'")) {
+          insideNoLink = true;
+        } else if (token.text.startsWith('</')) {
+          insideNoLink = false;
+        }
+        newTokens.push(token);
+        continue;
+      }
+
+      if (replaced || insideNoLink || token.text.includes('quickchart.io')) {
         newTokens.push(token);
         continue;
       }
