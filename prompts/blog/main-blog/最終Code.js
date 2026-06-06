@@ -418,7 +418,11 @@ return [articleItem].map(item => {
     return obj;
   });
   const chiAnRows = chiAnData.map(d => {
-    const formatSource = (val) => val.replace(/\s*([（(].*)$/, '<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">$1</span>');
+    const formatSource = (val) => {
+      const main = val.replace(/\s*[（(].*$/, '');
+      const source = val.match(/\s*([（(].*)$/);
+      return `<span style="font-weight:900; font-size:15px;">${main}</span>` + (source ? `<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">${source[1]}</span>` : '');
+    };
     return [d.項目, formatSource(d[countryName] || 'データなし'), formatSource(d['日本'] || 'データなし')];
   });
 
