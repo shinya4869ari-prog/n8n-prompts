@@ -246,7 +246,7 @@ function insertLinks(articleText) {
     if (cand.entity.type === 'keywords') {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'crimes') {
-      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=crime&q=${encodeURIComponent(cand.entity.name)}`;
+      mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=incident&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'people') {
       mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=person&q=${encodeURIComponent(cand.entity.name)}`;
     } else if (cand.entity.type === 'movies') {
@@ -257,15 +257,15 @@ function insertLinks(articleText) {
 
     let spanHTML;
     if (cand.entity.type === 'crimes' || cand.entity.type === 'movies') {
-      const mode = cand.entity.type === 'crimes' ? 'crime' : 'movie';
+      const mode = cand.entity.type === 'crimes' ? 'incident' : 'movie';
       const mapUrl = `https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=${mode}&q=${encodeURIComponent(cand.entity.name)}`;
-      const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const n = enc(cand.entity.name);
       const i = enc(linkHTML);
       const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
       spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
     } else {
-      const linkHTML = `<br><br><a href="${mapUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const n = enc(cand.entity.name);
       const i = enc(cand.entity.info + linkHTML);
       
