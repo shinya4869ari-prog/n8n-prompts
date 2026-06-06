@@ -152,21 +152,7 @@ const popupHTML = `
 </div>`;
 
 // 映画用ポップアップ動的処理
-const moviePopupScript = `
-<script>
-document.addEventListener('click', function(e) {
-  const el = e.target.closest('[data-movie-title]');
-  if (!el) return;
-  const title = el.getAttribute('data-movie-title');
-  const info = el.getAttribute('data-movie-info');
-  const mapUrl = 'https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=' + encodeURIComponent(title);
-  const linkHTML = '<br><br><a href="' + mapUrl + '" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>';
-  document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').innerHTML = info + linkHTML;
-  document.getElementById('tenbin-popup').style.display = 'block';
-  document.getElementById('tenbin-overlay').style.display = 'block';
-});
-</script>`;
+const moviePopupScript = '';
 
 function enc(t) {
   try { return btoa(unescape(encodeURIComponent(t || ''))); }

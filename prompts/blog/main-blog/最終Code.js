@@ -929,7 +929,7 @@ return [articleItem].map(item => {
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${movieInfo}'>${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
+      <div style="font-weight:800;font-size:16px;color:#333;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
       ${castHtml}
       ${linkHtml}
@@ -991,7 +991,7 @@ return [articleItem].map(item => {
     <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
-        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${rankingInfo}'>${d['タイトル'] || ''}</span>
+        <span style="font-weight:800;font-size:16px;color:#333;">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${d['公開年'] || ''}
