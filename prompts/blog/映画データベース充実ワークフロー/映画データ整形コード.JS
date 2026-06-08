@@ -4,7 +4,7 @@ const tmdb = $('TMDb検索').first().json;
 const formData = $('フォーム整形Code').first().json;
 const tmdb_input = tmdb?.results?.[0] || tmdb;
 const result = tmdb_input?.id ? tmdb_input : tmdb?.results?.[0];
-if (!formData?.title) return [];
+if (!formData?.title && !result?.title) return [];
 const langToCountry = {
   'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
   'zh': 'CN', 'ar': 'SA', 'fa': 'IR', 'hi': 'IN', 'th': 'TH',
