@@ -1,0 +1,26 @@
+SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tmdb ?genre ?depictedEvent ?lang WHERE {
+  {
+    SELECT DISTINCT ?movie ?date ?tmdb WHERE {
+      ?country wdt:P297 "{{ $('Loop Over Items').item.json.code2.toUpperCase() }}".
+      {
+        ?movie wdt:P495 ?country .
+      } UNION {
+        ?movie wdt:P840 ?country .
+      }
+      ?movie wdt:P31 wd:Q11424.
+      ?movie wdt:P4947 ?tmdb . 
+      ?movie wdt:P577 ?date .
+    }
+    ORDER BY DESC(?date)
+    LIMIT 30
+  }
+  BIND(YEAR(?date) AS ?year)
+  OPTIONAL { ?movie wdt:P136 ?genre . }
+  OPTIONAL { ?movie wdt:P4790 ?depictedEvent . }
+  OPTIONAL { ?movie wdt:P18 ?poster . }
+  OPTIONAL { ?movie rdfs:label ?movieLabelJa . FILTER(LANG(?movieLabelJa) = "ja") }
+  OPTIONAL { ?movie rdfs:label ?movieLabelKo . FILTER(LANG(?movieLabelKo) = "ko") }
+  OPTIONAL { ?movie rdfs:label ?movieLabelEn . FILTER(LANG(?movieLabelEn) = "en") }
+  OPTIONAL { ?movie wdt:P364 ?lang . }
+  BIND(COALESCE(?movieLabelJa, ?movieLabelEn, ?movieLabelKo) AS ?movieLabel)
+}
