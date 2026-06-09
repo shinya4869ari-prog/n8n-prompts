@@ -21,6 +21,9 @@ const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = $('Ollama').first().json;
 const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
+const videoResults = brave?.videos?.results || $('Brave Search_movie').first().json.videos?.results || [];
+const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
+const trailer_url = youtubeVideo?.url || null;
 return [{
   json: {
     title: formData.title || result?.title || null,
@@ -37,5 +40,6 @@ return [{
     ai_summary,
     director,
     cast,
+    trailer_url,
   }
 }];
