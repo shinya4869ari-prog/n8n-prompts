@@ -37,8 +37,18 @@ const wikidata = $('Wikidata検索').isExecuted ? ($('Wikidata検索').item?.jso
 const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
-const ollama = $('Ollama').isExecuted ? ($('Ollama').item?.json || {}) : {};
-const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
+const claude = $('Message a model').isExecuted ? ($('Message a model').item?.json || {}) : {};
+let rawText = '';
+if (typeof claude?.text === 'string') {
+  rawText = claude.text;
+} else if (typeof claude?.content === 'string') {
+  rawText = claude.content;
+} else if (Array.isArray(claude?.content) && claude.content[0]?.text) {
+  rawText = claude.content[0].text;
+} else if (typeof claude?.output === 'string') {
+  rawText = claude.output;
+}
+const ai_summary = rawText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const braveVideos = ($('Brave Search_movie').isExecuted && $('Brave Search_movie').item?.json?.videos?.results) || [];
 const videoResults = brave?.videos?.results || braveVideos;
 const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));

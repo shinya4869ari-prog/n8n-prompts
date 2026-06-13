@@ -1,7 +1,7 @@
-const credits = $('TMDb credits取得').item.json;
-const tmdb = $('TMDb検索').item.json;
-const sourceData = $('Loop Over Items1').item.json; // 修正：.item.jsonにして周回ごとの映画を正しく取得
-const result = tmdb?.results?.[0] || tmdb;
+const credits = $('TMDb credits取得').item?.json || {};
+const tmdb = $('TMDb検索').item?.json || {};
+const sourceData = $('Loop Over Items1').item?.json || {}; // 修正：.item.jsonにして周回ごとの映画を正しく取得
+const result = tmdb?.movie_results?.[0] || tmdb?.results?.[0] || tmdb;
 if (!sourceData?.title && !result?.title) return [];
 const langToCountry = {
   'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
@@ -18,7 +18,7 @@ const posterPath = result?.poster_path
 const wikidata_id = sourceData?.wikidata_id || null;
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
-const ollama = $('Ollama').item.json;
+const ollama = $('Ollama').item?.json || {};
 const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const braveVideos = $('Brave Search_movie').item?.json?.videos?.results || $('Brave Search_movie').first().json.videos?.results || [];
 const youtubeVideo = braveVideos.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
