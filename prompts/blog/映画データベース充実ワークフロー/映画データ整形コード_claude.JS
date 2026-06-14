@@ -58,7 +58,7 @@ if (typeof claude?.text === 'string') {
   rawText = claude.output;
 }
 const ai_summary = rawText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
-const braveSearchData = getNodeData('Brave Search_movie');
+const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.videos?.results || [];
 const videoResults = brave?.videos?.results || braveVideos;

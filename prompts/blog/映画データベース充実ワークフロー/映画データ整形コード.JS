@@ -48,7 +48,7 @@ const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = getNodeData('Ollama');
 const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
-const braveSearchData = getNodeData('Brave Search_movie');
+const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.videos?.results || [];
 const videoResults = brave?.videos?.results || braveVideos;

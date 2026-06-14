@@ -12,7 +12,7 @@
 - 前置きや挨拶（「〜をご紹介します」など）や、見出し（「# 映画名」や「## 紹介文」など）は一切出力しないでください。紹介文の本文（段落）のみを出力してください。
 
 検索結果：
-{{ $('Brave Search_movie').isExecuted ? $('Brave Search_movie').item.json.web?.results?.slice(0,5).map(r => r.movie?.description || r.description).join('\n') : '' }}
+{{ $('Tavily').isExecuted ? $('Tavily').item.json.results?.slice(0,5).map(r => r.content).join('\n') : '' }}
 
 公式あらすじ：
 {{
