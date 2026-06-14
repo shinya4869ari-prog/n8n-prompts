@@ -48,7 +48,21 @@ const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = getNodeData('Ollama');
-const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
+let rawOllamaText = '';
+if (typeof ollama?.response === 'string') {
+  rawOllamaText = ollama.response;
+} else if (typeof ollama?.text === 'string') {
+  rawOllamaText = ollama.text;
+} else if (typeof ollama?.content === 'string') {
+  rawOllamaText = ollama.content;
+} else if (typeof ollama?.message?.content === 'string') {
+  rawOllamaText = ollama.message.content;
+} else if (Array.isArray(ollama?.content) && ollama.content[0]?.text) {
+  rawOllamaText = ollama.content[0].text;
+} else if (typeof ollama?.output === 'string') {
+  rawOllamaText = ollama.output;
+}
+const ai_summary = rawOllamaText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
