@@ -1,12 +1,13 @@
-const brave = $input.first()?.json || {};
-const credits = $('TMDb credits取得').first()?.json || {};
-const tmdb = $('TMDb検索').first()?.json || {};
+const brave = $input.item?.json || {};
+const credits = $('TMDb credits取得').item?.json || {};
+const tmdb = $('TMDb検索').item?.json || {};
 const sourceData = $('Loop Over Items').item?.json || {};
 
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
   try {
-    return $(nodeName).first()?.json || {};
+    const node = $(nodeName);
+    return node.isExecuted ? (node.item?.json || {}) : {};
   } catch (e) {
     return {};
   }
