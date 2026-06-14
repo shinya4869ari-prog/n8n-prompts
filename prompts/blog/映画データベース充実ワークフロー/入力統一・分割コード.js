@@ -17,8 +17,8 @@ const firstJson = allInputs[0]?.json || {};
 if (allInputs.length > 1 || (firstJson.title && !firstJson.titles && allInputs.length === 1 && typeof firstJson.title === 'string' && !firstJson.title.trim().startsWith('['))) {
   items = allInputs.map(item => {
     const movie = item.json || {};
-    const inputCountry = movie.country || "KR";
-    const countryInfo = countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null };
+    const inputCountry = movie.country || null;
+    const countryInfo = inputCountry ? (countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null }) : { code: null, lang: null };
     return {
       title: movie.title,
       origin_title: movie.original_title || movie.origin_title || null,
@@ -45,8 +45,8 @@ if (items.length === 0) {
       const parsed = JSON.parse(jsonStr);
       if (Array.isArray(parsed)) {
         items = parsed.map(movie => {
-          const inputCountry = movie.country || inputData.country || "KR";
-          const countryInfo = countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null };
+          const inputCountry = movie.country || inputData.country || null;
+          const countryInfo = inputCountry ? (countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null }) : { code: null, lang: null };
           return {
             title: movie.title,
             origin_title: movie.original_title || movie.origin_title || null,
@@ -77,8 +77,8 @@ if (items.length === 0) {
     }
   }
 
-  const inputCountry = inputData.country || "KR";
-  const countryInfo = countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null };
+  const inputCountry = inputData.country || null;
+  const countryInfo = inputCountry ? (countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null }) : { code: null, lang: null };
   const titles = text.split('\n').map(t => t.trim()).filter(t => t.length > 0);
   items = titles.map(title => ({
     title,

@@ -40,7 +40,7 @@ const langToCountry = {
 };
 const lang = result?.original_language;
 // 判定された国、または指定された対象国を格納
-const country = sourceData.target_country || langToCountry[lang] || lang?.toUpperCase() || null;
+const country = langToCountry[lang] || sourceData.target_country || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
