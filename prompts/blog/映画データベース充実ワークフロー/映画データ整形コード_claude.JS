@@ -59,7 +59,8 @@ if (typeof claude?.text === 'string') {
 }
 const ai_summary = rawText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const braveSearchData = getNodeData('Brave Search_movie');
-const braveVideos = braveSearchData?.videos?.results || [];
+const braveTrailer = getNodeData('Brave Search_trailer');
+const braveVideos = braveTrailer?.videos?.results || [];
 const videoResults = brave?.videos?.results || braveVideos;
 const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
 const trailer_url = youtubeVideo?.url || null;
