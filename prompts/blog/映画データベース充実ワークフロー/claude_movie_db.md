@@ -1,4 +1,4 @@
-あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { const tmdb = $('TMDb検索').first().json; const sourceData = $('Loop Over Items').first().json; const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
+あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { const tmdb = $('TMDb検索').first().json; const sourceData = $('Loop Over Items').item.json; const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
 
 ルール：
 - 提供された情報に書かれていない情報は絶対に含めないでください。
@@ -18,7 +18,7 @@
 {{
   (() => {
     const tmdb = $('TMDb検索').first().json;
-    const sourceData = $('Loop Over Items').first().json;
+    const sourceData = $('Loop Over Items').item.json;
     const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
     let result = null;
     if (resultsList.length > 0) {

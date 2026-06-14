@@ -1,7 +1,7 @@
 const brave = $input.first()?.json || {};
 const credits = $('TMDb credits取得').first()?.json || {};
 const tmdb = $('TMDb検索').first()?.json || {};
-const sourceData = $('Loop Over Items').first()?.json || {};
+const sourceData = $('Loop Over Items').item?.json || {};
 
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
@@ -103,7 +103,7 @@ return [{
   json: {
     title: (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || result?.title || null,
     origin_title: sourceData.origin_title || result?.original_title || null,
-    year: result?.release_date ? result.release_date.substring(0, 4) : null,
+    year: (result?.release_date ? result.release_date.substring(0, 4) : null) || sourceData.year || null,
     poster_url: posterPath,
     country,
     wikidata_id,

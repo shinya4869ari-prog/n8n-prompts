@@ -24,7 +24,8 @@ if (allInputs.length > 1 || (firstJson.title && !firstJson.titles && allInputs.l
       origin_title: movie.original_title || movie.origin_title || null,
       target_country: countryInfo.code,
       target_lang: countryInfo.lang,
-      tmdb_id: movie.tmdb_id || movie.tmdb || null
+      tmdb_id: movie.tmdb_id || movie.tmdb || null,
+      year: movie.year || null
     };
   }).filter(item => item.title);
 }
@@ -52,7 +53,8 @@ if (items.length === 0) {
             origin_title: movie.original_title || movie.origin_title || null,
             target_country: countryInfo.code,
             target_lang: countryInfo.lang,
-            tmdb_id: movie.tmdb_id || movie.tmdb || null
+            tmdb_id: movie.tmdb_id || movie.tmdb || null,
+            year: movie.year || inputData.year || null
           };
         });
       }
@@ -85,7 +87,8 @@ if (items.length === 0) {
     origin_title: inputData.origin_title || null,
     target_country: countryInfo.code,
     target_lang: countryInfo.lang,
-    tmdb_id: inputData.tmdb_id || null
+    tmdb_id: inputData.tmdb_id || null,
+    year: inputData.year || null
   }));
 }
 
