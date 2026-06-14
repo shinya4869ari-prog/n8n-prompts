@@ -3,6 +3,15 @@ const credits = $('TMDb credits取得').item?.json || {};
 const tmdb = $('TMDb検索').item?.json || {};
 const sourceData = $('Loop Over Items').item?.json || {};
 
+// 実行されていないノードでも安全にデータを取得するヘルパー関数
+function getNodeData(nodeName) {
+  try {
+    return $(nodeName).item?.json || {};
+  } catch (e) {
+    return {};
+  }
+}
+
 const resultsList = tmdb?.results || tmdb?.movie_results || (tmdb?.id ? [tmdb] : []);
 
 // 対象国と言語にマッチする映画を検索結果（resultsList）から探す
@@ -33,13 +42,14 @@ const lang = result?.original_language;
 // 判定された国、または指定された対象国を格納
 const country = sourceData.target_country || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
-const wikidata = $('Wikidata検索').isExecuted ? ($('Wikidata検索').item?.json || {}) : {};
+const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
-const ollama = $('Ollama').isExecuted ? ($('Ollama').item?.json || {}) : {};
+const ollama = getNodeData('Ollama');
 const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
-const braveVideos = ($('Brave Search_movie').isExecuted && $('Brave Search_movie').item?.json?.videos?.results) || [];
+const braveSearchData = getNodeData('Brave Search_movie');
+const braveVideos = braveSearchData?.videos?.results || [];
 const videoResults = brave?.videos?.results || braveVideos;
 const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
 const trailer_url = youtubeVideo?.url || null;
