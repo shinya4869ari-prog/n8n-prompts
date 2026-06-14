@@ -52,7 +52,30 @@ const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.videos?.results || [];
 const videoResults = brave?.videos?.results || braveVideos;
-const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
+const youtubeVideo = videoResults.find(v => {
+  const url = v.url || '';
+  const title = (v.title || '').toLowerCase();
+  
+  // YouTubeの動画リンクであること
+  const isYouTube = url.includes('youtube.com/watch') || url.includes('youtu.be/');
+  if (!isYouTube) return false;
+  
+  // YouTubeのエラー画面（ノイズ）を除外する
+  const isNoise = title.includes('not currently available') || title.includes('利用できません') || title.includes('device');
+  if (isNoise) return false;
+  
+  // 映画の予告編に関連するキーワードが含まれているものを優先
+  const hasKeyword = title.includes('予告') || title.includes('特報') || title.includes('trailer') || title.includes('teaser') || title.includes('映画');
+  return hasKeyword;
+}) || videoResults.find(v => {
+  // フォールバック：キーワードは無くても、ノイズではないYouTube動画を返す
+  const url = v.url || '';
+  const title = (v.title || '').toLowerCase();
+  const isYouTube = url.includes('youtube.com/watch') || url.includes('youtu.be/');
+  const isNoise = title.includes('not currently available') || title.includes('利用できません') || title.includes('device');
+  return isYouTube && !isNoise;
+});
+
 const trailer_url = youtubeVideo?.url || null;
 
 const rawOverview = result?.overview || 
