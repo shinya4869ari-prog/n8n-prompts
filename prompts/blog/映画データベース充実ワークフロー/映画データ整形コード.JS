@@ -50,8 +50,8 @@ const ollama = getNodeData('Ollama');
 const ai_summary = (ollama?.content || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
-const braveVideos = braveTrailer?.videos?.results || [];
-const videoResults = brave?.videos?.results || braveVideos;
+const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
+const videoResults = brave?.results || brave?.videos?.results || braveVideos;
 const youtubeVideo = videoResults.find(v => {
   const url = v.url || '';
   const title = (v.title || '').toLowerCase();
