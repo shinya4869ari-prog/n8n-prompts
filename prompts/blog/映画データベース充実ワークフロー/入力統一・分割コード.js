@@ -22,10 +22,10 @@ if (allInputs.length > 1 || (firstJson.title && !firstJson.titles && allInputs.l
     return {
       title: movie.title,
       origin_title: movie.original_title || movie.origin_title || null,
+      year: movie.year || (movie.release_date ? movie.release_date.substring(0, 4) : null) || null,
       target_country: countryInfo.code,
       target_lang: countryInfo.lang,
-      tmdb_id: movie.tmdb_id || movie.tmdb || null,
-      year: movie.year || null
+      tmdb_id: movie.tmdb_id || movie.tmdb || null
     };
   }).filter(item => item.title);
 }
@@ -51,10 +51,10 @@ if (items.length === 0) {
           return {
             title: movie.title,
             origin_title: movie.original_title || movie.origin_title || null,
+            year: movie.year || (movie.release_date ? movie.release_date.substring(0, 4) : null) || null,
             target_country: countryInfo.code,
             target_lang: countryInfo.lang,
-            tmdb_id: movie.tmdb_id || movie.tmdb || null,
-            year: movie.year || inputData.year || null
+            tmdb_id: movie.tmdb_id || movie.tmdb || null
           };
         });
       }
@@ -85,10 +85,10 @@ if (items.length === 0) {
   items = titles.map(title => ({
     title,
     origin_title: inputData.origin_title || null,
+    year: inputData.year || (inputData.release_date ? inputData.release_date.substring(0, 4) : null) || null,
     target_country: countryInfo.code,
     target_lang: countryInfo.lang,
-    tmdb_id: inputData.tmdb_id || null,
-    year: inputData.year || null
+    tmdb_id: inputData.tmdb_id || null
   }));
 }
 

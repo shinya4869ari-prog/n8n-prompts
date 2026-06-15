@@ -18,11 +18,11 @@
     
     const originalTitle = result?.original_title || '';
     
-    // タイトルとオリジナルタイトルが同じ、あるいはオリジナルタイトルが無い場合は重複を避ける
-    if (!originalTitle || originalTitle.toLowerCase() === resolvedTitle.toLowerCase()) {
-      return `${resolvedTitle} あらすじ`;
-    }
+    // 日本語の映画情報や、漢字表記、邦題情報を引っ掛けるためのクエリを生成
+    const queryParts = [];
+    if (resolvedTitle) queryParts.push(`"${resolvedTitle}"`);
+    if (originalTitle && originalTitle !== resolvedTitle) queryParts.push(`"${originalTitle}"`);
     
-    return `${resolvedTitle} ${originalTitle} あらすじ`;
+    return `${queryParts.join(' ')} (映画 OR 邦題 OR 日本語タイトル OR 漢字)`;
   })()
 }}

@@ -1,4 +1,4 @@
-あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { const tmdb = $('TMDb検索').item.json; const sourceData = $('Loop Over Items').item.json; const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
+あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').first().json; } catch(e){} try { sourceData = $('Loop Over Items').item.json; } catch(e){} const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
 
 ルール：
 - 提供された情報に書かれていない情報は絶対に含めないでください。
@@ -9,16 +9,25 @@
 - **重要（翻訳・文体の質）**：公式あらすじが英語で提供されている場合、単なる機械的な直訳は避けてください。映画紹介ライターとして、読者を惹きつける**自然でドラマチックな日本語表現**（プロが執筆するレビューのような文体）に翻訳・要約してください。
   - 例："corrupt city" は「汚染された都市」のような直訳を避け、「腐敗した街」や「治安の悪い都市」など、映画の世界観に合わせた適切な訳語を選んでください。
   - 単にあらすじの事実を羅列するだけでなく、登場人物の葛藤やストーリーの緊張感が伝わるような、メリハリのある美しい日本語文章に仕上げてください。紹介文の中に英語の文章をそのまま残してはいけません。
+- 出力の最初の1行目に `[TITLE: この映画の日本語タイトル]` を必ず出力し、1行空けてから紹介文の本文（段落）を開始してください。
+  - 日本の公式配給元などから発表されている正式な邦題（例：『ホープ』）がある場合は、それを最優先して出力してください。
+  - 日本での正式な邦題がない（未公開など）場合は、原題の日本語直訳（例：『王と暮らす男』）または英題のカタカナ表記（例：『ザ・マン・フー・リブズ・ウィズ・ザ・キング』）にしてください。AIによる独自の創作タイトルや過度な意訳（例：『ジョソンの影王』など、原題や英題の意味から大きく乖離したもの）は絶対に付けないでください。
+- 登場人物などの人名や地名といった外国語の名前（例: Bum-seok、Sung-ae など）が英語アルファベット表記のまま紹介文に残らないようにしてください。必ず自然な日本語のカタカナ表記（例: 「ボムソク」「ソンエ」など）に翻訳して出力してください。
 - 前置きや挨拶（「〜をご紹介します」など）や、見出し（「# 映画名」や「## 紹介文」など）は一切出力しないでください。紹介文の本文（段落）のみを出力してください。
 
 検索結果：
-{{ $('Tavily').isExecuted ? $('Tavily').item.json.results?.slice(0,5).map(r => r.content).join('\n') : '' }}
-
+{{ (() => { try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { return (tavily.first()?.json?.results || []).slice(0, 5).map(r => r.content).join('\n'); } } catch (e) {} return ''; })() }}
 公式あらすじ：
 {{
   (() => {
-    const tmdb = $('TMDb検索').item.json;
-    const sourceData = $('Loop Over Items').item.json;
+    let tmdb = {};
+    let sourceData = {};
+    try {
+      tmdb = $('TMDb検索').first().json;
+    } catch (e) {}
+    try {
+      sourceData = $('Loop Over Items').item.json;
+    } catch (e) {}
     const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
     let result = null;
     if (resultsList.length > 0) {

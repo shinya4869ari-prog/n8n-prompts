@@ -6,8 +6,7 @@ const sourceData = $('Loop Over Items').item?.json || {};
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
   try {
-    const node = $(nodeName);
-    return node.isExecuted ? (node.item?.json || {}) : {};
+    return $(nodeName).first()?.json || {};
   } catch (e) {
     return {};
   }
@@ -48,21 +47,18 @@ const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = getNodeData('Ollama');
-let rawOllamaText = '';
-if (typeof ollama?.response === 'string') {
-  rawOllamaText = ollama.response;
-} else if (typeof ollama?.text === 'string') {
-  rawOllamaText = ollama.text;
-} else if (typeof ollama?.content === 'string') {
-  rawOllamaText = ollama.content;
-} else if (typeof ollama?.message?.content === 'string') {
-  rawOllamaText = ollama.message.content;
-} else if (Array.isArray(ollama?.content) && ollama.content[0]?.text) {
-  rawOllamaText = ollama.content[0].text;
-} else if (typeof ollama?.output === 'string') {
-  rawOllamaText = ollama.output;
+const rawOllamaText = (ollama?.content || '').trim();
+let ai_title = null;
+let ai_summary = null;
+if (rawOllamaText) {
+  const titleMatch = rawOllamaText.match(/\[TITLE:\s*(.+?)\]/i);
+  if (titleMatch) {
+    ai_title = titleMatch[1].trim();
+    ai_summary = rawOllamaText.replace(/\[TITLE:\s*(.+?)\]/i, '').replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
+  } else {
+    ai_summary = rawOllamaText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
+  }
 }
-const ai_summary = rawOllamaText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
@@ -104,19 +100,29 @@ const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawO
 // 日本語以外のあらすじ（英語など）で、AI要約（ai_summary）がある場合はAI翻訳文をセット
 const finalOverview = (!isOverviewJapanese && ai_summary) ? ai_summary : rawOverview;
 
+const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
+const isTmdbTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(result?.title || '');
+const finalTitle = inputTitle || (isTmdbTitleJapanese ? result?.title : null) || ai_title || result?.title || null;
+
+// JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
+const escapeJsonString = (str) => {
+  if (typeof str !== 'string') return str;
+  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+};
+
 return [{
   json: {
-    title: (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || result?.title || null,
-    origin_title: sourceData.origin_title || result?.original_title || null,
+    title: escapeJsonString(finalTitle),
+    origin_title: escapeJsonString(sourceData.origin_title || result?.original_title || null),
     year: (result?.release_date ? result.release_date.substring(0, 4) : null) || sourceData.year || null,
     poster_url: posterPath,
     country,
     wikidata_id,
     tmdb_id: result?.id || null,
-    overview: finalOverview,
-    ai_summary: (rawOverview && !isOverviewJapanese) ? null : ai_summary,
-    director,
-    cast,
+    overview: escapeJsonString(finalOverview),
+    ai_summary: escapeJsonString((rawOverview && !isOverviewJapanese) ? null : ai_summary),
+    director: escapeJsonString(director),
+    cast: escapeJsonString(cast),
     trailer_url,
   }
 }];
