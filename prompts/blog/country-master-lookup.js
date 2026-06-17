@@ -196,11 +196,20 @@ const countryMap = {
   "ジンバブエ": { en: "Zimbabwe", code: "ZW", code3: "ZWE", capital: "ハラレ", capitalEn: "Harare", currency: "ジンバブエ・ドル", currencyCode: "ZWL", currencySymbol: "$" }
 };
 
-const japaneseCountry = $input.first().json.countryJa || $input.first().json['国名（日本語）'] || $input.first().json.rowData?.['国名（日本語）'];
+const inputJson = $input.first().json;
+// `country` も評価対象に含める
+const japaneseCountry = inputJson.country || inputJson.countryJa || inputJson['国名（日本語）'] || inputJson.rowData?.['国名（日本語）'];
+
+if (!japaneseCountry) {
+  // 国の指定がない場合はエラーにせず、元の入力（監督やジャンル等）をそのまま次のノードへ渡す
+  return [{ json: inputJson }];
+}
+
 const entry = countryMap[japaneseCountry];
 
 if (!entry) {
-  throw new Error(`国名変換できませんでした: ${japaneseCountry}`);
+  // マスタに存在しない国名の場合もエラーにせず、元の入力をそのまま渡す
+  return [{ json: inputJson }];
 }
 
 const getRegion = (code3) => {
@@ -226,6 +235,7 @@ const countryRegion = getRegion(entry.code3 || "");
 
 return [{
   json: {
+    ...inputJson, // フォームからの入力データ(year, limit等)をすべて保持する
     country: japaneseCountry,
     countryEn: entry.en,
     countryCode: entry.code,

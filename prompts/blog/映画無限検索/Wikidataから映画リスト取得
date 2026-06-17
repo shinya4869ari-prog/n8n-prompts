@@ -1,0 +1,189 @@
+SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tmdb ?genre ?depictedEvent ?lang ?countryCode WHERE {
+  {
+    SELECT DISTINCT ?movie ?date ?tmdb WHERE {
+      ?movie wdt:P31 wd:Q11424 .
+      ?movie wdt:P4947 ?tmdb . 
+      ?movie wdt:P577 ?date .
+
+      # 監督による動的フィルタ
+      {{(() => {
+        const clean = (v) => {
+          if (v === undefined || v === null) return null;
+          const s = String(v).trim();
+          return (s === '' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') ? null : s;
+        };
+        let dirName = clean($json.directorName || $json['監督']);
+        let engName = clean($json.englishName);
+        if (!dirName) {
+          try {
+            const form = $node["n8n Form Trigger"].json;
+            dirName = clean(form.directorName || form['監督']);
+            engName = clean(form.englishName);
+          } catch(e) {}
+        }
+        if (dirName) {
+          const dir = dirName.toLowerCase();
+          const engDir = (engName || '').toLowerCase();
+          let filterStr = '?movie wdt:P57 ?director .\n      ?director rdfs:label ?directorLabel .\n      FILTER(LCASE(str(?directorLabel)) = "' + dir + '"';
+          if (engDir && engDir !== dir) {
+            filterStr += ' || LCASE(str(?directorLabel)) = "' + engDir + '"';
+          }
+          filterStr += ')';
+          return filterStr;
+        }
+        return '';
+      })()}}
+
+      # 制作国による動的フィルタ
+      {{(() => {
+        // country-master-lookup から出力される国コード (例: "KR") を最優先で使用する
+        const code = $json.countryCode || $json.code || $json.code2;
+        if (code) {
+          const val = String(code).trim().toUpperCase();
+          if (/^[A-Z]{2}$/.test(val)) {
+            return '?movie wdt:P495 ?prodCountry .\n      ?prodCountry wdt:P297 "' + val + '" .';
+          }
+        }
+        // フォールバック: コードがない場合は国名テキストで検索
+        const countryName = $json.country || $json.name || $json['国名（日本語）'];
+        if (countryName) {
+          const name = String(countryName).trim();
+          return '?movie wdt:P495 ?prodCountry .\n      ?prodCountry rdfs:label ?prodCountryLabel .\n      FILTER(?prodCountryLabel = "' + name + '"@ko || ?prodCountryLabel = "' + name + '"@en || ?prodCountryLabel = "' + name + '"@ja)';
+        }
+        return '';
+      })()}}
+
+      # ジャンルによる動的フィルタ
+      {{(() => {
+        const clean = (v) => {
+          if (v === undefined || v === null) return null;
+          const s = String(v).trim();
+          return (s === '' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') ? null : s;
+        };
+        let genreName = clean($json.genreName || $json['ジャンル']);
+        if (!genreName) {
+          try {
+            const form = $node["n8n Form Trigger"].json;
+            genreName = clean(form.genreName || form['ジャンル']);
+          } catch(e) {}
+        }
+        if (genreName) {
+          const lowerGenre = genreName.toLowerCase();
+          const cleanGenre = lowerGenre.replace(/映画$/, ''); // "犯罪映画" -> "犯罪"
+          
+          // 日本語の一般的なジャンル揺らぎマッピング
+          const genreSynonyms = {
+            '犯罪': ['犯罪', 'クライム', 'crime', '범죄'],
+            '恋愛': ['恋愛', 'ロマンス', 'romance', '연애', '멜로'],
+            'ロマンス': ['恋愛', 'ロマンス', 'romance', '연애', '멜로'],
+            'サスペンス': ['サスペンス', 'スリラー', 'suspense', 'thriller', '스릴러'],
+            'スリラー': ['サスペンス', 'スリラー', 'suspense', 'thriller', '스릴러'],
+            '特撮': ['特撮', 'tokusatsu'],
+            'コメディ': ['コメディ', '喜劇', 'comedy', '코미디'],
+            'コメディー': ['コメディ', '喜劇', 'comedy', '코미디'],
+            'アクション': ['アクション', 'action', '액션'],
+            'ホラー': ['ホラー', '恐怖', 'horror', '공포'],
+            '恐怖': ['ホラー', '恐怖', 'horror', '공포'],
+            '戦争': ['戦争', 'war', '전쟁'],
+            '歴史': ['歴史', '時代劇', 'history', 'historical', '역사', '사극'],
+            '時代劇': ['歴史', '時代劇', 'jidaigeki', 'historical', '사극'],
+            'アニメ': ['アニメ', 'animation', 'anime', '애니메이션'],
+            '音楽': ['音楽', 'ミュージカル', 'music', 'musical', '음악', '뮤지컬'],
+            'ミュージカル': ['音楽', 'ミュージカル', 'music', 'musical', '음악', '뮤지컬'],
+            '青春': ['青春', 'youth', '청춘'],
+            'ドラマ': ['ドラマ', 'drama', '드라마'],
+            'sf': ['sf', 'science fiction', 'サイエンス', '공상과학'],
+            'サイエンスフィクション': ['sf', 'science fiction', 'サイエンス', '공상과학'],
+            'ファンタジー': ['ファンタジー', 'fantasy', '판타지'],
+            'ミステリー': ['ミステリー', 'mystery', '미스터리'],
+            'ドキュメンタリー': ['ドキュメンタリー', 'documentary', '다큐멘터리'],
+            'アドベンチャー': ['アドベンチャー', '冒険', 'adventure', '모험'],
+            '冒険': ['アドベンチャー', '冒険', 'adventure', '모험'],
+            'ファミリー': ['ファミリー', '家族', 'family', '가족'],
+            '家族': ['ファミリー', '家族', 'family', '가족']
+          };
+
+          const keywords = genreSynonyms[cleanGenre] || [cleanGenre];
+          const filterConditions = keywords.map(kw => {
+            return 'CONTAINS(LCASE(?genreLabel), "' + kw + '")';
+          }).join(' || ');
+
+          return '?movie wdt:P136 ?genreObj .\n      ?genreObj rdfs:label ?genreLabel .\n      FILTER(' + filterConditions + ')';
+        }
+        return '';
+      })()}}
+
+      # 年および期間による動的フィルタ
+      {{(() => {
+        const clean = (v) => {
+          if (v === undefined || v === null) return null;
+          const s = String(v).trim();
+          return (s === '' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') ? null : s;
+        };
+        let yearVal = clean($json.year || $json['制作年数']);
+        if (!yearVal) {
+          try {
+            const form = $node["n8n Form Trigger"].json;
+            yearVal = clean(form.year || form['制作年数']);
+          } catch(e) {}
+        }
+        if (yearVal) {
+          // 全角数字を半角に変換し、空白を除去
+          let val = yearVal.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '');
+          
+          // 1. 範囲指定 (例: "1950-2000", "1950~2000")
+          const rangeMatch = val.match(/^(\d{4})[-~〜\u301C\uFF5E](\d{4})$/);
+          if (rangeMatch) {
+            const start = parseInt(rangeMatch[1]);
+            const end = parseInt(rangeMatch[2]);
+            return 'FILTER(YEAR(?date) >= ' + start + ')\n      FILTER(YEAR(?date) <= ' + end + ')';
+          }
+          
+          // 2. 〜まで (例: "~2000", "-2000")
+          const untilMatch = val.match(/^[-~〜\u301C\uFF5E](\d{4})$/);
+          if (untilMatch) {
+            const end = parseInt(untilMatch[1]);
+            return 'FILTER(YEAR(?date) <= ' + end + ')';
+          }
+          
+          // 3. 〜から (例: "2000~", "2000-")
+          const sinceMatch = val.match(/^(\d{4})[-~〜\u301C\uFF5E]$/);
+          if (sinceMatch) {
+            const start = parseInt(sinceMatch[1]);
+            return 'FILTER(YEAR(?date) >= ' + start + ')';
+          }
+          
+          // 4. 単一年度 (例: "2000")
+          const singleMatch = val.match(/^(\d{4})$/);
+          if (singleMatch) {
+            const year = parseInt(singleMatch[1]);
+            return 'FILTER(YEAR(?date) = ' + year + ')';
+          }
+        }
+        return '';
+      })()}}
+    }
+    ORDER BY DESC(?date)
+    LIMIT {{ (() => {
+      const cleanNum = (v) => v ? parseInt(v) : null;
+      let lim = cleanNum($json.limit || $json.number || $json.limitCount || $json.count || $json['リスト件数']);
+      if (!lim) {
+        try {
+          const f = $node["n8n Form Trigger"].json;
+          lim = cleanNum(f.limit || f.number || f.limitCount || f.count || f['リスト件数']);
+        } catch(e) {}
+      }
+      return lim || 40;
+    })() }}
+  }
+  BIND(YEAR(?date) AS ?year)
+  OPTIONAL { ?movie wdt:P136 ?genre . }
+  OPTIONAL { ?movie wdt:P4790 ?depictedEvent . }
+  OPTIONAL { ?movie wdt:P18 ?poster . }
+  OPTIONAL { ?movie rdfs:label ?movieLabelJa . FILTER(LANG(?movieLabelJa) = "ja") }
+  OPTIONAL { ?movie rdfs:label ?movieLabelKo . FILTER(LANG(?movieLabelKo) = "ko") }
+  OPTIONAL { ?movie rdfs:label ?movieLabelEn . FILTER(LANG(?movieLabelEn) = "en") }
+  OPTIONAL { ?movie wdt:P364 ?lang . }
+  OPTIONAL { ?movie wdt:P495 ?countryObj . ?countryObj wdt:P297 ?countryCode . }
+  BIND(COALESCE(?movieLabelJa, ?movieLabelEn, ?movieLabelKo) AS ?movieLabel)
+}
