@@ -16,7 +16,7 @@
 - 前置きや挨拶（「〜をご紹介します」など）や、見出し（「# 映画名」や「## 紹介文」など）は一切出力しないでください。紹介文の本文（段落）のみを出力してください。
 
 検索結果：
-{{ (() => { try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { return (tavily.first()?.json?.results || []).slice(0, 5).map(r => r.content).join('\n'); } } catch (e) {} return ''; })() }}
+{{ (() => { try { const brave = $('Brave Search_movie'); if (brave && brave.isExecuted) { return (brave.first()?.json?.web?.results || brave.first()?.json?.results || []).slice(0, 5).map(r => r.description || r.content || '').join('\n'); } } catch (e) {} return ''; })() }}
 公式あらすじ：
 {{
   (() => {
