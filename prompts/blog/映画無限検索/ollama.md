@@ -14,10 +14,9 @@
   - 日本での正式な邦題がない（未公開など）場合は、原題の日本語直訳（例：『王と暮らす男』）または英題のカタカナ表記（例：『ザ・マン・フー・リブズ・ウィズ・ザ・キング』）にしてください。AIによる独自の創作タイトルや過度な意訳（例：『ジョソンの影王』など、原題や英題の意味から大きく乖離したもの）は絶対に付けないでください。
 - 登場人物などの人名や地名といった外国語の名前（例: Bum-seok、Sung-ae など）が英語アルファベット表記のまま紹介文に残らないようにしてください。必ず自然な日本語のカタカナ表記（例: 「ボムソク」「ソンエ」など）に翻訳して出力してください。
 - 前置きや挨拶（「〜をご紹介します」など）や、見出し（「# 映画名」や「## 紹介文」など）は一切出力しないでください。紹介文の本文（段落）のみを出力してください。
-- 箇条書きや箇条書きのリスト形式（1., 2. などの数字付きを含む）は使用せず、通常の日本語の文章（段落）として記述してください。
 
 検索結果：
-{{ (() => { let text = []; try { const brave = $('Brave Search_movie'); if (brave && brave.isExecuted) { const results = brave.first()?.json?.web?.results || brave.first()?.json?.results || []; text.push(results.slice(0, 5).map(r => r.description || r.content || '').join('\n')); } } catch (e) {} try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { const results = tavily.first()?.json?.results || []; text.push(results.slice(0, 5).map(r => r.content || '').join('\n')); } } catch (e) {} try { const perplexity = $('Perplexity'); if (perplexity && perplexity.isExecuted) { text.push(perplexity.first()?.json?.content || ''); } } catch (e) {} return text.filter(Boolean).join('\n'); })() }}
+{{ (() => { try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { return (tavily.first()?.json?.results || []).slice(0, 5).map(r => r.content).join('\n'); } } catch (e) {} return ''; })() }}
 公式あらすじ：
 {{
   (() => {
