@@ -101,7 +101,8 @@ const finalOverview = (!isOverviewJapanese && ai_summary) ? ai_summary : rawOver
 
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
 const isTmdbTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(result?.title || '');
-const finalTitle = inputTitle || (isTmdbTitleJapanese ? result?.title : null) || ai_title || result?.title || null;
+const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
+const finalTitle = inputTitle || (isTmdbTitleJapanese ? result?.title : null) || tmdbJaTitle || result?.title || result?.original_title || null;
 
 // JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
 const escapeJsonString = (str) => {

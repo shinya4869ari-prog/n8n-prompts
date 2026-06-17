@@ -1,7 +1,20 @@
 const brave = $input.item?.json || {};
 const credits = $('TMDb credits取得').item?.json || {};
 const tmdb = $('TMDb検索').item?.json || {};
-const sourceData = $('Loop Over Items').item?.json || {};
+let sourceData = {};
+try {
+  sourceData = $('Loop Over Items').item?.json || {};
+} catch(e) {
+  try {
+    sourceData = $('Loop Over Items1').item?.json || {};
+  } catch(e2) {
+    try {
+      sourceData = $('映画ごとにループ実行').item?.json || {};
+    } catch(e3) {
+      sourceData = $input.item?.json || {};
+    }
+  }
+}
 
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
@@ -43,7 +56,7 @@ const lang = result?.original_language;
 const country = sourceData.target_country || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 const wikidata = getNodeData('Wikidata検索');
-const wikidata_id = wikidata?.error ? null : wikidata?.search?.[0]?.id || null;
+const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
 const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const claude = getNodeData('Message a model');
@@ -62,8 +75,31 @@ const braveSearchData = getNodeData('Brave Search_movie');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
 const videoResults = brave?.results || brave?.videos?.results || braveVideos;
-const youtubeVideo = videoResults.find(v => v.url?.includes('youtube.com') || v.url?.includes('youtu.be'));
-const trailer_url = youtubeVideo?.url || null;
+
+const youtubeVideo = videoResults.find(v => {
+  const url = v.url || v.profile?.url || '';
+  const title = (v.title || v.description || '').toLowerCase();
+  
+  // YouTubeの動画リンクであること
+  const isYouTube = url.includes('youtube.com/watch') || url.includes('youtu.be/');
+  if (!isYouTube) return false;
+  
+  // YouTubeのエラー画面（ノイズ）を除外する
+  const isNoise = title.includes('not currently available') || title.includes('利用できません') || title.includes('device');
+  if (isNoise) return false;
+  
+  // 映画の予告編に関連するキーワードが含まれているものを厳格に判定（「映画」などの広すぎる言葉は除外）
+  const hasKeyword = title.includes('予告') || 
+                    title.includes('特報') || 
+                    title.includes('trailer') || 
+                    title.includes('teaser') || 
+                    title.includes('preview') || 
+                    title.includes('promo') || 
+                    title.includes('예고'); // 韓国語の「予告」
+  return hasKeyword;
+});
+
+const trailer_url = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
 const rawOverview = result?.overview || 
                     result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
@@ -74,8 +110,8 @@ const rawOverview = result?.overview ||
 const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawOverview || '');
 
 // 日本語以外のあらすじ（英語など）で、AI要約（ai_summary）がある場合はAI翻訳文をセット
-const finalOverview = (!isOverviewJapanese && ai_summary) ? ai_summary : rawOverview;
-const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || result?.title || null;
+const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
+const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || (isOverviewJapanese ? result?.title : null) || tmdbJaTitle || result?.title || result?.original_title || null;
 
 // JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
 const escapeJsonString = (str) => {

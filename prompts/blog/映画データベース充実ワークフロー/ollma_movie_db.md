@@ -1,4 +1,4 @@
-あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').first().json; } catch(e){} try { sourceData = $('Loop Over Items').item.json; } catch(e){} const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
+あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').first().json; } catch(e){} try { sourceData = $('Loop Over Items').item.json; } catch(e){ try { sourceData = $('Loop Over Items1').item.json; } catch(e2){ try { sourceData = $('映画ごとにループ実行').item.json; } catch(e3){ sourceData = $input.item?.json || {}; } } } const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
 
 ルール：
 - 提供された情報に書かれていない情報は絶対に含めないでください。
@@ -27,7 +27,17 @@
     } catch (e) {}
     try {
       sourceData = $('Loop Over Items').item.json;
-    } catch (e) {}
+    } catch (e) {
+      try {
+        sourceData = $('Loop Over Items1').item.json;
+      } catch (e2) {
+        try {
+          sourceData = $('映画ごとにループ実行').item.json;
+        } catch (e3) {
+          sourceData = $input.item?.json || {};
+        }
+      }
+    }
     const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
     let result = null;
     if (resultsList.length > 0) {
@@ -45,5 +55,3 @@
            'なし';
   })()
 }}
-
-
