@@ -17,7 +17,7 @@
 - 箇条書きや箇条書きのリスト形式（1., 2. などの数字付きを含む）は使用せず、通常の日本語の文章（段落）として記述してください。
 
 検索結果：
-{{ (() => { try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { return (tavily.first()?.json?.results || []).slice(0, 5).map(r => r.content).join('\n'); } } catch (e) {} return ''; })() }}
+{{ (() => { let text = []; try { const brave = $('Brave Search_movie'); if (brave && brave.isExecuted) { const results = brave.first()?.json?.web?.results || brave.first()?.json?.results || []; text.push(results.slice(0, 5).map(r => r.description || r.content || '').join('\n')); } } catch (e) {} try { const tavily = $('Tavily'); if (tavily && tavily.isExecuted) { const results = tavily.first()?.json?.results || []; text.push(results.slice(0, 5).map(r => r.content || '').join('\n')); } } catch (e) {} try { const perplexity = $('Perplexity'); if (perplexity && perplexity.isExecuted) { text.push(perplexity.first()?.json?.content || ''); } } catch (e) {} return text.filter(Boolean).join('\n'); })() }}
 公式あらすじ：
 {{
   (() => {
