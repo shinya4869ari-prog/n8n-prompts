@@ -24,29 +24,7 @@ if (!html) throw new Error("Numbeoデータ抽出: 取得したHTMLデータが�
 // ブロック2: 価格抽出ロジック（部分一致への改良）
 // ※英語の表記ブレ（大文字・小文字・スペース）に耐えるように変更
 // ==========================================
-function extractPrice(html, keyword) {
-  // キーワードを大文字小文字無視で、tdタグ周辺から探す正規表現
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(
-    `<td>[^<]*?${escaped}[^<]*?<\\/td>[\\s\\S]*?<span class="first_currency">([^<]+?)<\\/span>`,
-    'i'
-  );
-  
-  const match = html.match(regex);
-  if (!match || !match[1]) return "欠測";
-
-  // HTMLエンティティデコード
-  let decoded = match[1]
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
-
-  // 数値部分だけを抽出
-  const numStr = decoded.replace(/[^\d.,]/g, '').trim();
-  if (!numStr) return "欠測";
-
-  // 欧州式・英語式の小数点正規化（既存のロジックを維持）
+function normalizePriceString(numStr) {
   const hasDot = numStr.includes('.');
   const hasComma = numStr.includes(',');
   let normalized;
@@ -67,8 +45,39 @@ function extractPrice(html, keyword) {
   } else {
     normalized = numStr.replace(/,/g, '');
   }
-
   return normalized || "欠測";
+}
+
+function extractPrice(html, keyword) {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let match;
+  
+  while ((match = trRegex.exec(html)) !== null) {
+    const trContent = match[1];
+    const keyRegex = new RegExp(`<td[^>]*>[^<]*?${escaped}[^<]*?<\\/td>`, 'i');
+    
+    if (keyRegex.test(trContent)) {
+      const valMatch = trContent.match(/<span class="first_currency">([^<]+?)<\/span>/i);
+      if (valMatch && valMatch[1]) {
+        let decoded = valMatch[1]
+          .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+
+        let numStr = decoded.replace(/[^\d.,]/g, '').trim();
+        // 通貨記号（例: "Nu."）から残った先頭や末尾のドット・カンマを削除
+        numStr = numStr.replace(/^[.,]+|[.,]+$/g, '');
+        
+        if (!numStr) continue;
+
+        return normalizePriceString(numStr);
+      }
+    }
+  }
+
+  return "欠測";
 }
 
 // ==========================================
@@ -104,6 +113,10 @@ return [{
     "設定通貨コード": currencyCode,
     "設定通貨記号": currencySymbol,
     "実際の通貨コード": actualCurrencyCode,
+    // 互換性維持（英語キー）
+    currencyCode: currencyCode,
+    currencySymbol: currencySymbol,
+    actualCurrencyCode: actualCurrencyCode,
     "取得日": today,
     ビール: extractPrice(html, 'Domestic Draft Beer'),
     タバコ: extractPrice(html, 'Cigarettes'),

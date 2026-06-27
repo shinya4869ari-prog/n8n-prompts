@@ -1,0 +1,120 @@
+const execData = $input.first().json;
+
+// executionDataの中からLLM（Geminiなど）またはAI Agentノードの情報を探す
+let tokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+let modelName = "";
+
+// オブジェクト内から特定のキーを持つオブジェクトまたは値を再帰的に探すヘルパー
+const findKeyDeep = (obj, keyToFind) => {
+  if (!obj || typeof obj !== 'object') return null;
+  
+  if (obj[keyToFind] !== undefined) {
+    return obj[keyToFind];
+  }
+  
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const res = findKeyDeep(item, keyToFind);
+      if (res !== null) return res;
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      const res = findKeyDeep(obj[key], keyToFind);
+      if (res !== null) return res;
+    }
+  }
+  return null;
+};
+
+const extractTokenAndModel = (lastRun) => {
+  // 深層探索で tokenUsage または tokenUsageEstimate を探す
+  const tokens = findKeyDeep(lastRun, 'tokenUsage') || findKeyDeep(lastRun, 'tokenUsageEstimate');
+  const model = findKeyDeep(lastRun, 'modelName') 
+             || findKeyDeep(lastRun, 'model') 
+             || "";
+  return { tokens, model };
+};
+
+try {
+  // さまざまなJSON階層に対応できるよう、runDataのパスを柔軟に探索
+  const runData = execData.data?.resultData?.runData 
+               || execData.resultData?.runData 
+               || execData.runData 
+               || execData;
+
+  if (runData && typeof runData === 'object') {
+    // 優先的にチェックしたいノード名のリスト
+    const targetNodes = [
+      'Gemini-flash（固定データ用）',
+      'Database_update_AI-agent',
+      'AI Agent',
+      'Google Gemini_pro'
+    ];
+    
+    // まず指定のノードリストから探す
+    let found = false;
+    for (const nodeName of targetNodes) {
+      const nodeData = runData[nodeName];
+      if (nodeData && nodeData.length > 0) {
+        const lastRun = nodeData[nodeData.length - 1];
+        const res = extractTokenAndModel(lastRun);
+        if (res.tokens && (res.tokens.promptTokens || res.tokens.completionTokens || res.tokens.totalTokens)) {
+          tokenUsage = {
+            promptTokens: Number(res.tokens.promptTokens || 0),
+            completionTokens: Number(res.tokens.completionTokens || 0),
+            totalTokens: Number(res.tokens.totalTokens || (res.tokens.promptTokens + res.tokens.completionTokens) || 0)
+          };
+          modelName = res.model;
+          found = true;
+          break;
+        }
+      }
+    }
+    
+    // 見つからなければ、runData内のすべてのノードを走査して自動検出
+    if (!found) {
+      for (const nodeName of Object.keys(runData)) {
+        const nodeData = runData[nodeName];
+        if (nodeData && nodeData.length > 0) {
+          const lastRun = nodeData[nodeData.length - 1];
+          const res = extractTokenAndModel(lastRun);
+          if (res.tokens && (res.tokens.promptTokens || res.tokens.completionTokens || res.tokens.totalTokens)) {
+            tokenUsage = {
+              promptTokens: Number(res.tokens.promptTokens || 0),
+              completionTokens: Number(res.tokens.completionTokens || 0),
+              totalTokens: Number(res.tokens.totalTokens || (res.tokens.promptTokens + res.tokens.completionTokens) || 0)
+            };
+            modelName = res.model;
+            break;
+          }
+        }
+      }
+    }
+  }
+} catch(e) {}
+
+// 対象国の取得（複数ワークフローに対応できるようにフォールバックを設定）
+let country = "";
+try {
+  country = $('country-master-lookup').first().json.country;
+} catch (e) {
+  try {
+    // Database_updateワークフロー用のフォールバック①（項目検出・国別マージから取得）
+    const mergeData = $('項目検出・国別マージ').first().json;
+    country = mergeData.countryJa || mergeData.countryEn || "";
+  } catch (e2) {
+    try {
+      // Database_updateワークフロー用のフォールバック②（rowData復元から取得）
+      const rowData = $('rowData復元').first().json.rowData;
+      country = rowData["国名（日本語）"] || rowData["国名（英語）"] || "";
+    } catch (e3) {}
+  }
+}
+
+return [{
+  json: {
+    tokenUsage,
+    country,
+    modelName
+  }
+}];

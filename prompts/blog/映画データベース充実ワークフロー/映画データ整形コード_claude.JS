@@ -110,6 +110,8 @@ const rawOverview = result?.overview ||
 const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawOverview || '');
 
 // 日本語以外のあらすじ（英語など）で、AI要約（ai_summary）がある場合はAI翻訳文をセット
+const finalOverview = (!isOverviewJapanese && ai_summary) ? ai_summary : rawOverview;
+
 const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
 const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || (isOverviewJapanese ? result?.title : null) || tmdbJaTitle || result?.title || result?.original_title || null;
 

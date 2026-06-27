@@ -229,9 +229,17 @@ if (agentOutput.GPI) {
 
 if (agentOutput.外務省危険レベル) {
     const d = agentOutput.外務省危険レベル;
-    anzen["外務省危険レベル"] = d.レベル ?? rowData["外務省危険レベル"];
+    const newLevel = String(d.レベル || "").replace(/[^0-9]/g, "");
+    const oldLevel = String(rowData["外務省危険レベル"] || "").replace(/[^0-9]/g, "").slice(0, 1);
+    
+    // レベルの数値自体に変更がある場合のみ上書きする（同じなら既存の詳細文を維持）
+    if (newLevel !== oldLevel && newLevel !== "") {
+        anzen["外務省危険レベル"] = d.レベル;
+        anzenUpdated.push("外務省危険レベル");
+    } else {
+        anzen["外務省危険レベル"] = rowData["外務省危険レベル"];
+    }
     anzen["外務省危険レベル_出典"] = d.出典 ?? rowData["外務省危険レベル_出典"];
-    anzenUpdated.push("外務省危険レベル");
 }
 
 
@@ -355,7 +363,10 @@ const eurJpy = parseFloat(rowData["EUR/JPY"]) || 165;
 
 const parseLocalValue = (val) => {
   if (!val || val === "欠測") return NaN;
-  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
+  // 先頭の通貨記号部分（アルファベット、記号、スペース、およびそれに続くピリオド）を除去
+  let cleanVal = String(val).replace(/^[A-Za-z$€£¥₹Nu.\s]+/, "");
+  // カンマを除去
+  cleanVal = cleanVal.replace(/,/g, "");
   return parseFloat(cleanVal);
 };
 

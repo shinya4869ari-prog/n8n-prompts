@@ -1,21 +1,15 @@
-const baseUrl = "https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/Country%20Fixed%20Data/";
-
-// AIへの指示書のみ取得（コードノードはn8nに直接貼り付けて管理）
-const urls = {
-  researcher: baseUrl + encodeURIComponent("固定データ Researcher.md"),
-};
-
 try {
-  const keys = Object.keys(urls);
-  const responses = await Promise.all(
-    keys.map(key => this.helpers.httpRequest({ method: 'GET', url: urls[key] }))
-  );
-  
-  const raw = {};
-  keys.forEach((key, i) => { raw[key] = responses[i]; });
+  const httpNode = $('Get Researcher Prompt').first().json;  
+  let researcherContent = '';
+  if (typeof httpNode === 'string') researcherContent = httpNode;
+  else if (httpNode?.data) researcherContent = httpNode.data;
+  else if (httpNode?.body) researcherContent = httpNode.body;
 
-  const base = $('国名変換Code').first().json;
+  const lookupItems = $('country-master-lookup').all();
+  const base = lookupItems.length > 0 ? lookupItems[0].json : {};
+
   const now = new Date();
+  
   const context = {
     ...base,
     now_date: `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`,
@@ -36,7 +30,7 @@ try {
 
   return [{
     json: {
-      researcherPrompt: forceInstruction + evaluateTemplate(raw.researcher, context),
+      researcherPrompt: forceInstruction + evaluateTemplate(researcherContent, context),
       base: base,
       capitalEn: base.capitalEn || "",
       capitalEnNumbeo: base.capitalEnNumbeo || "",
@@ -46,5 +40,5 @@ try {
     }
   }];
 } catch (error) {
-  throw new Error(`GitHubからのプロンプト取得に失敗しました: ${error.message}`);
+  throw new Error(`処理失敗: ${error.message}`);
 }

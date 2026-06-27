@@ -52,9 +52,9 @@ const parseRate = (val) => {
 const usdJpy = parseRate(b["USD/JPY"]);
 const eurJpy = parseRate(b["EUR/JPY"]);
 
-const currencyCode = numbeo.currencyCode;
-const rawSymbol = numbeo.currencySymbol || b["通貨記号"] || "";
-const actualCode = numbeo.actualCurrencyCode || currencyCode;
+const currencyCode = numbeo.currencyCode || numbeo["設定通貨コード"] || prev.currencyCode || "";
+const rawSymbol = numbeo.currencySymbol || numbeo["設定通貨記号"] || b["通貨記号"] || prev.currencySymbol || "";
+const actualCode = numbeo.actualCurrencyCode || numbeo["実際の通貨コード"] || currencyCode;
 
 const dollarSymbolMap = {
   'AUD': 'A$',
@@ -92,20 +92,23 @@ const getNumbeoToLocalRate = () => {
 
 const numbeoToLocal = getNumbeoToLocalRate();
 
+const parseLocalValue = (val) => {
+  if (!val || val === "欠測") return NaN;
+  // 先頭の通貨記号部分（アルファベット、記号、スペース、およびそれに続くピリオド）を除去
+  let cleanVal = String(val).replace(/^[A-Za-z$€£¥₹Nu.\s]+/, "");
+  // カンマを除去
+  cleanVal = cleanVal.replace(/,/g, "");
+  return parseFloat(cleanVal);
+};
+
 const calcJpy = (localVal) => {
-  if (!localVal || localVal === "欠測") return "欠測";
-  const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const val = parseFloat(cleanVal);
+  const val = parseLocalValue(localVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
   return Math.round(val * numbeoToLocal * fxRate);
 };
 
 const addSymbol = (val) => {
-  if (!val || val === "欠測") return "欠測";
-  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const num = parseFloat(cleanVal);
+  const num = parseLocalValue(val);
   if (isNaN(num)) return "欠測";
   const converted = Math.round(num * numbeoToLocal);
   const formatted = String(converted).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -113,19 +116,13 @@ const addSymbol = (val) => {
 };
 
 const calcBigMacJpy = (localVal) => {
-  if (!localVal || localVal === "欠測") return "欠測";
-  const cleanVal = String(localVal).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const val = parseFloat(cleanVal);
+  const val = parseLocalValue(localVal);
   if (isNaN(val) || isNaN(fxRate)) return "欠測";
   return Math.round(val * fxRate);
 };
 
 const formatBigMac = (val) => {
-  if (!val || val === "欠測") return "欠測";
-  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const num = parseFloat(cleanVal);
+  const num = parseLocalValue(val);
   if (isNaN(num)) return "欠測";
   const formatted = String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return symbol + formatted;
@@ -136,10 +133,7 @@ const netflixCode = b["各項目"]?.["Netflix"]?.["通貨コード"] || "";
 const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
 
 const calcNetflixJpy = (val) => {
-  if (!val || val === "欠測") return "欠測";
-  const cleanVal = String(val).replace(/,/g, "").replace(/[^\d.]/g, "");
-  if (!cleanVal) return "欠測";
-  const num = parseFloat(cleanVal);
+  const num = parseLocalValue(val);
   if (isNaN(num) || isNaN(netflixRate)) return "欠測";
   return Math.round(num * netflixRate);
 };

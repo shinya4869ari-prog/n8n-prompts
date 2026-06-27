@@ -1,20 +1,7 @@
 {{
   (() => {
     const tmdb = $('TMDb検索').first().json;
-    let sourceData = {};
-    try {
-      sourceData = $('Loop Over Items').item?.json || {};
-    } catch(e) {
-      try {
-        sourceData = $('Loop Over Items1').item?.json || {};
-      } catch(e2) {
-        try {
-          sourceData = $('映画ごとにループ実行').item?.json || {};
-        } catch(e3) {
-          sourceData = $input.item?.json || {};
-        }
-      }
-    }
+    const sourceData = $('Loop Over Items').first().json;
     const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
     let result = resultsList.length > 0 ? resultsList.find(m => 
       (m.original_language === sourceData.target_lang) || 
@@ -31,11 +18,11 @@
     
     const originalTitle = result?.original_title || '';
     
-    // あらすじ・ストーリー情報を確実に取得するためのクエリを生成
+    // 日本語の映画情報や、漢字表記、邦題情報を引っ掛けるためのクエリを生成
     const queryParts = [];
     if (resolvedTitle) queryParts.push(`"${resolvedTitle}"`);
     if (originalTitle && originalTitle !== resolvedTitle) queryParts.push(`"${originalTitle}"`);
     
-    return `${queryParts.join(' ')} あらすじ`;
+    return `${queryParts.join(' ')} (映画 OR 邦題 OR 日本語タイトル OR 漢字)`;
   })()
 }}

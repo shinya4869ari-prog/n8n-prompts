@@ -82,7 +82,13 @@ if (agentOutput.失業率) checkChange("失業率", agentOutput.失業率.値, r
 if (agentOutput.貧困率) checkChange("貧困率", agentOutput.貧困率.値, rowData["貧困率"], agentOutput.貧困率.年, rowData["貧困率_年"], agentOutput.貧困率.出典, rowData["貧困率_出典"]);
 if (agentOutput.ジニ係数) checkChange("ジニ係数", agentOutput.ジニ係数.値, rowData["ジニ係数"], agentOutput.ジニ係数.年, rowData["ジニ係数_年"], agentOutput.ジニ係数.出典, rowData["ジニ係数_出典"]);
 if (agentOutput.GPI) checkChange("GPIスコア", agentOutput.GPI.スコア, rowData["GPIスコア"], agentOutput.GPI.年, rowData["GPI年"], agentOutput.GPI.出典, rowData["GPI出典"]);
-if (agentOutput.外務省危険レベル) checkChange("外務省危険レベル", agentOutput.外務省危険レベル.レベル, rowData["外務省危険レベル"], undefined, undefined, agentOutput.外務省危険レベル.出典, rowData["外務省危険レベル_出典"]);
+if (agentOutput.外務省危険レベル) {
+  const newL = String(agentOutput.外務省危険レベル.レベル || "").replace(/[^0-9]/g, "");
+  const oldL = String(rowData["外務省危険レベル"] || "").replace(/[^0-9]/g, "").slice(0, 1);
+  if (newL !== oldL && newL !== "") {
+    checkChange("外務省危険レベル", agentOutput.外務省危険レベル.レベル, rowData["外務省危険レベル"], undefined, undefined, agentOutput.外務省危険レベル.出典, rowData["外務省危険レベル_出典"]);
+  }
+}
 if (agentOutput.GGI) checkChange("GGIスコア", agentOutput.GGI.スコア, rowData["GGIスコア"], agentOutput.GGI.年, rowData["GGI年"], agentOutput.GGI.出典, rowData["GGI出典"]);
 if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agentOutput.女性労働参加率.値, rowData["女性労働参加率"], agentOutput.女性労働参加率.年, rowData["女性労働参加率_年"], agentOutput.女性労働参加率.出典, rowData["女性労働参加率_出典"]);
 if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"], agentOutput.女性議員比率.年, rowData["女性議員比率_年"], agentOutput.女性議員比率.出典, rowData["女性議員比率_出典"]);

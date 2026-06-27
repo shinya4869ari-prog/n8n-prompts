@@ -7,14 +7,14 @@ const countryEn = $input.first().json.countryEn || "";
 let occupancyVal = "欠測";
 let occupancyYear = "欠測";
 // 例: 78.8% (31.1.2025)
-const occupancyMatch = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>\s*([\d.]+%)\s*<div[^>]*>\s*\(([^)]+)\)/i);
+const occupancyMatch = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*?c?\.?\s*([\d.]+%)\s*<div[^>]*>\s*\(([^)]+)\)/i);
 if (occupancyMatch) {
   occupancyVal = occupancyMatch[1].trim();
   const dateStr = occupancyMatch[2];
   const yearMatch = dateStr.match(/\d{4}/);
   occupancyYear = yearMatch ? yearMatch[0] : dateStr.trim();
 } else {
-  const fallbackOccupancy = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>\s*([\d.]+%)/i);
+  const fallbackOccupancy = html.match(/Occupancy level[^<]*<\/th>\s*<td[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*?c?\.?\s*([\d.]+%)/i);
   if (fallbackOccupancy) occupancyVal = fallbackOccupancy[1].trim();
 }
 
@@ -70,6 +70,25 @@ if (totalVal === "欠測" && filteredTrends.length > 0) {
   const latest = filteredTrends[filteredTrends.length - 1];
   totalVal = latest.総収容者数;
   totalYear = latest.年;
+}
+
+// 最新の総収容者数が、トレンドの最後の年より新しい場合は、トレンドの末尾に追加する
+if (totalVal !== "欠測" && totalYear !== "欠測") {
+  const latestTrend = filteredTrends[filteredTrends.length - 1];
+  const totalYNum = parseInt(totalYear);
+  const latestTrendYNum = latestTrend ? parseInt(latestTrend.年) : 0;
+  
+  if (totalYNum > latestTrendYNum) {
+    filteredTrends.push({
+      "年": totalYear,
+      "総収容者数": totalVal
+    });
+  }
+}
+
+// 念のため10件以下に収める
+if (filteredTrends.length > 10) {
+  filteredTrends = filteredTrends.slice(-10);
 }
 
 return [{

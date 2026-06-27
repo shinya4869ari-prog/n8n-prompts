@@ -198,7 +198,7 @@ const countryMap = {
 
 const inputJson = $input.first().json;
 // `country` も評価対象に含める
-const japaneseCountry = inputJson.country || inputJson.countryJa || inputJson['国名（日本語）'] || inputJson.rowData?.['国名（日本語）'];
+const japaneseCountry = inputJson.country || inputJson.countryJa || inputJson['国名（日本語）'] || inputJson['国名 (日本語)'] || inputJson.rowData?.['国名（日本語）'] || inputJson.rowData?.['国名 (日本語)'];
 
 if (!japaneseCountry) {
   // 国の指定がない場合はエラーにせず、元の入力（監督やジャンル等）をそのまま次のノードへ渡す

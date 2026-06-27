@@ -1,9 +1,12 @@
 const r1Raw = $('researcher1').first().json;
-const r2Raw = $('researcher2').first().json;
-const r25Raw = $('researcher25').first().json;
+const r2Raw = $('researcher2').first().json; // Perplexityノードの出力
+const r25Raw = $('researcher25').first().json; // 映像作品（歴史連動）エージェントの出力
+// Supabaseからあらかじめ登録されている「おすすめ映画ランキング」を取得するノードの名前を指定してください。
+// 例: const supabaseMovieRaw = $('Supabase映画データ').first().json;
+const supabaseMovieRaw = $('Supabase映画データ').first().json; 
 
-// Agent停止チェック
-for (const [raw, name] of [[r1Raw, 'researcher1'], [r2Raw, 'researcher2'], [r25Raw, 'researcher25']]) {
+// Agent停止チェック (AIエージェントとして動くresearcher1とresearcher25を監視します)
+for (const [raw, name] of [[r1Raw, 'researcher1'], [r25Raw, 'researcher25']]) {
   const out = typeof raw.output === 'string' ? raw.output : (typeof raw.json === 'string' ? raw.json : '');
   const hasAgentStopped = out.includes('Agent stopped') || out.includes('max iterations');
   const isToolLogOnly = out.startsWith('Calling ') || out.includes('Calling Perplexity');
@@ -175,13 +178,18 @@ if (r1 && r1.地理) {
 }
 
 const r2 = parseOutput(r2Raw, 'researcher2');
-if (!r2 || !r2.country || !r2.歴史的背景) {
-  throw new Error(`【researcher2】必要なデータ（歴史的背景など）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
+if (!r2 || !r2.歴史的背景) {
+  throw new Error(`【researcher2】Perplexityから必要な歴史・動向データが取得できませんでした。再実行してください。`);
 }
 
 const r25 = parseOutput(r25Raw, 'researcher25');
 if (!r25 || !r25.映像作品) {
-  throw new Error(`【researcher25】必要なデータ（映像作品リストなど）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
+  throw new Error(`【researcher25】必要な映像作品（歴史連動）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
+}
+
+const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
+if (!supabaseMovie || !supabaseMovie.おすすめ映画ランキング) {
+  throw new Error(`【Supabase】Supabaseから映画ランキングデータが取得できませんでした。登録状況を確認してください。`);
 }
 
 // 重大犯罪事件を発生年の新しい順（降順）に強制ソート
@@ -200,7 +208,7 @@ const r2Merged = {
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
   映像作品: r25.映像作品,
-  おすすめ映画ランキング: r25.おすすめ映画ランキング
+  おすすめ映画ランキング: supabaseMovie.おすすめ映画ランキング || []
 };
 
 // 対象国Googleシート
