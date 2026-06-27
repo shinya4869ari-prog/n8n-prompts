@@ -19,12 +19,14 @@ Web検索を行い、直近100年の主要な歴史的事象を**10個**収集�
 **収集ルール（厳守）：**
 - 各事象の「概要」は**2〜3文（行）程度**で簡潔に記述すること（箇条書き禁止）。
 - 年号、数字、固有名詞は正確な事実のみ記載すること。
+- **年代のバランス（最重要）**: 1900年代前半などの古い出来事ばかりに偏らないようにしてください。直近100年の中からバランスよく選定し、特に**直近30年（1990年代〜2020年代）の比較的新しい現代史から、主要な出来事（テレビ・ネット解禁、新憲法制定、初の民主的選挙、直近の大災害や社会改革など）を必ず複数件（3〜4件以上）含めてください。**
 - 深刻な事件・事故（虐殺・紛争・大災害・大事故等）は、存在する限り必ず含めること。
 - 安全・平和な国で大規模な惨事がない場合は、歴史的な転換点（独立、新憲法制定、政権交代、主要条約調印など）を確実に見つけて10個揃えること。
 - 各事象ごとに、具体的な出典（ニュースメディアやWikipedia等）を記載すること。
 
 **推奨検索テーマ：**
-- 「{{ $json.countryEn }} modern history major events 20th and 21st century timeline」
+- 「{{ $json.countryEn }} modern history major events 20th and 21st century timeline since 1990」
+- 「{{ $json.countryEn }} historical turning points last 100 years recent events」
 - 「{{ $json.countryEn }} historical turning points last 100 years」
 
 ---
