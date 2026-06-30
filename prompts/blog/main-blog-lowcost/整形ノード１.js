@@ -188,8 +188,8 @@ if (!r25 || !r25.映像作品) {
 }
 
 const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
-if (!supabaseMovie || !supabaseMovie.おすすめ映画ランキング) {
-  throw new Error(`【Supabase】Supabaseから映画ランキングデータが取得できませんでした。登録状況を確認してください。`);
+if (!supabaseMovie || !supabaseMovie.おすすめ映画) {
+  throw new Error(`【Supabase】Supabaseからおすすめ映画データが取得できませんでした。登録状況を確認してください。`);
 }
 
 // 重大犯罪事件を発生年の新しい順（降順）に強制ソート
@@ -208,7 +208,7 @@ const r2Merged = {
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
   映像作品: r25.映像作品,
-  おすすめ映画ランキング: supabaseMovie.おすすめ映画ランキング || []
+  おすすめ映画: supabaseMovie.おすすめ映画 || []
 };
 
 // 対象国Googleシート
