@@ -25,6 +25,7 @@ Web検索を行って以下の項目を調査し、挨拶や説明文を一切�
   - 公開年
   - director（監督名のみ）
   - cast（主要出演者、ナレーターなど）
+  - overview（作品のあらすじ・概要を日本語で2〜3文程度で簡潔に記述すること）
   - tmdb_id（TMDbのID、なければnull。検索結果から不明な場合は直接nullで可）
   - poster_path（TMDbのポスターパス、なければnull）
   - imdb_url（IMDbページのURL、なければnull）
@@ -46,6 +47,7 @@ Web検索を行って以下の項目を調査し、挨拶や説明文を一切�
       "公開年": "",
       "director": "",
       "cast": "",
+      "overview": "",
       "tmdb_id": null,
       "poster_path": null,
       "imdb_url": null,
