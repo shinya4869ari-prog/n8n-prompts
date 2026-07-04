@@ -47,7 +47,9 @@ for (const item of items) {
           origin_title: movie.原題 || "原題不明",
           poster_path: movie.poster_path || "",
           country: data.country || "",
-          overview: movie.あらすじ || movie.overview || ""
+          overview: movie.あらすじ || movie.overview || "",
+          tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0, // ★ nullエラー防止のため、IDが無い場合は0を指定
+          imdb_url: movie.imdb_url || ""
         }
       });
     }
