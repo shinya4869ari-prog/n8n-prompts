@@ -1,5 +1,5 @@
 // GitHubのRaw URLベースパス
-const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/main-blog/';
+const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/main-blog-lowcost/';
 // 同期対象のAIプロンプトファイル
 const files = {
   researcher1: baseUrl + 'researcher1.md',
