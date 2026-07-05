@@ -1,6 +1,12 @@
 const brave = $input.item?.json || {};
-const credits = $('TMDb credits取得').item?.json || {};
-const tmdb = $('TMDb検索').item?.json || {};
+const credits = getNodeData('TMDb credits取得');
+const tmdb = (() => {
+  const t1 = getNodeData('TMDb検索');
+  if (t1?.id || (t1?.results && t1.results.length > 0)) return t1;
+  const t2 = getNodeData('TMDb検索_タイトル');
+  if (t2?.id || (t2?.results && t2.results.length > 0)) return t2;
+  return t1 || t2 || {};
+})();
 let sourceData = {};
 try {
   sourceData = $('Loop Over Items').item?.json || {};
@@ -93,15 +99,13 @@ const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${resul
 let wikidata_id = result?.external_ids?.wikidata_id || null;
 if (!wikidata_id) {
   try {
-    const wikiJson1 = $('Wikidata検索').item?.json;
+    const wikiJson1 = getNodeData('Wikidata検索');
     let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
     
-    try {
-      const wikiJson2 = $('Wikidata検索（タイトル検索用）').item?.json;
-      if (!fallbackId && wikiJson2) {
-        fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.search?.[0]?.title || null;
-      }
-    } catch(e) {}
+    const wikiJson2 = getNodeData('Wikidata検索（タイトル検索用）');
+    if (!fallbackId && wikiJson2) {
+      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.search?.[0]?.title || null;
+    }
     
     wikidata_id = fallbackId;
   } catch (e) {}
