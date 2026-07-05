@@ -135,7 +135,7 @@ return [{
     country,
     wikidata_id,
     tmdb_id: result?.id || null,
-    overview: escapeJsonString(rawOverview),
+    overview_en: escapeJsonString(rawOverview),
     ai_summary: escapeJsonString((rawOverview && !isOverviewJapanese) ? null : ai_summary),
     trailer_url,
     director_en: escapeJsonString(director_en),
