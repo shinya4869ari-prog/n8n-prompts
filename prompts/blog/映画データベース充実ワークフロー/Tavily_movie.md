@@ -18,20 +18,7 @@
                  ((tmdbTitleSearch.id || tmdbTitleSearch.results) ? tmdbTitleSearch :
                  ((tmdbIdSearch.id || tmdbIdSearch.results) ? tmdbIdSearch : {}));
 
-    let sourceData = {};
-    try {
-      sourceData = $('Loop Over Items').item?.json || {};
-    } catch(e) {
-      try {
-        sourceData = $('Loop Over Items1').item?.json || {};
-      } catch(e2) {
-        try {
-          sourceData = $('映画ごとにループ実行').item?.json || {};
-        } catch(e3) {
-          sourceData = $input.item?.json || {};
-        }
-      }
-    }
+    const sourceData = $input.item?.json || {};
     const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
     let result = resultsList.length > 0 ? resultsList.find(m => 
       (m.original_language === sourceData.target_lang) || 
