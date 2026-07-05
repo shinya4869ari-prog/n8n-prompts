@@ -1,12 +1,6 @@
 const brave = $input.item?.json || {};
 const credits = $('TMDb credits取得').item?.json || {};
-const tmdb = (() => {
-  const pathId = getNodeData('TMDb検索_ID/Wikidata');
-  if (pathId.id || pathId.results || pathId.movie_results) return pathId;
-  const pathTitle = getNodeData('TMDb検索');
-  if (pathTitle.id || pathTitle.results || pathTitle.movie_results) return pathTitle;
-  try { return $('TMDb検索').item?.json || {}; } catch(e) { return {}; }
-})();
+const tmdb = $('TMDb検索').item?.json || {};
 let sourceData = {};
 try {
   sourceData = $('Loop Over Items').item?.json || {};
@@ -63,8 +57,8 @@ const country = langToCountry[lang] || sourceData.target_country || lang?.toUppe
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
-const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
-const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
+const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
+const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = getNodeData('Ollama');
 const rawOllamaText = (ollama?.content || '').trim();
 let ai_title = null;
