@@ -1,6 +1,23 @@
 {{
   (() => {
-    const tmdb = $('TMDb検索').first().json;
+    // 実行されたノードからデータを安全に取得するヘルパー
+    const getNodeData = (nodeName) => {
+      try {
+        return $(nodeName).item?.json || {};
+      } catch(e) {
+        return {};
+      }
+    };
+
+    const tmdbSearch = getNodeData('TMDb検索');
+    const tmdbTitleSearch = getNodeData('TMDb検索_タイトル');
+    const tmdbIdSearch = getNodeData('TMDb検索_ID/Wikidata');
+    
+    // どのルートでヒットしたかに応じてTMDbデータを決定
+    const tmdb = (tmdbSearch.id || tmdbSearch.results) ? tmdbSearch :
+                 ((tmdbTitleSearch.id || tmdbTitleSearch.results) ? tmdbTitleSearch :
+                 ((tmdbIdSearch.id || tmdbIdSearch.results) ? tmdbIdSearch : {}));
+
     let sourceData = {};
     try {
       sourceData = $('Loop Over Items').item?.json || {};
