@@ -49,12 +49,14 @@ for (const item of items) {
           director: movie.director || "監督不明",
           cast: movie.cast || "出演者不明",
           origin_title: movie.原題 || "原題不明",
-          poster_path: movie.poster_path || "",
+          poster_url: movie.poster_url || movie.poster_path || "",
           country: data.country || "",
           overview: movie.あらすじ || movie.overview || "",
           tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0, // ★ nullエラー防止のため、IDが無い場合は0を指定
           imdb_url: movie.imdb_url || "",
-          year: parsedYear // ★ 追加：制作年数（公開年）
+          year: parsedYear, // ★ 追加：制作年数（公開年）
+          wikidata_id: movie.wikidata_id || null,
+          ai_summary: movie.ai_summary || null
         }
       });
     }
