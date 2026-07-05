@@ -90,13 +90,8 @@ if (nameToCountryCode[rawCountry]) {
 
 const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
-let wikidata_id = result?.external_ids?.wikidata_id || null;
-if (!wikidata_id) {
-  try {
-    const wikiJson = $('Wikidata検索').item?.json;
-    wikidata_id = wikiJson?.search?.[0]?.id || wikiJson?.query?.search?.[0]?.title || null;
-  } catch (e) {}
-}
+const wikidata = getNodeData('Wikidata検索');
+const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
 const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const cast_en = credits?.cast?.map(c => c.original_name).join(', ') || null;
