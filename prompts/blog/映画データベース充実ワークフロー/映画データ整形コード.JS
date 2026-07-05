@@ -146,8 +146,16 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     null;
 
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
+
+let supabaseJaOverview = null;
+try {
+  const sbData = $('Supabaseから既存データを取得').item?.json || {};
+  const record = Array.isArray(sbData) ? sbData[0] : sbData;
+  supabaseJaOverview = record?.overview || record?.overview_en || record?.ai_summary || null;
+} catch(e){}
+
 const sourceJaOverview = sourceData.overview || null;
-const baseOverview = tmdbJaOverview || sourceJaOverview || null;
+const baseOverview = tmdbJaOverview || supabaseJaOverview || sourceJaOverview || null;
 
 const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
                            /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
