@@ -1,9 +1,8 @@
 // === Brave動画URL抽出 ===
 // Brave Search (Videos) の結果から、YouTubeの予告編URLを安全に抽出します。
 
-const braveData = $input.item?.json || {};
-const braveVideos = Array.isArray(braveData.results) ? braveData.results :
-                    (Array.isArray(braveData.videos?.results) ? braveData.videos.results : []);
+const braveVideos = Array.isArray($json.results) ? $json.results :
+                    (Array.isArray($json.videos?.results) ? $json.videos.results : []);
 
 const youtubeVideo = braveVideos.find(v => {
   const url = v.url || v.profile?.url || '';
