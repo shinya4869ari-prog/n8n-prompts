@@ -52,7 +52,7 @@ for (const item of items) {
           poster_url: movie.poster_url || movie.poster_path || "",
           country: data.country || "",
           overview: movie.あらすじ || movie.overview || "",
-          tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0, // ★ nullエラー防止のため、IDが無い場合は0を指定
+          tmdb_id: (movie.id || movie.tmdb_id) ? parseInt(movie.id || movie.tmdb_id) : 0, // ★ TMDbのレスポンスの'id'プロパティから正しく取得できるように修正
           imdb_url: movie.imdb_url || "",
           year: parsedYear, // ★ 追加：制作年数（公開年）
           wikidata_id: movie.wikidata_id || null,
