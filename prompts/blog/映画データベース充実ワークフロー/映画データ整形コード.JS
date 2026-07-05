@@ -145,42 +145,40 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
+// 各ソースから日本語あらすじを抽出・判定
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
+const sourceOverview = sourceData.overview || null;
+const sourceOverviewEn = sourceData.overview_en || null;
+const sourceAiSummary = sourceData.ai_summary || null;
 
-let supabaseJaOverview = null;
-try {
-  const sbData = $('Supabaseから既存データを取得').item?.json || {};
-  const record = Array.isArray(sbData) ? sbData[0] : sbData;
-  supabaseJaOverview = record?.overview || record?.overview_en || record?.ai_summary || null;
-} catch(e){}
+const hasJa = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/;
 
-const sourceJaOverview = sourceData.overview || null;
-const baseOverview = tmdbJaOverview || supabaseJaOverview || sourceJaOverview || null;
-
-const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
-                           /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
-
-const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                      (!isOverviewJapanese ? rawOverview : null);
+const isSourceOverviewJa = hasJa.test(sourceOverview || '');
+const isSourceOverviewEnJa = hasJa.test(sourceOverviewEn || '');
+const isSourceAiSummaryJa = hasJa.test(sourceAiSummary || '');
 
 let finalOverview = null;
 let finalOverviewEn = null;
 let finalAiSummary = null;
 
-if (rawOverview) {
-  if (isOverviewJapanese) {
-    finalOverview = baseOverview || rawOverview;
-    finalOverviewEn = null;
-    finalAiSummary = null;
-  } else {
-    finalOverview = baseOverview;
+// すでにいずれかに日本語のあらすじが存在している場合（上書き防止）
+if (tmdbJaOverview || isSourceOverviewJa || isSourceOverviewEnJa || isSourceAiSummaryJa) {
+  finalOverview = tmdbJaOverview || (isSourceOverviewJa ? sourceOverview : null);
+  finalOverviewEn = isSourceOverviewEnJa ? sourceOverviewEn : null;
+  finalAiSummary = isSourceAiSummaryJa ? sourceAiSummary : null;
+} else {
+  // 日本語あらすじが全く存在しない場合
+  if (rawOverview) {
+    // TMDbに英語あらすじがある場合 ➡ 英語原文を overview_en に入れて後ろの翻訳AIに流す
+    finalOverview = null;
     finalOverviewEn = rawOverview;
     finalAiSummary = null;
+  } else {
+    // あらすじが全く無い場合 ➡ 後ろの Tavily ＋ AI生成に任せる
+    finalOverview = null;
+    finalOverviewEn = null;
+    finalAiSummary = null;
   }
-} else {
-  finalOverview = baseOverview;
-  finalOverviewEn = null;
-  finalAiSummary = null;
 }
 
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);

@@ -144,49 +144,40 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// ベースとなる日本語あらすじを定義（TMDb公式日本語 ＞ Supabaseの既存日本語 ＞ 上流ブログでAIが取得した日本語）
+// 各ソースから日本語あらすじを抽出・判定
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
+const sourceOverview = sourceData.overview || null;
+const sourceOverviewEn = sourceData.overview_en || null;
+const sourceAiSummary = sourceData.ai_summary || null;
 
-let supabaseJaOverview = null;
-try {
-  const sbData = $('Supabaseから既存データを取得').item?.json || {};
-  const record = Array.isArray(sbData) ? sbData[0] : sbData;
-  supabaseJaOverview = record?.overview || record?.overview_en || record?.ai_summary || null;
-} catch(e){}
+const hasJa = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/;
 
-const sourceJaOverview = sourceData.overview || null;
-const baseOverview = tmdbJaOverview || supabaseJaOverview || sourceJaOverview || null;
-
-// TMDbの公式あらすじ、またはブログ側から流れてきた既存あらすじが日本語であるかを判定
-const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
-                           /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
-
-// TMDb英語あらすじを抽出
-const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                      (!isOverviewJapanese ? rawOverview : null);
+const isSourceOverviewJa = hasJa.test(sourceOverview || '');
+const isSourceOverviewEnJa = hasJa.test(sourceOverviewEn || '');
+const isSourceAiSummaryJa = hasJa.test(sourceAiSummary || '');
 
 let finalOverview = null;
 let finalOverviewEn = null;
 let finalAiSummary = null;
 
-if (rawOverview) {
-  // パターンA・B: 公式あらすじが存在する場合
-  if (isOverviewJapanese) {
-    // パターンA: 日本語公式あらすじがある場合
-    finalOverview = baseOverview || rawOverview;
-    finalOverviewEn = null;
+// すでにいずれかに日本語のあらすじが存在している場合（上書き防止）
+if (tmdbJaOverview || isSourceOverviewJa || isSourceOverviewEnJa || isSourceAiSummaryJa) {
+  finalOverview = tmdbJaOverview || (isSourceOverviewJa ? sourceOverview : null);
+  finalOverviewEn = isSourceOverviewEnJa ? sourceOverviewEn : null;
+  finalAiSummary = isSourceAiSummaryJa ? sourceAiSummary : null;
+} else {
+  // 日本語あらすじが全く存在しない場合
+  if (rawOverview) {
+    // TMDbに英語あらすじがある場合 ➡ 英語原文を overview_en に入れて後ろの翻訳AIに流す
+    finalOverview = null;
+    finalOverviewEn = rawOverview;
     finalAiSummary = null;
   } else {
-    // パターンB: 英語の公式あらすじだけがある場合
-    finalOverview = baseOverview; // overviewは日本語専用。英語は入れない
-    finalOverviewEn = rawOverview; // ◀ ここに「英語の原文あらすじ」をセットして後ろのAI翻訳に渡す
+    // あらすじが全く無い場合 ➡ 後ろの Tavily ＋ AI生成に任せる
+    finalOverview = null;
+    finalOverviewEn = null;
     finalAiSummary = null;
   }
-} else {
-  // パターンC: 公式あらすじが無い（Tavily検索ルート）の場合
-  finalOverview = baseOverview; // もともとブログ側で作られた日本語あらすじがあれば保持
-  finalOverviewEn = null;
-  finalAiSummary = null; // 後ろのTavily検索+AI生成で作成されるため、この時点ではnull
 }
 
 const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
