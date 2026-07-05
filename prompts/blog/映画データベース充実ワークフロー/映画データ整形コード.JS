@@ -52,15 +52,6 @@ if (!result && resultsList.length > 0) {
   }
 }
 
-// === 安全装置: 同名でも公開年が2年以上ズレている場合は別映画と判断してマッチングを拒否する ===
-if (result) {
-  const tmdbYear = result.release_date ? parseInt(result.release_date.substring(0, 4)) : null;
-  const sourceYear = sourceData.year ? parseInt(sourceData.year) : null;
-  if (tmdbYear && sourceYear && Math.abs(tmdbYear - sourceYear) > 2) {
-    result = null;
-  }
-}
-
 if (!sourceData?.title && !result?.title) return [];
 
 const langToCountry = {
