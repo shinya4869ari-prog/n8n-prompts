@@ -106,9 +106,9 @@ if (!wikidata_id) {
     const wikiJson1 = getNodeData('Wikidata検索');
     let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
     
-    const wikiJson2 = getNodeData('Wikidata検索（タイトル検索用）');
+    const wikiJson2 = getNodeData('Wikidata検索 (タイトル検索用)');
     if (!fallbackId && wikiJson2) {
-      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.search?.[0]?.title || null;
+      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.[0]?.title || null;
     }
     
     wikidata_id = fallbackId;
