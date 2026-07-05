@@ -51,9 +51,44 @@ const langToCountry = {
   'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
   'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
 };
+const nameToCountryCode = {
+  'ブータン': 'BT',
+  '韓国': 'KR',
+  '大韓民国': 'KR',
+  'アメリカ': 'US',
+  'アメリカ合衆国': 'US',
+  '日本': 'JP',
+  'フランス': 'FR',
+  'ドイツ': 'DE',
+  '中国': 'CN',
+  '中華人民共和国': 'CN',
+  'インド': 'IN',
+  'イギリス': 'GB',
+  'グレートブリテン': 'GB',
+  'イタリア': 'IT',
+  'カナダ': 'CA',
+  'オーストラリア': 'AU',
+  'スペイン': 'ES',
+  'ロシア': 'RU',
+  'ロシア連邦': 'RU',
+  '台湾': 'TW',
+  'タイ': 'TH',
+  'ベトナム': 'VN',
+  'インドネシア': 'ID',
+  'トルコ': 'TR',
+  'ブラジル': 'BR',
+  'メキシコ': 'MX',
+  'ニュージーランド': 'NZ',
+};
 const lang = result?.original_language;
-// 判定された国、または指定された対象国を格納
-const country = sourceData.target_country || langToCountry[lang] || lang?.toUpperCase() || null;
+
+// カタカナ国名が流れてきた場合は2文字コードに変換する
+let rawCountry = sourceData.target_country || '';
+if (nameToCountryCode[rawCountry]) {
+  rawCountry = nameToCountryCode[rawCountry];
+}
+
+const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
