@@ -27,7 +27,7 @@ Web検索を行って以下の項目を調査し、挨拶や説明文を一切�
   - cast（主要出演者、ナレーターなど）
   - overview（TMDbなどのツールで取得した映画データに含まれる `overview`（あらすじ・概要）をそのまま代入してください。日本語のデータがあれば優先し、無ければ英語などのデータをそのまま入れてください。自分で新しく作文したりでっち上げたりする必要はありません）
   - tmdb_id（TMDbのID、なければnull。検索結果から不明な場合は直接nullで可）
-  - poster_path（TMDbのポスターパス、なければnull）
+  - poster_url（TMDbのポスターパス、なければnull）
   - imdb_url（IMDbページのURL、なければnull）
   - is_serious（深刻な悲劇的題材ならtrue、それ以外はfalse）
   - 出典（検証した実在のURL）
