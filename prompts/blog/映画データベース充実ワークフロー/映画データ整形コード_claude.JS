@@ -1,12 +1,11 @@
 const brave = $input.item?.json || {};
 const credits = getNodeData('TMDb credits取得');
-const tmdb = (() => {
-  const t1 = getNodeData('TMDb検索');
-  if (t1?.id || (t1?.results && t1.results.length > 0)) return t1;
-  const t2 = getNodeData('TMDb検索_タイトル');
-  if (t2?.id || (t2?.results && t2.results.length > 0)) return t2;
-  return t1 || t2 || {};
-})();
+const t1 = getNodeData('TMDb検索');
+const t2 = getNodeData('TMDb検索_タイトル');
+const resultsList = [
+  ...(t1?.results || t1?.movie_results || (t1?.id ? [t1] : [])),
+  ...(t2?.results || t2?.movie_results || (t2?.id ? [t2] : []))
+];
 let sourceData = {};
 try {
   sourceData = $('Loop Over Items').item?.json || {};
@@ -31,11 +30,16 @@ function getNodeData(nodeName) {
   }
 }
 
-const resultsList = tmdb?.results || tmdb?.movie_results || (tmdb?.id ? [tmdb] : []);
+const correctMovieId = credits?.id;
 
 // 対象国と言語にマッチする映画を検索結果（resultsList）から探す
 let result = null;
-if (resultsList.length > 0) {
+if (correctMovieId && resultsList.length > 0) {
+  // 0. creditsのIDと完全一致するものを最優先（最も確実）
+  result = resultsList.find(m => m.id === correctMovieId);
+}
+
+if (!result && resultsList.length > 0) {
   // 1. 国コードとオリジナル言語の両方が一致するものを最優先
   result = resultsList.find(m => 
     (m.original_language === sourceData.target_lang) || 
