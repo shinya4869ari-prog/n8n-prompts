@@ -145,14 +145,15 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '');
-
-const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                      (!isOverviewJapanese ? rawOverview : null);
-
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
 const sourceJaOverview = sourceData.overview || null;
 const baseOverview = tmdbJaOverview || sourceJaOverview || null;
+
+const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
+                           /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
+
+const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
+                      (!isOverviewJapanese ? rawOverview : null);
 
 let finalOverview = null;
 let finalOverviewEn = null;

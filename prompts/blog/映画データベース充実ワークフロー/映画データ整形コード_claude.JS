@@ -144,17 +144,18 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// 日本語が含まれているかを判定
-const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '');
-
-// TMDb英語あらすじを抽出
-const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                      (!isOverviewJapanese ? rawOverview : null);
-
 // ベースとなる日本語あらすじを定義（TMDb公式日本語 ＞ 上流ブログでAIが取得した日本語）
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
 const sourceJaOverview = sourceData.overview || null;
 const baseOverview = tmdbJaOverview || sourceJaOverview || null;
+
+// TMDbの公式あらすじ、またはブログ側から流れてきた既存あらすじが日本語であるかを判定
+const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
+                           /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
+
+// TMDb英語あらすじを抽出
+const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
+                      (!isOverviewJapanese ? rawOverview : null);
 
 let finalOverview = null;
 let finalOverviewEn = null;
