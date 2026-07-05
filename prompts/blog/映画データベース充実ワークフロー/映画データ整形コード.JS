@@ -90,8 +90,12 @@ if (nameToCountryCode[rawCountry]) {
 
 const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
-const wikidata = getNodeData('Wikidata検索');
-const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
+let wikidata_id = result?.external_ids?.wikidata_id || null;
+if (!wikidata_id) {
+  try {
+    wikidata_id = $('Wikidata検索').item?.json?.search?.[0]?.id || null;
+  } catch (e) {}
+}
 const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const cast_en = credits?.cast?.map(c => c.original_name).join(', ') || null;
@@ -145,40 +149,34 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// 各ソースから日本語あらすじを抽出・判定
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
-const sourceOverview = sourceData.overview || null;
-const sourceOverviewEn = sourceData.overview_en || null;
-const sourceAiSummary = sourceData.ai_summary || null;
+const sourceJaOverview = sourceData.overview || null;
+const baseOverview = tmdbJaOverview || sourceJaOverview || null;
 
-const hasJa = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/;
+const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '') || 
+                           /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(baseOverview || '');
 
-const isSourceOverviewJa = hasJa.test(sourceOverview || '');
-const isSourceOverviewEnJa = hasJa.test(sourceOverviewEn || '');
-const isSourceAiSummaryJa = hasJa.test(sourceAiSummary || '');
+const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
+                      (!isOverviewJapanese ? rawOverview : null);
 
 let finalOverview = null;
 let finalOverviewEn = null;
 let finalAiSummary = null;
 
-// すでにいずれかに日本語のあらすじが存在している場合（上書き防止）
-if (tmdbJaOverview || isSourceOverviewJa || isSourceOverviewEnJa || isSourceAiSummaryJa) {
-  finalOverview = tmdbJaOverview || (isSourceOverviewJa ? sourceOverview : null);
-  finalOverviewEn = isSourceOverviewEnJa ? sourceOverviewEn : null;
-  finalAiSummary = isSourceAiSummaryJa ? sourceAiSummary : null;
-} else {
-  // 日本語あらすじが全く存在しない場合
-  if (rawOverview) {
-    // TMDbに英語あらすじがある場合 ➡ 英語原文を overview_en に入れて後ろの翻訳AIに流す
-    finalOverview = null;
-    finalOverviewEn = rawOverview;
-    finalAiSummary = null;
-  } else {
-    // あらすじが全く無い場合 ➡ 後ろの Tavily ＋ AI生成に任せる
-    finalOverview = null;
+if (rawOverview) {
+  if (isOverviewJapanese) {
+    finalOverview = baseOverview || rawOverview;
     finalOverviewEn = null;
     finalAiSummary = null;
+  } else {
+    finalOverview = baseOverview;
+    finalOverviewEn = rawOverview;
+    finalAiSummary = null;
   }
+} else {
+  finalOverview = baseOverview;
+  finalOverviewEn = null;
+  finalAiSummary = null;
 }
 
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
