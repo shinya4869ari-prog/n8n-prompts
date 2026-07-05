@@ -104,9 +104,8 @@ const youtubeVideo = videoResults.find(v => {
 
 const trailer_url = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
-const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || 
+const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
                     result?.overview || 
-                    result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
@@ -136,7 +135,7 @@ return [{
     country,
     wikidata_id,
     tmdb_id: result?.id || null,
-    overview: escapeJsonString(result?.overview || null),
+    overview: escapeJsonString(rawOverview),
     ai_summary: escapeJsonString((rawOverview && !isOverviewJapanese) ? null : ai_summary),
     trailer_url,
     director_en: escapeJsonString(director_en),
