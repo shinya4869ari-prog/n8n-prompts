@@ -39,6 +39,10 @@ for (const item of items) {
     if (title !== "タイトル不明" && !seenTitles.has(title)) {
       seenTitles.add(title);
 
+      // 公開年（制作年）を数値に変換（例："2023年" -> 2023）
+      const rawYear = movie.公開年 || movie.year || "";
+      const parsedYear = parseInt(String(rawYear).replace(/[^0-9]/g, '')) || null;
+
       results.push({
         json: {
           title: title,
@@ -49,7 +53,8 @@ for (const item of items) {
           country: data.country || "",
           overview: movie.あらすじ || movie.overview || "",
           tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0, // ★ nullエラー防止のため、IDが無い場合は0を指定
-          imdb_url: movie.imdb_url || ""
+          imdb_url: movie.imdb_url || "",
+          year: parsedYear // ★ 追加：制作年数（公開年）
         }
       });
     }
