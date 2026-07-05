@@ -164,20 +164,20 @@ if (rawOverview) {
   // パターンA・B: 公式あらすじが存在する場合
   if (isOverviewJapanese) {
     // パターンA: 日本語公式あらすじがある場合
-    finalOverview = baseOverview;
+    finalOverview = baseOverview || rawOverview;
     finalOverviewEn = null;
     finalAiSummary = null;
   } else {
     // パターンB: 英語の公式あらすじだけがある場合
-    finalOverview = baseOverview || rawOverview; // もともとの日本語か、無ければ英語生データ
-    finalOverviewEn = ai_summary || null;       // 今回のワークフローで英語から日本語に翻訳したあらすじ
+    finalOverview = baseOverview; // overviewは日本語専用。英語は入れない
+    finalOverviewEn = rawOverview; // ◀ ここに「英語の原文あらすじ」をセットして後ろのAI翻訳に渡す
     finalAiSummary = null;
   }
 } else {
   // パターンC: 公式あらすじが無い（Tavily検索ルート）の場合
   finalOverview = baseOverview; // もともとブログ側で作られた日本語あらすじがあれば保持
   finalOverviewEn = null;
-  finalAiSummary = ai_summary || null; // 今回のワークフロー内でTavilyのWeb検索から新しく生成した日本語あらすじ
+  finalAiSummary = null; // 後ろのTavily検索+AI生成で作成されるため、この時点ではnull
 }
 
 const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
