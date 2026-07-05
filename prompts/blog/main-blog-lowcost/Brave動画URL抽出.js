@@ -57,9 +57,25 @@ return braveItems.map((item, index) => {
   // 対応するインデックスの映画データを取得
   const movieData = movieItems[index]?.json || {};
 
+  // poster_path を絶対URL（poster_url）に変換
+  let poster_url = movieData.poster_url || movieData.poster_path || null;
+  if (poster_url && typeof poster_url === 'string' && poster_url.startsWith('/')) {
+    poster_url = `https://image.tmdb.org/t/p/w500${poster_url}`;
+  }
+
   return {
     json: {
-      ...movieData,
+      title: movieData.title || null,
+      origin_title: movieData.origin_title || null,
+      poster_url: poster_url,
+      country: movieData.country || null,
+      wikidata_id: movieData.wikidata_id || null,
+      tmdb_id: movieData.tmdb_id || 0,
+      overview: movieData.overview || null,
+      year: movieData.year || null,
+      ai_summary: movieData.ai_summary || null,
+      director: movieData.director || null,
+      cast: movieData.cast || null,
       trailer_url: trailer_url
     }
   };
