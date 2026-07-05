@@ -59,6 +59,8 @@ const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
 const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
 const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
+const cast_en = credits?.cast?.map(c => c.original_name).join(', ') || null;
+const director_en = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const claude = getNodeData('Message a model');
 let rawText = '';
 if (typeof claude?.text === 'string') {
@@ -136,5 +138,8 @@ return [{
     director: escapeJsonString(director),
     cast: escapeJsonString(cast),
     trailer_url,
+    overview_en: escapeJsonString(result?.overview || null),
+    director_en: escapeJsonString(director_en),
+    cast_en: escapeJsonString(cast_en),
   }
 }];
