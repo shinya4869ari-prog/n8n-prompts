@@ -49,7 +49,7 @@ Web検索を行って以下の項目を調査し、挨拶や説明文を一切�
       "cast": "",
       "overview": "",
       "tmdb_id": null,
-      "poster_path": null,
+      "poster_url": null,
       "imdb_url": null,
       "is_serious": false,
       "出典": ""

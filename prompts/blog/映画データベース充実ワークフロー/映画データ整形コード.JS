@@ -74,10 +74,8 @@ if (rawOllamaText) {
 }
 const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
-const braveVideos = Array.isArray(braveTrailer?.results) ? braveTrailer.results :
-                    (Array.isArray(braveTrailer?.videos?.results) ? braveTrailer.videos.results : []);
-const videoResults = Array.isArray(brave?.results) ? brave.results :
-                     (Array.isArray(brave?.videos?.results) ? brave.videos.results : braveVideos);
+const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
+const videoResults = brave?.results || brave?.videos?.results || braveVideos;
 
 const youtubeVideo = videoResults.find(v => {
   const url = v.url || v.profile?.url || '';
