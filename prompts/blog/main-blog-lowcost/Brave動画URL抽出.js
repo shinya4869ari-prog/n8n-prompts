@@ -4,24 +4,11 @@
 // 入力データ（Brave Searchの結果）をすべて取得
 const braveItems = $input.all();
 
-// 手前の「リサーチデータ整形」の映画データをすべて取得
 let movieItems = [];
 try {
   movieItems = $('リサーチデータ整形').all();
 } catch (e) {
-  try {
-    movieItems = $('Loop Over Items').all();
-  } catch (e2) {
-    try {
-      movieItems = $('Loop Over Items1').all();
-    } catch (e3) {
-      try {
-        movieItems = $('映画ごとにループ実行').all();
-      } catch (e4) {
-        movieItems = [];
-      }
-    }
-  }
+  movieItems = [];
 }
 
 // すべてのアイテムを順番に処理してマージする
