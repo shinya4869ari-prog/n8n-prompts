@@ -57,8 +57,8 @@ const country = langToCountry[lang] || sourceData.target_country || lang?.toUppe
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 const wikidata = getNodeData('Wikidata検索');
 const wikidata_id = result?.external_ids?.wikidata_id || (wikidata?.error ? null : wikidata?.search?.[0]?.id || null);
-const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
-const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
+const cast = credits?.cast?.map(c => c.original_name).join(', ') || null;
+const director = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
 const ollama = getNodeData('Ollama');
 const rawOllamaText = (ollama?.content || '').trim();
 let ai_title = null;
@@ -74,8 +74,10 @@ if (rawOllamaText) {
 }
 const tavilyData = getNodeData('Tavily');
 const braveTrailer = getNodeData('Brave Search_trailer');
-const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
-const videoResults = brave?.results || brave?.videos?.results || braveVideos;
+const braveVideos = Array.isArray(braveTrailer?.results) ? braveTrailer.results :
+                    (Array.isArray(braveTrailer?.videos?.results) ? braveTrailer.videos.results : []);
+const videoResults = Array.isArray(brave?.results) ? brave.results :
+                     (Array.isArray(brave?.videos?.results) ? brave.videos.results : braveVideos);
 
 const youtubeVideo = videoResults.find(v => {
   const url = v.url || v.profile?.url || '';

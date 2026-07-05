@@ -73,8 +73,10 @@ if (typeof claude?.text === 'string') {
 const ai_summary = rawText.replace(/[\x00-\x1F\x7F]/g, ' ').trim() || null;
 const braveSearchData = getNodeData('Brave Search_movie');
 const braveTrailer = getNodeData('Brave Search_trailer');
-const braveVideos = braveTrailer?.results || braveTrailer?.videos?.results || [];
-const videoResults = brave?.results || brave?.videos?.results || braveVideos;
+const braveVideos = Array.isArray(braveTrailer?.results) ? braveTrailer.results :
+                    (Array.isArray(braveTrailer?.videos?.results) ? braveTrailer.videos.results : []);
+const videoResults = Array.isArray(brave?.results) ? brave.results :
+                     (Array.isArray(brave?.videos?.results) ? brave.videos.results : braveVideos);
 
 const youtubeVideo = videoResults.find(v => {
   const url = v.url || v.profile?.url || '';
