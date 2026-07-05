@@ -1,5 +1,5 @@
 const brave = $input.item?.json || {};
-const credits = getNodeData('TMDb credits取得');
+const credits = $input.item?.json || getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
 const resultsList = [
@@ -24,7 +24,7 @@ try {
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
   try {
-    return $(nodeName).first()?.json || {};
+    return $(nodeName).first()?.json || $(nodeName).item?.json || {};
   } catch (e) {
     return {};
   }
