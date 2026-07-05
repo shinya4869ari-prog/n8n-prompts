@@ -1,6 +1,12 @@
 const brave = $input.item?.json || {};
 const credits = $('TMDb credits取得').item?.json || {};
-const tmdb = $('TMDb検索').item?.json || {};
+const tmdb = (() => {
+  const pathId = getNodeData('TMDb検索_ID/Wikidata');
+  if (pathId.id || pathId.results || pathId.movie_results) return pathId;
+  const pathTitle = getNodeData('TMDb検索');
+  if (pathTitle.id || pathTitle.results || pathTitle.movie_results) return pathTitle;
+  try { return $('TMDb検索').item?.json || {}; } catch(e) { return {}; }
+})();
 let sourceData = {};
 try {
   sourceData = $('Loop Over Items').item?.json || {};
