@@ -93,8 +93,17 @@ const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${resul
 let wikidata_id = result?.external_ids?.wikidata_id || null;
 if (!wikidata_id) {
   try {
-    const wikiJson = $('Wikidata検索').item?.json;
-    wikidata_id = wikiJson?.search?.[0]?.id || wikiJson?.query?.search?.[0]?.title || null;
+    const wikiJson1 = $('Wikidata検索').item?.json;
+    let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
+    
+    try {
+      const wikiJson2 = $('Wikidata検索（タイトル検索用）').item?.json;
+      if (!fallbackId && wikiJson2) {
+        fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.search?.[0]?.title || null;
+      }
+    } catch(e) {}
+    
+    wikidata_id = fallbackId;
   } catch (e) {}
 }
 const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
