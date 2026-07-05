@@ -28,8 +28,25 @@ const youtubeVideo = braveVideos.find(v => {
 
 const trailer_url = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
+// 元の映画データ（タイトル、監督、あらすじ等）をループ元ノードから取得してマージします
+let movieData = {};
+try {
+  movieData = $('Loop Over Items').item?.json || {};
+} catch (e) {
+  try {
+    movieData = $('Loop Over Items1').item?.json || {};
+  } catch (e2) {
+    try {
+      movieData = $('映画ごとにループ実行').item?.json || {};
+    } catch (e3) {
+      movieData = {};
+    }
+  }
+}
+
 return [{
   json: {
+    ...movieData,
     trailer_url: trailer_url
   }
 }];
