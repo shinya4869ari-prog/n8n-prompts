@@ -1,5 +1,5 @@
 const brave = $input.item?.json || {};
-const credits = $input.item?.json || getNodeData('TMDb credits取得');
+const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
 const resultsList = [
@@ -104,20 +104,20 @@ let wikidata_id = result?.external_ids?.wikidata_id || null;
 if (!wikidata_id) {
   try {
     const wikiJson1 = getNodeData('Wikidata検索');
-    let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
+    let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.query?.[0]?.id || null;
     
     const wikiJson2 = getNodeData('Wikidata検索（タイトル検索用）');
     if (!fallbackId && wikiJson2) {
-      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.search?.[0]?.title || null;
+      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.[0]?.title || null;
     }
     
     wikidata_id = fallbackId;
   } catch (e) {}
 }
-const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
-const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
-const cast_en = credits?.cast?.map(c => c.original_name).join(', ') || null;
-const director_en = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
+const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
+const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
+const cast_en = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;
+const director_en = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const ollama = getNodeData('Ollama');
 const rawOllamaText = (ollama?.content || '').trim();
 let ai_title = null;

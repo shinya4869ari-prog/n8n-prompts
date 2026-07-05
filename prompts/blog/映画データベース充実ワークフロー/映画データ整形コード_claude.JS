@@ -1,5 +1,5 @@
 const brave = $input.item?.json || {};
-const credits = $input.item?.json || getNodeData('TMDb credits取得');
+const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
 const resultsList = [
@@ -114,10 +114,10 @@ if (!wikidata_id) {
     wikidata_id = fallbackId;
   } catch (e) {}
 }
-const cast = credits?.cast?.map(c => c.name || c.original_name).join(', ') || null;
-const director = credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
-const cast_en = credits?.cast?.map(c => c.original_name).join(', ') || null;
-const director_en = credits?.crew?.find(c => c.job === 'Director')?.original_name || null;
+const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
+const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
+const cast_en = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;
+const director_en = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const claude = getNodeData('Message a model');
 let rawText = '';
 if (typeof claude?.text === 'string') {
