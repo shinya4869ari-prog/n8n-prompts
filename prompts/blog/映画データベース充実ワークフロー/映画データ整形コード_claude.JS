@@ -144,30 +144,44 @@ const rawOverview = result?.translations?.translations?.find(t => t.iso_639_1 ==
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
+// 日本語が含まれているかを判定
+const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006]/.test(rawOverview || '');
+
 // TMDb英語あらすじを抽出
 const rawOverviewEn = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                      rawOverview || 
-                      null;
+                      (!isOverviewJapanese ? rawOverview : null);
 
 // ベースとなる日本語あらすじを定義（TMDb公式日本語 ＞ 上流ブログでAIが取得した日本語）
 const tmdbJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || null;
 const sourceJaOverview = sourceData.overview || null;
 const baseOverview = tmdbJaOverview || sourceJaOverview || null;
 
-let finalOverview = baseOverview;
+let finalOverview = null;
 let finalOverviewEn = null;
 let finalAiSummary = null;
 
 if (rawOverview) {
-  // パターンB: 公式あらすじ（英語）が存在する場合 -> AI翻訳されたものを overview_en に格納
-  finalOverviewEn = ai_summary || null;
+  // パターンA・B: 公式あらすじが存在する場合
+  if (isOverviewJapanese) {
+    // パターンA: 日本語公式あらすじがある場合
+    finalOverview = baseOverview;
+    finalOverviewEn = null;
+    finalAiSummary = null;
+  } else {
+    // パターンB: 英語の公式あらすじだけがある場合
+    finalOverview = baseOverview || rawOverview; // もともとの日本語か、無ければ英語生データ
+    finalOverviewEn = ai_summary || null;       // 今回のワークフローで英語から日本語に翻訳したあらすじ
+    finalAiSummary = null;
+  }
 } else {
-  // パターンC: 公式あらすじが無い（Tavily検索ルート）場合 -> 生成文を ai_summary に格納
-  finalAiSummary = ai_summary || null;
+  // パターンC: 公式あらすじが無い（Tavily検索ルート）の場合
+  finalOverview = baseOverview; // もともとブログ側で作られた日本語あらすじがあれば保持
+  finalOverviewEn = null;
+  finalAiSummary = ai_summary || null; // 今回のワークフロー内でTavilyのWeb検索から新しく生成した日本語あらすじ
 }
 
 const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
-const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || tmdbJaTitle || result?.title || result?.original_title || null;
+const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || (isOverviewJapanese ? result?.title : null) || tmdbJaTitle || result?.title || result?.original_title || null;
 
 // JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
 const escapeJsonString = (str) => {
