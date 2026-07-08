@@ -7,19 +7,22 @@ const resultsList = [
   ...(t2?.results || t2?.movie_results || (t2?.id ? [t2] : []))
 ];
 let sourceData = {};
-try {
-  sourceData = $('Loop Over Items').item?.json || {};
-} catch(e) {
+function getSourceNodeData() {
   try {
-    sourceData = $('Loop Over Items1').item?.json || {};
-  } catch(e2) {
-    try {
-      sourceData = $('映画ごとにループ実行').item?.json || {};
-    } catch(e3) {
-      sourceData = $input.first()?.json || $input.item?.json || {};
-    }
-  }
+    const d = $('Loop Over Items').first()?.json || $('Loop Over Items').item?.json;
+    if (d && Object.keys(d).length > 0) return d;
+  } catch (e) {}
+  try {
+    const d = $('Loop Over Items1').first()?.json || $('Loop Over Items1').item?.json;
+    if (d && Object.keys(d).length > 0) return d;
+  } catch (e) {}
+  try {
+    const d = $('映画ごとにループ実行').first()?.json || $('映画ごとにループ実行').item?.json;
+    if (d && Object.keys(d).length > 0) return d;
+  } catch (e) {}
+  return $input.first()?.json || $input.item?.json || {};
 }
+sourceData = getSourceNodeData();
 
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
