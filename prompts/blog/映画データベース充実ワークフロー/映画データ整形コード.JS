@@ -8,18 +8,27 @@ const resultsList = [
 ];
 let sourceData = {};
 function getSourceNodeData() {
+  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview);
+  
+  // 1. First, check direct input
+  let d = $input.first()?.json || $input.item?.json;
+  if (isValid(d)) return d;
+
+  // 2. Check fallback nodes if direct input doesn't have movie data
   try {
-    const d = $('Loop Over Items').first()?.json || $('Loop Over Items').item?.json;
-    if (d && Object.keys(d).length > 0) return d;
+    d = $('Loop Over Items').first()?.json || $('Loop Over Items').item?.json;
+    if (isValid(d)) return d;
   } catch (e) {}
   try {
-    const d = $('Loop Over Items1').first()?.json || $('Loop Over Items1').item?.json;
-    if (d && Object.keys(d).length > 0) return d;
+    d = $('Loop Over Items1').first()?.json || $('Loop Over Items1').item?.json;
+    if (isValid(d)) return d;
   } catch (e) {}
   try {
-    const d = $('映画ごとにループ実行').first()?.json || $('映画ごとにループ実行').item?.json;
-    if (d && Object.keys(d).length > 0) return d;
+    d = $('映画ごとにループ実行').first()?.json || $('映画ごとにループ実行').item?.json;
+    if (isValid(d)) return d;
   } catch (e) {}
+  
+  // 3. Ultimate fallback
   return $input.first()?.json || $input.item?.json || {};
 }
 sourceData = getSourceNodeData();
