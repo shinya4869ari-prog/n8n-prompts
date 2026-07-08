@@ -1,4 +1,4 @@
-const brave = $input.item?.json || {};
+const brave = $input.first()?.json || $input.item?.json || {};
 const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
@@ -16,7 +16,7 @@ try {
     try {
       sourceData = $('映画ごとにループ実行').item?.json || {};
     } catch(e3) {
-      sourceData = $input.item?.json || {};
+      sourceData = $input.first()?.json || $input.item?.json || {};
     }
   }
 }
