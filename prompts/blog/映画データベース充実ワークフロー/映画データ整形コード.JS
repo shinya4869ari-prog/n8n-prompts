@@ -93,12 +93,17 @@ const nameToCountryCode = {
 const lang = result?.original_language;
 
 // カタカナ国名が流れてきた場合は2文字コードに変換する
-let rawCountry = sourceData.target_country || '';
+let rawCountry = sourceData.target_country || sourceData.country || '';
 if (nameToCountryCode[rawCountry]) {
   rawCountry = nameToCountryCode[rawCountry];
 }
 
-const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || langToCountry[lang] || lang?.toUpperCase() || null;
+const tmdbOriginCountry = (Array.isArray(result?.origin_country) && result.origin_country[0]) || (typeof result?.origin_country === 'string' ? result.origin_country : null);
+const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || 
+                (tmdbOriginCountry && tmdbOriginCountry.length === 2 ? tmdbOriginCountry.toUpperCase() : null) ||
+                langToCountry[lang] || 
+                lang?.toUpperCase() || 
+                null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
 let wikidata_id = result?.external_ids?.wikidata_id || null;
 if (!wikidata_id) {
