@@ -2,7 +2,11 @@ let raw = {};
 try {
   raw = $('Wikidataから映画リスト取得').first().json.data || $('Wikidataから映画リスト取得').first().json;
 } catch (e) {
-  raw = $input.first().json.data || $input.first().json;
+  try {
+    raw = $('TMDb結果変換コード').first().json.data || $('TMDb結果変換コード').first().json;
+  } catch (e2) {
+    raw = $input.first().json.data || $input.first().json;
+  }
 }
 
 let bindings = [];
@@ -12,18 +16,6 @@ try {
   bindings = parsed?.results?.bindings || [];
 } catch(e) {
   parseError = e.message;
-}
-
-if (bindings.length === 0) {
-  return [{ 
-    json: { 
-      skip: true, 
-      debug_reason: "No bindings found",
-      rawType: typeof raw,
-      rawKeys: raw ? Object.keys(raw) : [],
-      parseError: parseError
-    } 
-  }];
 }
 
 // フォームトリガーノードから設定値を取得
@@ -46,7 +38,24 @@ try {
   }
 }
 
-const rawLimit = formNode.limit || formNode.number || formNode.limitCount || formNode.count;
+if (bindings.length === 0) {
+  const country = formNode.country || formNode['国名（日本語）'] || '指定の国';
+  const year = formNode.year || formNode['制作年数'] || '';
+  const message = year ? `${country}の${year}年の映画はありませんでした。` : `${country}の映画は見つかりませんでした。`;
+
+  return [{ 
+    json: { 
+      skip: true,
+      message: message,
+      debug_reason: "No bindings found",
+      rawType: typeof raw,
+      rawKeys: raw ? Object.keys(raw) : [],
+      parseError: parseError
+    } 
+  }];
+}
+
+const rawLimit = formNode.limit || formNode.number || formNode.limitCount || formNode.count || formNode['リスト件数'];
 const limit = rawLimit ? parseInt(rawLimit) : 40;
 const directorName = formNode.directorName || formNode.englishName || formNode['監督'] || formNode.director || formNode.director_name || '';
 
@@ -113,21 +122,27 @@ for (const b of bindings) {
   }
 
   let movie = movieMap.get(movieUrl);
-  if (!movie) {
-    const target_country = b.countryCode?.value || null;
-    const target_lang = target_country ? (countryToLang[target_country] || null) : null;
+  const currentCountryCode = b.countryCode?.value || null;
+  const searchedCountryCode = formNode.countryCode || null;
 
+  if (!movie) {
     movie = {
       title,
       origin_title: b.movieLabelKo?.value || b.movieLabelEn?.value || null,
       year: b.year?.value ? parseInt(b.year.value) : null,
-      target_country,
-      target_lang,
+      target_country: currentCountryCode,
+      target_lang: currentCountryCode ? (countryToLang[currentCountryCode] || null) : null,
       tmdb_id,
       wikidata_id,
       director_name: directorName,
     };
     movieMap.set(movieUrl, movie);
+  } else {
+    // すでに仮登録された映画でも、今回の行の国コードが検索条件の国コード（例：KR）と一致していれば上書きする
+    if (searchedCountryCode && currentCountryCode === searchedCountryCode) {
+      movie.target_country = searchedCountryCode;
+      movie.target_lang = countryToLang[searchedCountryCode] || null;
+    }
   }
 }
 
