@@ -193,6 +193,32 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
   });
 }
 
+let recommendedMovies = [];
+try {
+  recommendedMovies = $('Call \'映画無限検索ワークフロー おすすめ映画版\'').all().map(item => {
+    const movie = item.json;
+    let posterPath = "";
+    if (movie.poster_url) {
+      const match = String(movie.poster_url).match(/\/t\/p\/w\d+(\/[^?#]+)/);
+      posterPath = match ? match[1] : movie.poster_url;
+    }
+    return {
+      "タイトル_日本語": movie.title || "",
+      "原題": movie.origin_title || "",
+      "種別": movie.type || "映画",
+      "公開年": movie.year || "",
+      "director": movie.director || "",
+      "cast": movie.cast || "",
+      "概要": movie.overview || "",
+      "tmdb_id": movie.tmdb_id || null,
+      "poster_path": posterPath,
+      "imdb_id": movie.wikidata_id || ""
+    };
+  });
+} catch (e) {
+  recommendedMovies = r25.おすすめ映画ランキング || r25.おすすめ映画 || [];
+}
+
 const r2Merged = {
   country: r2.country,
   歴史的背景: r2.歴史的背景,
@@ -200,7 +226,8 @@ const r2Merged = {
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
   映像作品: r25.映像作品,
-  おすすめ映画ランキング: r25.おすすめ映画ランキング
+  おすすめ映画: recommendedMovies.length > 0 ? recommendedMovies : (r25.おすすめ映画 || []),
+  おすすめ映画ランキング: recommendedMovies.length > 0 ? recommendedMovies : (r25.おすすめ映画ランキング || [])
 };
 
 // 対象国Googleシート

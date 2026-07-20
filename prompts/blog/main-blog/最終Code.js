@@ -986,26 +986,53 @@ return [articleItem].map(item => {
   article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 
   // --- 14. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
-  article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
-  const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+  const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+  const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+  
+  let kougyouData = [];
+  if (rawKougyou.length > 0) {
+    kougyouData = rawKougyou;
+  } else if (Array.isArray(kougyouData2) && kougyouData2.length > 0) {
+    kougyouData = kougyouData2.map((item, index) => ({
+      '順位': item['順位'] || `${index + 1}位`,
+      'タイトル': item['タイトル_日本語'] || item.title || '',
+      '原題': item['原題'] || item.origin_title || '',
+      '公開年': item['公開年'] || item.year || '',
+      'director': item.director || '',
+      'cast': item.cast || '',
+      '深刻': 'false',
+      'imdb_url': item.imdb_id ? `https://www.imdb.com/title/${item.imdb_id}/` : '',
+      'poster_path': item.poster_path || item.poster_url || ''
+    }));
+  }
+
   if (kougyouData.length > 0) {
-    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+    article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
       const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
       const apiData = kougyouData2.find(api => 
         (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
-        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
+        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
+        (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
       ) || {};
-      const posterPath = apiData['poster_path'];
-      const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
+      const posterPath = d['poster_path'] || apiData['poster_path'] || apiData['poster_url'] || '';
+      let posterUrl = '';
+      if (posterPath) {
+        if (String(posterPath).startsWith('http')) {
+          posterUrl = posterPath;
+        } else {
+          const prefix = posterPath.startsWith('/') ? '' : '/';
+          posterUrl = `https://image.tmdb.org/t/p/w200${prefix}${posterPath}`;
+        }
+      }
       const rankingInfo = (
         apiData?.概要 || 
         moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
         ''
       ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
-      const imdbId = apiData?.imdb_id || null;
+      const imdbId = apiData?.imdb_id || (d['imdb_url'] ? d['imdb_url'].replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
       const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
       const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1014,7 +1041,7 @@ return [articleItem].map(item => {
       </div>`;
 
       const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
         : '';
 
       const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
@@ -1028,7 +1055,7 @@ return [articleItem].map(item => {
   <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
     <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
+        <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || '🎬'}</span>
         <span style="font-weight:800;font-size:16px;color:#333;">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
@@ -1045,11 +1072,11 @@ return [articleItem].map(item => {
     if (kougyouCites.length > 0) {
       article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
     }
-  }
 
-  const kougyouNeko = getNekoBubbleForSection('⑨');
-  article += makeNekoBubble(kougyouNeko);
-  article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
+    const kougyouNeko = getNekoBubbleForSection('⑨');
+    article += makeNekoBubble(kougyouNeko);
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
+  }
 
   // --- 15. ライブログ ---
   const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);

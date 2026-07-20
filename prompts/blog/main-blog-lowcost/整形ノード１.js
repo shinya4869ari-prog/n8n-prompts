@@ -251,7 +251,7 @@ try {
     let posterPath = "";
     if (movie.poster_url) {
       const match = String(movie.poster_url).match(/\/t\/p\/w\d+(\/[^?#]+)/);
-      posterPath = match ? match[1] : (String(movie.poster_url).startsWith("/") ? movie.poster_url : "");
+      posterPath = match ? match[1] : movie.poster_url;
     }
 
     return {
