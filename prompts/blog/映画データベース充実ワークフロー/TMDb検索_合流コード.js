@@ -8,7 +8,10 @@ if (res1.movie_results && res1.movie_results.length > 0) {
 
 const res2 = ($('TMDb検索_タイトル').isExecuted && $('TMDb検索_タイトル').first()?.json) ? $('TMDb検索_タイトル').first().json : null;
 
-// タイトル検索が実行された場合はその結果を返し、そうでなければ最初のID/Wikidata検索の結果を返す
-const activeRes = res2 || res1;
+// ID/Wikidata検索の結果（確実な一致）がある場合はそちらを最優先し、ない場合はタイトル検索結果（res2）を使用する
+// ID/Wikidata検索で映画がヒットしなかった（idがない）場合は、空配列 [] を返してワークフローを安全に停止します
+if (!res1 || !res1.id) {
+  return [];
+}
 
-return [{ json: activeRes }];
+return [{ json: res1 }];

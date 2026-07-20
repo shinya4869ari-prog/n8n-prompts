@@ -252,10 +252,10 @@ return $input.all().map(item => {
   const eizouNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(eizouNeko);
 
-  // --- ⑤ 日本映画 歴代興行収入ランキング（ポスター画像追加） ---
-  article += `<h2 style="${h2Style}">⑤ 日本映画 歴代興行収入ランキング</h2>\n`;
-  const rankingList = sheetData.data?.対象国データ_記事?.興行収入ランキング || [];
-  const kougyouData = parseLines(raw, '興行');
+  // --- ⑤ 日本映画 おすすめ映画（ポスター画像追加） ---
+  article += `<h2 style="${h2Style}">⑤ 日本映画 おすすめ映画</h2>\n`;
+  const rankingList = sheetData.data?.対象国データ_記事?.おすすめ映画 || [];
+  const kougyouData = parseLines(raw, 'おすすめ');
   kougyouData.forEach((d, i) => {
     const isSerious = d['深刻'] === 'true';
     const bg = isSerious ? '#fff3f3' : '#ffffff';
@@ -272,12 +272,13 @@ return $input.all().map(item => {
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;padding-left:8px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
+        <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
         <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${rankingInfo}'>${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
-        📅 ${d['公開年'] || ''}年 &nbsp;|&nbsp; 💰 ${d['興行収入'] || 'データなし'}
-        ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督・主演：${d['監督_主演']}</span>` : ''}
+        📅 ${d['公開年'] || ''}
+        ${d['director'] && d['director'] !== '欠測' && d['director'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督：${d['director']}</span>` : ''}
+        ${d['cast'] && d['cast'] !== '欠測' && d['cast'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">👥 キャスト：${d['cast']}</span>` : ''}
       </div>
       ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">

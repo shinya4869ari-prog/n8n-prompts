@@ -1,6 +1,7 @@
 const r2Raw = $('researcher2_jp').first().json;
 const r25Raw = $('researcher25_jp').first().json;
 const boeki = $('Japan_④貿易').first().json;
+const supabaseMovieRaw = $('Supabase映画データ').first().json;
 
 const parseOutput = (node, nodeName) => {
   try {
@@ -156,12 +157,14 @@ const japanBoeki = {
 };
 
 // --- データの集約 ---
+const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
+
 const finalData = {
   対象国データ_記事: {
     歴史的背景: r2.歴史的背景,
     直近の動向: r2.直近の動向,
     映像作品: r25.映像作品,
-    興行収入ランキング: r25.興行収入ランキング
+    おすすめ映画: supabaseMovie.おすすめ映画 || []
   },
   固定データ: {
     貿易: japanBoeki,

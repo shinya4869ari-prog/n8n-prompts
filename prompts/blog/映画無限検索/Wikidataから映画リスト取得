@@ -48,7 +48,7 @@ SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tm
         const countryName = $json.country || $json.name || $json['国名（日本語）'];
         if (countryName) {
           const name = String(countryName).trim();
-          return '?movie wdt:P495 ?prodCountry .\n      ?prodCountry rdfs:label ?prodCountryLabel .\n      FILTER(?prodCountryLabel = "' + name + '"@ko || ?prodCountryLabel = "' + name + '"@en || ?prodCountryLabel = "' + name + '"@ja)';
+          return '?movie wdt:P495 ?prodCountry .\n      ?prodCountry rdfs:label ?prodCountryLabel .\n      FILTER(str(?prodCountryLabel) = "' + name + '")';
         }
         return '';
       })()}}
@@ -68,9 +68,17 @@ SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tm
           } catch(e) {}
         }
         if (genreName) {
-          const lowerGenre = genreName.toLowerCase();
-          const cleanGenre = lowerGenre.replace(/映画$/, ''); // "犯罪映画" -> "犯罪"
+          let genres = [];
+          if (Array.isArray(genreName)) {
+            // 配列（n8nの複数選択ドロップダウン）の場合
+            genres = genreName.map(g => String(g).trim().replace(/映画$/, '')).filter(Boolean);
+          } else {
+            // 文字列（カンマやスラッシュ区切り）の場合
+            genres = String(genreName).split(/[\s,，、\/／・|]+/g).map(g => g.trim().replace(/映画$/, '')).filter(Boolean);
+          }
           
+          if (genres.length === 0) return '';
+
           // 日本語の一般的なジャンル揺らぎマッピング
           const genreSynonyms = {
             '犯罪': ['犯罪', 'クライム', 'crime', '범죄'],
@@ -103,8 +111,18 @@ SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tm
             '家族': ['ファミリー', '家族', 'family', '가족']
           };
 
-          const keywords = genreSynonyms[cleanGenre] || [cleanGenre];
-          const filterConditions = keywords.map(kw => {
+          // すべての指定ジャンルとその類義語のキーワードをまとめる
+          let allKeywords = [];
+          for (const g of genres) {
+            const lowerG = g.toLowerCase();
+            const keywords = genreSynonyms[lowerG] || [lowerG];
+            allKeywords.push(...keywords);
+          }
+          
+          // 重複排除
+          allKeywords = Array.from(new Set(allKeywords));
+
+          const filterConditions = allKeywords.map(kw => {
             return 'CONTAINS(LCASE(?genreLabel), "' + kw + '")';
           }).join(' || ');
 
@@ -126,6 +144,9 @@ SELECT DISTINCT ?movie ?movieLabel ?movieLabelKo ?movieLabelEn ?year ?poster ?tm
             const form = $node["n8n Form Trigger"].json;
             yearVal = clean(form.year || form['制作年数']);
           } catch(e) {}
+        }
+        if (!yearVal) {
+          yearVal = "2024-2026";
         }
         if (yearVal) {
           // 全角数字を半角に変換し、空白を除去

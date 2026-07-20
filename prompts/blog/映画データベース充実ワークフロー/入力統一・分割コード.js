@@ -30,37 +30,39 @@ if (allInputs.length > 1 || (firstJson.title && !firstJson.titles && allInputs.l
   }).filter(item => item.title);
 }
 
-// パターン2: 文字列としての入力からJSON配列を探してパースする
+// パターン2: 配列（直接のArrayまたは文字列としてのJSON配列）を探してパースする
 if (items.length === 0) {
-  // inputData の中から最初に見つかった JSON 配列文字列を探す
-  let jsonStr = "";
+  let parsedArray = null;
   for (const key in inputData) {
-    if (typeof inputData[key] === 'string' && inputData[key].trim().startsWith('[')) {
-      jsonStr = inputData[key].trim();
+    // すでに配列（オブジェクト）である場合
+    if (Array.isArray(inputData[key])) {
+      parsedArray = inputData[key];
       break;
+    }
+    // 文字列で JSON 配列になっている場合
+    if (typeof inputData[key] === 'string' && inputData[key].trim().startsWith('[')) {
+      try {
+        parsedArray = JSON.parse(inputData[key].trim());
+        break;
+      } catch (e) {
+        // パース失敗時はスルーして他のキーを探す
+      }
     }
   }
 
-  if (jsonStr) {
-    try {
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed)) {
-        items = parsed.map(movie => {
-          const inputCountry = movie.country || inputData.country || null;
-          const countryInfo = inputCountry ? (countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null }) : { code: null, lang: null };
-          return {
-            title: movie.title,
-            origin_title: movie.original_title || movie.origin_title || null,
-            year: movie.year || (movie.release_date ? movie.release_date.substring(0, 4) : null) || null,
-            target_country: countryInfo.code,
-            target_lang: countryInfo.lang,
-            tmdb_id: movie.tmdb_id || movie.tmdb || null
-          };
-        });
-      }
-    } catch (e) {
-      // パース失敗時はスルー
-    }
+  if (parsedArray && Array.isArray(parsedArray)) {
+    items = parsedArray.map(movie => {
+      const inputCountry = movie.country || inputData.country || null;
+      const countryInfo = inputCountry ? (countryMapping[inputCountry] || { code: inputCountry.toUpperCase(), lang: null }) : { code: null, lang: null };
+      return {
+        title: movie.title,
+        origin_title: movie.original_title || movie.origin_title || null,
+        year: movie.year || (movie.release_date ? movie.release_date.substring(0, 4) : null) || null,
+        target_country: countryInfo.code,
+        target_lang: countryInfo.lang,
+        tmdb_id: movie.tmdb_id || movie.tmdb || null
+      };
+    }).filter(item => item.title);
   }
 }
 

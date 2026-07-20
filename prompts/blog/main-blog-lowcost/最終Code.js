@@ -981,7 +981,7 @@ return [articleItem].map(item => {
   article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
   const kougyouData = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   if (kougyouData.length > 0) {
-    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+    const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || [];
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
@@ -1016,11 +1016,11 @@ return [articleItem].map(item => {
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4500;"></div>
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
   <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
     <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:#ff4500;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">${d['順位'] || ''}</span>
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
         <span style="font-weight:800;font-size:16px;color:#333;">${d['タイトル'] || ''}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">

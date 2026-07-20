@@ -1,9 +1,12 @@
 const r1Raw = $('researcher1').first().json;
 const r2Raw = $('researcher2').first().json; // Perplexityノードの出力
 const r25Raw = $('researcher25').first().json; // 映像作品（歴史連動）エージェントの出力
-// Supabaseからあらかじめ登録されている「おすすめ映画ランキング」を取得するノードの名前を指定してください。
-// 例: const supabaseMovieRaw = $('Supabase映画データ').first().json;
-const supabaseMovieRaw = $('Supabase映画データ').first().json; 
+let supabaseMovieRaw = null;
+try {
+  supabaseMovieRaw = $('Supabase映画データ').first().json; 
+} catch (e) {
+  // ノードが削除されている場合はnullのままにする
+}
 
 // Agent停止チェック (AIエージェントとして動くresearcher1とresearcher25を監視します)
 for (const [raw, name] of [[r1Raw, 'researcher1'], [r25Raw, 'researcher25']]) {
@@ -18,12 +21,59 @@ for (const [raw, name] of [[r1Raw, 'researcher1'], [r25Raw, 'researcher25']]) {
 
 const parseOutput = (node, nodeName) => {
   try {
-    const rawVal = node.output ?? node.json ?? '{}';
-    if (typeof rawVal === 'object' && rawVal !== null) {
-      return rawVal;
+    let rawVal = node;
+
+    // ★最優先：もし入力自体が二重エスケープ等の「文字列」なら、まずデ코드して本来のオブジェクトや文字列にする
+    if (typeof rawVal === 'string') {
+      try {
+        const trimmed = rawVal.trim();
+        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+          rawVal = JSON.parse(trimmed);
+        } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          rawVal = JSON.parse(trimmed);
+        }
+      } catch (e) {
+        // パース失敗時はそのまま文字列として進む
+      }
     }
+
+    if (typeof rawVal === 'object' && rawVal !== null) {
+      // すでに目的のキーを持っている場合はそのままオブジェクトとして返す
+      if (rawVal.歴史的背景 || rawVal.映像作品 || rawVal.おすすめ映画) {
+        return rawVal;
+      }
+      // メッセージ内容や出力を最優先で展開する
+      if (rawVal.message !== undefined) {
+        if (typeof rawVal.message === 'string') {
+          rawVal = rawVal.message;
+        } else if (rawVal.message.content !== undefined) {
+          rawVal = rawVal.message.content; // 一般的なPerplexityオブジェクト
+        } else if (Array.isArray(rawVal.message) && rawVal.message[0] && rawVal.message[0].content !== undefined) {
+          rawVal = rawVal.message[0].content; // 配列の場合
+        } else {
+          rawVal = JSON.stringify(rawVal.message); // 未知の構造の場合
+        }
+      } else if (rawVal.output !== undefined) {
+        rawVal = rawVal.output;
+      } else if (rawVal.json !== undefined) {
+        rawVal = rawVal.json;
+      } else {
+        // それ以外のラッパーオブジェクトの場合、文字列化する
+        rawVal = JSON.stringify(rawVal);
+      }
+    }
+
     let raw = String(rawVal).trim();
     if (!raw || raw === '') throw new Error('outputが空です');
+
+    // ★二重エスケープ対策：全体がダブルクォーテーションで囲まれたJSON文字列の場合、デコードする
+    if (raw.startsWith('"') && raw.endsWith('"')) {
+      try {
+        raw = JSON.parse(raw);
+      } catch (e) {
+        // デコード失敗時はそのまま進む
+      }
+    }
 
     // 「Calling Perplexity...」などのシステムログが前後に入っている場合を考慮し、
     // 最初の { から最後の } まで（または [ から ] まで）を切り抜く
@@ -122,7 +172,9 @@ const parseOutput = (node, nodeName) => {
     cleaned = repaired;
 
     return JSON.parse(cleaned);
-  } catch (e) { throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}`); }
+  } catch (e) { 
+    throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}. データ冒頭: ${String(rawVal).substring(0, 200)}`); 
+  }
 };
 
 const adjustPrisonTrend = (trendArray, chiAnObj) => {
@@ -179,7 +231,9 @@ if (r1 && r1.地理) {
 
 const r2 = parseOutput(r2Raw, 'researcher2');
 if (!r2 || !r2.歴史的背景) {
-  throw new Error(`【researcher2】Perplexityから必要な歴史・動向データが取得できませんでした。再実行してください。`);
+  const keys = r2 ? Object.keys(r2).join(', ') : 'null';
+  const rawStr = r2Raw ? String(r2Raw.output ?? r2Raw.json ?? JSON.stringify(r2Raw)).substring(0, 200) : 'empty';
+  throw new Error(`【researcher2】Perplexityから必要な歴史・動向データが取得できませんでした。取得できたキー: [${keys}], データ冒頭: ${rawStr}`);
 }
 
 const r25 = parseOutput(r25Raw, 'researcher25');
@@ -187,9 +241,44 @@ if (!r25 || !r25.映像作品) {
   throw new Error(`【researcher25】必要な映像作品（歴史連動）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
 }
 
-const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
-if (!supabaseMovie || !supabaseMovie.おすすめ映画) {
-  throw new Error(`【Supabase】Supabaseからおすすめ映画データが取得できませんでした。登録状況を確認してください。`);
+let recommendedMovies = [];
+try {
+  // 子ワークフロー（映画無限検索ワークフロー おすすめ映画版）の出力から映画データを取得
+  recommendedMovies = $('Call \'映画無限検索ワークフロー おすすめ映画版\'').all().map(item => {
+    const movie = item.json;
+    
+    // フルURLのポスターURLから最終Codeが期待する相対パス (/xxxx.jpg) を抽出
+    let posterPath = "";
+    if (movie.poster_url) {
+      const match = String(movie.poster_url).match(/\/t\/p\/w\d+(\/[^?#]+)/);
+      posterPath = match ? match[1] : (String(movie.poster_url).startsWith("/") ? movie.poster_url : "");
+    }
+
+    return {
+      "タイトル_日本語": movie.title || "",
+      "原題": movie.origin_title || "",
+      "種別": movie.type || "映画",
+      "公開年": movie.year || "",
+      "director": movie.director || "",
+      "cast": movie.cast || "",
+      "概要": movie.overview || "",
+      "tmdb_id": movie.tmdb_id || null,
+      "poster_path": posterPath,
+      "imdb_id": movie.wikidata_id || "" // なければWikidata ID等をフォールバック
+    };
+  });
+} catch (e) {
+  // 子ワークフローが実行されていない、またはノードが無い場合は従来のSupabase映画データを使用
+  try {
+    if (supabaseMovieRaw) {
+      const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
+      recommendedMovies = supabaseMovie.おすすめ映画 || [];
+    } else {
+      recommendedMovies = [];
+    }
+  } catch (err) {
+    recommendedMovies = [];
+  }
 }
 
 // 重大犯罪事件を発生年の新しい順（降順）に強制ソート
@@ -208,7 +297,7 @@ const r2Merged = {
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
   映像作品: r25.映像作品,
-  おすすめ映画: supabaseMovie.おすすめ映画 || []
+  おすすめ映画: recommendedMovies
 };
 
 // 対象国Googleシート
