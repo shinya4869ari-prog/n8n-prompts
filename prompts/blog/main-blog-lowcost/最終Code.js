@@ -936,7 +936,15 @@ return [articleItem].map(item => {
       const directorActorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
       const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
       const posterPath = apiData['poster_path'];
-      const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : '';
+      let posterUrl = '';
+      if (posterPath) {
+        if (String(posterPath).startsWith('http')) {
+          posterUrl = posterPath;
+        } else {
+          const prefix = posterPath.startsWith('/') ? '' : '/';
+          posterUrl = `https://image.tmdb.org/t/p/w200${prefix}${posterPath}`;
+        }
+      }
       const movieInfo = (
         apiData?.概要 || 
         moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
@@ -951,7 +959,7 @@ return [articleItem].map(item => {
       </div>`;
 
       const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>`
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
         : '';
 
       article += `

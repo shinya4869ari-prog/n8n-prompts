@@ -21,7 +21,7 @@ function forceParseJSON(text) {
 // === ブロック2: データのパースと映画リストの統合 ===
 // 映画検索結果のテキスト（output）を解析し、リスト化します。
 for (const item of items) {
-  const rawText = item.json.output;
+  const rawText = item.json.output ?? (typeof item.json.message === 'object' ? item.json.message?.content : item.json.message) ?? item.json.text ?? (typeof item.json === 'string' ? item.json : JSON.stringify(item.json));
   if (!rawText) continue;
 
   const data = forceParseJSON(rawText);

@@ -21,15 +21,33 @@ function forceParseJSON(text) {
 // === ブロック2: データのパースと映画リストの統合 ===
 // 映画検索結果のテキスト（output）を解析し、リスト化します。
 for (const item of items) {
-  const rawText = item.json.output;
+  const rawText = item.json.output ?? (typeof item.json.message === 'object' ? item.json.message?.content : item.json.message) ?? item.json.text ?? (typeof item.json === 'string' ? item.json : JSON.stringify(item.json));
   if (!rawText) continue;
 
   const data = forceParseJSON(rawText);
   if (!data) continue;
 
   let allMovies = [];
-  if (Array.isArray(data.映像作品)) allMovies.push(...data.映像作品);
-  if (Array.isArray(data.おすすめ映画ランキング)) allMovies.push(...data.おすすめ映画ランキング);
+  
+  // データ自体が配列の場合
+  if (Array.isArray(data)) {
+    allMovies.push(...data);
+  } else if (typeof data === 'object' && data !== null) {
+    // 既知のキー
+    if (Array.isArray(data.映像作品)) allMovies.push(...data.映像作品);
+    if (Array.isArray(data.おすすめ映画ランキング)) allMovies.push(...data.おすすめ映画ランキング);
+    if (Array.isArray(data.movies)) allMovies.push(...data.movies);
+    if (Array.isArray(data.映画)) allMovies.push(...data.映画);
+    
+    // それでも見つからない場合、オブジェクト内の配列を片っ端から探す
+    if (allMovies.length === 0) {
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          allMovies.push(...data[key]);
+        }
+      }
+    }
+  }
 
   // === ブロック3: 重複排除と出力フォーマットの整形 ===
   // タイトルの重複を削り、後続のAIノードに引き渡す枠組みを作ります。
