@@ -795,8 +795,8 @@ return [articleItem].map(item => {
 
         const isReason = String(displayP).includes('禁止') || String(displayP).includes('未進出') || String(displayP).includes('店舗なし') || String(displayP).includes('not') || String(displayP).includes('ban') || String(displayP).includes('illegal') || String(displayP).includes('no ') || String(displayP).includes('法律') || String(displayP).includes('販売なし');
         if (displayP !== 'データなし' && displayP !== '欠測' && !isReason) {
-          // 数字部分（カンマ含む）を抽出
-          const numMatch = String(displayP).match(/[\d,\.]+/);
+          // 数字部分（カンマ含む）を抽出。Nu. のようなピリオド付き通貨記号のピリオドを誤認しないよう、必ず数字からマッチさせる
+          const numMatch = String(displayP).match(/\d[\d,\.]*/);
           if (numMatch) {
             const num = parseFloat(numMatch[0].replace(/,/g, ''));
             const yen = Math.round(num * currentRate);
