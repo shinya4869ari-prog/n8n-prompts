@@ -195,28 +195,72 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
 
 let recommendedMovies = [];
 try {
-  recommendedMovies = $('Call \'映画無限検索ワークフロー おすすめ映画版\'').all().map(item => {
-    const movie = item.json;
+  let subItems = [];
+  const candidateNodes = [
+    "Call '映画無限検索ワークフロー おすすめ映画版'",
+    "映画無限検索ワークフロー おすすめ映画版",
+    "Call '映画無限検索ワークフロー'",
+    "映画無限検索ワークフロー",
+    "Call 'おすすめ映画'",
+    "おすすめ映画",
+    "Call 'おすすめ映画ワークフロー'",
+    "おすすめ映画ワークフロー",
+    "Execute Workflow",
+    "Execute Sub-Workflow",
+    "Execute Workflow1",
+    "Execute Workflow2"
+  ];
+  for (const nodeName of candidateNodes) {
+    try {
+      const found = $(nodeName).all();
+      if (found && found.length > 0) {
+        subItems = found;
+        break;
+      }
+    } catch (err) {}
+  }
+
+  if (subItems.length === 0) {
+    try {
+      const inputs = $input.all();
+      const inputMovies = inputs.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
+      if (inputMovies.length > 0) subItems = inputMovies;
+    } catch (err) {}
+  }
+
+  recommendedMovies = subItems.map(item => {
+    const movie = item.json || {};
     let posterPath = "";
-    if (movie.poster_url) {
-      const match = String(movie.poster_url).match(/\/t\/p\/w\d+(\/[^?#]+)/);
-      posterPath = match ? match[1] : movie.poster_url;
+    const rawPoster = movie.poster_url || movie.poster_path || "";
+    if (rawPoster) {
+      const match = String(rawPoster).match(/\/t\/p\/w\d+(\/[^?#]+)/);
+      posterPath = match ? match[1] : rawPoster;
     }
     return {
-      "タイトル_日本語": movie.title || "",
-      "原題": movie.origin_title || "",
-      "種別": movie.type || "映画",
-      "公開年": movie.year || "",
-      "director": movie.director || "",
-      "cast": movie.cast || "",
-      "概要": movie.overview || "",
+      "タイトル_日本語": movie.title || movie.タイトル_日本語 || movie.name || "",
+      "原題": movie.origin_title || movie.原題 || "",
+      "種別": movie.type || movie.種別 || "映画",
+      "公開年": movie.year || movie.公開年 || "",
+      "director": movie.director || movie.director_name || movie.監督 || "",
+      "cast": movie.cast || movie.キャスト || movie.出演 || "",
+      "概要": movie.overview || movie.概要 || movie.ai_summary || "",
       "tmdb_id": movie.tmdb_id || null,
       "poster_path": posterPath,
-      "imdb_id": movie.wikidata_id || ""
+      "imdb_id": movie.wikidata_id || movie.imdb_id || movie.imdb_url || ""
     };
   });
-} catch (e) {
-  recommendedMovies = r25.おすすめ映画ランキング || r25.おすすめ映画 || [];
+} catch (e) {}
+
+if (recommendedMovies.length === 0) {
+  if (Array.isArray(r25?.おすすめ映画) && r25.おすすめ映画.length > 0) {
+    recommendedMovies = r25.おすすめ映画;
+  } else if (Array.isArray(r25?.おすすめ映画ランキング) && r25.おすすめ映画ランキング.length > 0) {
+    recommendedMovies = r25.おすすめ映画ランキング;
+  } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
+    recommendedMovies = r2.おすすめ映画;
+  } else if (Array.isArray(r2?.おすすめ映画ランキング) && r2.おすすめ映画ランキング.length > 0) {
+    recommendedMovies = r2.おすすめ映画ランキング;
+  }
 }
 
 const r2Merged = {
