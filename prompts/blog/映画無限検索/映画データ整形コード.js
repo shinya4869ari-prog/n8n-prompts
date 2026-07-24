@@ -7,42 +7,6 @@ function getNodeData(nodeName) {
   }
 }
 
-const translateHangulToKatakana = (text) => {
-  if (!text) return text;
-  const hangulMap = {
-    '가': 'ガ', '강': 'カン', '건': 'ゴン', '검': 'ゴム', '경': 'ギョン', '계': 'ギェ', '고': 'コ', '곤': 'ゴン', '공': 'コン', '과': 'グァ', '관': 'グァン', '광': 'グァン', '구': 'ク', '국': 'グク', '권': 'クォン', '귀': 'グィ', '규': 'ギュ', '균': 'ギュン', '근': 'グン', '금': 'グム', '기': 'ギ', '길': 'ギル', '김': 'キム',
-    '나': 'ナ', '남': 'ナム', '노': 'ノ', '뇌': 'ノィ',
-    '다': 'ダ', '단': 'ダン', '담': 'ダム', '대': 'デ', '덕': 'ドク', '도': 'ド', '독': 'ドク', '돈': 'ドン', '동': 'ドン', '두': 'ド', '득': 'ドゥク',
-    '라': 'ラ', '란': 'ラン', '람': 'ラム', '래': 'レ', '려': 'リョ', '련': 'リョン', '령': 'リョン', '례': 'リェ', '록': 'ロク', '론': 'ロン', '뢰': 'ロィ', '료': 'リョ', '룡': 'リョン', '루': 'ル', '류': 'リュ', '륙': 'リュク', '륜': 'リュン', '률': 'リュル', '륭': 'リュン', '리': 'リ', '림': 'リム',
-    '마': 'マ', '만': 'マン', '망': 'マン', '매': 'メ', '맹': 'メン', '명': 'ミョン', '목': 'モク', '묘': 'ミョ', '무': 'ム', '묵': 'ムク', '문': 'ムン', '미': 'ミ', '민': 'ミン', '밀': 'ミル',
-    '박': 'パク', '반': 'バン', '방': 'バン', '배': 'ペ', '백': 'ベク', '번': 'ボン', '범': 'ボム', '법': 'ボプ', '변': 'ビョン', '병': 'ビョン', '보': 'ボ', '복': 'ボク', '본': 'ボン', '봉': 'ボン', '부': 'ブ', '북': 'ブク', '분': 'ブン', '비': 'ビ', '빈': 'ビン', '빙': 'ビン',
-    '사': 'サ', '삭': 'サク', 'san': 'サン', '산': 'サン', '살': 'サル', 'サム': 'サム', '상': 'サン', '새': 'セ', '서': 'ソ', '석': 'ソク', '선': 'ソン', '설': 'ソル', '섭': 'ソプ', '성': 'ソン', 'се': 'セ', '세': 'セ', '속': 'ソク', '손': 'ソン', '송': 'ソン', '쇄': 'スェ', '수': 'ス', '숙': 'スク', '순': 'スン', '숭': 'スン', '슬': 'スル', '승': 'スン', '시': 'シ', '식': 'シク', '신': 'シン', '심': 'シム', '십': 'シプ', '아': 'ア', '악': 'アク', '안': 'アン', '알': 'アル', '암': 'アム', '압': 'アプ', '앙': 'アン', '애': 'エ', '야': 'ヤ', '약': 'ヤク', '양': 'ヤン', '어': 'オ', '억': 'オク', '언': 'オン', '엄': 'オム', '업': 'オプ', '여': 'ヨ', '역': 'ヨク', '연': 'ヨン', '열': 'ヨル', '염': 'ヨム', '엽': 'ヨプ', '영': 'ヨン', '예': 'イェ', '오': 'オ', '옥': 'オク', '온': 'オン', '옹': 'オン', '와': 'ワ', '완': 'ワン', '왕': 'ワン', '요': 'ヨ', '욕': 'ヨク', '용': 'ヨン', '우': 'ウ', '욱': 'ウク', '운': 'ウン', '울': 'ウル', '웅': 'ウン', '원': 'ウォン', '월': 'ウォル', '위': 'ウィ', '유': 'ユ', '육': 'ユク', '윤': 'ユン', '율': 'ユル', '융': 'ユン', '은': 'ウン', '을': 'ウル', '음': 'ウム', '응': 'ウン', '의': 'ウィ', '이': 'イ', '익': 'イク', '인': 'イン', '일': 'イル', '임': 'イム', '입': 'イプ', '자': 'ジャ', '작': 'ジャク', '잔': 'ジャン', '잠': 'ジャム', '잡': 'ジャプ', '장': 'ジャン', '재': 'ジェ', '쟁': 'ジェン', '저': 'ジョ', '적': 'ジョク', '전': 'チョン', '절': 'ジョル', '점': 'ジョム', '접': 'ジョプ', '정': 'ジョン', '제': 'ジェ', '조': 'ジョ', '족': 'ジョク', '존': 'ジョン', '졸': 'ジョル', '종': 'ジョン', '좌': 'ジュァ', '주': 'ジュ', '죽': 'ジュク', '준': 'ジュン', '줄': 'ジュル', '중': 'ジュン', '즙': 'ジュプ', '증': 'ジュン', '지': 'ジ', '직': 'ジク', '진': 'ジン', '질': 'ジル', '짐': 'ジム', '집': 'ジップ', '징': 'ジン',
-    '차': 'チャ', '착': 'チャク', '찬': 'チャン', '찰': 'チャル', '참': 'チャム', '창': 'チャン', '채': 'チェ', '책': 'チェク', '처': 'チョ', '척': 'チョク', '천': 'チョン', '철': 'チョル', '첨': 'チョム', '첩': 'チョプ', '청': 'チョン', '체': 'チェ', '초': 'チョ', '촉': 'チョク', '촌': 'チョン', '총': 'チョン', '최': 'チェ', '추': 'チュ', '축': 'チュク', '춘': 'チュン', '충': 'チュン', '췌': 'チェ', '취': 'チュィ', '측': 'チュク', '치': 'チ', '칙': 'チク', '친': 'チン', '칠': 'チル', '침': 'チム', '칩': 'チップ', '칭': 'チン',
-    '쾌': 'クェ',
-    '탁': 'タク', '탄': 'タン', '탈': 'タル', '탐': 'タム', '탑': 'タプ', '탕': 'タン', '태': 'テ', '택': 'テク', '탱': 'テン', '토': 'ト', '통': 'トン', '퇴': 'トゥィ', '투': 'トゥ', '특': 'トゥク', '틈': 'トゥム',
-    '파': 'パ', '판': 'パン', '팔': 'パル', '패': 'ペ', '팽': 'ペン', '편': 'ピョン', '평': 'ピョン', '폐': 'ピェ', '포': 'ポ', '폭': 'ポク', '표': 'ピョ', '푸': 'プ', '품': 'プム', '풍': 'プン', '피': 'ピ', '필': 'ピル', '하': 'ハ', '학': 'ハク', '한': 'ハン', '할': 'ハル', '함': 'ハム', '합': 'ハプ', '항': 'ハン', '해': 'ヘ', '핵': 'ヘク', '행': 'ヘン', '향': 'ヒャン', '허': 'ホ', '헌': 'ホン', '혁': 'ヒョク', '현': 'ヒョン', '혈': 'ヒョル', '협': 'ヒョプ', '형': 'ヒョン', '혜': 'ヘ', '호': 'ホ', '혹': 'ホク', '혼': 'ホン', '홍': 'ホン', '화': 'ファ', '확': 'ファク', '환': 'ファン', '활': 'ファル', '황': 'ファン', '회': 'フェ', '획': 'フェク', '효': 'ヒョ', '후': 'フ', '훈': 'フン', '웅': 'ウン', '휘': 'フィ', '휴': 'ヒュ', '휼': 'ヒュル', '흉': 'ヒュン', '흔': 'フン', '흥': 'フン', '희': 'ヒ', '힐': 'ヒル'
-  };
-  return text.split('').map(char => hangulMap[char] || char).join('');
-};
-
-const translateKoreanNames = (namesStr) => {
-  if (!namesStr) return namesStr;
-  return namesStr.split(', ').map(name => {
-    const trimmed = name.trim();
-    if (/[\uAC00-\uD7A3]/.test(trimmed)) {
-      if (trimmed.length >= 2 && trimmed.length <= 4) {
-        const doubleSurnames = ['남궁', '황보', '제갈', '사공', '독고'];
-        const surnameLen = (trimmed.length === 4 && doubleSurnames.includes(trimmed.substring(0, 2))) ? 2 : 1;
-        const surname = trimmed.substring(0, surnameLen);
-        const given = trimmed.substring(surnameLen);
-        return translateHangulToKatakana(surname) + '・' + translateHangulToKatakana(given);
-      }
-      return translateHangulToKatakana(trimmed);
-    }
-    return trimmed;
-  }).join(', ');
-};
-
 const credits = getNodeData('TMDb credits取得');
 const tmdb = getNodeData('TMDb検索');
 const sourceData = $('映画ごとにループ実行').item?.json || {};
@@ -78,8 +42,8 @@ const lang = result?.original_language;
 const country = sourceData.target_country || sourceData.country || langToCountry[lang] || lang?.toUpperCase() || null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (sourceData.poster_url || null);
 const wikidata_id = sourceData.wikidata_id || null;
-const cast = Array.isArray(credits?.cast) ? translateKoreanNames(credits.cast.map(c => c.name || c.original_name).join(', ')) : null;
-const director = Array.isArray(credits?.crew) ? translateKoreanNames(credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
+const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
+const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const cast_en = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;
 const director_en = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const ollama = getNodeData('Ollama');
@@ -178,6 +142,16 @@ const finalTitle = (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || 
 
 
 
+// TMDbのジャンルID ➔ 日本語変換マッピング
+const genreMap = {
+  28: "アクション", 12: "アドベンチャー", 16: "アニメ", 35: "コメディ", 80: "犯罪",
+  99: "ドキュメンタリー", 18: "ドラマ", 10751: "ファミリー", 14: "ファンタジー", 36: "歴史",
+  27: "ホラー", 10402: "音楽", 9648: "ミステリー", 10749: "ロマンス", 878: "SF",
+  10770: "テレビ映画", 53: "スリラー", 10752: "戦争", 37: "西部劇"
+};
+const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
+const genres = (Array.isArray(rawGenreIds) && rawGenreIds.length > 0 ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : '') || sourceData.genres || sourceData.genre || null;
+
 // JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
 const escapeJsonString = (str) => {
   if (typeof str !== 'string') return str;
@@ -191,6 +165,7 @@ return [{
     year: (result?.release_date ? result.release_date.substring(0, 4) : null) || sourceData.year || null,
     poster_url: posterPath,
     country,
+    genres: escapeJsonString(genres),
     wikidata_id,
     tmdb_id: result?.id || null,
     overview: escapeJsonString(finalOverview),

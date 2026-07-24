@@ -265,7 +265,42 @@ if (rawOverview) {
 }
 
 const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
+const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || null;
 const finalTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title) || (isOverviewJapanese ? result?.title : null) || tmdbJaTitle || result?.title || result?.original_title || null;
+
+// オリジナルタイトルの言語判定（日本語、ハングル、英語/ラテン文字のみ許可）
+const isAllowedOriginTitle = (str) => {
+  if (!str || typeof str !== 'string') return false;
+  return /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\u0020-\u007E\u00C0-\u024F\u1E00-\u1EFF\s\-_:'",\.!\?&\(\)]+$/.test(str.trim());
+};
+
+const rawTmdbOrigin = result?.original_title || null;
+const rawSourceOrigin = sourceData.origin_title || null;
+
+let finalOriginTitle = null;
+if (isAllowedOriginTitle(rawTmdbOrigin)) {
+  finalOriginTitle = rawTmdbOrigin;
+} else if (isAllowedOriginTitle(tmdbEnTitle)) {
+  finalOriginTitle = tmdbEnTitle;
+} else if (isAllowedOriginTitle(rawSourceOrigin)) {
+  finalOriginTitle = rawSourceOrigin;
+} else if (isAllowedOriginTitle(result?.title)) {
+  finalOriginTitle = result.title;
+}
+
+if (!isAllowedOriginTitle(finalOriginTitle)) {
+  finalOriginTitle = null;
+}
+
+// TMDbのジャンルID ➔ 日本語変換マッピング
+const genreMap = {
+  28: "アクション", 12: "アドベンチャー", 16: "アニメ", 35: "コメディ", 80: "犯罪",
+  99: "ドキュメンタリー", 18: "ドラマ", 10751: "ファミリー", 14: "ファンタジー", 36: "歴史",
+  27: "ホラー", 10402: "音楽", 9648: "ミステリー", 10749: "ロマンス", 878: "SF",
+  10770: "テレビ映画", 53: "スリラー", 10752: "戦争", 37: "西部劇"
+};
+const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
+const genres = (Array.isArray(rawGenreIds) && rawGenreIds.length > 0 ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : '') || sourceData.genres || sourceData.genre || null;
 
 // JSON壊れ（パースエラー）を防ぐため、文字列の特殊文字をエスケープするヘルパー関数
 const escapeJsonString = (str) => {
@@ -276,15 +311,15 @@ const escapeJsonString = (str) => {
 return [{
   json: {
     title: escapeJsonString(finalTitle),
-    origin_title: escapeJsonString(sourceData.origin_title || result?.original_title || null),
+    origin_title: escapeJsonString(finalOriginTitle),
     year: (result?.release_date ? result.release_date.substring(0, 4) : null) || sourceData.year || null,
     poster_url: posterPath,
     country,
+    genres: escapeJsonString(genres),
     wikidata_id,
     tmdb_id: result?.id || null,
     overview: escapeJsonString(finalOverview),
     overview_en: escapeJsonString(finalOverviewEn),
-    ai_summary: escapeJsonString(finalAiSummary),
     trailer_url,
     director: escapeJsonString(director),
     cast: escapeJsonString(cast),

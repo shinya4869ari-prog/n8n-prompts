@@ -1,10 +1,12 @@
 const item = $input.first().json;
 
-const raw = item?.content?.[0]?.text 
-         ?? item?.content?.parts?.[0]?.text 
+const raw = (typeof item?.message === 'string' ? item.message : null)
          ?? item?.message?.content
+         ?? item?.choices?.[0]?.message?.content
+         ?? item?.content?.[0]?.text 
+         ?? item?.content?.parts?.[0]?.text 
          ?? item?.output 
-         ?? "";
+         ?? (typeof item === 'string' ? item : "");
 
 const cleaned = raw
   .replace(/【Layer \d の文章】\s*/g, '')
