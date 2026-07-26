@@ -22,7 +22,11 @@ items.forEach((movie, index) => {
   const rank = index + 1;
   const title = movie.title || 'タイトル未定';
   const originTitle = movie.origin_title ? `<span style="font-size:13px;color:#666;margin-left:8px;">(${movie.origin_title})</span>` : '';
-  const poster = movie.poster_url ? `<div style="text-align:center;margin-bottom:15px;"><img src="${movie.poster_url}" alt="${title}" style="max-width:200px;width:100%;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,0.12);"></div>` : '';
+  let validPosterUrl = movie.poster_url;
+  if (validPosterUrl && (validPosterUrl.includes('v6v6v6') || validPosterUrl.includes('dummy') || validPosterUrl.includes('sample'))) {
+    validPosterUrl = null;
+  }
+  const poster = validPosterUrl ? `<div style="text-align:center;margin-bottom:15px;"><img src="${validPosterUrl}" alt="${title}" style="max-width:200px;width:100%;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,0.12);"></div>` : '';
   const genres = movie.genres ? `<span style="background:#e8eaf6;color:#1a237e;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;margin-left:8px;">${movie.genres}</span>` : '';
   const overview = movie.overview ? `<p style="font-size:13.5px;line-height:1.8;color:#333;background:#f9f9f9;padding:12px 15px;border-left:4px solid #1a237e;margin:12px 0;">${movie.overview}</p>` : '';
   const director = movie.director ? `<li><strong>🎬 監督:</strong> ${movie.director} ${movie.director_en ? `(${movie.director_en})` : ''}</li>` : '';

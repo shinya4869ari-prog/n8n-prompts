@@ -45,7 +45,11 @@ const langToCountry = {
 const lang = result?.original_language;
 // 判定された国、または指定された対象国を格納
 const country = sourceData.target_country || sourceData.country || langToCountry[lang] || lang?.toUpperCase() || null;
-const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (sourceData.poster_url || null);
+let rawPosterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (sourceData.poster_url || null);
+if (rawPosterPath && (rawPosterPath.includes('v6v6v6') || rawPosterPath.includes('dummy') || rawPosterPath.includes('sample'))) {
+  rawPosterPath = null;
+}
+const posterPath = rawPosterPath;
 const wikidata_id = sourceData.wikidata_id || null;
 const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
 const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
