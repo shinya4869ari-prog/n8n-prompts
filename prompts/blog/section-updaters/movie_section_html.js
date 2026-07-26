@@ -1,26 +1,20 @@
-# 【モジュール 04: 映画セクション（Supabaseデータ連携）】
+/**
+ * 【映画10本の一括HTML構築コード】
+ * 
+ * Supabaseから取得した映画10本（is_recommended優先）を元に、
+ * WordPress更新用の単体HTMLセクション（<!-- START_MOVIE_SECTION --> ...）を組み立てます。
+ */
 
-このモジュールは、Supabaseの `Movies` テーブルから指定国の映画データを取得し、ブログ記事に埋め込める単体HTMLパーツ（`movie_section_html`）を組み立てます。
-
-## n8n 処理構造
-
-```
-[1. Supabase ノード (Get Many Rows)]
-  - Table: Movies
-  - Filter: country = {{ $json.country }}
-  - Order By: is_recommended.desc, tmdb_id.desc
-  - Limit: 10
-      │
-[2. Code ノード (映画HTMLパーツ組み立て)]
-```
-
-## Code ノード (JavaScript)
-
-```javascript
 const items = $input.all().map(item => item.json);
 if (!items || items.length === 0) {
-  return [{ json: { movie_section_html: '' } }];
+  return [{ json: { movie_section_html: '', post_id: null, section_html: '' } }];
 }
+
+// フォーム入力された post_id を取得
+let postId = null;
+try {
+  postId = $('On form submission').first().json.post_id || null;
+} catch(e) {}
 
 let movieItemsHtml = '';
 
@@ -34,6 +28,7 @@ items.forEach((movie, index) => {
   const director = movie.director ? `<li><strong>🎬 監督:</strong> ${movie.director} ${movie.director_en ? `(${movie.director_en})` : ''}</li>` : '';
   const cast = movie.cast ? `<li><strong>👥 出演:</strong> ${movie.cast} ${movie.cast_en ? `(${movie.cast_en})` : ''}</li>` : '';
 
+  // YouTube 埋め込み
   let trailerHtml = '';
   if (movie.trailer_url && movie.trailer_url.includes('youtube.com')) {
     const embedUrl = movie.trailer_url.replace('watch?v=', 'embed/');
@@ -54,6 +49,7 @@ items.forEach((movie, index) => {
 `;
 });
 
+// ブログ埋め込み用のセクション全体HTML
 const movieSectionHtml = `
 <!-- START_MOVIE_SECTION -->
 <div id="recommended-movies-section" style="margin:40px 0;padding:25px;background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -65,7 +61,8 @@ const movieSectionHtml = `
 
 return [{
   json: {
-    movie_section_html: movieSectionHtml
+    post_id: postId,
+    movie_section_html: movieSectionHtml,
+    section_html: movieSectionHtml
   }
 }];
-```

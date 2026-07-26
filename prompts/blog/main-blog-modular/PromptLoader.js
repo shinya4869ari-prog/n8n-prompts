@@ -6,9 +6,7 @@ const files = {
   basicInstitution: baseUrl + '01_basic_institution.md',
   historyTrends: baseUrl + '02_history_trends.md',
   safetyCrimes: baseUrl + '03_safety_crimes.md',
-  movieSectionSpec: baseUrl + '04_movie_section.md',
-  deepDiveSelect: baseUrl + '05_deep_dive_select.md',
-  deepDiveWriter: baseUrl + '05_deep_dive_writer.md',
+  deepDiveWriter: baseUrl + 'deep_dive_writer.md',
 };
 
 try {
