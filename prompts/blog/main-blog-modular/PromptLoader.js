@@ -8,7 +8,7 @@ const files = {
   historyTrends: baseUrl + '02_history_trends.md',
   safetyCrimes: baseUrl + '03_safety_crimes.md',
   researcher25: lowcostUrl + 'researcher25.md',
-  writerPrompt: lowcostUrl + 'writer.md',
+  writerPrompt: baseUrl + 'writer.md', // モジュール用ライタープロンプトを参照
   deepDivePrompt: lowcostUrl + 'Deep-Dive_writer.md',
   deepDiveSelect: lowcostUrl + 'Deep-Dive_select.md',
   deepDiveWriter: baseUrl + 'deep_dive_writer.md',
@@ -41,7 +41,7 @@ try {
   
   const evaluateTemplate = (text, data) => {
     if (!text) return "";
-    return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
+    let replaced = text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
       if (expression.includes('$now.toFormat')) return context.now_date;
       const parts = expression.split('||').map(p => p.trim());
       for (const part of parts) {
@@ -57,9 +57,10 @@ try {
       if (data[exprClean] !== undefined && data[exprClean] !== null && data[exprClean] !== '') {
         return String(data[exprClean]);
       }
-      // 置換対象でない {{ ... }} （ライター用のテンプレート等）はそのまま保持
       return match;
     });
+    
+    return replaced;
   };
   
   const results = {};
