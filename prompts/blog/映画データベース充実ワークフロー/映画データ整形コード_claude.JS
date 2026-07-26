@@ -225,35 +225,14 @@ const youtubeVideo = videoResults.find(v => {
 const trailer_url = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
 const rawOverview = result?.overview || 
+                    result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || 
                     result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// あらすじ（日本語）があるかどうか
-const isOverviewJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawOverview || '');
-
-// ベースのあらすじテキスト（AI翻訳がある場合はそれを優先）
-const baseOverview = ai_summary || rawOverview || null;
-
-let finalOverview = null;
-let finalOverviewEn = null;
-let finalAiSummary = null;
-
-if (baseOverview) {
-  if (isOverviewJapanese) {
-    finalOverview = baseOverview || rawOverview;
-    finalOverviewEn = null;
-    finalAiSummary = null;
-  } else {
-    finalOverview = baseOverview;
-    finalOverviewEn = rawOverview;
-    finalAiSummary = null;
-  }
-} else {
-  finalOverview = baseOverview;
-  finalOverviewEn = null;
-  finalAiSummary = null;
-}
+// あらすじ（日本語）の取得：入力(sourceData.overview)を最優先、次いでTMDb(rawOverview)
+const finalOverview = sourceData.overview || rawOverview || null;
+const finalOverviewEn = (rawOverview && rawOverview !== finalOverview) ? rawOverview : null;
 
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
 const isInputTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(inputTitle || '');

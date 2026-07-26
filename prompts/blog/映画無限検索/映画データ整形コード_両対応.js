@@ -169,14 +169,14 @@ const youtubeVideo = videoResults.find(v => {
 const trailer_url = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
 const rawOverview = result?.overview || 
+                    result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || 
                     result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// AI（Claude/Ollama）で翻訳した日本語あらすじ（rawAiText）があればそれをそのまま overview にセット
-const finalOverview = rawAiText || rawOverview;
-// 元々あった英語あらすじ（rawOverview）をそのまま overview_en にセット
-const overviewEn = rawOverview;
+// あらすじ（日本語）の取得：入力(sourceData.overview)を最優先、次いでTMDb(rawOverview)
+const finalOverview = sourceData.overview || rawOverview || null;
+const overviewEn = (rawOverview && rawOverview !== finalOverview) ? rawOverview : null;
 
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
 const isInputTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(inputTitle || '');
