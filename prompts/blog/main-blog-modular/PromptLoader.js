@@ -41,7 +41,7 @@ try {
   
   const evaluateTemplate = (text, data) => {
     if (!text) return "";
-    let replaced = text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
+    return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
       if (expression.includes('$now.toFormat')) return context.now_date;
       const parts = expression.split('||').map(p => p.trim());
       for (const part of parts) {
@@ -57,10 +57,9 @@ try {
       if (data[exprClean] !== undefined && data[exprClean] !== null && data[exprClean] !== '') {
         return String(data[exprClean]);
       }
+      // 置換対象でない {{ ... }} （ライター用のテンプレート等）はそのまま保持
       return match;
     });
-    
-    return replaced.replace(/\{\{/g, '｛').replace(/\}\}/g, '｝');
   };
   
   const results = {};
