@@ -48,59 +48,7 @@ const country = sourceData.target_country || sourceData.country || langToCountry
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (sourceData.poster_url || null);
 const wikidata_id = sourceData.wikidata_id || null;
 const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
-const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;0, 2))) ? 2 : 1;
-        const surname = trimmed.substring(0, surnameLen);
-        const given = trimmed.substring(surnameLen);
-        return translateHangulToKatakana(surname) + '・' + translateHangulToKatakana(given);
-      }
-      return translateHangulToKatakana(trimmed);
-    }
-    return trimmed;
-  }).join(', ');
-};
-
-const credits = getNodeData('TMDb credits取得');
-const tmdb = getNodeData('TMDb検索');
-let sourceData = {};
-try {
-  sourceData = $('映画ごとにループ実行').item?.json || {};
-} catch (e) {
-  sourceData = $input.item?.json || {};
-}
-
-const resultsList = tmdb?.results || tmdb?.movie_results || (tmdb?.id ? [tmdb] : []);
-
-// 対象国と言語にマッチする映画を検索結果（resultsList）から探す
-let result = null;
-if (resultsList.length > 0) {
-  // 1. 国コードとオリジナル言語の両方が一致するものを最優先
-  result = resultsList.find(m => 
-    (m.original_language === sourceData.target_lang) || 
-    (m.origin_country && m.origin_country.includes(sourceData.target_country))
-  );
-  
-  // 2. マッチするものがない場合は、最初の検索結果をフォールバックとして使用
-  if (!result) {
-    result = resultsList[0];
-  }
-}
-
-if (!sourceData?.title && !result?.title) return [];
-
-const langToCountry = {
-  'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
-  'zh': 'CN', 'ar': 'SA', 'fa': 'IR', 'hi': 'IN', 'th': 'TH',
-  'vi': 'VN', 'id': 'ID', 'tr': 'TR', 'ru': 'RU', 'es': 'ES',
-  'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
-  'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
-};
-const lang = result?.original_language;
-// 判定された国、または指定された対象国を格納
-const country = sourceData.target_country || sourceData.country || langToCountry[lang] || lang?.toUpperCase() || null;
-const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (sourceData.poster_url || null);
-const wikidata_id = sourceData.wikidata_id || null;
-const cast = Array.isArray(credits?.cast) ? translateKoreanNames(credits.cast.map(c => c.name || c.original_name).join(', ')) : null;
-const director = Array.isArray(credits?.crew) ? translateKoreanNames(credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
+const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const cast_en = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;
 const director_en = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 
