@@ -9,11 +9,6 @@ const input = $input.first()?.json || {};
 
 // postIdの取得（input.post_id, input.id, または他ノードからの安全取得）
 let postId = input.post_id || input.id || null;
-if (!postId) {
-  try {
-    postId = $('On form submission').first().json.post_id || $('トリガー').first().json.post_id || $('WP Get a Post').first().json.id || $('WP Get Post').first().json.id || null;
-  } catch(e) {}
-}
 
 // 修正したいセクション種別 ('seido', 'chiri_keizai', 'chian', 'boeki', 'bukka', 'rekishi', 'doukou', 'eizou', 'osusume', 'deep_dive')
 let sectionType = input.section_type || input.section || 'eizou';
@@ -21,19 +16,56 @@ if (Array.isArray(sectionType)) sectionType = sectionType[0];
 
 // 新しく生成・取得したセクションHTML
 let newSectionHtml = input.section_html || input.html || input.movie_section_html || '';
-if (!newSectionHtml) {
+
+// WordPressから取得した既存の記事本文HTML (WP Get Postノード)
+let currentWpHtml = input.wp_content || (typeof input.content?.rendered === 'string' ? input.content.rendered : '');
+
+// $inputの全アイテムから探索
+for (const item of $input.all()) {
+  const j = item.json || {};
+  if (!postId && (j.post_id || j.id)) postId = j.post_id || j.id;
+  if (!newSectionHtml && (j.section_html || j.movie_section_html || j.html)) {
+    newSectionHtml = j.section_html || j.movie_section_html || j.html;
+  }
+  if (!currentWpHtml && j.content?.rendered) {
+    currentWpHtml = j.content.rendered;
+  }
+}
+
+// 他のノード名からのフォールバック取得
+if (!postId) {
   try {
-    newSectionHtml = $('movie_section_html').first().json.section_html || $('Code').first().json.section_html || '';
+    postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a post').first()?.json?.id || $('WP Get Post').first()?.json?.id || null;
   } catch(e) {}
 }
 
-// WordPressから取得した既存の記事本文HTML (WP Get Postノード)
-let currentWpHtml = input.wp_content || input.content?.rendered || (typeof input.content === 'string' ? input.content : '');
+if (!newSectionHtml) {
+  const possibleMovieNodes = ['movie_section_html', '映画セクションHTML', '映画セクションHTML生成', 'Code', '映画10本の一括取得'];
+  for (const name of possibleMovieNodes) {
+    try {
+      const n = $(name).first()?.json;
+      if (n?.section_html || n?.movie_section_html || n?.html) {
+        newSectionHtml = n.section_html || n.movie_section_html || n.html;
+        break;
+      }
+    } catch(e) {}
+  }
+}
+
 if (!currentWpHtml) {
-  try {
-    const wpNode = $('WP Get a Post').first().json || $('WP Get Post').first().json || {};
-    currentWpHtml = wpNode.content?.rendered || wpNode.content || '';
-  } catch(e) {}
+  const possibleWpNodes = ['WP Get a Post', 'Get a post', 'WP Get Post', 'WordPress', 'WordPress1', 'Get Post'];
+  for (const name of possibleWpNodes) {
+    try {
+      const n = $(name).first()?.json;
+      if (n?.content?.rendered) {
+        currentWpHtml = n.content.rendered;
+        break;
+      } else if (typeof n?.content === 'string' && n.content.length > 20) {
+        currentWpHtml = n.content;
+        break;
+      }
+    } catch(e) {}
+  }
 }
 
 let updatedContent = currentWpHtml;
@@ -61,6 +93,14 @@ const legacyRegexMap = {
   chian: /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/g
 };
 
+if (!currentWpHtml || currentWpHtml.trim().length < 10) {
+  throw new Error(`[置換エラー] 既存のWordPress記事本文(wp_content / content.rendered)が取得できていません。「WP Get a Post」ノードが正しく実行されているか確認してください。`);
+}
+
+if (!newSectionHtml || newSectionHtml.trim().length < 10) {
+  throw new Error(`[置換エラー] 生成されたセクションHTML(section_html)が空です。「movie_section_html」ノードが正しく実行されているか確認してください。`);
+}
+
 let matchFound = false;
 
 if (newFormatRegex.test(currentWpHtml)) {
@@ -71,7 +111,7 @@ if (newFormatRegex.test(currentWpHtml)) {
   matchFound = true;
 } else {
   // 置換タグが本文内に存在しない場合は、本文末尾に安全にセクションを追加追記
-  updatedContent = currentWpHtml + '\n\n' + newSectionHtml.trim();
+  updatedContent = currentWpHtml.trim() + '\n\n' + newSectionHtml.trim();
 }
 
 return [{
