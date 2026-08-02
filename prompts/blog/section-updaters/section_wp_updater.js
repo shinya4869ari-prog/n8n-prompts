@@ -102,7 +102,7 @@ function findNextBoundary(text, pos, headers, deepDives) {
   return Math.min(...candidates);
 }
 
-// id="section-N" 基準の置換（重複があれば自動で1つに畳み込む）
+// id="section-N" 基準の置換（重複があれば自動で1つに畳み込み＋周囲のゴミタグを一括全消去）
 function replaceNumberedSection(text, num, section, newHtml) {
   const headers = findAllSectionHeaders(text);
   const deepDives = findAllDeepDiveMarkers(text);
@@ -119,8 +119,8 @@ function replaceNumberedSection(text, num, section, newHtml) {
   let partBefore = text.substring(0, firstStart).trimEnd();
   let partAfter = text.substring(boundaryAfterLast).trimStart();
 
-  // 見出しの手前や直後に残っている対象セクションの不要なタグ（増殖の元凶）を完全除去・掃除
-  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
+  // 見出しの手前や直後に残っている映画セクション(eizou/osusume)の不要なタグ（増殖の元凶）を完全除去・掃除
+  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:(eizou|osusume):(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
   partBefore = partBefore.replace(junkRe, '').trimEnd();
   partAfter = partAfter.replace(junkRe, '').trimStart();
 
@@ -128,10 +128,16 @@ function replaceNumberedSection(text, num, section, newHtml) {
 }
 
 // ---------------------------------------------------------------
-// 0. コメントマーカーが完全な形（START/ENDが1組だけ）で存在する場合は最優先で使う
-//    ⑧⑨含め、全セクション共通のルート
+// 8番・9番 (eizou / osusume) は id="section-N" 基準＋ゴミ掃除で確定実行
 // ---------------------------------------------------------------
-{
+if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+  const num = numMap[canonicalSection];
+  updatedContent = replaceNumberedSection(updatedContent, num, canonicalSection, newSectionHtml);
+  matchFound = true;
+} else {
+  // ---------------------------------------------------------------
+  // その他のセクション: 1個だけ存在すればコメント置換、無ければパターン
+  // ---------------------------------------------------------------
   const startRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->`, 'gi');
   const endRe = new RegExp(`<!-- SECTION:${canonicalSection}:END -->`, 'gi');
   const startCount = (updatedContent.match(startRe) || []).length;
@@ -141,25 +147,6 @@ function replaceNumberedSection(text, num, section, newHtml) {
     const commentRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
     updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
     matchFound = true;
-  } else if (startCount > 1 || endCount > 1) {
-    // コメントマーカー自体が壊れて重複している場合は、id基準（⑧⑨）以外は危険なので停止
-    if (!(canonicalSection === 'eizou' || canonicalSection === 'osusume')) {
-      throw new Error(`[置換エラー] 「${canonicalSection}」のSECTIONコメントが重複しています（START:${startCount}件, END:${endCount}件）。本文を手動確認してください。`);
-    }
-    // eizou/osusumeはこの後 id="section-N" 方式のフォールバックへ進む
-  }
-}
-
-// ---------------------------------------------------------------
-// 1. コメントマーカーで解決しなかった場合のフォールバック
-// ---------------------------------------------------------------
-if (!matchFound) {
-
-  if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
-    const num = numMap[canonicalSection];
-    updatedContent = replaceNumberedSection(updatedContent, num, canonicalSection, newSectionHtml);
-    matchFound = true;
-
   } else {
     const sectionPatterns = {
       deep_dive: [
