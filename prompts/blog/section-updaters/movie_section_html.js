@@ -116,25 +116,36 @@ items.forEach(d => {
   const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
   const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
-  const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
-  const posterHtml = posterUrl ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${titleJa}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
+  
+  // キャスト表記の最適化（多すぎる場合は上位3名＋「ほか」でスッキリ化）
+  let castFormatted = cast;
+  if (cast && cast !== 'EMPTY') {
+    const castArr = String(cast).split(/[,、]/).map(s => s.trim()).filter(Boolean);
+    if (castArr.length > 3) {
+      castFormatted = castArr.slice(0, 3).join('、 ') + ' ほか';
+    } else {
+      castFormatted = castArr.join('、 ');
+    }
+  }
+  const castHtml = castFormatted ? `<div style="font-size:12.5px;color:#555;margin-bottom:10px;line-height:1.4;">👥 キャスト：<span class="no-link">${castFormatted}</span></div>` : '';
+  const posterHtml = posterUrl ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
 
   const origTitleSpan = titleOrig ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
 
   if (isOsusume) {
     html += `
-<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
-  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
     <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">🎬</span>
-        <span style="font-weight:800;font-size:16px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">🎬</span>
+        <span style="font-weight:800;font-size:17px;color:#111;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</span>
       </div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
-      ${summary ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${summary}</div>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${summary ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${summary}</div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${youtubeBtn}
         ${imdbBtn}
       </div>
@@ -144,14 +155,15 @@ items.forEach(d => {
 </div>`;
   } else {
     html += `
-<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-  <div style="display:flex;gap:16px;align-items:flex-start;">
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.06);position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#20B2AA;"></div>
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
     <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</div>
+      <div style="font-weight:800;font-size:17px;color:#111;margin-bottom:8px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
-      ${summary ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${summary}</div>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${summary ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${summary}</div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${youtubeBtn}
         ${imdbBtn}
       </div>
