@@ -947,11 +947,18 @@ return [articleItem].map(item => {
         (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
         (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
-      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
-      const directorActorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
+      const titleJa = d['タイトル'] || apiData['タイトル_日本語'] || apiData['title'] || '';
+      const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
+      const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
+
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
+      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      const type = d['種別'] || apiData['genres'] || '';
+      const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
+
+      const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
       const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
-      const posterPath = apiData['poster_path'];
+      const posterPath = apiData['poster_path'] || apiData['poster_url'];
       let posterUrl = '';
       if (posterPath) {
         if (String(posterPath).startsWith('http')) {
@@ -966,25 +973,27 @@ return [articleItem].map(item => {
         moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
         ''
       ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+
       const imdbId = apiData?.imdb_id || null;
       const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
       const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
         ${imdbBtn}
       </div>`;
 
       const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${titleJa}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
         : '';
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;color:#333;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${d['タイトル'] || ''}</div>
-      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}${directorActorStr}</div>
+      <div style="font-weight:800;font-size:16px;color:#333;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
+      ${movieInfo ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${movieInfo}</div>` : ''}
       ${linkHtml}
     </div>
     ${posterHtml}
@@ -1015,6 +1024,7 @@ return [articleItem].map(item => {
       'タイトル': item['タイトル_日本語'] || item.title || '',
       '原題': item['原題'] || item.origin_title || '',
       '公開年': item['公開年'] || item.year || '',
+      '種別': item['種別'] || item.genres || '',
       'director': item.director || '',
       'cast': item.cast || '',
       '深刻': 'false',
@@ -1034,6 +1044,10 @@ return [articleItem].map(item => {
         (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
         (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
       ) || {};
+      const titleJa = d['タイトル'] || apiData['タイトル_日本語'] || apiData['title'] || '';
+      const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
+      const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
+
       const posterPath = d['poster_path'] || apiData['poster_path'] || apiData['poster_url'] || '';
       let posterUrl = '';
       if (posterPath) {
@@ -1053,32 +1067,34 @@ return [articleItem].map(item => {
       const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
       const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
         ${imdbBtn}
       </div>`;
 
       const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${titleJa}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
         : '';
 
-      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
-      const directorHtml = director ? `<br><span style="color:#555;font-size:12px;">🎬 監督：<span class="no-link">${director}</span></span>` : '';
-      const castHtml = cast ? `<br><span style="color:#555;font-size:12px;">👥 キャスト：<span class="no-link">${cast}</span></span>` : '';
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
+      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      const type = d['種別'] || apiData['genres'] || '';
+      const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
+
+      const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
+      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
 
       article += `
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
   <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
     <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
-        <span style="font-weight:800;font-size:16px;color:#333;">${d['タイトル'] || ''}</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">🎬</span>
+        <span style="font-weight:800;font-size:16px;color:#333;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</span>
       </div>
-      <div style="font-size:13px;color:#666;margin-bottom:10px;">
-        📅 ${d['公開年'] || ''}
-        ${directorHtml}${castHtml}
-      </div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
+      ${castHtml}
+      ${rankingInfo ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${rankingInfo}</div>` : ''}
       ${linkHtml}
     </div>
     ${posterHtml}
