@@ -47,16 +47,10 @@ return items.map((item, index) => {
   }
 
   // ID / メディアURLの安全判定
-  const isCorrected = aiData.audit_status && String(aiData.audit_status).includes('CORRECTED');
-
-  // 異なる映画の不一致データ(MISMATCH)が検出された場合はエラーを出してワークフローをストップさせる
-  if (isCorrected && String(aiData.audit_status).includes('MISMATCH')) {
-    throw new Error(`[映画データ不一致エラー (MISMATCH)] AIが異なる映画の不一致データを検出しました。\n対象作品: ${source.title || source.origin_title || '不明'}\n詳細: ${aiData.audit_status}`);
-  }
-
-  const tmdb_id = (isCorrected && aiData.tmdb_id === null) ? null : (source.tmdb_id || aiData.tmdb_id || null);
-  const poster_url = (isCorrected && (aiData.poster_url === "" || aiData.poster_url === null)) ? "" : (source.poster_url || aiData.poster_url || "");
-  const trailer_url = (isCorrected && (aiData.trailer_url === "" || aiData.trailer_url === null)) ? "" : (source.trailer_url || aiData.trailer_url || "");
+  // 入力データ(source)に元々URL/IDが入っている場合は、AIの誤判定(Rebecca等の錯覚)による空欄化を防ぎ最優先保持する
+  const tmdb_id = source.tmdb_id ?? aiData.tmdb_id ?? null;
+  const poster_url = (source.poster_url && source.poster_url !== "") ? source.poster_url : (aiData.poster_url || "");
+  const trailer_url = (source.trailer_url && source.trailer_url !== "") ? source.trailer_url : (aiData.trailer_url || "");
 
   // ハングル判定関数
   const isHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
