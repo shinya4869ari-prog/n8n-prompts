@@ -112,49 +112,59 @@ if (canonicalSection === 'eizou') {
 
 } else if (canonicalSection === 'osusume') {
   // --- 【9番 osusume の独立更新】 ---
-  // 実際のHTMLデータで判明した構造：
-  //   - eizou:STARTより前に osusume:START が孤立して残っている（ゴミ）
-  //   - eizou:END の直後に osusume:END がくっついている
-  // → 正しい方法：記事を「1-7前半 + section8 + 新9番 + DeepDive」に完全再構築する
+  // 記事を「1-7」「section8」「新9番」「それ以降(DeepDive等)」に完全再構築する
+  // Deep Diveの検索はしない（形式が不安定なため）。
+  // 代わりに「最後の osusume:END の後ろ」をDeepDive以降として扱う。
 
-  const eizouStartMarker = '<!-- SECTION:eizou:START -->';
-  const eizouEndMarker   = '<!-- SECTION:eizou:END -->';
-  const eizouStartPos = updatedContent.indexOf(eizouStartMarker);
-  const eizouEndPos   = updatedContent.lastIndexOf(eizouEndMarker);
-  const deepDivePos   = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+  const eizouStartMarker  = '<!-- SECTION:eizou:START -->';
+  const eizouEndMarker    = '<!-- SECTION:eizou:END -->';
+  const osusumeEndMarker  = '<!-- SECTION:osusume:END -->';
 
-  if (eizouStartPos !== -1 && eizouEndPos !== -1 && deepDivePos !== -1 && eizouStartPos < eizouEndPos && eizouEndPos < deepDivePos) {
-    // eizou:STARTより前のコンテンツ（1-7）から、ゴミの osusume:START 以降を除去
+  const eizouStartPos       = updatedContent.indexOf(eizouStartMarker);
+  const eizouEndPos         = updatedContent.lastIndexOf(eizouEndMarker);
+  const lastOsusumeEndPos   = updatedContent.lastIndexOf(osusumeEndMarker);
+
+  if (eizouStartPos !== -1 && eizouEndPos !== -1 && eizouStartPos < eizouEndPos) {
+    // 【1〜7】eizou:START より前。ゴミの osusume:START があれば除去
     let beforeEizou = updatedContent.substring(0, eizouStartPos).trimEnd();
-    const lastJunkOsusume = beforeEizou.lastIndexOf('<!-- SECTION:osusume:START -->');
-    if (lastJunkOsusume !== -1) {
-      beforeEizou = beforeEizou.substring(0, lastJunkOsusume).trimEnd();
+    const lastJunk = beforeEizou.lastIndexOf('<!-- SECTION:osusume:START -->');
+    if (lastJunk !== -1) {
+      beforeEizou = beforeEizou.substring(0, lastJunk).trimEnd();
     }
 
-    // section8 ブロックをそのまま保持
+    // 【section8】eizou:START 〜 eizou:END
     const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
     const sec8Block = updatedContent.substring(eizouStartPos, afterEizouEnd);
 
-    // 再構築：1-7 + section8 + 新9番 + DeepDive
+    // 【DeepDive以降】最後の osusume:END の後ろのコンテンツ
+    // osusume:END が eizou:END より後ろにある場合のみ有効
+    let tail = '';
+    if (lastOsusumeEndPos !== -1 && lastOsusumeEndPos > eizouEndPos) {
+      tail = updatedContent.substring(lastOsusumeEndPos + osusumeEndMarker.length);
+    }
+
+    // 再構築：1-7 + section8 + 新9番 + DeepDive以降
     updatedContent = beforeEizou
       + '\n\n' + sec8Block
       + '\n\n' + newSectionHtml.trim()
-      + '\n\n' + updatedContent.substring(deepDivePos);
-    matchFound = true;
-  } else if (eizouEndPos !== -1 && deepDivePos !== -1 && eizouEndPos < deepDivePos) {
-    // eizou:STARTが見つからない場合：eizou:END以降〜DeepDive手前を置換
-    const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
-    updatedContent = updatedContent.substring(0, afterEizouEnd)
-      + '\n\n' + newSectionHtml.trim()
-      + '\n\n' + updatedContent.substring(deepDivePos);
-    matchFound = true;
-  } else if (deepDivePos !== -1) {
-    updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
-      + '\n\n' + newSectionHtml.trim()
-      + '\n\n' + updatedContent.substring(deepDivePos);
+      + tail;
     matchFound = true;
   } else {
-    updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    // eizou:STARTが見つからない場合のフォールバック
+    // 末尾に追記せず、最後の osusume:END 以降を使って置換を試みる
+    if (lastOsusumeEndPos !== -1) {
+      const tail = updatedContent.substring(lastOsusumeEndPos + osusumeEndMarker.length);
+      const firstOsusumeStartPos = updatedContent.indexOf('<!-- SECTION:osusume:START -->');
+      if (firstOsusumeStartPos !== -1) {
+        updatedContent = updatedContent.substring(0, firstOsusumeStartPos).trimEnd()
+          + '\n\n' + newSectionHtml.trim()
+          + tail;
+      } else {
+        updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+      }
+    } else {
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    }
     matchFound = true;
   }
 } else {
