@@ -974,8 +974,9 @@ return [articleItem].map(item => {
         ''
       ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
 
-      const imdbId = apiData?.imdb_id || null;
-      const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+      const imdbId = apiData?.imdb_id || (d['imdb_url'] ? d['imdb_url'].replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
+      const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : ((titleOrig || titleJa) ? `https://www.imdb.com/find/?q=${encodeURIComponent(titleOrig || titleJa)}` : '');
+      const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
       const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>

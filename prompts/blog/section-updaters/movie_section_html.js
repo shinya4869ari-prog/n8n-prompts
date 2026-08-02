@@ -98,10 +98,22 @@ items.forEach(d => {
     youtubeBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube検索</a>`;
   }
 
-  // IMDb リンク
-  const imdbId = d.imdb_id || (d.imdb_url ? String(d.imdb_url).replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
-  const isValidImdb = imdbId && /^tt\d+/.test(String(imdbId).trim());
-  const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${String(imdbId).trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+  // IMDb リンク (直リンク/IDがあれば作品ページへ、無ければIMDb検索へフォールバック)
+  let imdbUrl = '';
+  const rawImdb = d.imdb_id || d.imdb_url || d.imdb || '';
+  if (rawImdb) {
+    if (String(rawImdb).startsWith('http')) {
+      imdbUrl = rawImdb;
+    } else {
+      const cleanId = String(rawImdb).replace(/.*\/title\//, '').replace(/\/.*/, '').trim();
+      if (cleanId) imdbUrl = `https://www.imdb.com/title/${cleanId}/`;
+    }
+  }
+  if (!imdbUrl && (titleOrig || titleJa)) {
+    imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(titleOrig || titleJa)}`;
+  }
+
+  const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
   const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
   const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
