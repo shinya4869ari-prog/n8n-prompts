@@ -98,6 +98,16 @@ const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
 let matchFound = false;
 
+// --- 0. 重複した古い9番セクション（2つ目以降の余分な9番）の自動お掃除 ---
+const sec9Matches = updatedContent.match(/<!-- SECTION:osusume:START -->|<h2[^>]*id="section-9"/gi);
+if (sec9Matches && sec9Matches.length >= 2) {
+  let count = 0;
+  updatedContent = updatedContent.replace(/(<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<div id="deep-dive"|$))/gi, (match) => {
+    count++;
+    return count === 1 ? match : '';
+  });
+}
+
 // --- 映画セクション (8番 eizou & 9番 osusume) の完全独立置換・復元ロジック ---
 if (canonicalSection === 'eizou') {
   // 【⑧ 映像作品セクションの更新】
