@@ -1,5 +1,5 @@
 /**
- * 【各セクション単体更新・万能HTML置換コード】
+ * 【各セクション単体更新・万能HTML置換＆映画ゾーン全自動クリーンアップコード】
  * 
  * WordPressの既存記事本文（currentWpHtml）から、指定された section_type のセクションブロックのみを
  * 最新の生成HTMLで安全に置き換え（Update）します。
@@ -96,71 +96,73 @@ const sectionAliasMap = {
 
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
-let matchFound = false;
 
-// --- ⑧ 映像作品セクション (eizou) の独立更新 ---
-if (canonicalSection === 'eizou') {
-  const hasEizou = /<!-- SECTION:eizou:START -->|<h2[^>]*id="section-8"|映像で知る/i.test(updatedContent);
+// --- 映画セクション（8番 eizou & 9番 osusume）のゾーン再構築アルゴリズム ---
+if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+  // 1. 本文を「映画ゾーンより前(Part A)」「映画ゾーン(Movie Zone)」「Deep-Dive以降(Part B)」に完全3分割
+  let partA = '';
+  let movieZone = '';
+  let partB = '';
 
-  if (hasEizou) {
-    updatedContent = updatedContent.replace(
-      /(<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<div id="deep-dive"|$))/i,
-      newSectionHtml.trim()
-    );
-    matchFound = true;
+  const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->[\s\S]*)/i);
+
+  if (deepDiveMatch) {
+    partB = deepDiveMatch[0];
+    const beforeDeepDive = updatedContent.substring(0, deepDiveMatch.index);
+
+    const movieStartMatch = beforeDeepDive.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:<span[^>]*>)?[\s\S]*?(?:映像で知る|特別枠|おすすめ映画))/i);
+
+    if (movieStartMatch) {
+      partA = beforeDeepDive.substring(0, movieStartMatch.index);
+      movieZone = beforeDeepDive.substring(movieStartMatch.index);
+    } else {
+      partA = beforeDeepDive;
+      movieZone = '';
+    }
   } else {
-    // 8番が存在しない場合：9番(osusume / 特別枠)の直前、またはDeep-Diveの直前に安全挿入して8番を復元
-    if (/<!-- SECTION:osusume:START -->|<h2[^>]*id="section-9"|特別枠|おすすめ映画/i.test(updatedContent)) {
-      updatedContent = updatedContent.replace(
-        /(<!-- SECTION:osusume:START -->|<h2[^>]*id="section-9"|特別枠：|おすすめ映画)/i,
-        `${newSectionHtml.trim()}\n\n$1`
-      );
-      matchFound = true;
-    } else if (/<div id="deep-dive"|<!-- SECTION:deep_dive:START -->/i.test(updatedContent)) {
-      updatedContent = updatedContent.replace(
-        /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->)/i,
-        `${newSectionHtml.trim()}\n\n$1`
-      );
-      matchFound = true;
+    const movieStartMatch = updatedContent.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:<span[^>]*>)?[\s\S]*?(?:映像で知る|特別枠|おすすめ映画))/i);
+    if (movieStartMatch) {
+      partA = updatedContent.substring(0, movieStartMatch.index);
+      movieZone = updatedContent.substring(movieStartMatch.index);
+    } else {
+      partA = updatedContent;
+      movieZone = '';
     }
   }
-}
 
-// --- ⑨ おすすめ映画セクション (osusume) の独立更新 ---
-else if (canonicalSection === 'osusume') {
-  const hasOsusume = /<!-- SECTION:osusume:START -->|<h2[^>]*id="section-9"|特別枠|おすすめ映画/i.test(updatedContent);
+  // 2. 既存の映画ゾーンの中から、正しい 8番(eizou) と 9番(osusume) のブロックを抽出（重複・旧ゴミは排除）
+  let existingSec8 = '';
+  let existingSec9 = '';
 
-  if (hasOsusume) {
-    // 既存の9番ブロックを置換（複数ある場合は1つ目を新しい9番で更新し、余分な2つ目以降の9番は自動消去！）
-    let replacedCount = 0;
-    updatedContent = updatedContent.replace(
-      /(<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<div id="deep-dive"|$))/gi,
-      (match) => {
-        replacedCount++;
-        return replacedCount === 1 ? newSectionHtml.trim() : '';
-      }
-    );
-    matchFound = true;
-  } else {
-    // 9番が存在しない場合：8番(eizou)の直後、またはDeep-Diveの直前に安全挿入
-    if (/<!-- SECTION:eizou:END -->/i.test(updatedContent)) {
-      updatedContent = updatedContent.replace(
-        /<!-- SECTION:eizou:END -->/i,
-        `<!-- SECTION:eizou:END -->\n\n${newSectionHtml.trim()}`
-      );
-      matchFound = true;
-    } else if (/<div id="deep-dive"|<!-- SECTION:deep_dive:START -->/i.test(updatedContent)) {
-      updatedContent = updatedContent.replace(
-        /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->)/i,
-        `${newSectionHtml.trim()}\n\n$1`
-      );
-      matchFound = true;
+  if (movieZone) {
+    const sec8Match = movieZone.match(/<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|$)/i);
+    if (sec8Match && (sec8Match[0].includes('映像で知る') || sec8Match[0].includes('section-8') || sec8Match[0].includes('eizou'))) {
+      existingSec8 = sec8Match[0].trim();
+    }
+
+    const sec9Match = movieZone.match(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|$)/i);
+    if (sec9Match && (sec9Match[0].includes('特別枠') || sec9Match[0].includes('おすすめ映画') || sec9Match[0].includes('section-9') || sec9Match[0].includes('osusume'))) {
+      existingSec9 = sec9Match[0].trim();
     }
   }
-}
 
-// --- 他のセクション (1〜7, 10) ---
-else {
+  // 3. 更新された最新セクションHTMLをセットし、映画ゾーンを「8番 ➔ 9番」の順序で完全固定再構築！
+  let finalSec8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existingSec8;
+  let finalSec9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existingSec9;
+
+  let rebuiltMovieZone = '';
+  if (finalSec8 && finalSec9) {
+    rebuiltMovieZone = `${finalSec8}\n\n${finalSec9}`;
+  } else if (finalSec8) {
+    rebuiltMovieZone = finalSec8;
+  } else if (finalSec9) {
+    rebuiltMovieZone = finalSec9;
+  }
+
+  // Part A + 再構築された映画ゾーン + Part B を結合！
+  updatedContent = partA.trim() + '\n\n' + rebuiltMovieZone + (partB ? '\n\n' + partB.trim() : '');
+} else {
+  // 他のセクション (1〜7, 10) の更新
   const newFormatRegex = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
   const legacyRegexMap = {
     deep_dive: /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
@@ -169,6 +171,7 @@ else {
     chian: /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/i
   };
 
+  let matchFound = false;
   if (newFormatRegex.test(updatedContent)) {
     updatedContent = updatedContent.replace(newFormatRegex, newSectionHtml.trim());
     matchFound = true;
@@ -176,11 +179,10 @@ else {
     updatedContent = updatedContent.replace(legacyRegexMap[canonicalSection], newSectionHtml.trim());
     matchFound = true;
   }
-}
 
-if (!matchFound) {
-  // どこにも見つからなければ末尾に安全追記
-  updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+  if (!matchFound) {
+    updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+  }
 }
 
 return [{
@@ -188,6 +190,6 @@ return [{
     post_id: postId,
     content: updatedContent,
     updated_section: canonicalSection,
-    match_found: matchFound
+    match_found: true
   }
 }];
