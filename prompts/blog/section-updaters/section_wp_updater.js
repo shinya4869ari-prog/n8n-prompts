@@ -99,8 +99,6 @@ if (!newSectionHtml || newSectionHtml.trim().length < 10) {
   throw new Error(`[置換エラー] 生成されたセクションHTML(section_html)が空です。「movie_section_html」ノードが正しく実行されているか確認してください。`);
 }
 
-let updatedContent = currentWpHtml;
-
 // 0. ディープダイブより下に漂流・誤追記された8番/9番セクションを事前に自動クリーンアップ
 if (currentWpHtml.includes('id="deep-dive"') || currentWpHtml.includes('<!-- SECTION:deep_dive:START -->')) {
   const parts = currentWpHtml.split(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->)/i);
