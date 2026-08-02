@@ -112,43 +112,31 @@ if (canonicalSection === 'eizou') {
 
 } else if (canonicalSection === 'osusume') {
   // --- 【9番 osusume の独立更新】 ---
-  // 記事内の全 9番ブロック（重複含む）を特定して、1つの最新9番に置換（8番には一切干渉しない）
-  const osusumeFullRegex = /<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->/gi;
-  if (osusumeFullRegex.test(updatedContent)) {
-    let isFirst = true;
-    updatedContent = updatedContent.replace(osusumeFullRegex, () => {
-      if (isFirst) {
-        isFirst = false;
-        return newSectionHtml.trim();
-      }
-      return '';
-    });
+  // 【9番更新】eizou:END より後ろのみを操作する（8番に絶対干渉しない）
+  // データから判明した実際の構造：eizou:END と osusume:END が同じ行にくっついているため
+  // 通常の osusume:START→END の正規表現マッチが8番の内容を飲み込んでしまう。
+  // 正しい修正：eizou:END の位置を特定し、それ以降〜Deep Dive手前を丸ごと新しい9番に置換する。
+
+  const eizouEndMarker = '<!-- SECTION:eizou:END -->';
+  const eizouEndPos = updatedContent.lastIndexOf(eizouEndMarker);
+  const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+
+  if (eizouEndPos !== -1 && deepDivePos !== -1 && eizouEndPos < deepDivePos) {
+    // eizou:END の直後〜Deep Diveの手前を、新しい9番HTMLに丸ごと置換
+    const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
+    updatedContent = updatedContent.substring(0, afterEizouEnd)
+      + '\n\n' + newSectionHtml.trim()
+      + '\n\n' + updatedContent.substring(deepDivePos);
+    matchFound = true;
+  } else if (deepDivePos !== -1) {
+    // eizou:END が見つからない場合：Deep Dive の手前に挿入
+    updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
+      + '\n\n' + newSectionHtml.trim()
+      + '\n\n' + updatedContent.substring(deepDivePos);
     matchFound = true;
   } else {
-    // 旧タグまたは h2 パターンの場合
-    const osusumePatterns = [
-      /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i,
-      /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
-      /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
-    ];
-
-    for (const pattern of osusumePatterns) {
-      if (pattern.test(updatedContent)) {
-        updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
-        matchFound = true;
-        break;
-      }
-    }
-  }
-
-  // もし記事内に9番がない場合：Deep Dive の手前に安全に挿入
-  if (!matchFound) {
-    const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
-    if (deepDivePos !== -1) {
-      updatedContent = updatedContent.substring(0, deepDivePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDivePos);
-    } else {
-      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
-    }
+    updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    matchFound = true;
   }
 } else {
   // その他のセクション
