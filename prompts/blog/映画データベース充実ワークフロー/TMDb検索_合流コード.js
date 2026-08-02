@@ -1,17 +1,63 @@
+// 他のノードから元の入力データ（国・年・タイトル）を安全に取得
+function getSourceData() {
+  const nodeNames = ['映画ごとにループ実行', 'Loop Over Items', '入力統一・分割コード', 'On form submission1'];
+  for (const name of nodeNames) {
+    try {
+      const d = $(name).first()?.json || $(name).item?.json;
+      if (d && (d.title || d.origin_title || d.target_country || d.country)) return d;
+    } catch(e) {}
+  }
+  return $input.first()?.json || {};
+}
+
+const sourceData = getSourceData();
+const targetCountry = sourceData.target_country || sourceData.country || null;
+const targetYear = sourceData.year ? parseInt(sourceData.year, 10) : null;
+const targetLang = sourceData.target_lang || null;
+
+// 1. ID/Wikidata検索結果 (res1) の取得と平坦化
 const rawRes1 = $('TMDb検索_ID/Wikidata').isExecuted ? ($('TMDb検索_ID/Wikidata').first()?.json || {}) : {};
 const res1 = JSON.parse(JSON.stringify(rawRes1));
-
-// Wikidata経由の/find結果の場合、movie_results[0]の内容をルートにコピーして平坦化する
 if (res1.movie_results && res1.movie_results.length > 0) {
   Object.assign(res1, res1.movie_results[0]);
 }
 
+// 2. タイトル検索結果 (res2) の取得
 const res2 = ($('TMDb検索_タイトル').isExecuted && $('TMDb検索_タイトル').first()?.json) ? $('TMDb検索_タイトル').first().json : null;
+const res2List = res2?.results || (res2?.id ? [res2] : []);
 
-// ID/Wikidata検索の結果（確実な一致）がある場合はそちらを最優先し、ない場合はタイトル検索結果（res2）を使用する
-// ID/Wikidata検索で映画がヒットしなかった（idがない）場合は、空配列 [] を返してワークフローを安全に停止します
-if (!res1 || !res1.id) {
+// 候補リストの作成 (res1を優先し、res2のリストを補合)
+const candidates = [];
+if (res1 && res1.id) candidates.push(res1);
+if (Array.isArray(res2List)) candidates.push(...res2List);
+
+// 検証関数：国名・公開年の合致判定
+function isValidMatch(movie) {
+  if (!movie || !movie.id) return false;
+
+  const releaseYear = movie.release_date ? parseInt(movie.release_date.substring(0, 4), 10) : null;
+
+  // 公開年（year）の判定：年指定がある場合、±2年以上離れていたら明確に別作品（例: 2005年想定なのに1975年映画）
+  if (targetYear && releaseYear && Math.abs(releaseYear - targetYear) > 2) {
+    return false;
+  }
+
+  // 国コード（origin_country）の判定：国指定がある場合、含まれていなければ別作品
+  if (targetCountry && movie.origin_country && Array.isArray(movie.origin_country) && movie.origin_country.length > 0) {
+    if (!movie.origin_country.includes(targetCountry) && (!releaseYear || !targetYear || Math.abs(releaseYear - targetYear) > 0)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// 最も合致する1件を探索
+const matchedMovie = candidates.find(isValidMatch);
+
+// 一致する映画が存在しない場合は、空配列 [] を返して後続ノード（Brave SearchやCredits取得等）の実行を安全に即時ストップ（APIコスト回避）
+if (!matchedMovie) {
   return [];
 }
 
-return [{ json: res1 }];
+return [{ json: matchedMovie }];

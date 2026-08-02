@@ -51,18 +51,25 @@ if (correctMovieId && resultsList.length > 0) {
   result = resultsList.find(m => m.id === correctMovieId);
 }
 
-if (!result && resultsList.length > 0) {
-  // 1. 国コードとオリジナル言語の両方が一致するものを最優先
+  // 1. 国コードまたは言語が一致するものを検索
   result = resultsList.find(m => 
-    (m.original_language === sourceData.target_lang) || 
-    (m.origin_country && m.origin_country.includes(sourceData.target_country))
+    (m.original_language && sourceData.target_lang && m.original_language === sourceData.target_lang) || 
+    (m.origin_country && sourceData.target_country && m.origin_country.includes(sourceData.target_country))
   );
-  
-  // 2. マッチするものがない場合は、最初の検索結果をフォールバックとして使用
-  if (!result) {
-    result = resultsList[0];
+
+  // 2. 公開年（year）が近しいもの（±2年以内）を検証検索
+  if (!result && sourceData.year) {
+    const targetY = parseInt(sourceData.year, 10);
+    result = resultsList.find(m => {
+      const y = m.release_date ? parseInt(m.release_date.substring(0, 4), 10) : null;
+      return y && Math.abs(y - targetY) <= 2;
+    });
   }
-}
+
+  // 3. 国・年の条件に一致しない場合、別作品（例: 同タイトルの旧作アメリカ映画等）で誤上書きするのを防ぐため、危険なフォールバック(resultsList[0])を行わずnullのままとします
+  if (!result) {
+    result = null;
+  }
 
 if (!sourceData?.title && !result?.title) return [];
 

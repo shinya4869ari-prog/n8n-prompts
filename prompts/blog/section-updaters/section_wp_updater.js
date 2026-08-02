@@ -70,8 +70,19 @@ if (!currentWpHtml) {
 
 let updatedContent = currentWpHtml;
 
-// セクションIDエイリアス正規化マップ（旧互換用）
+// セクションIDエイリアス正規化マップ（番号 1〜10 対応）
 const sectionAliasMap = {
+  '1': 'seido',
+  '2': 'chiri_keizai',
+  '3': 'chian',
+  '4': 'boeki',
+  '5': 'bukka',
+  '6': 'rekishi',
+  '7': 'doukou',
+  '8': 'eizou',
+  '9': 'osusume',
+  '10': 'deep_dive',
+  // 旧文字エイリアス互換
   movie: 'eizou',
   institution: 'seido',
   history: 'rekishi',

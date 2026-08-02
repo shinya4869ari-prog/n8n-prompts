@@ -11,18 +11,34 @@ if (!items || items.length === 0) {
   return [{ json: { html: '', section_html: '' } }];
 }
 
-// フォーム/トリガーからの入力情報
+// フォーム/トリガー/アイテムからの入力情報
 let countryName = '対象国';
 let sectionType = 'eizou'; // 'eizou' または 'osusume'
 
 try {
-  countryName = $('On form submission').first().json.country || $('トリガー').first().json.country || countryName;
-} catch(e) {}
-try {
-  sectionType = $('On form submission').first().json.section || $('トリガー').first().json.section || sectionType;
+  const trig = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
+  countryName = trig.country_name || trig.country_ja || trig.country || countryName;
+  sectionType = trig.section_type || trig.section || sectionType;
 } catch(e) {}
 
-const isOsusume = sectionType === 'osusume' || sectionType === 'recommend';
+// 入力アイテム(items)からのフォールバック取得
+if ((countryName === '対象国' || countryName === 'BT') && items[0]) {
+  countryName = items[0].country_name || items[0].country_ja || items[0].country || countryName;
+}
+if (items[0] && (items[0].section_type || items[0].section)) {
+  sectionType = items[0].section_type || items[0].section || sectionType;
+}
+
+// 国コード（ISO等）から日本語表記への簡易マッピング補正
+const countryCodeMap = {
+  'BT': 'ブータン', 'bt': 'ブータン', 'Bhutan': 'ブータン', 'bhutan': 'ブータン'
+};
+if (countryCodeMap[countryName]) {
+  countryName = countryCodeMap[countryName];
+}
+
+const sectionStr = String(sectionType).toLowerCase();
+const isOsusume = sectionStr === 'osusume' || sectionStr === 'recommend' || sectionStr === '9' || sectionStr.includes('おすすめ');
 const sectionId = isOsusume ? 'osusume' : 'eizou';
 
 const h2Style = `margin-top:60px;padding:14px 20px;background:#f5f5f5;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
@@ -42,6 +58,11 @@ if (isOsusume) {
   html += `<h2 id="section-8" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
 }
 
+function enc(t) {
+  try { return btoa(unescape(encodeURIComponent(t || ''))); }
+  catch (e) { return ''; }
+}
+
 items.forEach(d => {
   const titleJa = d.title || d.タイトル_日本語 || d.title_ja || d.タイトル || '';
   const titleOrig = (d.origin_title && d.origin_title !== d.title) ? d.origin_title : (d.原題 || '');
@@ -56,6 +77,18 @@ items.forEach(d => {
 
   const bg = isSerious ? '#fff3f3' : '#ffffff';
   const posterUrl = getPosterUrl(d.poster_url || d.poster_path);
+
+  // 国家の天秤 歴史館 ポップアップ＆直リンク生成
+  // 英語原題 (origin_title) があればそちらを検索クエリ優先採用して確実にヒットさせる
+  const searchQuery = titleOrig || titleJa;
+  const popupTitleStr = titleOrig ? `${titleJa} (${titleOrig})` : titleJa;
+  
+  const mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(searchQuery)}`;
+  const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+  const n = enc(popupTitleStr);
+  const i = enc(linkHTML);
+  const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+  const titleLinkHtml = `<span style="color:#00bcd4;border-bottom:1px dashed #00bcd4;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${titleJa}</span>`;
   
   // 予告編リンク
   let youtubeBtn = '';
@@ -84,7 +117,7 @@ items.forEach(d => {
     <div style="flex:1;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
-        <span style="font-weight:800;font-size:16px;color:#333;">${titleJa} ${origTitleSpan}</span>
+        <span style="font-weight:800;font-size:16px;">${titleLinkHtml} ${origTitleSpan}</span>
       </div>
       <div style="font-size:13px;color:#666;margin-bottom:10px;">
         📅 ${year}${type ? ' &nbsp;•&nbsp; ' + type : ''}
@@ -105,7 +138,7 @@ items.forEach(d => {
 <div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;color:#333;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</div>
+      <div style="font-weight:800;font-size:16px;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type} &nbsp;•&nbsp; ${year}${directorStr}</div>
       ${castHtml}
       ${summary ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${summary}</div>` : ''}
