@@ -79,7 +79,7 @@ function wrap(section, html) {
 
 // 全ての section-N 見出しの位置を収集
 function findAllSectionHeaders(text) {
-  const re = /<h2[^>]*id="section-(\d+)"[^>]*>/gi;
+  const re = /<h2[^>]*id=["']?section-(\d+)["']?[^>]*>/gi;
   const list = [];
   let m;
   while ((m = re.exec(text)) !== null) list.push({ num: parseInt(m[1], 10), index: m.index });
@@ -87,7 +87,7 @@ function findAllSectionHeaders(text) {
 }
 
 function findAllDeepDiveMarkers(text) {
-  const re = /<div id="deep-dive"[^>]*>/gi;
+  const re = /<(?:div|h2|section)[^>]*id=["']?deep-dive["']?[^>]*>|id="deep-dive"/gi;
   const list = [];
   let m;
   while ((m = re.exec(text)) !== null) list.push(m.index);
