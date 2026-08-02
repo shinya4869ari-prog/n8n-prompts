@@ -1,26 +1,19 @@
 /**
- * 【各セクション単体更新・完全位置判定＆誤上書き防止コード】
+ * 【各セクション単体更新・完全独立置換コード】
  * 
- * WordPressの既存記事本文（currentWpHtml）から、指定された section_type のセクションのみを
- * 他のセクション（1〜10）を一切破壊せずピンポイントで最新HTMLに更新します。
+ * 指定された section_type のセクションのみをターゲットにし、
+ * 他のセクションには一切干渉せず、安全に最新HTMLへ置換します。
  */
 
 const input = $input.first()?.json || {};
 
-// postIdの取得
 let postId = input.post_id || input.id || null;
-
-// 修正したいセクション種別 ('seido', 'chiri_keizai', 'chian', 'boeki', 'bukka', 'rekishi', 'doukou', 'eizou', 'osusume', 'deep_dive')
 let sectionType = input.section_type || input.section || 'eizou';
 if (Array.isArray(sectionType)) sectionType = sectionType[0];
 
-// 新しく生成・取得したセクションHTML
 let newSectionHtml = input.section_html || input.html || input.movie_section_html || '';
-
-// WordPressから取得した既存の記事本文HTML (WP Get Postノード)
 let currentWpHtml = input.wp_content || (typeof input.content?.rendered === 'string' ? input.content.rendered : '');
 
-// $inputの全アイテムから探索
 for (const item of $input.all()) {
   const j = item.json || {};
   if (!postId && (j.post_id || j.id)) postId = j.post_id || j.id;
@@ -32,7 +25,6 @@ for (const item of $input.all()) {
   }
 }
 
-// 他のノード名からのフォールバック取得
 if (!postId) {
   try {
     postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a post').first()?.json?.id || $('WP Get Post').first()?.json?.id || null;
@@ -84,111 +76,82 @@ const sectionAliasMap = {
 
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
+let matchFound = false;
 
-// ====================================================================
-// 映画セクション（8番 eizou & 9番 osusume）: 4ゾーン分割方式
-// ====================================================================
-if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+if (canonicalSection === 'eizou') {
+  // --- 【8番 eizou の独立更新】 ---
+  // 既存の8番ブロックのみを探して置換（他セクションには一切干渉しない）
+  const eizouPatterns = [
+    /<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->/i,
+    /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/i,
+    /<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
+    /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|8\.|映像で知る|映像作品)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
+  ];
 
-  // ---- ゾーン境界の高度特定（コメントタグ・id属性・h2内文字列の全対応） ----
-  // 境界1: 8番の開始位置
-  const sec8StartPattern = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|映像で知る))/i;
-  // 境界2: 9番の開始位置（最初の出現）
-  const sec9StartPattern = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|特別枠|おすすめ))/i;
-  // 境界3: Deep Diveの開始位置
-  const deepDivePattern = /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i;
-
-  const sec8StartMatch = updatedContent.match(sec8StartPattern);
-  const sec9StartMatch = updatedContent.match(sec9StartPattern);
-  const deepDiveStartMatch = updatedContent.match(deepDivePattern);
-
-  if (!deepDiveStartMatch) {
-    // Deep Diveが見つからない場合は末尾に追記（フォールバック）
-    updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
-  } else {
-    const deepDivePos = deepDiveStartMatch.index;
-
-    if (!sec8StartMatch) {
-      // 8番マーカーが存在しない場合
-      if (canonicalSection === 'eizou') {
-        // 8番更新：最初の9番マーカーの手前に8番を挿入
-        if (sec9StartMatch) {
-          updatedContent = updatedContent.substring(0, sec9StartMatch.index).trimEnd()
-            + '\n\n' + newSectionHtml.trim()
-            + '\n\n' + updatedContent.substring(sec9StartMatch.index);
-        } else {
-          updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
-            + '\n\n' + newSectionHtml.trim()
-            + '\n\n' + updatedContent.substring(deepDivePos);
-        }
-      } else {
-        // 9番更新で8番がない場合：最初の9番開始位置〜Deep Dive手前までの全旧9番を、新しい1つの9番に丸ごと置換！
-        if (sec9StartMatch) {
-          updatedContent = updatedContent.substring(0, sec9StartMatch.index).trimEnd()
-            + '\n\n' + newSectionHtml.trim()
-            + '\n\n' + updatedContent.substring(deepDivePos);
-        } else {
-          updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
-            + '\n\n' + newSectionHtml.trim()
-            + '\n\n' + updatedContent.substring(deepDivePos);
-        }
-      }
-    } else {
-      const sec8Pos = sec8StartMatch.index;
-      // 前半(1-7)部分
-      const partFront = updatedContent.substring(0, sec8Pos).trimEnd();
-      // 8番〜Deep Diveの手前までの全内容（8番ゾーン + 9番ゾーン、ゴミ含む）
-      const movieArea = updatedContent.substring(sec8Pos, deepDivePos);
-      // Deep Dive以降
-      const partDeepDive = updatedContent.substring(deepDivePos);
-
-      // movieArea を 8番(existing8) と 9番(existing9) に確実に2分割する
-      const eizouEndMatch = movieArea.match(/(<!-- SECTION:eizou:END -->|<!-- END_MOVIE_SECTION -->)/i);
-      
-      let existing8 = '';
-      let existing9 = '';
-
-      if (eizouEndMatch) {
-        const splitPos = eizouEndMatch.index + eizouEndMatch[0].length;
-        existing8 = movieArea.substring(0, splitPos).trim();
-        existing9 = movieArea.substring(splitPos).trim();
-      } else {
-        // eizou:END がない場合は、movieArea内の 2番目の <h2 を探して境界とする
-        const h2Matches = [...movieArea.matchAll(/<h2[^>]*>/gi)];
-        if (h2Matches.length >= 2) {
-          const splitPos = h2Matches[1].index;
-          existing8 = movieArea.substring(0, splitPos).trim();
-          existing9 = movieArea.substring(splitPos).trim();
-        } else {
-          // h2が1つしかない場合
-          const sec9Match = movieArea.match(sec9StartPattern);
-          if (sec9Match && sec9Match.index > 0) {
-            existing8 = movieArea.substring(0, sec9Match.index).trim();
-            existing9 = movieArea.substring(sec9Match.index).trim();
-          } else {
-            existing8 = movieArea.trim();
-            existing9 = '';
-          }
-        }
-      }
-
-      // 更新するゾーンだけ差し替え、もう片方はそのまま保持
-      // ※ osusume更新時は、8番より後ろにある既存9番（重複・旧9番全部）を新しい1つの9番に完全置換する
-      let final8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existing8;
-      let final9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existing9;
-
-      // 結合
-      let rebuilt = final8;
-      if (final9) rebuilt += '\n\n' + final9;
-
-      updatedContent = partFront + '\n\n' + rebuilt + '\n\n' + partDeepDive.trimStart();
+  for (const pattern of eizouPatterns) {
+    if (pattern.test(updatedContent)) {
+      updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
+      matchFound = true;
+      break;
     }
   }
 
+  // もし記事内に8番がない場合：9番の手前、または Deep Dive の手前に安全に挿入
+  if (!matchFound) {
+    const osusumePos = updatedContent.search(/(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ))/i);
+    const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+
+    if (osusumePos !== -1) {
+      updatedContent = updatedContent.substring(0, osusumePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(osusumePos);
+    } else if (deepDivePos !== -1) {
+      updatedContent = updatedContent.substring(0, deepDivePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDivePos);
+    } else {
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    }
+  }
+
+} else if (canonicalSection === 'osusume') {
+  // --- 【9番 osusume の独立更新】 ---
+  // 記事内の全 9番ブロック（重複含む）を特定して、1つの最新9番に置換（8番には一切干渉しない）
+  const osusumeFullRegex = /<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->/gi;
+  if (osusumeFullRegex.test(updatedContent)) {
+    let isFirst = true;
+    updatedContent = updatedContent.replace(osusumeFullRegex, () => {
+      if (isFirst) {
+        isFirst = false;
+        return newSectionHtml.trim();
+      }
+      return '';
+    });
+    matchFound = true;
+  } else {
+    // 旧タグまたは h2 パターンの場合
+    const osusumePatterns = [
+      /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i,
+      /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
+      /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
+    ];
+
+    for (const pattern of osusumePatterns) {
+      if (pattern.test(updatedContent)) {
+        updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
+        matchFound = true;
+        break;
+      }
+    }
+  }
+
+  // もし記事内に9番がない場合：Deep Dive の手前に安全に挿入
+  if (!matchFound) {
+    const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+    if (deepDivePos !== -1) {
+      updatedContent = updatedContent.substring(0, deepDivePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDivePos);
+    } else {
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    }
+  }
 } else {
-  // ====================================================================
-  // その他のセクション (1〜7, 10 Deep Dive): ピンポイント置換
-  // ====================================================================
+  // その他のセクション
   const sectionPatterns = {
     deep_dive: [
       /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
@@ -208,7 +171,6 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
     new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i')
   ];
 
-  let matchFound = false;
   for (const pattern of patterns) {
     if (pattern.test(updatedContent)) {
       updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
@@ -226,6 +188,6 @@ return [{
     post_id: postId,
     content: updatedContent,
     updated_section: canonicalSection,
-    match_found: true
+    match_found: matchFound
   }
 }];
