@@ -1,8 +1,8 @@
 /**
- * 【各セクション単体更新・完全独立置換コード】
+ * 【各セクション単体更新・位置インデックス分割方式】
  * 
- * 指定された section_type のセクションのみをターゲットにし、
- * 他のセクションには一切干渉せず、安全に最新HTMLへ置換します。
+ * 記事全体の「8番見出し位置」「9番見出し位置」「Deep Dive位置」をインデックスで正確に測定し、
+ * 対象セクションの区間のみをピンポイントで置換します。
  */
 
 const input = $input.first()?.json || {};
@@ -78,97 +78,105 @@ const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
 let matchFound = false;
 
-if (canonicalSection === 'eizou') {
-  // --- 【8番 eizou の独立更新】 ---
-  // 既存の8番ブロックのみを探して置換（他セクションには一切干渉しない）
-  const eizouPatterns = [
-    /<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->/i,
-    /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/i,
-    /<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
-    /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|8\.|映像で知る|映像作品)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
-  ];
+if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+  // ====================================================================
+  // 映画セクション (8番 eizou & 9番 osusume) 位置インデックス分割置換
+  // ====================================================================
+  
+  // 1. 8番の開始位置を検索 (コメントタグ、id属性、または <h2>...⑧ / 映像で知る)
+  const sec8Regex = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|8\.|映像で知る))/i;
+  const sec8Match = updatedContent.match(sec8Regex);
+  const h8Pos = sec8Match ? sec8Match.index : -1;
 
-  for (const pattern of eizouPatterns) {
-    if (pattern.test(updatedContent)) {
-      updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
-      matchFound = true;
+  // 2. 9番の開始位置を検索 (8番の開始位置より後ろにあるものを優先)
+  const sec9Regex = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ))/gi;
+  let h9Pos = -1;
+  let m;
+  while ((m = sec9Regex.exec(updatedContent)) !== null) {
+    if (h8Pos === -1 || m.index > h8Pos) {
+      h9Pos = m.index;
       break;
     }
   }
 
-  // もし記事内に8番がない場合：9番の手前、または Deep Dive の手前に安全に挿入
-  if (!matchFound) {
-    const osusumePos = updatedContent.search(/(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ))/i);
-    const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+  // 3. Deep Dive の開始位置を検索
+  const deepDiveRegex = /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->|<h2[^>]*id="deep-dive"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?Deep Dive)/i;
+  const deepDiveMatch = updatedContent.match(deepDiveRegex);
+  const hdPos = deepDiveMatch ? deepDiveMatch.index : -1;
 
-    if (osusumePos !== -1) {
-      updatedContent = updatedContent.substring(0, osusumePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(osusumePos);
-    } else if (deepDivePos !== -1) {
-      updatedContent = updatedContent.substring(0, deepDivePos).trimEnd() + '\n\n' + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDivePos);
-    } else {
-      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
-    }
-  }
-
-} else if (canonicalSection === 'osusume') {
-  // --- 【9番 osusume の独立更新】 ---
-  // 記事を「1-7」「section8」「新9番」「それ以降(DeepDive等)」に完全再構築する
-  // Deep Diveの検索はしない（形式が不安定なため）。
-  // 代わりに「最後の osusume:END の後ろ」をDeepDive以降として扱う。
-
-  const eizouStartMarker  = '<!-- SECTION:eizou:START -->';
-  const eizouEndMarker    = '<!-- SECTION:eizou:END -->';
-  const osusumeEndMarker  = '<!-- SECTION:osusume:END -->';
-
-  const eizouStartPos       = updatedContent.indexOf(eizouStartMarker);
-  const eizouEndPos         = updatedContent.lastIndexOf(eizouEndMarker);
-  const lastOsusumeEndPos   = updatedContent.lastIndexOf(osusumeEndMarker);
-
-  if (eizouStartPos !== -1 && eizouEndPos !== -1 && eizouStartPos < eizouEndPos) {
-    // 【1〜7】eizou:START より前。ゴミの osusume:START があれば除去
-    let beforeEizou = updatedContent.substring(0, eizouStartPos).trimEnd();
-    const lastJunk = beforeEizou.lastIndexOf('<!-- SECTION:osusume:START -->');
-    if (lastJunk !== -1) {
-      beforeEizou = beforeEizou.substring(0, lastJunk).trimEnd();
-    }
-
-    // 【section8】eizou:START 〜 eizou:END
-    const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
-    const sec8Block = updatedContent.substring(eizouStartPos, afterEizouEnd);
-
-    // 【DeepDive以降】最後の osusume:END の後ろのコンテンツ
-    // osusume:END が eizou:END より後ろにある場合のみ有効
-    let tail = '';
-    if (lastOsusumeEndPos !== -1 && lastOsusumeEndPos > eizouEndPos) {
-      tail = updatedContent.substring(lastOsusumeEndPos + osusumeEndMarker.length);
-    }
-
-    // 再構築：1-7 + section8 + 新9番 + DeepDive以降
-    updatedContent = beforeEizou
-      + '\n\n' + sec8Block
-      + '\n\n' + newSectionHtml.trim()
-      + tail;
-    matchFound = true;
-  } else {
-    // eizou:STARTが見つからない場合のフォールバック
-    // 末尾に追記せず、最後の osusume:END 以降を使って置換を試みる
-    if (lastOsusumeEndPos !== -1) {
-      const tail = updatedContent.substring(lastOsusumeEndPos + osusumeEndMarker.length);
-      const firstOsusumeStartPos = updatedContent.indexOf('<!-- SECTION:osusume:START -->');
-      if (firstOsusumeStartPos !== -1) {
-        updatedContent = updatedContent.substring(0, firstOsusumeStartPos).trimEnd()
-          + '\n\n' + newSectionHtml.trim()
-          + tail;
-      } else {
-        updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+  if (canonicalSection === 'eizou') {
+    // ------------------------------------------------------------------
+    // 【8番 (eizou) の更新】
+    // ------------------------------------------------------------------
+    if (h8Pos !== -1) {
+      // 前半: 0 〜 h8Pos (1〜7セクション)
+      const partBefore = updatedContent.substring(0, h8Pos).trimEnd();
+      
+      // 後半: h9Pos があれば h9Pos 以降 (9番＋DeepDive)、なければ hdPos 以降
+      let partAfter = '';
+      if (h9Pos !== -1 && h9Pos > h8Pos) {
+        partAfter = updatedContent.substring(h9Pos).trimStart();
+      } else if (hdPos !== -1 && hdPos > h8Pos) {
+        partAfter = updatedContent.substring(hdPos).trimStart();
       }
+
+      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + (partAfter ? '\n\n' + partAfter : '');
+      matchFound = true;
+    } else if (h9Pos !== -1) {
+      // 8番が見つからない場合は 9番の手前に挿入
+      const partBefore = updatedContent.substring(0, h9Pos).trimEnd();
+      const partAfter = updatedContent.substring(h9Pos).trimStart();
+      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
+      matchFound = true;
+    } else if (hdPos !== -1) {
+      // 9番もない場合は Deep Dive の手前に挿入
+      const partBefore = updatedContent.substring(0, hdPos).trimEnd();
+      const partAfter = updatedContent.substring(hdPos).trimStart();
+      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
+      matchFound = true;
     } else {
       updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+      matchFound = true;
     }
-    matchFound = true;
+
+  } else if (canonicalSection === 'osusume') {
+    // ------------------------------------------------------------------
+    // 【9番 (osusume) の更新】
+    // ------------------------------------------------------------------
+    if (h9Pos !== -1) {
+      // 前半: 0 〜 h9Pos (1〜7セクション ＋ 8番セクション全体が含まれる)
+      let partBefore = updatedContent.substring(0, h9Pos).trimEnd();
+      
+      // 前半に含まれる孤立した <!-- SECTION:osusume:START --> コメントがあれば掃除
+      const junkOsusume = partBefore.lastIndexOf('<!-- SECTION:osusume:START -->');
+      if (junkOsusume !== -1 && (h8Pos === -1 || junkOsusume < h8Pos)) {
+        partBefore = partBefore.substring(0, junkOsusume).trimEnd();
+      }
+
+      // 後半: hdPos (Deep Dive) 以降。なければ末尾
+      let partAfter = '';
+      if (hdPos !== -1 && hdPos > h9Pos) {
+        partAfter = updatedContent.substring(hdPos).trimStart();
+      }
+
+      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + (partAfter ? '\n\n' + partAfter : '');
+      matchFound = true;
+    } else if (hdPos !== -1) {
+      // 9番が見つからない場合は Deep Dive の手前に挿入 (8番は保持される)
+      const partBefore = updatedContent.substring(0, hdPos).trimEnd();
+      const partAfter = updatedContent.substring(hdPos).trimStart();
+      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
+      matchFound = true;
+    } else {
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+      matchFound = true;
+    }
   }
+
 } else {
-  // その他のセクション
+  // ====================================================================
+  // その他のセクション (1〜7, 10 Deep Dive): ピンポイント置換
+  // ====================================================================
   const sectionPatterns = {
     deep_dive: [
       /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
