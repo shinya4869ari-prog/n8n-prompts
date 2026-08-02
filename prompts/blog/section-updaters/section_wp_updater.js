@@ -112,24 +112,43 @@ if (canonicalSection === 'eizou') {
 
 } else if (canonicalSection === 'osusume') {
   // --- 【9番 osusume の独立更新】 ---
-  // 【9番更新】eizou:END より後ろのみを操作する（8番に絶対干渉しない）
-  // データから判明した実際の構造：eizou:END と osusume:END が同じ行にくっついているため
-  // 通常の osusume:START→END の正規表現マッチが8番の内容を飲み込んでしまう。
-  // 正しい修正：eizou:END の位置を特定し、それ以降〜Deep Dive手前を丸ごと新しい9番に置換する。
+  // 実際のHTMLデータで判明した構造：
+  //   - eizou:STARTより前に osusume:START が孤立して残っている（ゴミ）
+  //   - eizou:END の直後に osusume:END がくっついている
+  // → 正しい方法：記事を「1-7前半 + section8 + 新9番 + DeepDive」に完全再構築する
 
-  const eizouEndMarker = '<!-- SECTION:eizou:END -->';
-  const eizouEndPos = updatedContent.lastIndexOf(eizouEndMarker);
-  const deepDivePos = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+  const eizouStartMarker = '<!-- SECTION:eizou:START -->';
+  const eizouEndMarker   = '<!-- SECTION:eizou:END -->';
+  const eizouStartPos = updatedContent.indexOf(eizouStartMarker);
+  const eizouEndPos   = updatedContent.lastIndexOf(eizouEndMarker);
+  const deepDivePos   = updatedContent.search(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
 
-  if (eizouEndPos !== -1 && deepDivePos !== -1 && eizouEndPos < deepDivePos) {
-    // eizou:END の直後〜Deep Diveの手前を、新しい9番HTMLに丸ごと置換
+  if (eizouStartPos !== -1 && eizouEndPos !== -1 && deepDivePos !== -1 && eizouStartPos < eizouEndPos && eizouEndPos < deepDivePos) {
+    // eizou:STARTより前のコンテンツ（1-7）から、ゴミの osusume:START 以降を除去
+    let beforeEizou = updatedContent.substring(0, eizouStartPos).trimEnd();
+    const lastJunkOsusume = beforeEizou.lastIndexOf('<!-- SECTION:osusume:START -->');
+    if (lastJunkOsusume !== -1) {
+      beforeEizou = beforeEizou.substring(0, lastJunkOsusume).trimEnd();
+    }
+
+    // section8 ブロックをそのまま保持
+    const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
+    const sec8Block = updatedContent.substring(eizouStartPos, afterEizouEnd);
+
+    // 再構築：1-7 + section8 + 新9番 + DeepDive
+    updatedContent = beforeEizou
+      + '\n\n' + sec8Block
+      + '\n\n' + newSectionHtml.trim()
+      + '\n\n' + updatedContent.substring(deepDivePos);
+    matchFound = true;
+  } else if (eizouEndPos !== -1 && deepDivePos !== -1 && eizouEndPos < deepDivePos) {
+    // eizou:STARTが見つからない場合：eizou:END以降〜DeepDive手前を置換
     const afterEizouEnd = eizouEndPos + eizouEndMarker.length;
     updatedContent = updatedContent.substring(0, afterEizouEnd)
       + '\n\n' + newSectionHtml.trim()
       + '\n\n' + updatedContent.substring(deepDivePos);
     matchFound = true;
   } else if (deepDivePos !== -1) {
-    // eizou:END が見つからない場合：Deep Dive の手前に挿入
     updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
       + '\n\n' + newSectionHtml.trim()
       + '\n\n' + updatedContent.substring(deepDivePos);
