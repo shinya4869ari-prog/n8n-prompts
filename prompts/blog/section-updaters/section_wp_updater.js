@@ -134,37 +134,31 @@ if (canonicalSection === 'eizou') {
   }
 } else if (canonicalSection === 'osusume') {
   // 【9番 osusume の更新】
-  const osusumeBlocks = [...updatedContent.matchAll(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->/gi)];
-  if (osusumeBlocks.length >= 2) {
-    // osusumeブロックが複数ある場合：必ず最後（2番目）の osusume ブロックのみを更新する！（8番の位置にある1番目のosusumeには絶対に触らない）
-    const lastBlock = osusumeBlocks[osusumeBlocks.length - 1];
-    updatedContent = updatedContent.substring(0, lastBlock.index) + newSectionHtml.trim() + updatedContent.substring(lastBlock.index + lastBlock[0].length);
+  // 8番の後ろから Deep Dive の手前までにあるすべての9番（重複・旧ゴミ含む）を、最新の1つの9番HTMLへ完全置換！
+  const eizouEndMatch = updatedContent.match(/(<!-- SECTION:eizou:END -->|<!-- END_MOVIE_SECTION -->)/i);
+  const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+
+  if (eizouEndMatch && deepDiveMatch) {
+    // 8番の直後から Deep Dive の直前までをゾーンとして指定し、その間の旧9番や重複9番をまるごと1つの最新9番に置き換える！
+    const searchStart = eizouEndMatch.index + eizouEndMatch[0].length;
+    const beforeZone = updatedContent.substring(0, searchStart);
+    const afterZone = updatedContent.substring(deepDiveMatch.index);
+    updatedContent = beforeZone.trim() + '\n\n' + newSectionHtml.trim() + '\n\n' + afterZone.trim();
     matchFound = true;
-  } else if (osusumeBlocks.length === 1) {
-    // osusumeブロックが1つの場合
-    // その手前に 8番（eizou または section-8 または 映像で知る）があるか確認
-    const hasEizouBefore = /<!-- SECTION:eizou:START -->|<h2[^>]*id="section-8"|映像で知る/i.test(updatedContent.substring(0, osusumeBlocks[0].index));
-    if (hasEizouBefore) {
-      // 手前に8番がちゃんと存在するので、この1つのosusumeブロックが正当な9番！
-      updatedContent = updatedContent.replace(osusumeBlocks[0][0], newSectionHtml.trim());
-      matchFound = true;
-    } else {
-      // 手前に8番がない場合：この1つのosusumeは「誤って8番の位置に居座っている9番」の可能性が高いため、上書きせず、Deep Diveの手前に正しい9番として挿入する！
-      const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
-      if (deepDiveMatch) {
-        updatedContent = updatedContent.substring(0, deepDiveMatch.index) + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDiveMatch.index);
-        matchFound = true;
-      }
-    }
   } else {
-    // osusumeブロックが存在しない場合：旧タグ検索または Deep Dive の前に挿入
-    const legacy9Match = updatedContent.match(/<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i);
-    if (legacy9Match) {
-      updatedContent = updatedContent.replace(legacy9Match[0], newSectionHtml.trim());
+    // 8番の明確な閉じタグがない場合のフォールバック
+    const osusumeBlocks = [...updatedContent.matchAll(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->/gi)];
+    if (osusumeBlocks.length >= 2) {
+      // osusumeが2つある場合は2番目のブロックを更新
+      const lastBlock = osusumeBlocks[osusumeBlocks.length - 1];
+      updatedContent = updatedContent.substring(0, lastBlock.index) + newSectionHtml.trim() + updatedContent.substring(lastBlock.index + lastBlock[0].length);
       matchFound = true;
     } else {
-      const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
-      if (deepDiveMatch) {
+      const legacy9Match = updatedContent.match(/<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i);
+      if (legacy9Match) {
+        updatedContent = updatedContent.replace(legacy9Match[0], newSectionHtml.trim());
+        matchFound = true;
+      } else if (deepDiveMatch) {
         updatedContent = updatedContent.substring(0, deepDiveMatch.index) + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDiveMatch.index);
         matchFound = true;
       }
