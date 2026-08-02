@@ -142,24 +142,38 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       // Deep Dive以降
       const partDeepDive = updatedContent.substring(deepDivePos);
 
-      // movieArea の中から9番の開始位置を特定
-      const sec9InMovieMatch = movieArea.match(sec9StartPattern);
-
+      // movieArea を 8番(existing8) と 9番(existing9) に確実に2分割する
+      const eizouEndMatch = movieArea.match(/(<!-- SECTION:eizou:END -->|<!-- END_MOVIE_SECTION -->)/i);
+      
       let existing8 = '';
       let existing9 = '';
 
-      if (sec9InMovieMatch) {
-        // 8番ゾーン = movieArea の先頭〜9番開始前
-        existing8 = movieArea.substring(0, sec9InMovieMatch.index).trim();
-        // 9番ゾーン = 9番開始〜movieArea末尾（重複・旧ゴミ含む全部）
-        existing9 = movieArea.substring(sec9InMovieMatch.index).trim();
+      if (eizouEndMatch) {
+        const splitPos = eizouEndMatch.index + eizouEndMatch[0].length;
+        existing8 = movieArea.substring(0, splitPos).trim();
+        existing9 = movieArea.substring(splitPos).trim();
       } else {
-        // 9番が見当たらない場合はmovieArea全体を8番として扱う
-        existing8 = movieArea.trim();
-        existing9 = '';
+        // eizou:END がない場合は、movieArea内の 2番目の <h2 を探して境界とする
+        const h2Matches = [...movieArea.matchAll(/<h2[^>]*>/gi)];
+        if (h2Matches.length >= 2) {
+          const splitPos = h2Matches[1].index;
+          existing8 = movieArea.substring(0, splitPos).trim();
+          existing9 = movieArea.substring(splitPos).trim();
+        } else {
+          // h2が1つしかない場合
+          const sec9Match = movieArea.match(sec9StartPattern);
+          if (sec9Match && sec9Match.index > 0) {
+            existing8 = movieArea.substring(0, sec9Match.index).trim();
+            existing9 = movieArea.substring(sec9Match.index).trim();
+          } else {
+            existing8 = movieArea.trim();
+            existing9 = '';
+          }
+        }
       }
 
       // 更新するゾーンだけ差し替え、もう片方はそのまま保持
+      // ※ osusume更新時は、8番より後ろにある既存9番（重複・旧9番全部）を新しい1つの9番に完全置換する
       let final8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existing8;
       let final9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existing9;
 
