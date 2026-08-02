@@ -91,19 +91,6 @@ const sectionAliasMap = {
 
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 
-// 置換用正規表現（新標準フォーマット: <!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->）
-const newFormatRegex = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'g');
-
-// 旧フォーマットタグマップ（互換用）
-const legacyRegexMap = {
-  eizou: /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/g,
-  osusume: /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/g,
-  deep_dive: /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/g,
-  seido: /<!-- START_INSTITUTION_SECTION -->[\s\S]*?<!-- END_INSTITUTION_SECTION -->/g,
-  rekishi: /<!-- START_HISTORY_SECTION -->[\s\S]*?<!-- END_HISTORY_SECTION -->/g,
-  chian: /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/g
-};
-
 if (!currentWpHtml || currentWpHtml.trim().length < 10) {
   throw new Error(`[置換エラー] 既存のWordPress記事本文(wp_content / content.rendered)が取得できていません。「WP Get a Post」ノードが正しく実行されているか確認してください。`);
 }
@@ -114,14 +101,54 @@ if (!newSectionHtml || newSectionHtml.trim().length < 10) {
 
 let matchFound = false;
 
+// 1. 新標準フォーマットタグ（<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->）
+const newFormatRegex = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
+
 if (newFormatRegex.test(currentWpHtml)) {
   updatedContent = currentWpHtml.replace(newFormatRegex, newSectionHtml.trim());
   matchFound = true;
-} else if (legacyRegexMap[canonicalSection] && legacyRegexMap[canonicalSection].test(currentWpHtml)) {
-  updatedContent = currentWpHtml.replace(legacyRegexMap[canonicalSection], newSectionHtml.trim());
-  matchFound = true;
+} else if (canonicalSection === 'osusume') {
+  // --- ⑨ おすすめ映画セクション更新 (特定ターゲット) ---
+  const h2Section9Regex = /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->|$)/i;
+  const legacyOsusumeRegex = /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i;
+  
+  if (h2Section9Regex.test(currentWpHtml)) {
+    updatedContent = currentWpHtml.replace(h2Section9Regex, newSectionHtml.trim());
+    matchFound = true;
+  } else if (legacyOsusumeRegex.test(currentWpHtml)) {
+    updatedContent = currentWpHtml.replace(legacyOsusumeRegex, newSectionHtml.trim());
+    matchFound = true;
+  }
+} else if (canonicalSection === 'eizou') {
+  // --- ⑧ 映像作品セクション更新 (特定ターゲット) ---
+  const h2Section8Regex = /<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2[^>]*id="section-9"|<!-- SECTION:osusume:START -->|<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/i;
+  const legacyEizouRegex = /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/i;
+
+  if (h2Section8Regex.test(currentWpHtml)) {
+    updatedContent = currentWpHtml.replace(h2Section8Regex, newSectionHtml.trim());
+    matchFound = true;
+  } else if (legacyEizouRegex.test(currentWpHtml)) {
+    updatedContent = currentWpHtml.replace(legacyEizouRegex, newSectionHtml.trim());
+    matchFound = true;
+  }
 } else {
-  // 置換タグが本文内に存在しない場合は、本文末尾に安全にセクションを追加追記
+  // 他の標準セクション（制度、歴史、治安、Deep Dive等）
+  const legacyRegexMap = {
+    deep_dive: /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
+    seido: /<!-- START_INSTITUTION_SECTION -->[\s\S]*?<!-- END_INSTITUTION_SECTION -->/i,
+    rekishi: /<!-- START_HISTORY_SECTION -->[\s\S]*?<!-- END_HISTORY_SECTION -->/i,
+    chian: /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/i
+  };
+
+  const reg = legacyRegexMap[canonicalSection];
+  if (reg && reg.test(currentWpHtml)) {
+    updatedContent = currentWpHtml.replace(reg, newSectionHtml.trim());
+    matchFound = true;
+  }
+}
+
+if (!matchFound) {
+  // 置換タグが本文内に見つからなかった場合は末尾に追記
   updatedContent = currentWpHtml.trim() + '\n\n' + newSectionHtml.trim();
 }
 
