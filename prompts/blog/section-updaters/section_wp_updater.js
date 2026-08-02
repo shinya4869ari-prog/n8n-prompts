@@ -79,7 +79,7 @@ function wrap(section, html) {
 
 // 全ての section-N 見出しの位置を収集
 function findAllSectionHeaders(text) {
-  const re = /<h2[^>]*id=["']?section-(\d+)["']?[^>]*>/gi;
+  const re = /<h2[^>]*id="section-(\d+)"[^>]*>/gi;
   const list = [];
   let m;
   while ((m = re.exec(text)) !== null) list.push({ num: parseInt(m[1], 10), index: m.index });
@@ -87,7 +87,7 @@ function findAllSectionHeaders(text) {
 }
 
 function findAllDeepDiveMarkers(text) {
-  const re = /<(?:div|h2|section)[^>]*id=["']?deep-dive["']?[^>]*>|id="deep-dive"/gi;
+  const re = /<div id="deep-dive"[^>]*>/gi;
   const list = [];
   let m;
   while ((m = re.exec(text)) !== null) list.push(m.index);
@@ -116,8 +116,13 @@ function replaceNumberedSection(text, num, section, newHtml) {
   const lastStart = starts[starts.length - 1];
   const boundaryAfterLast = findNextBoundary(text, lastStart, headers, deepDives);
 
-  const partBefore = text.substring(0, firstStart).trimEnd();
-  const partAfter = text.substring(boundaryAfterLast).trimStart();
+  let partBefore = text.substring(0, firstStart).trimEnd();
+  let partAfter = text.substring(boundaryAfterLast).trimStart();
+
+  // 見出しの手前や直後に残っている対象セクションの不要なタグ（増殖の元凶）を完全除去・掃除
+  const junkRe = new RegExp(`(<p>)?\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->(<br\\s*\\/?>|<\\/p>)?`, 'gi');
+  partBefore = partBefore.replace(junkRe, '').trimEnd();
+  partAfter = partAfter.replace(junkRe, '').trimStart();
 
   return partBefore + '\n\n' + wrap(section, newHtml) + '\n\n' + partAfter;
 }
