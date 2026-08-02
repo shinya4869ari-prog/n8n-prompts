@@ -104,7 +104,8 @@ for (const b of bindings) {
     continue;
   }
 
-  const wikidata_id = movieUrl.split('/').pop() || null;
+  const rawWikidataId = movieUrl.split('/').pop() || null;
+  const wikidata_id = (rawWikidataId && /^Q\d+$/.test(rawWikidataId)) ? rawWikidataId : null;
 
   // すでにデータベース（Supabase）に登録済みの映画は除外する
   if (existingTmdbIds.has(tmdb_id)) {

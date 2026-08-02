@@ -107,7 +107,10 @@ return items.map((item, index) => {
     trailer_url: trailer_url,
 
     tmdb_id: tmdb_id,
-    wikidata_id: source.wikidata_id || aiData.wikidata_id || null,
+    wikidata_id: (() => {
+      const rawId = source.wikidata_id || aiData.wikidata_id || null;
+      return (rawId && /^Q\d+$/.test(rawId)) ? rawId : null;
+    })(),
 
     audit_status: aiData.audit_status || "OK"
   };

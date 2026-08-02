@@ -124,8 +124,8 @@ const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase(
                 lang?.toUpperCase() || 
                 null;
 const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
-let wikidata_id = result?.external_ids?.wikidata_id || null;
-if (!wikidata_id) {
+let rawWikidataId = result?.external_ids?.wikidata_id || null;
+if (!rawWikidataId) {
   try {
     const wikiJson1 = getNodeData('Wikidata検索');
     let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
@@ -135,9 +135,10 @@ if (!wikidata_id) {
       fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.[0]?.title || null;
     }
     
-    wikidata_id = fallbackId;
+    rawWikidataId = fallbackId;
   } catch (e) {}
 }
+const wikidata_id = (rawWikidataId && /^Q\d+$/.test(rawWikidataId)) ? rawWikidataId : null;
 const cast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
 const director = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 const cast_en = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;

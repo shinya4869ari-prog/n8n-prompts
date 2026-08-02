@@ -104,7 +104,8 @@ for (const b of bindings) {
     continue;
   }
 
-  const wikidata_id = movieUrl.split('/').pop() || null;
+  const rawWikidataId = movieUrl.split('/').pop() || null;
+  const wikidata_id = (rawWikidataId && /^Q\d+$/.test(rawWikidataId)) ? rawWikidataId : null;
 
   // ★おすすめ映画版のため、データベース既存データの重複排除（除外）は行いません
 
