@@ -1074,7 +1074,7 @@ return [articleItem].map(item => {
       </div>`;
 
       const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;"><img src="${posterUrl}" alt="${titleJa}" style="width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+        ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
         : '';
 
       const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
@@ -1083,20 +1083,20 @@ return [articleItem].map(item => {
       const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
 
       const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
-      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
+      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
 
       article += `
-<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
-  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
     <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">🎬</span>
-        <span style="font-weight:800;font-size:16px;color:#333;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">🎬</span>
+        <span style="font-weight:800;font-size:17px;color:#111;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</span>
       </div>
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
-      ${rankingInfo ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${rankingInfo}</div>` : ''}
+      ${rankingInfo ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${rankingInfo}</div>` : ''}
       ${linkHtml}
     </div>
     ${posterHtml}
