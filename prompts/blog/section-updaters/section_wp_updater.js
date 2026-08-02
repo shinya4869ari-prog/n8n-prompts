@@ -74,7 +74,12 @@ let updatedContent = currentWpHtml.trim();
 let matchFound = false;
 
 function wrap(section, html) {
-  return `<!-- SECTION:${section}:START -->\n${html.trim()}\n<!-- SECTION:${section}:END -->`;
+  // 内部に含まれる既存の SECTION START/END コメントを除去して二重ラップ・タグ漏れを防止
+  const cleanHtml = html
+    .replace(/<!--\s*SECTION:[^>]+?:START\s*-->/gi, '')
+    .replace(/<!--\s*SECTION:[^>]+?:END\s*-->/gi, '')
+    .trim();
+  return `<!-- SECTION:${section}:START -->\n${cleanHtml}\n<!-- SECTION:${section}:END -->`;
 }
 
 // 全ての section-N 見出しの位置を収集
