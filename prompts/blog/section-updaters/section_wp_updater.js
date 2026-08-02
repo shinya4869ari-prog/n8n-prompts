@@ -135,13 +135,13 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
   let existingSec9 = '';
 
   if (movieZone) {
-    const sec8Match = movieZone.match(/<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|$)/i);
-    if (sec8Match && (sec8Match[0].includes('映像で知る') || sec8Match[0].includes('section-8') || sec8Match[0].includes('eizou'))) {
+    const sec8Match = movieZone.match(/<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i);
+    if (sec8Match && (sec8Match[0].includes('映像で知る') || sec8Match[0].includes('section-8') || sec8Match[0].includes('eizou') || sec8Match[0].includes('MOVIE'))) {
       existingSec8 = sec8Match[0].trim();
     }
 
-    const sec9Match = movieZone.match(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|$)/i);
-    if (sec9Match && (sec9Match[0].includes('特別枠') || sec9Match[0].includes('おすすめ映画') || sec9Match[0].includes('section-9') || sec9Match[0].includes('osusume'))) {
+    const sec9Match = movieZone.match(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:特別枠|おすすめ映画)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i);
+    if (sec9Match && (sec9Match[0].includes('特別枠') || sec9Match[0].includes('おすすめ映画') || sec9Match[0].includes('section-9') || sec9Match[0].includes('osusume') || sec9Match[0].includes('RECOMMENDED'))) {
       existingSec9 = sec9Match[0].trim();
     }
   }
