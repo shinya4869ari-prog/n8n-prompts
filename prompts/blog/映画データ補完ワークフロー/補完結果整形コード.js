@@ -73,8 +73,13 @@ return items.map((item, index) => {
   const cast = (aiData.cast && isJapanese(aiData.cast)) ? aiData.cast : (source.cast || aiData.cast || null);
   const cast_en = (isKorea && aiData.cast_en && isHangul(aiData.cast_en)) ? aiData.cast_en : ((aiData.cast_en && !isJapanese(aiData.cast_en)) ? aiData.cast_en : (source.cast_en || null));
 
-  // overview_en: 韓国映画の場合はハングルを優先採択
-  const overview_en = (isKorea && aiData.overview_en && isHangul(aiData.overview_en)) ? aiData.overview_en : (source.overview_en || aiData.overview_en || null);
+  // overview: AIが詳細化・補完した場合はAIの出力を優先採択
+  const overview = (aiData.overview && (aiData.overview.length >= (source.overview || '').length)) ? aiData.overview : (source.overview || aiData.overview || null);
+
+  // overview_en: 韓国映画の場合はハングルを優先、通常はAIが詳細化・補完した出力を優先採択
+  const overview_en = (isKorea && aiData.overview_en && isHangul(aiData.overview_en)) 
+    ? aiData.overview_en 
+    : ((aiData.overview_en && (aiData.overview_en.length >= (source.overview_en || '').length)) ? aiData.overview_en : (source.overview_en || aiData.overview_en || null));
 
   // 1. レコード構築
   const updatedRecord = {
@@ -94,8 +99,8 @@ return items.map((item, index) => {
     cast: cast,
     cast_en: cast_en,
 
-    overview: source.overview || aiData.overview || null,
-    overview_en: source.overview_en || aiData.overview_en || null,
+    overview: overview,
+    overview_en: overview_en,
 
     poster_url: poster_url,
     trailer_url: trailer_url,
