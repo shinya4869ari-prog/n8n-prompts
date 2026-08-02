@@ -113,12 +113,17 @@ return items.map((item, index) => {
 
   // 2. 変更履歴 (changes_summary) の自動解析
   const changes = [];
-  if (!source.cast_en && updatedRecord.cast_en) changes.push("補完: cast_en");
-  if (!source.overview_en && updatedRecord.overview_en) changes.push("補完: overview_en");
-  if (!source.genres && updatedRecord.genres) changes.push("補完: genres");
-  if (!source.director_en && updatedRecord.director_en) changes.push("補完: director_en");
-  if (!source.wikidata_id && updatedRecord.wikidata_id) changes.push("補完: wikidata_id");
-  if (!source.tmdb_id && updatedRecord.tmdb_id) changes.push("補完: tmdb_id");
+  if ((!source.title || source.title !== updatedRecord.title) && updatedRecord.title) changes.push("補完: title");
+  if ((!source.origin_title || source.origin_title !== updatedRecord.origin_title) && updatedRecord.origin_title) changes.push("補完: origin_title");
+  if ((!source.director || source.director !== updatedRecord.director) && updatedRecord.director) changes.push("補完: director");
+  if ((!source.director_en || source.director_en !== updatedRecord.director_en) && updatedRecord.director_en) changes.push("補完: director_en");
+  if ((!source.cast || source.cast !== updatedRecord.cast) && updatedRecord.cast) changes.push("補完: cast");
+  if ((!source.cast_en || source.cast_en !== updatedRecord.cast_en) && updatedRecord.cast_en) changes.push("補完: cast_en");
+  if ((!source.overview || source.overview !== updatedRecord.overview) && updatedRecord.overview) changes.push("補完: overview");
+  if ((!source.overview_en || source.overview_en !== updatedRecord.overview_en) && updatedRecord.overview_en) changes.push("補完: overview_en");
+  if ((!source.genres || source.genres !== updatedRecord.genres) && updatedRecord.genres) changes.push("補完: genres");
+  if ((!source.wikidata_id || source.wikidata_id !== updatedRecord.wikidata_id) && updatedRecord.wikidata_id) changes.push("補完: wikidata_id");
+  if ((!source.tmdb_id || source.tmdb_id !== updatedRecord.tmdb_id) && updatedRecord.tmdb_id) changes.push("補完: tmdb_id");
 
   if (source.tmdb_id && updatedRecord.tmdb_id === null) changes.push("誤データ削除: tmdb_id");
   if (source.poster_url && updatedRecord.poster_url === "") changes.push("誤データ削除: poster_url");
