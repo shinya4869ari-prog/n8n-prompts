@@ -1,19 +1,26 @@
 /**
- * 【各セクション単体更新・4ゾーン分割＆ピンポイント差し替えコード】
- *
- * 記事を「前半(1-7)」「8番ゾーン」「9番ゾーン」「Deep Dive」の4つに物理分割し、
- * 更新するゾーンのみを最新HTMLに差し替えます。他のゾーンは一切変更しません。
+ * 【各セクション単体更新・完全位置判定＆誤上書き防止コード】
+ * 
+ * WordPressの既存記事本文（currentWpHtml）から、指定された section_type のセクションのみを
+ * 他のセクション（1〜10）を一切破壊せずピンポイントで最新HTMLに更新します。
  */
 
 const input = $input.first()?.json || {};
 
+// postIdの取得
 let postId = input.post_id || input.id || null;
+
+// 修正したいセクション種別 ('seido', 'chiri_keizai', 'chian', 'boeki', 'bukka', 'rekishi', 'doukou', 'eizou', 'osusume', 'deep_dive')
 let sectionType = input.section_type || input.section || 'eizou';
 if (Array.isArray(sectionType)) sectionType = sectionType[0];
 
+// 新しく生成・取得したセクションHTML
 let newSectionHtml = input.section_html || input.html || input.movie_section_html || '';
+
+// WordPressから取得した既存の記事本文HTML (WP Get Postノード)
 let currentWpHtml = input.wp_content || (typeof input.content?.rendered === 'string' ? input.content.rendered : '');
 
+// $inputの全アイテムから探索
 for (const item of $input.all()) {
   const j = item.json || {};
   if (!postId && (j.post_id || j.id)) postId = j.post_id || j.id;
@@ -25,6 +32,7 @@ for (const item of $input.all()) {
   }
 }
 
+// 他のノード名からのフォールバック取得
 if (!postId) {
   try {
     postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a post').first()?.json?.id || $('WP Get Post').first()?.json?.id || null;
@@ -82,11 +90,11 @@ let updatedContent = currentWpHtml.trim();
 // ====================================================================
 if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
 
-  // ---- ゾーン境界の特定 ----
+  // ---- ゾーン境界の高度特定（コメントタグ・id属性・h2内文字列の全対応） ----
   // 境界1: 8番の開始位置
-  const sec8StartPattern = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8")/i;
+  const sec8StartPattern = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|映像で知る))/i;
   // 境界2: 9番の開始位置（最初の出現）
-  const sec9StartPattern = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9")/i;
+  const sec9StartPattern = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|特別枠|おすすめ))/i;
   // 境界3: Deep Diveの開始位置
   const deepDivePattern = /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i;
 
@@ -103,22 +111,27 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
     if (!sec8StartMatch) {
       // 8番マーカーが存在しない場合
       if (canonicalSection === 'eizou') {
-        // 最初の9番マーカーの手前に8番を挿入（9番, 9番, 9番... の前に8番を置く）
+        // 8番更新：最初の9番マーカーの手前に8番を挿入
         if (sec9StartMatch) {
           updatedContent = updatedContent.substring(0, sec9StartMatch.index).trimEnd()
             + '\n\n' + newSectionHtml.trim()
             + '\n\n' + updatedContent.substring(sec9StartMatch.index);
         } else {
-          // 9番もない場合はDeep Diveの前に挿入
           updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
             + '\n\n' + newSectionHtml.trim()
             + '\n\n' + updatedContent.substring(deepDivePos);
         }
       } else {
-        // 9番更新で8番もない場合はDeep Diveの前に挿入
-        updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
-          + '\n\n' + newSectionHtml.trim()
-          + '\n\n' + updatedContent.substring(deepDivePos);
+        // 9番更新で8番がない場合：最初の9番開始位置〜Deep Dive手前までの全旧9番を、新しい1つの9番に丸ごと置換！
+        if (sec9StartMatch) {
+          updatedContent = updatedContent.substring(0, sec9StartMatch.index).trimEnd()
+            + '\n\n' + newSectionHtml.trim()
+            + '\n\n' + updatedContent.substring(deepDivePos);
+        } else {
+          updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
+            + '\n\n' + newSectionHtml.trim()
+            + '\n\n' + updatedContent.substring(deepDivePos);
+        }
       }
     } else {
       const sec8Pos = sec8StartMatch.index;
@@ -147,7 +160,6 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       }
 
       // 更新するゾーンだけ差し替え、もう片方はそのまま保持
-      // ※ osusume更新時は「9番ゾーン全体（重複含む）」を新しい1つの9番に完全置換する
       let final8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existing8;
       let final9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existing9;
 
