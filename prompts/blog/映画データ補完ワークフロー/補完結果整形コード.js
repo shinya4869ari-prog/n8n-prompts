@@ -47,10 +47,12 @@ return items.map((item, index) => {
   }
 
   // ID / メディアURLの安全判定
-  // 入力データ(source)に元々URL/IDが入っている場合は、AIの誤判定(Rebecca等の錯覚)による空欄化を防ぎ最優先保持する
-  const tmdb_id = source.tmdb_id ?? aiData.tmdb_id ?? null;
-  const poster_url = (source.poster_url && source.poster_url !== "") ? source.poster_url : (aiData.poster_url || "");
-  const trailer_url = (source.trailer_url && source.trailer_url !== "") ? source.trailer_url : (aiData.trailer_url || "");
+  const isCorrected = aiData.audit_status && String(aiData.audit_status).includes('CORRECTED');
+
+  // 本当に異なる映画の誤データとAIが検証・判定した場合はクリアし、それ以外はAI/元の入力データの正常な値を採択
+  const tmdb_id = (isCorrected && aiData.tmdb_id === null) ? null : (aiData.tmdb_id || source.tmdb_id || null);
+  const poster_url = (isCorrected && (aiData.poster_url === "" || aiData.poster_url === null)) ? "" : (aiData.poster_url || source.poster_url || "");
+  const trailer_url = (isCorrected && (aiData.trailer_url === "" || aiData.trailer_url === null)) ? "" : (aiData.trailer_url || source.trailer_url || "");
 
   // ハングル判定関数
   const isHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
