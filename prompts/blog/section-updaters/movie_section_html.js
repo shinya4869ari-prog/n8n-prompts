@@ -115,15 +115,12 @@ items.forEach(d => {
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
   <div style="display:flex;gap:16px;align-items:flex-start;padding-left:8px;">
     <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
-        <span style="font-weight:800;font-size:16px;">${titleLinkHtml} ${origTitleSpan}</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">🎬</span>
+        <span style="font-weight:800;font-size:16px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</span>
       </div>
-      <div style="font-size:13px;color:#666;margin-bottom:10px;">
-        📅 ${year}${type ? ' &nbsp;•&nbsp; ' + type : ''}
-        ${director ? '<br><span style="color:#555;font-size:12px;">🎬 監督：<span class="no-link">' + director + '</span></span>' : ''}
-        ${cast ? '<br><span style="color:#555;font-size:12px;">👥 キャスト：<span class="no-link">' + cast + '</span></span>' : ''}
-      </div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
+      ${castHtml}
       ${summary ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${summary}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${youtubeBtn}
@@ -139,7 +136,7 @@ items.forEach(d => {
   <div style="display:flex;gap:16px;align-items:flex-start;">
     <div style="flex:1;">
       <div style="font-weight:800;font-size:16px;margin-bottom:6px;">${isSerious ? '⚠️ ' : ''}${titleLinkHtml} ${origTitleSpan}</div>
-      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type} &nbsp;•&nbsp; ${year}${directorStr}</div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
       ${summary ? `<div style="font-size:13.5px;color:#444;line-height:1.6;margin-bottom:10px;">${summary}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
