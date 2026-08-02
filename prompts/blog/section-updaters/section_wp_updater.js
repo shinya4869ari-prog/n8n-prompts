@@ -110,7 +110,7 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
     partB = deepDiveMatch[0];
     const beforeDeepDive = updatedContent.substring(0, deepDiveMatch.index);
 
-    const movieStartMatch = beforeDeepDive.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:<span[^>]*>)?[\s\S]*?(?:映像で知る|特別枠|おすすめ映画))/i);
+    const movieStartMatch = beforeDeepDive.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:映像で知る|特別枠|おすすめ映画))/i);
 
     if (movieStartMatch) {
       partA = beforeDeepDive.substring(0, movieStartMatch.index);
@@ -120,7 +120,7 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       movieZone = '';
     }
   } else {
-    const movieStartMatch = updatedContent.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:<span[^>]*>)?[\s\S]*?(?:映像で知る|特別枠|おすすめ映画))/i);
+    const movieStartMatch = updatedContent.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:映像で知る|特別枠|おすすめ映画))/i);
     if (movieStartMatch) {
       partA = updatedContent.substring(0, movieStartMatch.index);
       movieZone = updatedContent.substring(movieStartMatch.index);
