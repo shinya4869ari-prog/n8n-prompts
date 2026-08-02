@@ -118,53 +118,49 @@ if (currentWpHtml.includes('id="deep-dive"') || currentWpHtml.includes('<!-- SEC
 
 let matchFound = false;
 
-// 1. 新標準フォーマットタグ（<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->）
-const newFormatRegex = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
-
-if (newFormatRegex.test(updatedContent)) {
-  updatedContent = updatedContent.replace(newFormatRegex, newSectionHtml.trim());
-  matchFound = true;
-} else if (canonicalSection === 'eizou') {
-  // --- ⑧ 映像作品セクション更新 ---
-  const h2Section8Regex = /<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2[^>]*id="section-9"|<!-- SECTION:osusume:START -->|<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/i;
+// --- 映画セクション（8番・9番）およびその他セクションの個別更新 ---
+if (canonicalSection === 'eizou') {
+  // 【⑧ 映像作品セクション更新】 常に1番目の映画ブロック位置をターゲット
+  const eizouRegex = /<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2[^>]*id="section-9"|<!-- SECTION:osusume:START -->|<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/i;
   const legacyEizouRegex = /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/i;
 
-  if (h2Section8Regex.test(updatedContent)) {
-    updatedContent = updatedContent.replace(h2Section8Regex, newSectionHtml.trim());
+  if (eizouRegex.test(updatedContent)) {
+    updatedContent = updatedContent.replace(eizouRegex, newSectionHtml.trim());
     matchFound = true;
   } else if (legacyEizouRegex.test(updatedContent)) {
     updatedContent = updatedContent.replace(legacyEizouRegex, newSectionHtml.trim());
     matchFound = true;
   } else {
-    // 【自動修復】8番が消えて9番が2つ重複している場合、1つ目の9番ブロックを8番で自動復元・置換
-    const firstSection9Regex = /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2[^>]*id="section-9"|<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/i;
-    const allSec9Matches = updatedContent.match(/<h2[^>]*id="section-9"/gi);
-    if (allSec9Matches && allSec9Matches.length >= 2 && firstSection9Regex.test(updatedContent)) {
-      updatedContent = updatedContent.replace(firstSection9Regex, newSectionHtml.trim());
+    // 8番タグが消えて1番目の映画ブロックが 9番のタグになってしまっている場合の自動復元置換
+    const firstSec9Regex = /(<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2[^>]*id="section-9"|<!-- SECTION:osusume:START -->|<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$))/i;
+    if (firstSec9Regex.test(updatedContent)) {
+      updatedContent = updatedContent.replace(firstSec9Regex, newSectionHtml.trim());
       matchFound = true;
     }
   }
 } else if (canonicalSection === 'osusume') {
-  // --- ⑨ おすすめ映画セクション更新 ---
-  const h2Section9Regex = /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->|$)/i;
-  const legacyOsusumeRegex = /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i;
+  // 【⑨ おすすめ映画セクション更新】 常に2番目の映画ブロック位置（またはsection-9）をターゲット
+  const osusumeBlocks = updatedContent.match(/(<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$))/gi);
   
-  if (h2Section9Regex.test(updatedContent)) {
-    const allSec9Matches = updatedContent.match(/<h2[^>]*id="section-9"/gi);
-    if (allSec9Matches && allSec9Matches.length >= 2) {
-      let count = 0;
-      updatedContent = updatedContent.replace(/<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/gi, (match) => {
-        count++;
-        return count === 2 ? newSectionHtml.trim() : match;
-      });
+  if (osusumeBlocks && osusumeBlocks.length >= 2) {
+    // 映画ブロックが2つ以上ある場合、1番目(8番の位置)は触らず、必ず2番目を置換！
+    let count = 0;
+    updatedContent = updatedContent.replace(/(<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$))/gi, (match) => {
+      count++;
+      return count === 2 ? newSectionHtml.trim() : match;
+    });
+    matchFound = true;
+  } else {
+    const singleOsusumeRegex = /<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|$)/i;
+    const legacyOsusumeRegex = /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i;
+
+    if (singleOsusumeRegex.test(updatedContent)) {
+      updatedContent = updatedContent.replace(singleOsusumeRegex, newSectionHtml.trim());
       matchFound = true;
-    } else {
-      updatedContent = updatedContent.replace(h2Section9Regex, newSectionHtml.trim());
+    } else if (legacyOsusumeRegex.test(updatedContent)) {
+      updatedContent = updatedContent.replace(legacyOsusumeRegex, newSectionHtml.trim());
       matchFound = true;
     }
-  } else if (legacyOsusumeRegex.test(updatedContent)) {
-    updatedContent = updatedContent.replace(legacyOsusumeRegex, newSectionHtml.trim());
-    matchFound = true;
   }
 } else {
   // 他の標準セクション（制度、歴史、治安、Deep Dive等）
