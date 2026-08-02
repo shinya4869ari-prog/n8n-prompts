@@ -116,18 +116,7 @@ items.forEach(d => {
   const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
 
   const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
-  
-  // キャスト表記の最適化（多すぎる場合は上位3名＋「ほか」でスッキリ化）
-  let castFormatted = cast;
-  if (cast && cast !== 'EMPTY') {
-    const castArr = String(cast).split(/[,、]/).map(s => s.trim()).filter(Boolean);
-    if (castArr.length > 3) {
-      castFormatted = castArr.slice(0, 3).join('、 ') + ' ほか';
-    } else {
-      castFormatted = castArr.join('、 ');
-    }
-  }
-  const castHtml = castFormatted ? `<div style="font-size:12.5px;color:#555;margin-bottom:10px;line-height:1.4;">👥 キャスト：<span class="no-link">${castFormatted}</span></div>` : '';
+  const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
   const posterHtml = posterUrl ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
 
   const origTitleSpan = titleOrig ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';

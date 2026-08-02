@@ -957,16 +957,7 @@ return [articleItem].map(item => {
       const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
 
       const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
-      let castFormatted = cast;
-      if (cast && cast !== '空白' && cast !== '-') {
-        const castArr = String(cast).split(/[,、]/).map(s => s.trim()).filter(Boolean);
-        if (castArr.length > 3) {
-          castFormatted = castArr.slice(0, 3).join('、 ') + ' ほか';
-        } else {
-          castFormatted = castArr.join('、 ');
-        }
-      }
-      const castHtml = castFormatted ? `<div style="font-size:12.5px;color:#555;margin-bottom:10px;line-height:1.4;">👥 キャスト：<span class="no-link">${castFormatted}</span></div>` : '';
+      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
       const posterPath = apiData['poster_path'] || apiData['poster_url'];
       let posterUrl = '';
       if (posterPath) {
