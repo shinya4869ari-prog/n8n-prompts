@@ -11,22 +11,25 @@ if (!items || items.length === 0) {
   return [{ json: { html: '', section_html: '' } }];
 }
 
-// フォーム/トリガー/アイテムからの入力情報
+// フォーム/トリガーからの入力情報（section_type は必ずここだけを信頼する。
+// items（Supabaseの映画データ行）側に同名フィールドが紛れていても
+// 絶対に上書きさせない。これが⑧⑨混同バグの原因だったため。）
 let countryName = '対象国';
-let sectionType = 'eizou'; // 'eizou' または 'osusume'
+let sectionType = null;
 
 try {
   const trig = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
   countryName = trig.country_name || trig.country_ja || trig.country || countryName;
-  sectionType = trig.section_type || trig.section || sectionType;
-} catch(e) {}
+  sectionType = trig.section_type || trig.section || null;
+} catch (e) {}
 
-// 入力アイテム(items)からのフォールバック取得
+// countryNameのみ、items からのフォールバックを許可（section_typeは絶対に許可しない）
 if ((countryName === '対象国' || countryName === 'BT') && items[0]) {
   countryName = items[0].country_name || items[0].country_ja || items[0].country || countryName;
 }
-if (items[0] && (items[0].section_type || items[0].section)) {
-  sectionType = items[0].section_type || items[0].section || sectionType;
+
+if (!sectionType) {
+  throw new Error('[映画セクション生成エラー] トリガーから section_type（eizou/osusume）を取得できませんでした。items側のデータでの代用は行いません。呼び出し元ノードのパラメータを確認してください。');
 }
 
 // 国コード（ISO等）から日本語表記への簡易マッピング補正
@@ -39,6 +42,12 @@ if (countryCodeMap[countryName]) {
 
 const sectionStr = String(sectionType).toLowerCase();
 const isOsusume = sectionStr === 'osusume' || sectionStr === 'recommend' || sectionStr === '9' || sectionStr.includes('おすすめ');
+const isEizou = sectionStr === 'eizou' || sectionStr === '8' || sectionStr.includes('映像');
+
+if (!isOsusume && !isEizou) {
+  throw new Error(`[映画セクション生成エラー] section_type「${sectionType}」が eizou/osusume のどちらとも判定できませんでした。処理を中止しました。`);
+}
+
 const sectionId = isOsusume ? 'osusume' : 'eizou';
 
 const h2Style = `margin-top:60px;padding:14px 20px;background:#f5f5f5;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
@@ -68,29 +77,26 @@ items.forEach(d => {
   const titleOrig = (d.origin_title && d.origin_title !== d.title) ? d.origin_title : (d.原題 || '');
   const type = d.genres || d.種別 || d.type || '';
   const year = d.year || d.公開年 || d.release_year || '';
-  
+
   const director = (d.director && d.director !== 'EMPTY') ? d.director : (d.director_en && d.director_en !== 'EMPTY' ? d.director_en : '');
   const cast = (d.cast && d.cast !== 'EMPTY') ? d.cast : (d.cast_en && d.cast_en !== 'EMPTY' ? d.cast_en : '');
   const summary = (d.overview && d.overview !== 'EMPTY') ? d.overview : (d.overview_en && d.overview_en !== 'EMPTY' ? d.overview_en : '');
-  
+
   const isSerious = d.is_serious === true || d.is_serious === 'true' || d.深刻 === 'true';
 
   const bg = isSerious ? '#fff3f3' : '#ffffff';
   const posterUrl = getPosterUrl(d.poster_url || d.poster_path);
 
-  // 国家の天秤 歴史館 ポップアップ＆直リンク生成
-  // 英語原題 (origin_title) があればそちらを検索クエリ優先採用して確実にヒットさせる
   const searchQuery = titleOrig || titleJa;
   const popupTitleStr = titleOrig ? `${titleJa} (${titleOrig})` : titleJa;
-  
+
   const mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(searchQuery)}`;
   const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
   const n = enc(popupTitleStr);
   const i = enc(linkHTML);
   const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
   const titleLinkHtml = `<span style="color:#00bcd4;border-bottom:1px dashed #00bcd4;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${titleJa}</span>`;
-  
-  // 予告編リンク
+
   let youtubeBtn = '';
   if (d.trailer_url && d.trailer_url.includes('http') && d.trailer_url !== 'EMPTY') {
     youtubeBtn = `<a href="${d.trailer_url}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>`;
@@ -98,7 +104,6 @@ items.forEach(d => {
     youtubeBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube検索</a>`;
   }
 
-  // IMDb リンク (直リンク/IDがあれば作品ページへ、無ければIMDb検索へフォールバック)
   let imdbUrl = '';
   const rawImdb = d.imdb_id || d.imdb_url || d.imdb || '';
   if (rawImdb) {
@@ -173,5 +178,3 @@ return [{
     section_type: sectionId
   }
 }];
-
-

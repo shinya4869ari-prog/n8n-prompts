@@ -1,10 +1,3 @@
-/**
- * 【各セクション単体更新・位置インデックス分割方式】
- * 
- * 記事全体の「8番見出し位置」「9番見出し位置」「Deep Dive位置」をインデックスで正確に測定し、
- * 対象セクションの区間のみをピンポイントで置換します。
- */
-
 const input = $input.first()?.json || {};
 
 let postId = input.post_id || input.id || null;
@@ -28,7 +21,7 @@ for (const item of $input.all()) {
 if (!postId) {
   try {
     postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a post').first()?.json?.id || $('WP Get Post').first()?.json?.id || null;
-  } catch(e) {}
+  } catch (e) {}
 }
 
 if (!newSectionHtml) {
@@ -40,7 +33,7 @@ if (!newSectionHtml) {
         newSectionHtml = n.section_html || n.movie_section_html || n.html;
         break;
       }
-    } catch(e) {}
+    } catch (e) {}
   }
 }
 
@@ -56,7 +49,7 @@ if (!currentWpHtml) {
         currentWpHtml = n.content;
         break;
       }
-    } catch(e) {}
+    } catch (e) {}
   }
 }
 
@@ -74,137 +67,125 @@ const sectionAliasMap = {
   movie: 'eizou', institution: 'seido', history: 'rekishi', crime: 'chian'
 };
 
+const numMap = { seido: 1, chiri_keizai: 2, chian: 3, boeki: 4, bukka: 5, rekishi: 6, doukou: 7, eizou: 8, osusume: 9 };
+
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
 let matchFound = false;
 
-if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
-  // ====================================================================
-  // 映画セクション (8番 eizou & 9番 osusume) 位置インデックス分割置換
-  // ====================================================================
-  
-  // 1. 8番の開始位置を検索 (コメントタグ、id属性、または <h2>...⑧ / 映像で知る)
-  const sec8Regex = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑧|8\.|映像で知る))/i;
-  const sec8Match = updatedContent.match(sec8Regex);
-  const h8Pos = sec8Match ? sec8Match.index : -1;
+function wrap(section, html) {
+  return `<!-- SECTION:${section}:START -->\n${html.trim()}\n<!-- SECTION:${section}:END -->`;
+}
 
-  // 2. 9番の開始位置を検索 (8番の開始位置より後ろにあるものを優先)
-  const sec9Regex = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:⑨|9\.|特別枠|おすすめ))/gi;
-  let h9Pos = -1;
+// 全ての section-N 見出しの位置を収集
+function findAllSectionHeaders(text) {
+  const re = /<h2[^>]*id="section-(\d+)"[^>]*>/gi;
+  const list = [];
   let m;
-  while ((m = sec9Regex.exec(updatedContent)) !== null) {
-    if (h8Pos === -1 || m.index > h8Pos) {
-      h9Pos = m.index;
-      break;
-    }
+  while ((m = re.exec(text)) !== null) list.push({ num: parseInt(m[1], 10), index: m.index });
+  return list;
+}
+
+function findAllDeepDiveMarkers(text) {
+  const re = /<div id="deep-dive"[^>]*>/gi;
+  const list = [];
+  let m;
+  while ((m = re.exec(text)) !== null) list.push(m.index);
+  return list;
+}
+
+function findNextBoundary(text, pos, headers, deepDives) {
+  let candidates = [];
+  headers.forEach(h => { if (h.index > pos) candidates.push(h.index); });
+  deepDives.forEach(d => { if (d > pos) candidates.push(d); });
+  if (candidates.length === 0) return text.length;
+  return Math.min(...candidates);
+}
+
+// id="section-N" 基準の置換（重複があれば自動で1つに畳み込む）
+function replaceNumberedSection(text, num, section, newHtml) {
+  const headers = findAllSectionHeaders(text);
+  const deepDives = findAllDeepDiveMarkers(text);
+  const starts = headers.filter(h => h.num === num).map(h => h.index).sort((a, b) => a - b);
+
+  if (starts.length === 0) {
+    throw new Error(`[置換エラー] id="section-${num}" の見出しが見つかりませんでした。生成側のH2に id="section-${num}" が付与されているか確認してください。処理を中止しました（誤消失・重複を避けるため）。`);
   }
 
-  // 3. Deep Dive の開始位置を検索
-  const deepDiveRegex = /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->|<h2[^>]*id="deep-dive"|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?Deep Dive)/i;
-  const deepDiveMatch = updatedContent.match(deepDiveRegex);
-  const hdPos = deepDiveMatch ? deepDiveMatch.index : -1;
+  const firstStart = starts[0];
+  const lastStart = starts[starts.length - 1];
+  const boundaryAfterLast = findNextBoundary(text, lastStart, headers, deepDives);
 
-  if (canonicalSection === 'eizou') {
-    // ------------------------------------------------------------------
-    // 【8番 (eizou) の更新】
-    // ------------------------------------------------------------------
-    if (h8Pos !== -1) {
-      // 前半: 0 〜 h8Pos (1〜7セクション)
-      const partBefore = updatedContent.substring(0, h8Pos).trimEnd();
-      
-      // 後半: h9Pos があれば h9Pos 以降 (9番＋DeepDive)、なければ hdPos 以降
-      let partAfter = '';
-      if (h9Pos !== -1 && h9Pos > h8Pos) {
-        partAfter = updatedContent.substring(h9Pos).trimStart();
-      } else if (hdPos !== -1 && hdPos > h8Pos) {
-        partAfter = updatedContent.substring(hdPos).trimStart();
-      }
+  const partBefore = text.substring(0, firstStart).trimEnd();
+  const partAfter = text.substring(boundaryAfterLast).trimStart();
 
-      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + (partAfter ? '\n\n' + partAfter : '');
-      matchFound = true;
-    } else if (h9Pos !== -1) {
-      // 8番が見つからない場合は 9番の手前に挿入
-      const partBefore = updatedContent.substring(0, h9Pos).trimEnd();
-      const partAfter = updatedContent.substring(h9Pos).trimStart();
-      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
-      matchFound = true;
-    } else if (hdPos !== -1) {
-      // 9番もない場合は Deep Dive の手前に挿入
-      const partBefore = updatedContent.substring(0, hdPos).trimEnd();
-      const partAfter = updatedContent.substring(hdPos).trimStart();
-      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
-      matchFound = true;
-    } else {
-      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
-      matchFound = true;
+  return partBefore + '\n\n' + wrap(section, newHtml) + '\n\n' + partAfter;
+}
+
+// ---------------------------------------------------------------
+// 0. コメントマーカーが完全な形（START/ENDが1組だけ）で存在する場合は最優先で使う
+//    ⑧⑨含め、全セクション共通のルート
+// ---------------------------------------------------------------
+{
+  const startRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->`, 'gi');
+  const endRe = new RegExp(`<!-- SECTION:${canonicalSection}:END -->`, 'gi');
+  const startCount = (updatedContent.match(startRe) || []).length;
+  const endCount = (updatedContent.match(endRe) || []).length;
+
+  if (startCount === 1 && endCount === 1) {
+    const commentRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
+    updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
+    matchFound = true;
+  } else if (startCount > 1 || endCount > 1) {
+    // コメントマーカー自体が壊れて重複している場合は、id基準（⑧⑨）以外は危険なので停止
+    if (!(canonicalSection === 'eizou' || canonicalSection === 'osusume')) {
+      throw new Error(`[置換エラー] 「${canonicalSection}」のSECTIONコメントが重複しています（START:${startCount}件, END:${endCount}件）。本文を手動確認してください。`);
     }
-
-  } else if (canonicalSection === 'osusume') {
-    // ------------------------------------------------------------------
-    // 【9番 (osusume) の更新】
-    // ------------------------------------------------------------------
-    if (h9Pos !== -1) {
-      // 前半: 0 〜 h9Pos (1〜7セクション ＋ 8番セクション全体が含まれる)
-      let partBefore = updatedContent.substring(0, h9Pos).trimEnd();
-      
-      // 前半に含まれる孤立した <!-- SECTION:osusume:START --> コメントがあれば掃除
-      const junkOsusume = partBefore.lastIndexOf('<!-- SECTION:osusume:START -->');
-      if (junkOsusume !== -1 && (h8Pos === -1 || junkOsusume < h8Pos)) {
-        partBefore = partBefore.substring(0, junkOsusume).trimEnd();
-      }
-
-      // 後半: hdPos (Deep Dive) 以降。なければ末尾
-      let partAfter = '';
-      if (hdPos !== -1 && hdPos > h9Pos) {
-        partAfter = updatedContent.substring(hdPos).trimStart();
-      }
-
-      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + (partAfter ? '\n\n' + partAfter : '');
-      matchFound = true;
-    } else if (hdPos !== -1) {
-      // 9番が見つからない場合は Deep Dive の手前に挿入 (8番は保持される)
-      const partBefore = updatedContent.substring(0, hdPos).trimEnd();
-      const partAfter = updatedContent.substring(hdPos).trimStart();
-      updatedContent = partBefore + '\n\n' + newSectionHtml.trim() + '\n\n' + partAfter;
-      matchFound = true;
-    } else {
-      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
-      matchFound = true;
-    }
+    // eizou/osusumeはこの後 id="section-N" 方式のフォールバックへ進む
   }
+}
 
-} else {
-  // ====================================================================
-  // その他のセクション (1〜7, 10 Deep Dive): ピンポイント置換
-  // ====================================================================
-  const sectionPatterns = {
-    deep_dive: [
-      /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
-      /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
-      /<div id="deep-dive"[\s\S]*$/i
-    ],
-    seido: [/<!-- SECTION:seido:START -->[\s\S]*?<!-- SECTION:seido:END -->/i, /<!-- START_INSTITUTION_SECTION -->[\s\S]*?<!-- END_INSTITUTION_SECTION -->/i, /<h2[^>]*id="section-1"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    chiri_keizai: [/<!-- SECTION:chiri_keizai:START -->[\s\S]*?<!-- SECTION:chiri_keizai:END -->/i, /<h2[^>]*id="section-2"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    chian: [/<!-- SECTION:chian:START -->[\s\S]*?<!-- SECTION:chian:END -->/i, /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/i, /<h2[^>]*id="section-3"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    boeki: [/<!-- SECTION:boeki:START -->[\s\S]*?<!-- SECTION:boeki:END -->/i, /<h2[^>]*id="section-4"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    bukka: [/<!-- SECTION:bukka:START -->[\s\S]*?<!-- SECTION:bukka:END -->/i, /<h2[^>]*id="section-5"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    rekishi: [/<!-- SECTION:rekishi:START -->[\s\S]*?<!-- SECTION:rekishi:END -->/i, /<!-- START_HISTORY_SECTION -->[\s\S]*?<!-- END_HISTORY_SECTION -->/i, /<h2[^>]*id="section-6"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-    doukou: [/<!-- SECTION:doukou:START -->[\s\S]*?<!-- SECTION:doukou:END -->/i, /<h2[^>]*id="section-7"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i]
-  };
+// ---------------------------------------------------------------
+// 1. コメントマーカーで解決しなかった場合のフォールバック
+// ---------------------------------------------------------------
+if (!matchFound) {
 
-  const patterns = sectionPatterns[canonicalSection] || [
-    new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i')
-  ];
+  if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+    const num = numMap[canonicalSection];
+    updatedContent = replaceNumberedSection(updatedContent, num, canonicalSection, newSectionHtml);
+    matchFound = true;
 
-  for (const pattern of patterns) {
-    if (pattern.test(updatedContent)) {
-      updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
-      matchFound = true;
-      break;
+  } else {
+    const sectionPatterns = {
+      deep_dive: [
+        /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
+        /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
+        /<div id="deep-dive"[\s\S]*$/i
+      ],
+      seido: [/<h2[^>]*id="section-1"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      chiri_keizai: [/<h2[^>]*id="section-2"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      chian: [/<h2[^>]*id="section-3"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      boeki: [/<h2[^>]*id="section-4"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      bukka: [/<h2[^>]*id="section-5"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      rekishi: [/<h2[^>]*id="section-6"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+      doukou: [/<h2[^>]*id="section-7"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i]
+    };
+
+    const patterns = sectionPatterns[canonicalSection] || [
+      new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i')
+    ];
+
+    for (const pattern of patterns) {
+      if (pattern.test(updatedContent)) {
+        updatedContent = updatedContent.replace(pattern, wrap(canonicalSection, newSectionHtml));
+        matchFound = true;
+        break;
+      }
     }
-  }
-  if (!matchFound) {
-    updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+
+    if (!matchFound) {
+      throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
+    }
   }
 }
 
