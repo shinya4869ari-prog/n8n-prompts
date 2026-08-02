@@ -120,7 +120,7 @@ function replaceNumberedSection(text, num, section, newHtml) {
   let partAfter = text.substring(boundaryAfterLast).trimStart();
 
   // 見出しの手前や直後に残っている対象セクションの不要なタグ（増殖の元凶）を完全除去・掃除
-  const junkRe = new RegExp(`(<p>)?\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->(<br\\s*\\/?>|<\\/p>)?`, 'gi');
+  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
   partBefore = partBefore.replace(junkRe, '').trimEnd();
   partAfter = partAfter.replace(junkRe, '').trimStart();
 
