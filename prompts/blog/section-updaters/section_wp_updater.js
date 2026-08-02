@@ -83,14 +83,15 @@ let updatedContent = currentWpHtml.trim();
 if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
 
   // ---- ゾーン境界の特定 ----
-  // 境界1: 8番の開始位置（記事の途中）
+  // 境界1: 8番の開始位置
   const sec8StartPattern = /(<!-- SECTION:eizou:START -->|<!-- START_MOVIE_SECTION -->|<h2[^>]*id="section-8")/i;
-  // 境界2: 9番の開始位置
+  // 境界2: 9番の開始位置（最初の出現）
   const sec9StartPattern = /(<!-- SECTION:osusume:START -->|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9")/i;
   // 境界3: Deep Diveの開始位置
   const deepDivePattern = /(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i;
 
   const sec8StartMatch = updatedContent.match(sec8StartPattern);
+  const sec9StartMatch = updatedContent.match(sec9StartPattern);
   const deepDiveStartMatch = updatedContent.match(deepDivePattern);
 
   if (!deepDiveStartMatch) {
@@ -100,11 +101,19 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
     const deepDivePos = deepDiveStartMatch.index;
 
     if (!sec8StartMatch) {
-      // 8番自体が見つからない場合は Deep Dive の前に新規挿入
+      // 8番マーカーが存在しない場合
       if (canonicalSection === 'eizou') {
-        updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
-          + '\n\n' + newSectionHtml.trim()
-          + '\n\n' + updatedContent.substring(deepDivePos);
+        // 最初の9番マーカーの手前に8番を挿入（9番, 9番, 9番... の前に8番を置く）
+        if (sec9StartMatch) {
+          updatedContent = updatedContent.substring(0, sec9StartMatch.index).trimEnd()
+            + '\n\n' + newSectionHtml.trim()
+            + '\n\n' + updatedContent.substring(sec9StartMatch.index);
+        } else {
+          // 9番もない場合はDeep Diveの前に挿入
+          updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
+            + '\n\n' + newSectionHtml.trim()
+            + '\n\n' + updatedContent.substring(deepDivePos);
+        }
       } else {
         // 9番更新で8番もない場合はDeep Diveの前に挿入
         updatedContent = updatedContent.substring(0, deepDivePos).trimEnd()
@@ -120,7 +129,7 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       // Deep Dive以降
       const partDeepDive = updatedContent.substring(deepDivePos);
 
-      // movieArea の中から8番ブロックを抽出（最初の境界から9番の始まりまで）
+      // movieArea の中から9番の開始位置を特定
       const sec9InMovieMatch = movieArea.match(sec9StartPattern);
 
       let existing8 = '';
@@ -129,7 +138,7 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       if (sec9InMovieMatch) {
         // 8番ゾーン = movieArea の先頭〜9番開始前
         existing8 = movieArea.substring(0, sec9InMovieMatch.index).trim();
-        // 9番ゾーン = 9番開始〜movieArea末尾
+        // 9番ゾーン = 9番開始〜movieArea末尾（重複・旧ゴミ含む全部）
         existing9 = movieArea.substring(sec9InMovieMatch.index).trim();
       } else {
         // 9番が見当たらない場合はmovieArea全体を8番として扱う
@@ -138,6 +147,7 @@ if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
       }
 
       // 更新するゾーンだけ差し替え、もう片方はそのまま保持
+      // ※ osusume更新時は「9番ゾーン全体（重複含む）」を新しい1つの9番に完全置換する
       let final8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existing8;
       let final9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existing9;
 
