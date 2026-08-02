@@ -1,8 +1,8 @@
 /**
- * 【各セクション単体更新・万能HTML置換＆映画ゾーン全自動クリーンアップコード】
+ * 【各セクション単体更新・ピンポイント置換＆位置保持コード】
  * 
- * WordPressの既存記事本文（currentWpHtml）から、指定された section_type のセクションブロックのみを
- * 最新の生成HTMLで安全に置き換え（Update）します。
+ * WordPressの既存記事本文（currentWpHtml）から、指定された section_type のセクションのみを
+ * 他のセクション（1〜10）を一切破壊せずピンポイントで最新HTMLに更新します。
  */
 
 const input = $input.first()?.json || {};
@@ -96,91 +96,71 @@ const sectionAliasMap = {
 
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
+let matchFound = false;
 
-// --- 映画セクション（8番 eizou & 9番 osusume）のゾーン再構築アルゴリズム ---
-if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
-  // 1. 本文を「映画ゾーンより前(Part A)」「映画ゾーン(Movie Zone)」「Deep-Dive以降(Part B)」に完全3分割
-  let partA = '';
-  let movieZone = '';
-  let partB = '';
+// 1. 各セクションのピンポイント置換パターン定義
+const sectionPatterns = {
+  eizou: [
+    /<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->/i,
+    /<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->/i,
+    /<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
+    /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?映像で知る[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
+  ],
+  osusume: [
+    /<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->/i,
+    /<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->/i,
+    /<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i,
+    /<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:特別枠|おすすめ映画)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|<div id="deep-dive"|$)/i
+  ],
+  deep_dive: [
+    /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
+    /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
+    /<div id="deep-dive"[\s\S]*$/i
+  ],
+  seido: [/<!-- SECTION:seido:START -->[\s\S]*?<!-- SECTION:seido:END -->/i, /<!-- START_INSTITUTION_SECTION -->[\s\S]*?<!-- END_INSTITUTION_SECTION -->/i, /<h2[^>]*id="section-1"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  chiri_keizai: [/<!-- SECTION:chiri_keizai:START -->[\s\S]*?<!-- SECTION:chiri_keizai:END -->/i, /<h2[^>]*id="section-2"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  chian: [/<!-- SECTION:chian:START -->[\s\S]*?<!-- SECTION:chian:END -->/i, /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/i, /<h2[^>]*id="section-3"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  boeki: [/<!-- SECTION:boeki:START -->[\s\S]*?<!-- SECTION:boeki:END -->/i, /<h2[^>]*id="section-4"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  bukka: [/<!-- SECTION:bukka:START -->[\s\S]*?<!-- SECTION:bukka:END -->/i, /<h2[^>]*id="section-5"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  rekishi: [/<!-- SECTION:rekishi:START -->[\s\S]*?<!-- SECTION:rekishi:END -->/i, /<!-- START_HISTORY_SECTION -->[\s\S]*?<!-- END_HISTORY_SECTION -->/i, /<h2[^>]*id="section-6"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
+  doukou: [/<!-- SECTION:doukou:START -->[\s\S]*?<!-- SECTION:doukou:END -->/i, /<h2[^>]*id="section-7"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i]
+};
 
-  const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->[\s\S]*)/i);
+const patterns = sectionPatterns[canonicalSection] || [
+  new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i')
+];
 
-  if (deepDiveMatch) {
-    partB = deepDiveMatch[0];
-    const beforeDeepDive = updatedContent.substring(0, deepDiveMatch.index);
+// 既存コンテンツ内から対象セクションを探して置換
+for (const pattern of patterns) {
+  if (pattern.test(updatedContent)) {
+    updatedContent = updatedContent.replace(pattern, newSectionHtml.trim());
+    matchFound = true;
+    break;
+  }
+}
 
-    const movieStartMatch = beforeDeepDive.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:映像で知る|特別枠|おすすめ映画))/i);
-
-    if (movieStartMatch) {
-      partA = beforeDeepDive.substring(0, movieStartMatch.index);
-      movieZone = beforeDeepDive.substring(movieStartMatch.index);
+// もし既存記事内に該当セクションが見つからなかった場合のスマート挿入
+if (!matchFound) {
+  if (canonicalSection === 'eizou') {
+    // 8番(eizou)がない場合 ➔ 9番の前、あるいは Deep Dive の前に挿入
+    const osusumeMatch = updatedContent.match(/(<!-- SECTION:osusume:START -->|<h2[^>]*id="section-9"|<!-- START_RECOMMENDED_SECTION -->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:特別枠|おすすめ映画))/i);
+    const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+    if (osusumeMatch) {
+      updatedContent = updatedContent.substring(0, osusumeMatch.index) + newSectionHtml.trim() + '\n\n' + updatedContent.substring(osusumeMatch.index);
+    } else if (deepDiveMatch) {
+      updatedContent = updatedContent.substring(0, deepDiveMatch.index) + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDiveMatch.index);
     } else {
-      partA = beforeDeepDive;
-      movieZone = '';
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
+    }
+  } else if (canonicalSection === 'osusume') {
+    // 9番(osusume)がない場合 ➔ Deep Dive の前に挿入
+    const deepDiveMatch = updatedContent.match(/(<div id="deep-dive"|<!-- SECTION:deep_dive:START -->|<!-- START_DEEP_DIVE_SECTION -->)/i);
+    if (deepDiveMatch) {
+      updatedContent = updatedContent.substring(0, deepDiveMatch.index) + newSectionHtml.trim() + '\n\n' + updatedContent.substring(deepDiveMatch.index);
+    } else {
+      updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
     }
   } else {
-    const movieStartMatch = updatedContent.match(/(<!-- SECTION:(?:eizou|osusume):START -->|<h2[^>]*id="section-[89]"|<!-- START_(?:MOVIE|RECOMMENDED)_SECTION -->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:映像で知る|特別枠|おすすめ映画))/i);
-    if (movieStartMatch) {
-      partA = updatedContent.substring(0, movieStartMatch.index);
-      movieZone = updatedContent.substring(movieStartMatch.index);
-    } else {
-      partA = updatedContent;
-      movieZone = '';
-    }
-  }
-
-  // 2. 既存の映画ゾーンの中から、正しい 8番(eizou) と 9番(osusume) のブロックを抽出（重複・旧ゴミは排除）
-  let existingSec8 = '';
-  let existingSec9 = '';
-
-  if (movieZone) {
-    const sec8Match = movieZone.match(/<!-- SECTION:eizou:START -->[\s\S]*?<!-- SECTION:eizou:END -->|<!-- START_MOVIE_SECTION -->[\s\S]*?<!-- END_MOVIE_SECTION -->|<h2[^>]*id="section-8"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i);
-    if (sec8Match && (sec8Match[0].includes('映像で知る') || sec8Match[0].includes('section-8') || sec8Match[0].includes('eizou') || sec8Match[0].includes('MOVIE'))) {
-      existingSec8 = sec8Match[0].trim();
-    }
-
-    const sec9Match = movieZone.match(/<!-- SECTION:osusume:START -->[\s\S]*?<!-- SECTION:osusume:END -->|<!-- START_RECOMMENDED_SECTION -->[\s\S]*?<!-- END_RECOMMENDED_SECTION -->|<h2[^>]*id="section-9"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?(?:特別枠|おすすめ映画)[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i);
-    if (sec9Match && (sec9Match[0].includes('特別枠') || sec9Match[0].includes('おすすめ映画') || sec9Match[0].includes('section-9') || sec9Match[0].includes('osusume') || sec9Match[0].includes('RECOMMENDED'))) {
-      existingSec9 = sec9Match[0].trim();
-    }
-  }
-
-  // 3. 更新された最新セクションHTMLをセットし、映画ゾーンを「8番 ➔ 9番」の順序で完全固定再構築！
-  let finalSec8 = canonicalSection === 'eizou' ? newSectionHtml.trim() : existingSec8;
-  let finalSec9 = canonicalSection === 'osusume' ? newSectionHtml.trim() : existingSec9;
-
-  let rebuiltMovieZone = '';
-  if (finalSec8 && finalSec9) {
-    rebuiltMovieZone = `${finalSec8}\n\n${finalSec9}`;
-  } else if (finalSec8) {
-    rebuiltMovieZone = finalSec8;
-  } else if (finalSec9) {
-    rebuiltMovieZone = finalSec9;
-  }
-
-  // Part A + 再構築された映画ゾーン + Part B を結合！
-  updatedContent = partA.trim() + '\n\n' + rebuiltMovieZone + (partB ? '\n\n' + partB.trim() : '');
-} else {
-  // 他のセクション (1〜7, 10) の更新
-  const newFormatRegex = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
-  const legacyRegexMap = {
-    deep_dive: /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
-    seido: /<!-- START_INSTITUTION_SECTION -->[\s\S]*?<!-- END_INSTITUTION_SECTION -->/i,
-    rekishi: /<!-- START_HISTORY_SECTION -->[\s\S]*?<!-- END_HISTORY_SECTION -->/i,
-    chian: /<!-- START_CRIME_SECTION -->[\s\S]*?<!-- END_CRIME_SECTION -->/i
-  };
-
-  let matchFound = false;
-  if (newFormatRegex.test(updatedContent)) {
-    updatedContent = updatedContent.replace(newFormatRegex, newSectionHtml.trim());
-    matchFound = true;
-  } else if (legacyRegexMap[canonicalSection] && legacyRegexMap[canonicalSection].test(updatedContent)) {
-    updatedContent = updatedContent.replace(legacyRegexMap[canonicalSection], newSectionHtml.trim());
-    matchFound = true;
-  }
-
-  if (!matchFound) {
     updatedContent = updatedContent.trim() + '\n\n' + newSectionHtml.trim();
   }
 }
@@ -190,6 +170,6 @@ return [{
     post_id: postId,
     content: updatedContent,
     updated_section: canonicalSection,
-    match_found: true
+    match_found: matchFound
   }
 }];
