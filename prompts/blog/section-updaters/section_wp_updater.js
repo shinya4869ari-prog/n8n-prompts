@@ -31,6 +31,9 @@ if (!newSectionHtml) {
       const n = $(name).first()?.json;
       if (n?.section_html || n?.movie_section_html || n?.html) {
         newSectionHtml = n.section_html || n.movie_section_html || n.html;
+        if (!input.section_type && !input.section && (n.section_type || n.section)) {
+          sectionType = n.section_type || n.section;
+        }
         break;
       }
     } catch (e) {}
