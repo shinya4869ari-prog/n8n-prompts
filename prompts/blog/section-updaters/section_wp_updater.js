@@ -124,8 +124,8 @@ function replaceNumberedSection(text, num, section, newHtml) {
   let partBefore = text.substring(0, firstStart).trimEnd();
   let partAfter = text.substring(boundaryAfterLast).trimStart();
 
-  // 見出しの手前や直後に残っている映画セクション(eizou/osusume)の不要なタグ（増殖の元凶）を完全除去・掃除
-  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:(eizou|osusume):(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
+  // 見出しの手前や直後に残っている対象セクションの不要なゴミタグのみを除去・掃除（他セクションのタグは一切壊さない）
+  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
   partBefore = partBefore.replace(junkRe, '').trimEnd();
   partAfter = partAfter.replace(junkRe, '').trimStart();
 
