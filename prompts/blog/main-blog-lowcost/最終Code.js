@@ -1011,10 +1011,10 @@ return [articleItem].map(item => {
   const eizouNeko = getNekoBubbleForSection('⑧');
   article += makeNekoBubble(eizouNeko);
   article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
-  article += `<!-- SECTION:eizou:END -->\n`;
+  article += `\n<!-- SECTION:eizou:END -->\n\n`;
 
   // --- 14. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
-  article += `<!-- SECTION:osusume:START -->\n`;
+  article += `\n<!-- SECTION:osusume:START -->\n`;
   const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
   
