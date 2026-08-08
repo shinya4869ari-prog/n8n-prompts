@@ -25,8 +25,8 @@ if (!postId) {
 }
 
 if (!newSectionHtml) {
-  const possibleMovieNodes = ['movie_section_html', '映画セクションHTML', '映画セクションHTML生成', 'Code', '映画10本の一括取得'];
-  for (const name of possibleMovieNodes) {
+  const possibleSectionNodes = ['music_section_html', 'movie_section_html', '音楽セクションHTML', '映画セクションHTML', '映画セクションHTML生成', 'Code', '映画10本の一括取得'];
+  for (const name of possibleSectionNodes) {
     try {
       const n = $(name).first()?.json;
       if (n?.section_html || n?.movie_section_html || n?.html) {
