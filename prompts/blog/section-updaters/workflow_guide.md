@@ -1,6 +1,6 @@
 # 【セクション個別更新サブワークフロー 構築ガイド】
 
-このサブワークフローは、WordPress記事の特定のセクション（映画、物価、治安、貿易、制度、歴史、動向、Deep Dive等）を指定し、保存済みデータ（Supabase / Google Sheets）またはAI再検索結果を基に、該当セクションのみを自動生成・上書き置換（Update）する万能型サブワークフローです。
+このサブワークフローは、WordPress記事の特定のセクション（映画、音楽、物価、治安、貿易、制度、歴史、動向、Deep Dive等）を指定し、保存済みデータ（Supabase / Google Sheets）または外部API/AIリアルタイム検索結果を基に、該当セクションのみを自動生成・上書き置換（Update）する万能型サブワークフローです。
 
 ---
 
@@ -10,21 +10,25 @@
 [1. Form Trigger / Webhook (国名, section_type, post_id)]
        │
 [2. Switch / Router ノード (section_typeによる分岐)]
-       ├─ 'eizou' / 'osusume' ➔ [3A. Supabase (movies / recommend_movies 取得)] ➔ [4A. Code (movie_section_html.js)]
-       ├─ 'bukka' / 'boeki' / 'chian' ➔ [3B. Google Sheets / DB (既存固定データ取得)] ➔ [4B. Code (専用HTML整形)]
-       └─ 'doukou' / 'deep_dive' ➔ [3C. AI node (単体再リサーチ・再生成)] ➔ [4C. Code (HTML整形)]
-                                 │
-                                 ▼ (各整形済みHTML `section_html` を合流)
-                  [5. WordPress (Get a Post: wp REST API /wp-json/wp/v2/posts/{post_id})]
-                                 │
-                  [6. Code (section_wp_updater.js: 正規表現でマーカー間を安全上書き)]
-                                 │
-                  [7. WordPress (Update a Post: POST/PUT /wp-json/wp/v2/posts/{post_id})]
+       ├─ 'eizou'              ➔ [3A. Supabase (movies 取得)] ➔ [4A. Code (movie_section_html.js)]
+       ├─ 'deep_dive'          ➔ [3B. AI node (単体再リサーチ・再生成)] ➔ [4B. Code (HTML整形)]
+       ├─ 'osusume'            ➔ [3C. Supabase (recommend_movies 取得)] ➔ [4C. Code (HTML整形)]
+       ├─ 'music' / 'ongaku'   ➔ [3D. Execute Sub-Workflow (音楽検索)] ➔ [4D. Code (音楽セクションHTML整形)]
+       └─ 'bukka' / 'boeki'... ➔ [3E. Google Sheets / DB 取得] ➔ [4E. Code (専用HTML整形)]
+                                  │
+                                  ▼ (各整形済みHTML `section_html` を合流)
+                   [5. WordPress (Get a Post: wp REST API /wp-json/wp/v2/posts/{post_id})]
+                                  │
+                   [6. Code (section_wp_updater.js: 正規表現でマーカー間を安全上書き)]
+                                  │
+                   [7. WordPress (Update a Post: POST/PUT /wp-json/wp/v2/posts/{post_id})]
 ```
 
 ---
 
-## 📝 1. 入力パラメータ (Trigger Input)
+## 📝 1. 入力パラメータ (Trigger Input & セクション順序)
+
+記事のセクション配置順序：
 
 - **country** (Text): 対象国名（例: `韓国`, `ブータン`, `Korea`）
 - **post_id** (Number/Text): 更新対象のWordPress投稿ID（例: `1234`）
@@ -37,14 +41,15 @@
   - `rekishi` : ⑥ 歴史的背景
   - `doukou` : ⑦ 直近の動向
   - `eizou` : ⑧ 映像作品
+  - `deep_dive` : ✦ Deep Dive（ディープダイブ）
   - `osusume` : ⑨ おすすめ映画
-  - `deep_dive` : ✦ Deep Dive
+  - `music` / `ongaku` : ⑩ おすすめ音楽
 
 ---
 
 ## 🏷️ 2. WordPressマーカーコメント仕様
 
-`最終Code.js` から出力された記事本文内には、各セクションごとに以下の識別タグが埋め込まれています。
+`最終Code.js` または `section_wp_updater.js` から出力される記事本文内には、各セクションごとに以下の識別タグが埋め込まれています。
 
 - `<!-- SECTION:seido:START -->` ... `<!-- SECTION:seido:END -->`
 - `<!-- SECTION:chiri_keizai:START -->` ... `<!-- SECTION:chiri_keizai:END -->`
@@ -54,8 +59,9 @@
 - `<!-- SECTION:rekishi:START -->` ... `<!-- SECTION:rekishi:END -->`
 - `<!-- SECTION:doukou:START -->` ... `<!-- SECTION:doukou:END -->`
 - `<!-- SECTION:eizou:START -->` ... `<!-- SECTION:eizou:END -->`
-- `<!-- SECTION:osusume:START -->` ... `<!-- SECTION:osusume:END -->`
 - `<!-- SECTION:deep_dive:START -->` ... `<!-- SECTION:deep_dive:END -->`
+- `<!-- SECTION:osusume:START -->` ... `<!-- SECTION:osusume:END -->`
+- `<!-- SECTION:music:START -->` ... `<!-- SECTION:music:END -->`
 
 ---
 
@@ -74,3 +80,13 @@
 2. `movie_section_html.js` ノードに流し込んでセクションHTMLを構築。
 3. `section_wp_updater.js` で本文の `<!-- SECTION:eizou:START -->` または `<!-- SECTION:osusume:START -->` 内を置換。
 4. WordPress POSTノードで投稿本文を更新。
+
+---
+
+## 🎵 5. 音楽セクション更新の例 (iTunes API 連携)
+
+1. 入力パラメータ `section_type = 'music'`（または `10`, `ongaku`）と `country` を指定。
+2. サブワークフロー「音楽検索ワークフロー」（iTunes Search API + AI Screener）を実行し、厳選された 10 曲の `recommend_music` JSONリストを取得。
+3. 高画質ジャケット (`album_cover`) や 30 秒音声試聴プレイヤー (`<audio controls src="...">`) を含む HTML セクションを構築。
+4. `section_wp_updater.js` で本文の `<!-- SECTION:music:START -->` ... `<!-- SECTION:music:END -->` タグ内を上書き置換。
+5. WordPress REST API で投稿本文を自動更新。
