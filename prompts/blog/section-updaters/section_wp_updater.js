@@ -66,11 +66,11 @@ if (!newSectionHtml || newSectionHtml.trim().length < 10) {
 const sectionAliasMap = {
   '1': 'seido', '2': 'chiri_keizai', '3': 'chian', '4': 'boeki',
   '5': 'bukka', '6': 'rekishi', '7': 'doukou', '8': 'eizou',
-  '9': 'deep_dive', '10': 'osusume', '11': 'music',
+  '9': 'osusume', '10': 'music', '11': 'deep_dive',
   movie: 'eizou', music: 'music', ongaku: 'music', institution: 'seido', history: 'rekishi', crime: 'chian'
 };
 
-const numMap = { seido: 1, chiri_keizai: 2, chian: 3, boeki: 4, bukka: 5, rekishi: 6, doukou: 7, eizou: 8, deep_dive: 9, osusume: 10, music: 11 };
+const numMap = { seido: 1, chiri_keizai: 2, chian: 3, boeki: 4, bukka: 5, rekishi: 6, doukou: 7, eizou: 8, osusume: 9, music: 10, deep_dive: 11 };
 
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
@@ -136,9 +136,9 @@ function replaceNumberedSection(text, num, section, newHtml) {
 }
 
 // ---------------------------------------------------------------
-// 8番・9番 (eizou / osusume) は id="section-N" 基準＋ゴミ掃除で確定実行
+// 8番・9番・10番 (eizou / osusume / music) は id="section-N" 基準＋ゴミ掃除で確定実行
 // ---------------------------------------------------------------
-if (canonicalSection === 'eizou' || canonicalSection === 'osusume') {
+if (canonicalSection === 'eizou' || canonicalSection === 'osusume' || canonicalSection === 'music') {
   const num = numMap[canonicalSection];
   updatedContent = replaceNumberedSection(updatedContent, num, canonicalSection, newSectionHtml);
   matchFound = true;
