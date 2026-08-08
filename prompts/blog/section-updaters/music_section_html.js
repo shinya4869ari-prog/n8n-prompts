@@ -39,7 +39,7 @@ const sectionId = 'music';
 const h2Style = `margin-top:60px;padding:14px 20px;background:#f5f5f5;border-left:3px solid #ff4081;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
 
 let html = `<!-- SECTION:${sectionId}:START -->\n`;
-html += `<h2 id="section-10" style="${h2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
+html += `<h2 id="section-11" style="${h2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
 
 function enc(t) {
   try { return btoa(unescape(encodeURIComponent(t || ''))); }
