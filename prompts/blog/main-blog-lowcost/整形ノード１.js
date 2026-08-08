@@ -332,6 +332,12 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
   });
 }
 
+let recommendMusic = [];
+try {
+  const musicNode = $('音楽検索ワークフロー').first()?.json || $('Call \'音楽検索ワークフロー\'').first()?.json || $('音楽検索').first()?.json || $('Execute Workflow').first()?.json || {};
+  recommendMusic = musicNode.recommend_music || musicNode.tracks || [];
+} catch (e) {}
+
 const r2Merged = {
   country: r2.country,
   歴史的背景: r2.歴史的背景,
@@ -339,7 +345,8 @@ const r2Merged = {
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
   映像作品: r25.映像作品,
-  おすすめ映画: recommendedMovies
+  おすすめ映画: recommendedMovies,
+  おすすめ音楽: recommendMusic
 };
 
 // 対象国Googleシート
