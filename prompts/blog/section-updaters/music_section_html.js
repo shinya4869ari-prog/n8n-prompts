@@ -47,13 +47,18 @@ function enc(t) {
 }
 
 musicList.forEach((d, idx) => {
-  const trackName = d.track_name || d.曲名 || '';
-  const artistName = d.artist_name || d.アーティスト || '';
-  const releaseYear = d.release_year || d.リリース年 || '';
+  const trackName = d['track_name'] || d['曲名'] || '';
+  const trackNameEn = d['track_name_en'] || d['曲名_英語'] || '';
+  const artistName = d['artist_name'] || d['アーティスト'] || '';
+  const artistNameEn = d['artist_name_en'] || d['アーティスト_英語'] || '';
+  const releaseYear = d['release_year'] || d['リリース年'] || d['年'] || '';
   const previewUrl = d.preview_url || '';
   const itunesUrl = d.itunes_url || d.spotify_url || '';
   const coverUrl = d.album_cover || d.ジャケット || '';
   const description = d.description || d.概要 || '';
+
+  const trackTitleSpan = (trackNameEn && trackNameEn !== trackName) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
+  const artistSpan = (artistNameEn && artistNameEn !== artistName) ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
 
   const searchQuery = `${artistName} ${trackName}`;
   const mapUrl = `https://map.seronworks.dev/?mode=music&q=${encodeURIComponent(searchQuery)}`;
@@ -64,7 +69,7 @@ musicList.forEach((d, idx) => {
   const i = enc(linkHTML);
   const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
   
-  const titleLinkHtml = `<span style="color:#ff4081;border-bottom:1px dashed #ff4081;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${trackName}</span>`;
+  const titleLinkHtml = `<span style="color:#ff4081;border-bottom:1px dashed #ff4081;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${trackName}</span> ${trackTitleSpan}`;
 
   let audioPlayerHtml = '';
   if (previewUrl && previewUrl.startsWith('http')) {
@@ -90,7 +95,7 @@ musicList.forEach((d, idx) => {
         <span style="background:#ff4081;color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${idx + 1}</span>
         <span style="font-weight:800;font-size:17px;color:#111;">${titleLinkHtml}</span>
       </div>
-      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
+      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
       ${audioPlayerHtml}
       ${description ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">${description}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
