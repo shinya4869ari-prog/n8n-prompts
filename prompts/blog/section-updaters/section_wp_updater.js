@@ -116,7 +116,12 @@ function findNextBoundary(text, pos, headers, deepDives) {
 function replaceNumberedSection(text, num, section, newHtml) {
   const headers = findAllSectionHeaders(text);
   const deepDives = findAllDeepDiveMarkers(text);
-  const starts = headers.filter(h => h.num === num).map(h => h.index).sort((a, b) => a - b);
+  let starts = headers.filter(h => h.num === num).map(h => h.index).sort((a, b) => a - b);
+
+  // 互換性フォールバック: 音楽(⑩/num=10)の時、過去記事で id="section-11" が付与されている場合も自動検出
+  if (starts.length === 0 && section === 'music') {
+    starts = headers.filter(h => h.num === 11).map(h => h.index).sort((a, b) => a - b);
+  }
 
   if (starts.length === 0) {
     throw new Error(`[置換エラー] id="section-${num}" の見出しが見つかりませんでした。生成側のH2に id="section-${num}" が付与されているか確認してください。処理を中止しました（誤消失・重複を避けるため）。`);

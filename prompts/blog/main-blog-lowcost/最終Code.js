@@ -368,7 +368,7 @@ return [articleItem].map(item => {
     <li><a href="#section-7" style="color:#333;text-decoration:none;">直近の動向</a></li>
     <li><a href="#section-8" style="color:#333;text-decoration:none;">映像で知る${countryName}</a></li>
     <li><a href="#section-9" style="color:#333;text-decoration:none;">おすすめ映画・映像作品</a></li>
-    <li><a href="#section-11" style="color:#333;text-decoration:none;">おすすめ音楽・ナショナルサウンドトラック</a></li>
+    <li><a href="#section-10" style="color:#333;text-decoration:none;">おすすめ音楽・ナショナルサウンドトラック</a></li>
     <li><a href="#deep-dive" style="color:#333;text-decoration:none;">✦ Deep Dive</a></li>
   </ol>
 </div>
@@ -1171,7 +1171,7 @@ return [articleItem].map(item => {
   }
 
   if (kougyouData.length > 0) {
-    article += `<h2 id="section-10" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
+    article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
     kougyouData.forEach(d => {
       const isSerious = d['深刻'] === 'true';
       const bg = isSerious ? '#fff3f3' : '#ffffff';
@@ -1273,7 +1273,7 @@ return [articleItem].map(item => {
 
   if (musicData.length > 0) {
     const musicH2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #ff4081;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
-    article += `<h2 id="section-11" style="${musicH2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
+    article += `<h2 id="section-10" style="${musicH2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
     musicData.forEach((d, idx) => {
       const trackName = d['曲名'] || d['track_name'] || '';
       const trackNameEn = d['曲名_英語'] || d['track_name_en'] || '';

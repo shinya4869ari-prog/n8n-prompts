@@ -39,7 +39,7 @@ const parseOutput = (node, nodeName) => {
 
     if (typeof rawVal === 'object' && rawVal !== null) {
       // すでに目的のキーを持っている場合はそのままオブジェクトとして返す
-      if (rawVal.歴史的背景 || rawVal.映像作品 || rawVal.おすすめ映画 || rawVal.recommend_music || rawVal.recommend_tracks || rawVal.tracks || rawVal.おすすめ音楽) {
+      if (rawVal.歴史的背景 || rawVal.映像作品 || rawVal.おすすめ映画) {
         return rawVal;
       }
       // メッセージ内容や出力を最優先で展開する
