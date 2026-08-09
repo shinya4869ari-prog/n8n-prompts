@@ -140,23 +140,29 @@ if (startCount === 1 && endCount === 1) {
   }
 }
 
-// 【安全自動ブロック機能】 元の本文に存在していたセクションが置換後に誤って消えていないか自動点検
-const originalHasEizou = /<!--\s*SECTION:eizou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑧(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
-const originalHasOsusume = /<!--\s*SECTION:osusume:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑨(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
-const originalHasMusic = /<!--\s*SECTION:music:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑩(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
+// 【全セクション完全保護ブロック機能】 元の本文に存在していた全11セクションが置換後に1つでも誤消去されていないか検証
+const allSectionsCheck = [
+  { key: 'seido', name: '① 制度の9つの皿', regex: /<!--\s*SECTION:seido:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?①(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'chiri_keizai', name: '② 地理と経済の衡量', regex: /<!--\s*SECTION:chiri_keizai:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?②(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'chian', name: '③ 治安と平和の衡量', regex: /<!--\s*SECTION:chian:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?③(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'boeki', name: '④ 貿易の衡量', regex: /<!--\s*SECTION:boeki:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?④(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'bukka', name: '⑤ 生活・価値の衡量', regex: /<!--\s*SECTION:bukka:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑤(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'rekishi', name: '⑥ 歴史的背景', regex: /<!--\s*SECTION:rekishi:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑥(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'doukou', name: '⑦ 直近の動向', regex: /<!--\s*SECTION:doukou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑦(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'eizou', name: '⑧ 映像で知る', regex: /<!--\s*SECTION:eizou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑧(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'osusume', name: '⑨ おすすめ映画', regex: /<!--\s*SECTION:osusume:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑨(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'music', name: '⑩ おすすめ音楽', regex: /<!--\s*SECTION:music:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑩(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
+  { key: 'deep_dive', name: '✦ Deep Dive', regex: /<!--\s*SECTION:deep_dive:START\s*-->|<div id="deep-dive"/i }
+];
 
-const hasEizou = /<!--\s*SECTION:eizou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑧(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
-const hasOsusume = /<!--\s*SECTION:osusume:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑨(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
-const hasMusic = /<!--\s*SECTION:music:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑩(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
-
-if (originalHasEizou && !hasEizou) {
-  throw new Error(`[安全保護エラー] 「⑧ 映像で知る」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
-}
-if (originalHasOsusume && !hasOsusume && canonicalSection !== 'osusume') {
-  throw new Error(`[安全保護エラー] 「⑨ おすすめ映画」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
-}
-if (originalHasMusic && !hasMusic && canonicalSection !== 'music') {
-  throw new Error(`[安全保護エラー] 「⑩ おすすめ音楽」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
+for (const sec of allSectionsCheck) {
+  if (sec.key !== canonicalSection) {
+    const wasPresent = sec.regex.test(currentWpHtml);
+    const isPresent = sec.regex.test(updatedContent);
+    if (wasPresent && !isPresent) {
+      throw new Error(`[安全保護エラー] 「${sec.name}」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
+    }
+  }
 }
 
 return [{
