@@ -56,6 +56,32 @@ return [articleItem].map(item => {
       });
   }
 
+  // --- 汎用キー取得ヘルパー (国名表記が ブータン / ブータン（ティンプー） 等で揺れても100%マッチさせる) ---
+  function getCountryValue(obj, fallbackKeys = []) {
+    if (!obj || typeof obj !== 'object') return 'データなし';
+    for (const key of fallbackKeys) {
+      if (obj[key] !== undefined && obj[key] !== '') return obj[key];
+    }
+    const keys = Object.keys(obj).filter(k => 
+      k !== '項目' && k !== '順位' && k !== '年' && 
+      !k.includes('日本') && !k.toLowerCase().includes('japan')
+    );
+    if (keys.length > 0 && obj[keys[0]] !== undefined && obj[keys[0]] !== '') {
+      return obj[keys[0]];
+    }
+    return 'データなし';
+  }
+
+  function getJapanValue(obj) {
+    if (!obj || typeof obj !== 'object') return 'データなし';
+    if (obj['日本'] !== undefined && obj['日本'] !== '') return obj['日本'];
+    const keys = Object.keys(obj).filter(k => k.includes('日本') || k.toLowerCase().includes('japan'));
+    if (keys.length > 0 && obj[keys[0]] !== undefined && obj[keys[0]] !== '') {
+      return obj[keys[0]];
+    }
+    return 'データなし';
+  }
+
   // --- 3. HTML生成ヘルパー ---
   const h2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
   const h3Style = `font-size:14px;font-weight:500;color:#e67e22;margin-top:30px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #e67e22;display:inline-block;`;
@@ -325,13 +351,13 @@ return [articleItem].map(item => {
   const seidoItems = ['国家の形と統治機構', '行政トップ', '立法と選挙制度', '司法と法制度', '社会保障・医療・年金', '教育制度', '徴税・財政制度', '安全保障と兵役', '基本権と価値観'];
   const seidoData = seidoItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
-    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    if (!line) return { 項目: item };
     const parts = line.replace(item + '｜', '').split('｜');
     const obj = { 項目: item };
     parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim(); });
     return obj;
   });
-  const seidoRows = seidoData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
+  const seidoRows = seidoData.map(d => [d.項目, getCountryValue(d, [countryName, '対象国']), getJapanValue(d)]);
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
 
   const seidoExplanation = cleanMarkdown(extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：'));
@@ -409,7 +435,7 @@ return [articleItem].map(item => {
   const econItems = ['総人口', 'GDP（名目・USドル）', '一人当たりGDP', 'GDP成長率', '政府債務残高（GDP比）', '経常収支（GDP比）', 'インフレ率'];
   const econData = econItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
-    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    if (!line) return { 項目: item };
     const parts = line.replace(item + '｜', '').split('｜');
     const obj = { 項目: item };
     parts.forEach(p => {
@@ -417,13 +443,16 @@ return [articleItem].map(item => {
       if (idx !== -1) {
         const key = p.substring(0, idx).trim();
         const val = p.substring(idx + 1).trim();
-        // ここで数値を整形
-        obj[key] = formatEconValue(item, val);
+        obj[key] = val;
       }
     });
     return obj;
   });
-  const econRows = econData.map(d => [d.項目, d[countryName] || 'データなし', d['日本'] || 'データなし']);
+  const econRows = econData.map(d => {
+    const rawC = getCountryValue(d, [countryName, '対象国']);
+    const rawJ = getJapanValue(d);
+    return [d.項目, formatEconValue(d.項目, rawC), formatEconValue(d.項目, rawJ)];
+  });
   article += makeTable(['経済指標', countryLabel, japanLabel], econRows, ['30%', '35%', '35%']);
   const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
   article += `<p class="citation" style="${citationStyle}">出典：${econCite}</p>\n`;
@@ -449,7 +478,7 @@ return [articleItem].map(item => {
   const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所稼働率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
   const chiAnData = chiAnItems.map(item => {
     const line = rawLines.find(l => l.startsWith(item + '｜'));
-    if (!line) return { 項目: item, [countryName]: 'データなし', 日本: 'データなし' };
+    if (!line) return { 項目: item };
     const parts = line.replace(item + '｜', '').split('｜');
     const obj = { 項目: item };
     parts.forEach(p => { const idx = p.indexOf('：'); if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim(); });
@@ -457,11 +486,12 @@ return [articleItem].map(item => {
   });
   const chiAnRows = chiAnData.map(d => {
     const formatSource = (val) => {
+      if (!val || val === 'データなし') return 'データなし';
       const main = val.replace(/\s*[（(].*$/, '');
       const source = val.match(/\s*([（(].*)$/);
       return `<span style="font-weight:900; font-size:15px;">${main}</span>` + (source ? `<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">${source[1]}</span>` : '');
     };
-    return [d.項目, formatSource(d[countryName] || 'データなし'), formatSource(d['日本'] || 'データなし')];
+    return [d.項目, formatSource(getCountryValue(d, [countryName, '対象国'])), formatSource(getJapanValue(d))];
   });
 
   const chiAnCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
@@ -482,13 +512,13 @@ return [articleItem].map(item => {
 
     const labels = prisonData.map(d => d['年']);
     const targetData = prisonData.map(d => {
-      const val = d[`${countryName}総収容者数`]?.replace(/,/g, '').trim();
+      const val = getCountryValue(d)?.replace(/,/g, '').trim();
       if (!val || val === '-' || val === 'データなし') return null;
       const num = parseInt(val);
       return isNaN(num) ? null : num;
     });
     const japanData = prisonData.map(d => {
-      const val = d['日本総収容者数']?.replace(/,/g, '').trim();
+      const val = getJapanValue(d)?.replace(/,/g, '').trim();
       if (!val || val === '-' || val === 'データなし') return null;
       const num = parseInt(val);
       return isNaN(num) ? null : num;
@@ -626,7 +656,7 @@ return [articleItem].map(item => {
 
   if (shiinData.length > 0) {
     article += `<h3 style="${h3Style}">主要な死因トップ10</h3>\n`;
-    const shiinRows = shiinData.map(d => [d['順位'], d[countryName] || 'データなし', d['日本'] || 'データなし']);
+    const shiinRows = shiinData.map(d => [d['順位'], getCountryValue(d, [countryName]), getJapanValue(d)]);
     article += makeTable(['順位', countryName, '日本'], shiinRows);
     if (citation) article += `<p class="citation" style="${citationStyle}">${citation}</p>\n`;
 
@@ -740,7 +770,7 @@ return [articleItem].map(item => {
       }
 
       const emoji = bukkaEmoji[d['項目']] || '';
-      let rawVal = d[countryName] || d['対象国'] || 'データなし';
+      let rawVal = getCountryValue(d, [countryName, '対象国']);
 
       // 対象国の価格データが欠測・データなしの場合、スプレッドシートデータから直接補完するフォールバック
       if (String(rawVal).includes('データなし') || String(rawVal).includes('欠測')) {
@@ -829,7 +859,7 @@ return [articleItem].map(item => {
       }
 
       // 日本側の価格もカンマを入れる（欠測・データなしの場合はスプレッドシートから補完）
-      let japanVal = d['日本'] || 'データなし';
+      let japanVal = getJapanValue(d);
       if (japanVal === 'データなし' || String(japanVal).includes('欠測')) {
         const sheetItemKey = {
           'ビール（レストラン500ml）': 'ビール（レストラン500ml）',
