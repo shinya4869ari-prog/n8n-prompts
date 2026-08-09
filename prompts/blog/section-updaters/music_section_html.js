@@ -87,6 +87,9 @@ musicList.forEach((d, idx) => {
     appleMusicBtn = `<a href="${itunesUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#fc3c44;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">🎵 Apple Musicで聴く</a>`;
   }
 
+  const youtubeQuery = `${artistName} ${trackName} MV`;
+  const youtubeBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ YouTube MV</a>`;
+
   const coverHtml = coverUrl ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${coverUrl}" alt="${trackName}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
 
   html += `
@@ -102,6 +105,7 @@ musicList.forEach((d, idx) => {
       ${audioPlayerHtml}
       ${description ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">${description}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        ${youtubeBtn}
         ${appleMusicBtn}
       </div>
     </div>
