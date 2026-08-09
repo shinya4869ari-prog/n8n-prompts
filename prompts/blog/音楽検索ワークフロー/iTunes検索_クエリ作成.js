@@ -14,33 +14,33 @@ const countryCode = input.countryCode || input.iso2 || 'KR';
 const marketCode = (countryCode && countryCode.length === 2) ? countryCode.toUpperCase() : 'JP';
 
 // iTunes検索用クエリの生成
-// 世界各国の音楽ジャンル・特徴的キーワードのマッピングテーブル
+// 世界各国の音楽ジャンル・時代を超える名曲（クラシック・ヒット）のマッピングテーブル
 const genreMap = {
-  'Korea': 'K-Pop',
-  'South Korea': 'K-Pop',
-  'Japan': 'J-Pop',
-  'Jamaica': 'Reggae Jamaica',
-  'Brazil': 'Samba Bossa Nova Brazil',
-  'Nigeria': 'Afrobeats Nigeria',
-  'India': 'Bollywood India',
-  'Cuba': 'Salsa Cuba',
-  'Spain': 'Flamenco Spain',
-  'Argentina': 'Tango Argentina',
-  'Ireland': 'Celtic Irish music',
-  'United Kingdom': 'UK Pop',
-  'United States': 'US Pop',
-  'France': 'Chanson French music',
-  'Italy': 'Italian music',
-  'Mexico': 'Regional Mexican',
-  'Colombia': 'Cumbia Colombia',
-  'Puerto Rico': 'Reggaeton Puerto Rico',
-  'South Africa': 'Amapiano South Africa',
-  'Egypt': 'Arabic Egyptian music',
-  'Turkey': 'Turkish music',
-  'Mongolia': 'Mongolian music',
-  'Bhutan': 'Bhutanese music',
-  'Greece': 'Greek music',
-  'Sweden': 'Swedish pop'
+  'Korea': 'Korea hits classic',
+  'South Korea': 'Korea hits classic',
+  'Japan': 'Japan iconic hits',
+  'Jamaica': 'Jamaica reggae classics',
+  'Brazil': 'Brazil bossa nova samba classics',
+  'Nigeria': 'Nigeria afrobeats classics',
+  'India': 'India bollywood classics',
+  'Cuba': 'Cuba salsa classics',
+  'Spain': 'Spain flamenco classics',
+  'Argentina': 'Argentina tango classics',
+  'Ireland': 'Ireland celtic folk classics',
+  'United Kingdom': 'UK rock pop classics',
+  'United States': 'US billboard iconic hits',
+  'France': 'France chanson classics',
+  'Italy': 'Italy classic songs',
+  'Mexico': 'Mexico mariachi classics',
+  'Colombia': 'Colombia cumbia classics',
+  'Puerto Rico': 'Puerto Rico classic hits',
+  'South Africa': 'South Africa amapiano classics',
+  'Egypt': 'Egypt arabic classics',
+  'Turkey': 'Turkey classic songs',
+  'Mongolia': 'Mongolia folk music',
+  'Bhutan': 'Bhutan traditional music',
+  'Greece': 'Greece classic songs',
+  'Sweden': 'Sweden pop classics'
 };
 
 let searchTerm = genreMap[countryEn] || `${countryEn} music`;
