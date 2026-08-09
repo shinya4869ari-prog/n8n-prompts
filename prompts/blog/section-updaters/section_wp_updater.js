@@ -140,11 +140,31 @@ if (startCount === 1 && endCount === 1) {
   }
 }
 
+// 【安全自動ブロック機能】 元の本文に存在していたセクションが置換後に誤って消えていないか自動点検
+const originalHasEizou = /<!--\s*SECTION:eizou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑧(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
+const originalHasOsusume = /<!--\s*SECTION:osusume:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑨(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
+const originalHasMusic = /<!--\s*SECTION:music:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑩(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(currentWpHtml);
+
+const hasEizou = /<!--\s*SECTION:eizou:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑧(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
+const hasOsusume = /<!--\s*SECTION:osusume:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑨(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
+const hasMusic = /<!--\s*SECTION:music:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑩(?:(?!<\/h2>)[\s\S])*?<\/h2>/i.test(updatedContent);
+
+if (originalHasEizou && !hasEizou) {
+  throw new Error(`[安全保護エラー] 「⑧ 映像で知る」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
+}
+if (originalHasOsusume && !hasOsusume && canonicalSection !== 'osusume') {
+  throw new Error(`[安全保護エラー] 「⑨ おすすめ映画」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
+}
+if (originalHasMusic && !hasMusic && canonicalSection !== 'music') {
+  throw new Error(`[安全保護エラー] 「⑩ おすすめ音楽」セクションが誤消去されるリスクを検知しました。WordPress投稿への送信を強制ブロックしました。`);
+}
+
 return [{
   json: {
     post_id: postId,
     content: updatedContent,
     updated_section: canonicalSection,
-    match_found: matchFound
+    match_found: matchFound,
+    safety_audit: "PASSED (他セクションの無事を確認済み)"
   }
 }];
