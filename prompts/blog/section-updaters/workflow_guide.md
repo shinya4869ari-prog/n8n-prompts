@@ -13,15 +13,18 @@
        ├─ 'eizou'              ➔ [3A. Supabase (movies 取得)] ➔ [4A. Code (movie_section_html.js)]
        ├─ 'deep_dive'          ➔ [3B. AI node (単体再リサーチ・再生成)] ➔ [4B. Code (HTML整形)]
        ├─ 'osusume'            ➔ [3C. Supabase (recommend_movies 取得)] ➔ [4C. Code (HTML整形)]
-       ├─ 'music' / 'ongaku'   ➔ [3D. Execute Sub-Workflow (音楽検索)] ➔ [4D. Code (音楽セクションHTML整形)]
-       └─ 'bukka' / 'boeki'... ➔ [3E. Google Sheets / DB 取得] ➔ [4E. Code (専用HTML整形)]
-                                  │
-                                  ▼ (各整形済みHTML `section_html` を合流)
-                   [5. WordPress (Get a Post: wp REST API /wp-json/wp/v2/posts/{post_id})]
-                                  │
-                   [6. Code (section_wp_updater.js: 正規表現でマーカー間を安全上書き)]
-                                  │
-                   [7. WordPress (Update a Post: POST/PUT /wp-json/wp/v2/posts/{post_id})]
+       ├─ 'music' (Supabase)   ➔ [3D. Supabase (音楽10本の一括取得: tracks)] ➔ [4D. Code (movie_data_source_switch.js)] ➔ [5D. Code (music_section_html.js)]
+       ├─ 'music' (API再検索)   ➔ [3E. Execute Sub-Workflow (音楽検索)] ➔ [4E. Code (music_section_html.js)]
+       └─ 'bukka' / 'boeki'... ➔ [3F. Google Sheets / DB 取得] ➔ [4F. Code (専用HTML整形)]
+                                   │
+                                   ▼ (各整形済みHTML `section_html` を合流)
+                    [5. WordPress (Get a Post: wp REST API /wp-json/wp/v2/posts/{post_id})]
+                                   │
+                                   ▼
+                    [6. Code (section_wp_updater.js: 正規表現でマーカー間を安全上書き)]
+                                   │
+                                   ▼
+                    [7. WordPress (Update a Post: POST/PUT /wp-json/wp/v2/posts/{post_id})]
 ```
 
 ---
