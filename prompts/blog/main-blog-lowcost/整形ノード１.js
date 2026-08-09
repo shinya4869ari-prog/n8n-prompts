@@ -332,6 +332,11 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
   });
 }
 
+let supabaseMusicRaw = null;
+try {
+  supabaseMusicRaw = $('Supabase音楽データ').first()?.json || $('Supabase 音楽データ').first()?.json || $('Supabase音楽').first()?.json || null;
+} catch (e) {}
+
 let recommendMusic = [];
 try {
   let musicItems = [];
@@ -341,12 +346,22 @@ try {
     "Call '音楽検索'",
     "音楽検索",
     "Call '音楽検索ワークフロー iTunes Search API版'",
+    "音楽検索ワークフロー iTunes Search API版",
+    "Call 'おすすめ音楽'",
+    "おすすめ音楽",
+    "音楽データ",
+    "Call '音楽'",
+    "音楽",
     "Execute Workflow",
     "Execute Sub-Workflow",
-    "Execute Workflow3",
-    "Execute Workflow2",
     "Execute Workflow1",
-    "音楽"
+    "Execute Workflow2",
+    "Execute Workflow3",
+    "Execute Workflow4",
+    "Execute Workflow5",
+    "Execute Sub-Workflow1",
+    "Execute Sub-Workflow2",
+    "Execute Subworkflow"
   ];
   for (const nodeName of musicCandidateNodes) {
     try {
@@ -361,20 +376,73 @@ try {
   if (musicItems.length === 0) {
     try {
       const inputs = $input.all();
-      const inputMusic = inputs.filter(i => i.json && (i.json.track_name || i.json.track_id || i.json.recommend_music));
+      const inputMusic = inputs.filter(i => i.json && (i.json.track_name || i.json.track_id || i.json.recommend_music || i.json.tracks));
       if (inputMusic.length > 0) musicItems = inputMusic;
     } catch (err) {}
   }
 
   if (musicItems.length > 0) {
     if (musicItems.length > 1 && musicItems[0].json && (musicItems[0].json.track_name || musicItems[0].json.track_id)) {
-      recommendMusic = musicItems.map(i => i.json);
+      recommendMusic = musicItems.map(item => {
+        const d = item.json || {};
+        return {
+          "track_name": d.track_name || d.曲名 || "",
+          "track_name_en": d.track_name_en || d.曲名_英語 || "",
+          "artist_name": d.artist_name || d.アーティスト || "",
+          "artist_name_en": d.artist_name_en || d.アーティスト_英語 || "",
+          "release_year": d.release_year || d.年 || d.リリース年 || "",
+          "preview_url": d.preview_url || "",
+          "itunes_url": d.itunes_url || d.spotify_url || "",
+          "album_cover": d.album_cover || d.ジャケット || "",
+          "description": d.description || d.概要 || ""
+        };
+      });
     } else {
       const firstJson = musicItems[0].json || {};
-      recommendMusic = firstJson.recommend_music || firstJson.tracks || (Array.isArray(firstJson) ? firstJson : []);
+      const rawList = firstJson.recommend_music || firstJson.tracks || firstJson.おすすめ音楽 || (Array.isArray(firstJson) ? firstJson : []);
+      if (Array.isArray(rawList)) {
+        recommendMusic = rawList.map(item => ({
+          "track_name": item.track_name || item.曲名 || "",
+          "track_name_en": item.track_name_en || item.曲名_英語 || "",
+          "artist_name": item.artist_name || item.アーティスト || "",
+          "artist_name_en": item.artist_name_en || item.アーティスト_英語 || "",
+          "release_year": item.release_year || item.年 || item.リリース年 || "",
+          "preview_url": item.preview_url || "",
+          "itunes_url": item.itunes_url || item.spotify_url || "",
+          "album_cover": item.album_cover || item.ジャケット || "",
+          "description": item.description || item.概要 || ""
+        }));
+      }
     }
   }
 } catch (e) {}
+
+if (recommendMusic.length === 0 && supabaseMusicRaw) {
+  try {
+    const rawList = supabaseMusicRaw.recommend_music || supabaseMusicRaw.tracks || supabaseMusicRaw.おすすめ音楽 || (Array.isArray(supabaseMusicRaw) ? supabaseMusicRaw : []);
+    if (Array.isArray(rawList)) {
+      recommendMusic = rawList.map(item => ({
+        "track_name": item.track_name || item.曲名 || "",
+        "track_name_en": item.track_name_en || item.曲名_英語 || "",
+        "artist_name": item.artist_name || item.アーティスト || "",
+        "artist_name_en": item.artist_name_en || item.アーティスト_英語 || "",
+        "release_year": item.release_year || item.年 || item.リリース年 || "",
+        "preview_url": item.preview_url || "",
+        "itunes_url": item.itunes_url || item.spotify_url || "",
+        "album_cover": item.album_cover || item.ジャケット || "",
+        "description": item.description || item.概要 || ""
+      }));
+    }
+  } catch (err) {}
+}
+
+if (recommendMusic.length === 0) {
+  if (Array.isArray(r25?.おすすめ音楽) && r25.おすすめ音楽.length > 0) {
+    recommendMusic = r25.おすすめ音楽;
+  } else if (Array.isArray(r2?.おすすめ音楽) && r2.おすすめ音楽.length > 0) {
+    recommendMusic = r2.おすすめ音楽;
+  }
+}
 
 const r2Merged = {
   country: r2.country,
