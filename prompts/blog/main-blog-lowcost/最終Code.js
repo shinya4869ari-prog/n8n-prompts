@@ -33,7 +33,6 @@ return [articleItem].map(item => {
   // --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
   raw = raw.replace(/^[①-⑩] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
-  raw = raw.replace(/^(国家の形と統治機構|行政トップ|立法と選挙制度|司法と法制度|社会保障・医療・年金|教育制度|徴税・財政制度|安全保障と兵役|基本権と価値観)｜.*$/gm, '');
 
   const citation = sheetData.data?.固定データ?.死因出典
     ? `出典：${sheetData.data.固定データ.死因出典} / 日本：${sheetData.data.日本固定データ?.死因出典 || '厚生労働省'}`
@@ -46,17 +45,21 @@ return [articleItem].map(item => {
   const countryLabel = capital ? `${countryName}（${capital}）` : countryName;
   const japanLabel = '日本（東京）';
 
-  // --- 2. パイプ区切りデータをパース ---
+  // --- 2. パイプ・タブ・コロン区切りデータをパース ---
   function parseLines(text, prefix) {
+    if (!text) return [];
     return text.split('\n')
       .filter(l => {
+        if (!l) return false;
         const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
-        return cleaned.startsWith(prefix + '｜') || cleaned.startsWith(prefix + '|');
+        const prefixStr = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp('^' + prefixStr + '[｜|\\t：:]').test(cleaned);
       })
       .map(l => {
         const cleanedLine = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').replace(/<\/?[^>]+(>|$)/g, "").trim();
-        const prefixStr = cleanedLine.includes('｜') ? prefix + '｜' : prefix + '|';
-        const parts = cleanedLine.replace(prefixStr, '').split(/[｜|]/);
+        const prefixStr = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const body = cleanedLine.replace(new RegExp('^' + prefixStr + '[｜|\\t：:]'), '');
+        const parts = body.split(/[｜|\t]|\s{2,}/).map(p => p.trim()).filter(Boolean);
         const obj = {};
         parts.forEach(p => {
           const idx = p.search(/[：:]/);
@@ -417,7 +420,16 @@ return [articleItem].map(item => {
   });
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
 
-  const seidoExplanation = cleanMarkdown(extractTextBetween(raw, '基本権と価値観｜', '🐱 エラーネコ：'));
+  const seidoSectionText = extractTextBetween(raw, '① 制度の9つの皿', '🐱 エラーネコ：') || extractTextBetween(raw, '基本権と価値観', '🐱 エラーネコ：') || extractTextBetween(raw, '制度の9つの皿', '🐱 エラーネコ：');
+  const seidoExplanation = cleanMarkdown(
+    seidoSectionText
+      .split('\n')
+      .filter(l => {
+        const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+        return !seidoItems.some(item => cleaned.startsWith(item));
+      })
+      .join('\n')
+  );
   if (seidoExplanation) article += `\n${seidoExplanation}\n`;
 
   const spotlight = sheetData.data?.対象国データ?.制度の9つの皿?.制度スポットライト || null;
@@ -499,7 +511,17 @@ return [articleItem].map(item => {
   const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
   article += `<p class="citation" style="${citationStyle}">出典：${econCite}</p>\n`;
 
-  const econExplanation = cleanMarkdown(extractTextBetween(raw, '出典：World Bank', '🐱 エラーネコ：'));
+  const econSectionText = extractTextBetween(raw, '② 地理と経済の衡量', '🐱 エラーネコ：') || extractTextBetween(raw, '地理と経済の衡量', '🐱 エラーネコ：');
+  const econExplanation = cleanMarkdown(
+    econSectionText
+      .split('\n')
+      .filter(l => {
+        const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+        const isGeoOrEconLine = geoItems.concat(econItems).some(item => cleaned.startsWith(item)) || cleaned.startsWith('外務省危険レベル');
+        return !isGeoOrEconLine;
+      })
+      .join('\n')
+  );
   if (econExplanation) article += `\n${econExplanation}\n`;
   // ② エラー猫の直前
   if (chirigeiKaisetu) {
