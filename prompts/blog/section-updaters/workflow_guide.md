@@ -93,3 +93,13 @@
 3. 高画質ジャケット (`album_cover`) や 30 秒音声試聴プレイヤー (`<audio controls src="...">`) を含む HTML セクションを構築。
 4. `section_wp_updater.js` で本文の `<!-- SECTION:music:START -->` ... `<!-- SECTION:music:END -->` タグ内を上書き置換。
 5. WordPress REST API で投稿本文を自動更新。
+
+---
+
+## ✦ 6. ディープダイブ (Deep Dive) セクション更新の例
+
+1. 入力パラメータ `section_type = 'deep_dive'`（または `deepdive`）と `post_id` を指定。
+2. AI ノード（Deep Dive 単体ライター/リサーチノード）で深掘り記事を生成。
+3. `deep_dive_section_html.js` ノードに文章を流し込み、公式 Deep Dive デザインコンテナ（`id="deep-dive"`、ネイビーバッジ、`▲ 先頭に戻る` ボタン）を自動構築。
+4. `section_wp_updater.js` で本文の `<!-- SECTION:deep_dive:START -->` ... `<!-- SECTION:deep_dive:END -->` タグ（または `<div id="deep-dive">` の位置）を完全安全置換。
+5. 他の①〜⑩セクションが無事であることを全自動判定した上で WordPress の投稿本文を自動更新。
