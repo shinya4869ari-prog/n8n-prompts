@@ -87,7 +87,7 @@ HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与する�
   "track_name_en": "{{ $json.track_name_en || '' }}",
   "artist_name": "{{ $json.artist_name || '' }}",
   "artist_name_en": "{{ $json.artist_name_en || '' }}",
-  "country": "{{ $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR' }}",
+  "country": "{{ $('country-master-lookup').first()?.json?.country || $('iTunes検索_クエリ作成').first()?.json?.countryJa || $json.countryJa || $json.country }}",
   "release_year": "{{ String($json.release_year || '') }}",
   "preview_url": "{{ $json.preview_url || '' }}",
   "itunes_url": "{{ $json.itunes_url || '' }}",
