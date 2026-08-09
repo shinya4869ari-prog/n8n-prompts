@@ -263,7 +263,7 @@ return [articleItem].map(item => {
   };
 
   // --- データ事前抽出（ヘッダーで使用するため） ---
-  const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離'];
+  const geoItems = ['位置', '面積', '公用語', '日本からの飛行距離', '外務省危険レベル'];
   const geoData = geoItems.map(item => {
     const line = findMatchingLine(rawLines, item);
     const { countryVal } = extractRowValuesFromLine(line);
@@ -276,14 +276,15 @@ return [articleItem].map(item => {
           if (!isNaN(areaNum)) {
             const ratio = areaNum / 377900;
             const ratioStr = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
-            if (val === 'データなし') {
-              val = `${areaNum.toLocaleString()}km²（日本の面積の約${ratioStr}倍）`;
-            } else {
-              val = val.replace('データなし', ratioStr);
-            }
+            val = val === 'データなし'
+              ? `${areaNum.toLocaleString()}km²（日本の面積の約${ratioStr}倍）`
+              : val.replace('データなし', ratioStr);
           }
         }
       }
+    }
+    if (item === '外務省危険レベル' && (val === 'データなし' || !val)) {
+      val = sheetData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
     }
     return { 項目: item, 値: val };
   });
@@ -310,7 +311,7 @@ return [articleItem].map(item => {
   let article = '';
 
   // --- 4. ヒーローステータスカード（冒頭） ---
-  const kikenLevelRaw = sheetData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
+  const kikenLevelRaw = geoData.find(d => d.項目 === '外務省危険レベル')?.値 || 'データなし';
   const kikenLevel = parseInt(String(kikenLevelRaw).replace(/[^0-9]/g, '')) || 0;
   const location = geoData.find(d => d.項目 === '位置')?.値 || '不明';
 
@@ -459,10 +460,7 @@ return [articleItem].map(item => {
   article += `<!-- SECTION:chiri_keizai:START -->\n`;
   article += `<h2 id="section-2" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">②</span> 地理と経済の衡量</h2>\n`;
   // geoData は上で事前抽出済み
-  const geoRows = [
-    ...geoData.map(d => [d.項目, d.値]),
-    ['外務省危険レベル', kikenLevelRaw]
-  ];
+  const geoRows = geoData.map(d => [d.項目, d.値]);
   article += makeTable(['地理項目', '内容'], geoRows, ['30%', '70%']);
 
   // --- 経済データ整形ヘルパー ---
