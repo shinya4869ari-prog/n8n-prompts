@@ -271,6 +271,7 @@ return [articleItem].map(item => {
     <li><a href="#section-7" style="color:#333;text-decoration:none;">直近の動向</a></li>
     <li><a href="#section-8" style="color:#333;text-decoration:none;">映像で知る${countryName}</a></li>
     <li><a href="#section-9" style="color:#333;text-decoration:none;">おすすめ映画・映像作品</a></li>
+    <li><a href="#section-11" style="color:#333;text-decoration:none;">おすすめ音楽・ナショナルサウンドトラック</a></li>
     <li><a href="#deep-dive" style="color:#333;text-decoration:none;">✦ Deep Dive</a></li>
   </ol>
 </div>

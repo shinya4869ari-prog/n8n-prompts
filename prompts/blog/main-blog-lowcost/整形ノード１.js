@@ -388,9 +388,11 @@ try {
   }
 
   if (musicItems.length > 0) {
-    if (musicItems.length > 1 && musicItems[0].json && (musicItems[0].json.track_name || musicItems[0].json.track_id)) {
+    const firstObj = musicItems[0].json || musicItems[0] || {};
+    // パターンA: 複数Items（トラック単体配列、またはSupabase保存ノードが返した行配列）
+    if (musicItems.length > 1 && (firstObj.track_name || firstObj.track_id || firstObj.曲名)) {
       recommendMusic = musicItems.map(item => {
-        const d = item.json || {};
+        const d = item.json || item || {};
         return {
           "track_name": d.track_name || d.曲名 || "",
           "track_name_en": d.track_name_en || d.曲名_英語 || "",
@@ -404,18 +406,17 @@ try {
         };
       });
     } else {
-      const firstJson = musicItems[0].json || musicItems[0] || {};
-      
+      // パターンB: 単一Item（AIスクリーナー出力オブジェクト、またはJSON文字列）
       let parsed = null;
       try {
-        parsed = parseOutput(firstJson, '音楽検索ワークフロー');
+        parsed = parseOutput(firstObj, '音楽検索ワークフロー');
       } catch (err) {
-        parsed = firstJson;
+        parsed = firstObj;
       }
 
       if (parsed) {
         const rawList = parsed.recommend_music || parsed.tracks || parsed.おすすめ音楽 || parsed.recommend_tracks || (Array.isArray(parsed) ? parsed : []);
-        if (Array.isArray(rawList)) {
+        if (Array.isArray(rawList) && rawList.length > 0) {
           recommendMusic = rawList.map(item => ({
             "track_name": item.track_name || item.曲名 || "",
             "track_name_en": item.track_name_en || item.曲名_英語 || "",
@@ -427,6 +428,19 @@ try {
             "album_cover": item.album_cover || item.ジャケット || "",
             "description": item.description || item.概要 || ""
           }));
+        } else if (firstObj.track_name || firstObj.track_id || firstObj.曲名) {
+          // 単一のトラックオブジェクトが1件だけ返ってきた場合
+          recommendMusic = [{
+            "track_name": firstObj.track_name || firstObj.曲名 || "",
+            "track_name_en": firstObj.track_name_en || firstObj.曲名_英語 || "",
+            "artist_name": firstObj.artist_name || firstObj.アーティスト || "",
+            "artist_name_en": firstObj.artist_name_en || firstObj.アーティスト_英語 || "",
+            "release_year": firstObj.release_year || firstObj.年 || firstObj.リリース年 || "",
+            "preview_url": firstObj.preview_url || "",
+            "itunes_url": firstObj.itunes_url || firstObj.spotify_url || "",
+            "album_cover": firstObj.album_cover || firstObj.ジャケット || "",
+            "description": firstObj.description || firstObj.概要 || ""
+          }];
         }
       }
     }
