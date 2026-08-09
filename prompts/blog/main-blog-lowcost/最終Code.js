@@ -20,7 +20,7 @@ return [articleItem].map(item => {
   // 直列接続などで $input が response_extraction1 等の出力（===places===）に上書きされている場合の安全策
   if (!raw || raw.startsWith('===places===')) {
     try {
-      const writerNode = $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || $('Writer').first()?.json || {};
+      const writerNode = $('記事集合').first()?.json || $('整列2').first()?.json || $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || $('Writer').first()?.json || {};
       raw = writerNode.article || writerNode.output || writerNode.text || raw;
     } catch(e) {}
   }
