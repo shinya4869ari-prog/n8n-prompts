@@ -40,9 +40,14 @@ if (countryCodeMap[countryName]) {
   countryName = countryCodeMap[countryName];
 }
 
-const sectionStr = String(sectionType).toLowerCase();
-const isOsusume = sectionStr === 'osusume' || sectionStr === 'recommend' || sectionStr === '9' || sectionStr.includes('おすすめ');
-const isEizou = sectionStr === 'eizou' || sectionStr === '8' || sectionStr.includes('映像');
+let sectionStr = String(sectionType).toLowerCase();
+if (sectionStr.includes(':')) {
+  const parts = sectionStr.split(':').map(s => s.trim());
+  sectionStr = parts.find(p => p === 'osusume' || p === 'eizou' || p === '9' || p === '8') || parts[0];
+}
+
+const isOsusume = sectionStr.includes('osusume') || sectionStr.includes('recommend') || sectionStr === '9' || sectionStr.includes('おすすめ');
+const isEizou = sectionStr.includes('eizou') || sectionStr === '8' || sectionStr.includes('映像');
 
 if (!isOsusume && !isEizou) {
   throw new Error(`[映画セクション生成エラー] section_type「${sectionType}」が eizou/osusume のどちらとも判定できませんでした。処理を中止しました。`);
