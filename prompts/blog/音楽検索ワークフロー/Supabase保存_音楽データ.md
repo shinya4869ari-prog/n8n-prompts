@@ -45,15 +45,36 @@
 
 ## ⚙️ 2. n8n 音楽検索ワークフローでの Supabase 保存設定
 
-`Music_AI_Screener`（AIノード）の直後に **`Supabase` ノード** を追加します。
+`Music_AI_Screener`（AIノード）の直後に保存ノードを追加します。
 
-### n8n Supabase ノード設定パラメータ
-- **Resource**: `Database`
-- **Operation**: `Upsert` (重複があれば上書き、無ければ新規挿入)
-- **Table**: `tracks`
-- **Matching Column**: `track_id`
+### パターンA：n8nの `Supabase` ノードを使う場合
 
-### データのマッピングJSON (n8n Expression)
+1. **新規登録の場合**:
+   - **Resource**: `Row`
+   - **Operation**: `Create`
+   - **Table**: `tracks`
+
+2. **既存レコードの更新の場合**:
+   - **Resource**: `Row`
+   - **Operation**: `Update`
+   - **Table**: `tracks`
+   - **Must Match**: `track_id`
+
+---
+
+### パターンB：既存の映画保存と同じ `HTTP Request` ノードを使う場合（推奨・完全自動アップサート）
+
+HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与することで、**「存在しなければ新規追加、存在すれば上書き（Upsert）」** が1発で実行できます。
+
+- **Method**: `POST`
+- **URL**: `https://<YOUR_SUPABASE_PROJECT_ID>.supabase.co/rest/v1/tracks`
+- **Headers**:
+  - `Prefer`: `resolution=merge-duplicates` 👈 **(これで完全Upsert動作になります)**
+  - `apikey`: `<YOUR_SUPABASE_ANON_OR_SERVICE_KEY>`
+  - `Authorization`: `Bearer <YOUR_SUPABASE_ANON_OR_SERVICE_KEY>`
+  - `Content-Type`: `application/json`
+
+### データのマッピングJSON (Body)
 
 ```json
 {
