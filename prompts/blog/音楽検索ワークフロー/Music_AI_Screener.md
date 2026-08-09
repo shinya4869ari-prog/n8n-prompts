@@ -20,13 +20,16 @@
      - ③ **現代の世界的トレンド・代表的ヒット曲**: 3〜4曲
 3. **無関係な外国楽曲の除外**: 曲名やアーティスト名が対象国と無関係なもの（例: タイトルに国名が入っているだけの他国軍隊曲や洋楽等）は除外してください。
 4. **質の高い曲解説**: 各曲について、なぜその曲がその国を象徴するのか、どのような時代背景や歴史的価値を持つのかを丁寧に（100文字程度）解説してください。
-5. **アーティスト名・曲名の表記ルール（無駄な英語重複の徹底禁止）**:
-   - **日本・韓国**:
-     - `artist_name` / `track_name`: 現地語表記（日本語・ハングル）
-     - `artist_name_en` / `track_name_en`: 英語表記（例: `BTS`, `Dynamic Duo & DJ Premier`）
-   - **日本・韓国以外の全世界（ブータン、タイ、中東、欧米等）**:
-     - `artist_name` / `track_name`: 公式英語表記（例: `Bhutanese musicians`）または カタカナ読み
-     - `artist_name_en` / `track_name_en`: **`artist_name` や `track_name` と同じ英字文字列になる場合は、必ず空文字 `""` をセットすること**（Supabaseやブログで同じ英語名が2重に重複保存されるのを防ぐため）。
+5. **アーティスト名・曲名の表記ルール（カタカナ化・英語表記の徹底）**:
+   - **韓国（South Korea）のみ**:
+     - `artist_name`: ハングル表記（例: `방탄소년단`）
+     - `artist_name_en`: 公式英語表記（例: `BTS`）
+   - **韓国以外の全世界（ブータン、日本、タイ、中東、欧米等すべての国）**:
+     - `artist_name`: **必ずカタカナ読み（日本語カタカナ）で表記すること**（例: `ビートルズ`, `テイラー・スウィフト`, `チェンチョ・ドルジ`, `ブータン・ミュージシャンズ`）
+     - `artist_name_en`: **必ず公式英語表記（英字アルファベット）をセットすること**（例: `The Beatles`, `Taylor Swift`, `Chencho Dorji`, `Bhutanese musicians`）
+   - **曲名（track_name / track_name_en）**:
+     - `track_name`: 原題または一般的なタイトル表記
+     - `track_name_en`: 公式英語表記（英字アルファベット）
 
 ---
 
@@ -46,6 +49,18 @@
       "itunes_url": "https://music.apple.com/jp/album/dynamite/...",
       "album_cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/.../600x600bb.jpg",
       "description": "韓国を代表する世界的ポップグループBTSの代表曲。グローバルなヒットを記録し、現代韓国のエンタメ産業の象徴。"
+    },
+    {
+      "track_id": "214663416",
+      "track_name": "Ging Tsholing",
+      "track_name_en": "Ging Tsholing",
+      "artist_name": "ブータン・ミュージシャンズ",
+      "artist_name_en": "Bhutanese musicians",
+      "release_year": "1978",
+      "preview_url": "https://audio-ssl.itunes.apple.com/itunes-assets/...",
+      "itunes_url": "https://music.apple.com/us/album/ging-tsholing/...",
+      "album_cover": "https://is1-ssl.mzstatic.com/image/thumb/...",
+      "description": "ブータンの伝統的な仮面舞踏チャムの伴奏音楽。"
     }
   ]
 }
