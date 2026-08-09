@@ -1027,7 +1027,129 @@ return [articleItem].map(item => {
 </div>\n`;
 
     // 本文中に残っている丸括弧で囲まれたマークダウンリンク（[出典](URL)）を括弧ごと除去
-    let cleanedDD = deepDiveArticle.replace(/[（  let musicData = [];
+    let cleanedDD = deepDiveArticle.replace(/[（\(]\s*\[[^\]]+\]\(https?:\/\/[^)]+\)(?:\s*[\/／,、\s]*\[[^\]]+\]\(https?:\/\/[^)]+\))*\s*[）\)]/g, '');
+
+    // ディープダイブの「■ 主な出典」を全箇所まとめてメイン記事の出典スタイルに統一
+    let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
+      const citeHtml = citeContent
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
+        .replace(/[-–]\s*/g, '')
+        .replace(/\n+/g, '<br>')
+        .trim();
+      if (!citeHtml) return '';
+      return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
+    });
+    article += styledDD;
+    article += `<!-- SECTION:deep_dive:END -->\n`;
+  }
+
+  // --- 15. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
+  article += `\n<!-- SECTION:osusume:START -->\n`;
+  const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+  const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+  
+  let kougyouData = [];
+  if (rawKougyou.length > 0) {
+    kougyouData = rawKougyou;
+  } else if (Array.isArray(kougyouData2) && kougyouData2.length > 0) {
+    kougyouData = kougyouData2.map(item => ({
+      'タイトル': item['タイトル_日本語'] || item.title || '',
+      '原題': item['原題'] || item.origin_title || '',
+      '公開年': item['公開年'] || item.year || '',
+      '種別': item['種別'] || item.genres || '',
+      'director': item.director || '',
+      'cast': item.cast || '',
+      '深刻': 'false',
+      'imdb_url': item.imdb_id ? `https://www.imdb.com/title/${item.imdb_id}/` : '',
+      'poster_path': item.poster_path || item.poster_url || ''
+    }));
+  }
+
+  if (kougyouData.length > 0) {
+    article += `<h2 id="section-10" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
+    kougyouData.forEach(d => {
+      const isSerious = d['深刻'] === 'true';
+      const bg = isSerious ? '#fff3f3' : '#ffffff';
+      const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
+      const apiData = kougyouData2.find(api => 
+        (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
+        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
+        (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
+      ) || {};
+      const titleJa = d['タイトル'] || apiData['タイトル_日本語'] || apiData['title'] || '';
+      const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
+      const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
+
+      const posterPath = d['poster_path'] || apiData['poster_path'] || apiData['poster_url'] || '';
+      let posterUrl = '';
+      if (posterPath) {
+        if (String(posterPath).startsWith('http')) {
+          posterUrl = posterPath;
+        } else {
+          const prefix = posterPath.startsWith('/') ? '' : '/';
+          posterUrl = `https://image.tmdb.org/t/p/w200${prefix}${posterPath}`;
+        }
+      }
+      const rankingInfo = (
+        apiData?.概要 || 
+        moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
+        ''
+      ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+      const imdbId = apiData?.imdb_id || (d['imdb_url'] ? d['imdb_url'].replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
+      const imdbBtn = imdbId ? `<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+
+      const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+        ${imdbBtn}
+      </div>`;
+
+      const posterHtml = posterUrl
+        ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+        : '';
+
+      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
+      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      const type = d['種別'] || apiData['genres'] || '';
+      const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
+
+      const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
+      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
+
+      article += `
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">🎬</span>
+        <span style="font-weight:800;font-size:17px;color:#111;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</span>
+      </div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
+      ${castHtml}
+      ${rankingInfo ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${rankingInfo}</div>` : ''}
+      ${linkHtml}
+    </div>
+    ${posterHtml}
+  </div>
+</div>`;
+    });
+    const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
+    if (kougyouCites.length > 0) {
+      article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
+    }
+
+    const kougyouNeko = getNekoBubbleForSection('⑨');
+    article += makeNekoBubble(kougyouNeko);
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
+  }
+  article += `<!-- SECTION:osusume:END -->\n`;
+
+  // --- 16. ⑩ 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック ---
+  article += `\n<!-- SECTION:music:START -->\n`;
+  const rawMusic = parseLines(raw, '音楽').filter(d => d['曲名'] && d['曲名'] !== '欠測');
+  const musicData2 = sheetData.data?.対象国データ_記事?.おすすめ音楽 || sheetData.data?.対象国データ_記事?.recommend_music || [];
+
+  let musicData = [];
   if (rawMusic.length > 0) {
     musicData = rawMusic;
   } else if (Array.isArray(musicData2) && musicData2.length > 0) {
@@ -1100,129 +1222,7 @@ return [articleItem].map(item => {
         <span style="background:#ff4081;color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${idx + 1}</span>
         <span style="font-weight:800;font-size:17px;color:#111;">${titleLinkHtml}</span>
       </div>
-      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>`;>
-        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
-        ${imdbBtn}
-      </div>`;
-
-      const posterHtml = posterUrl
-        ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
-        : '';
-
-      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
-      const type = d['種別'] || apiData['genres'] || '';
-      const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
-
-      const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
-      const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
-
-      article += `
-<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#00bcd4;"></div>
-  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
-    <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-        <span style="background:#00bcd4;color:#fff;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">🎬</span>
-        <span style="font-weight:800;font-size:17px;color:#111;">${isSerious ? '⚠️ ' : ''}${titleJa} ${origTitleSpan}</span>
-      </div>
-      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
-      ${castHtml}
-      ${rankingInfo ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${rankingInfo}</div>` : ''}
-      ${linkHtml}
-    </div>
-    ${posterHtml}
-  </div>
-</div>`;
-    });
-    const kougyouCites = [...new Set(kougyouData2.map(d => d.出典).filter(Boolean))];
-    if (kougyouCites.length > 0) {
-      article += `<p class="citation" style="${citationStyle}">出典：${kougyouCites.join(' / ')}</p>\n`;
-    }
-
-    const kougyouNeko = getNekoBubbleForSection('⑨');
-    article += makeNekoBubble(kougyouNeko);
-    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
-  }
-  article += `<!-- SECTION:osusume:END -->\n`;
-
-  // --- 16. ⑩ 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック ---
-  article += `\n<!-- SECTION:music:START -->\n`;
-  const rawMusic = parseLines(raw, '音楽').filter(d => d['曲名'] && d['曲名'] !== '欠測');
-  const musicData2 = sheetData.data?.対象国データ_記事?.おすすめ音楽 || sheetData.data?.対象国データ_記事?.recommend_music || [];
-
-  let musicData = [];
-  if (rawMusic.length > 0) {
-    musicData = rawMusic;
-  } else if (Array.isArray(musicData2) && musicData2.length > 0) {
-    musicData = musicData2.map(item => ({
-      '曲名': item['track_name'] || item['曲名'] || '',
-      'アーティスト': item['artist_name'] || item['アーティスト'] || '',
-      'リリース年': item['release_year'] || item['年'] || '',
-      'preview_url': item['preview_url'] || '',
-      'itunes_url': item['itunes_url'] || item['spotify_url'] || '',
-      'ジャケット': item['album_cover'] || item['ジャケット'] || '',
-      '概要': item['description'] || item['概要'] || ''
-    }));
-  }
-
-  if (musicData.length > 0) {
-    const musicH2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #ff4081;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
-    article += `<h2 id="section-11" style="${musicH2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
-    musicData.forEach((d, idx) => {
-      const trackName = d['曲名'] || d['track_name'] || '';
-      const trackNameEn = d['曲名_英語'] || d['track_name_en'] || '';
-      const artistName = d['アーティスト'] || d['artist_name'] || '';
-      const artistNameEn = d['アーティスト_英語'] || d['artist_name_en'] || '';
-      const releaseYear = d['リリース年'] || d['release_year'] || '';
-      const previewUrl = d['preview_url'] || '';
-      const itunesUrl = d['itunes_url'] || '';
-      const coverUrl = d['ジャケット'] || d['album_cover'] || '';
-      const description = d['概要'] || d['description'] || '';
-
-      const trackTitleSpan = (trackNameEn && trackNameEn !== trackName) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
-      const artistSpan = (artistNameEn && artistNameEn !== artistName) ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
-
-      function encText(t) {
-        try { return btoa(unescape(encodeURIComponent(t || ''))); }
-        catch (e) { return ''; }
-      }
-
-      const searchQuery = `${artistName} ${trackName}`;
-      const mapUrl = `https://map.seronworks.dev/?mode=music&q=${encodeURIComponent(searchQuery)}`;
-      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#ff4081;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
-      const popupTitleStr = `${trackName} - ${artistName}`;
-      const n = encText(popupTitleStr);
-      const i = encText(linkHTML);
-      const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
-
-      const titleLinkHtml = `<span style="color:#ff4081;border-bottom:1px dashed #ff4081;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${trackName}</span> ${trackTitleSpan}`;
-
-      let audioPlayerHtml = '';
-      if (previewUrl && previewUrl.startsWith('http')) {
-        audioPlayerHtml = `
-          <div style="margin-top:10px;margin-bottom:12px;">
-            <audio controls src="${previewUrl}" style="width:100%;max-width:360px;height:36px;outline:none;border-radius:18px;"></audio>
-          </div>`;
-      }
-
-      let appleMusicBtn = '';
-      if (itunesUrl && itunesUrl.startsWith('http')) {
-        appleMusicBtn = `<a href="${itunesUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#fc3c44;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">🎵 Apple Musicで聴く</a>`;
-      }
-
-      const coverHtml = coverUrl ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${coverUrl}" alt="${trackName}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
-
-      article += `
-<div style="background:#ffffff;border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4081;"></div>
-  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
-    <div style="flex:1;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-        <span style="background:#ff4081;color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${idx + 1}</span>
-        <span style="font-weight:800;font-size:17px;color:#111;">${titleLinkHtml}</span>
-      </div>
-      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
+      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>`;
       ${audioPlayerHtml}
       ${description ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">${description}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
