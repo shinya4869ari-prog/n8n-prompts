@@ -1,8 +1,14 @@
 const input = $input.first()?.json || {};
 
 let postId = input.post_id || input.id || null;
-let sectionType = input.section_type || input.section || 'eizou';
+let rawSectionType = input.section_type || input.section || 'music';
+
+let sectionType = rawSectionType;
 if (Array.isArray(sectionType)) sectionType = sectionType[0];
+if (typeof sectionType === 'string' && sectionType.includes(':')) {
+  const parts = sectionType.split(':').map(s => s.trim().toLowerCase());
+  sectionType = parts.find(p => ['music', 'osusume', 'eizou', 'seido', 'chiri_keizai', 'chian', 'boeki', 'bukka', 'rekishi', 'doukou', 'deep_dive'].includes(p)) || parts[0];
+}
 
 let newSectionHtml = input.section_html || input.html || input.movie_section_html || '';
 let currentWpHtml = input.wp_content || (typeof input.content?.rendered === 'string' ? input.content.rendered : '');
@@ -72,14 +78,11 @@ const sectionAliasMap = {
   institution: 'seido', history: 'rekishi', crime: 'chian'
 };
 
-const numMap = { seido: 1, chiri_keizai: 2, chian: 3, boeki: 4, bukka: 5, rekishi: 6, doukou: 7, eizou: 8, osusume: 9, music: 10 };
-
 const canonicalSection = sectionAliasMap[sectionType] || sectionType;
 let updatedContent = currentWpHtml.trim();
 let matchFound = false;
 
 function wrap(section, html) {
-  // 内部に含まれる既存の SECTION START/END コメントを除去して二重ラップ・タグ漏れを防止
   const cleanHtml = html
     .replace(/<!--\s*SECTION:[^>]+?:START\s*-->/gi, '')
     .replace(/<!--\s*SECTION:[^>]+?:END\s*-->/gi, '')
@@ -87,112 +90,53 @@ function wrap(section, html) {
   return `<!-- SECTION:${section}:START -->\n${cleanHtml}\n<!-- SECTION:${section}:END -->`;
 }
 
-// 全ての section-N 見出しの位置を収集
-function findAllSectionHeaders(text) {
-  const re = /<h2[^>]*id="section-(\d+)"[^>]*>/gi;
-  const list = [];
-  let m;
-  while ((m = re.exec(text)) !== null) list.push({ num: parseInt(m[1], 10), index: m.index });
-  return list;
-}
+// 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
+const startRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->`, 'gi');
+const endRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'gi');
+const startCount = (updatedContent.match(startRe) || []).length;
+const endCount = (updatedContent.match(endRe) || []).length;
 
-function findAllDeepDiveMarkers(text) {
-  const re = /<div id="deep-dive"[^>]*>/gi;
-  const list = [];
-  let m;
-  while ((m = re.exec(text)) !== null) list.push(m.index);
-  return list;
-}
-
-function findNextBoundary(text, pos, headers, deepDives) {
-  let candidates = [];
-  headers.forEach(h => { if (h.index > pos) candidates.push(h.index); });
-  deepDives.forEach(d => { if (d > pos) candidates.push(d); });
-  if (candidates.length === 0) return text.length;
-  return Math.min(...candidates);
-}
-
-// id="section-N" 基準の置換（重複があれば自動で1つに畳み込み＋周囲のゴミタグを一括全消去）
-function replaceNumberedSection(text, num, section, newHtml) {
-  const headers = findAllSectionHeaders(text);
-  const deepDives = findAllDeepDiveMarkers(text);
-  let starts = headers.filter(h => h.num === num).map(h => h.index).sort((a, b) => a - b);
-
-  // 互換性フォールバック: 音楽(⑩/num=10)の時、過去記事で id="section-11" が付与されている場合も自動検出
-  if (starts.length === 0 && section === 'music') {
-    starts = headers.filter(h => h.num === 11).map(h => h.index).sort((a, b) => a - b);
-  }
-
-  if (starts.length === 0) {
-    throw new Error(`[置換エラー] id="section-${num}" の見出しが見つかりませんでした。生成側のH2に id="section-${num}" が付与されているか確認してください。処理を中止しました（誤消失・重複を避けるため）。`);
-  }
-
-  const firstStart = starts[0];
-  const lastStart = starts[starts.length - 1];
-  const boundaryAfterLast = findNextBoundary(text, lastStart, headers, deepDives);
-
-  let partBefore = text.substring(0, firstStart).trimEnd();
-  let partAfter = text.substring(boundaryAfterLast).trimStart();
-
-  // 見出しの手前や直後に残っている対象セクションの不要なゴミタグのみを除去・掃除（他セクションのタグは一切壊さない）
-  const junkRe = new RegExp(`(<p>|<br\\s*\\/?>)*\\s*<!--\\s*SECTION:${section}:(START|END)\\s*-->\\s*(<br\\s*\\/?>|<\\/p>)*`, 'gi');
-  partBefore = partBefore.replace(junkRe, '').trimEnd();
-  partAfter = partAfter.replace(junkRe, '').trimStart();
-
-  return partBefore + '\n\n' + wrap(section, newHtml) + '\n\n' + partAfter;
-}
-
-// ---------------------------------------------------------------
-// 8番・9番・10番 (eizou / osusume / music) は id="section-N" 基準＋ゴミ掃除で確定実行
-// ---------------------------------------------------------------
-if (canonicalSection === 'eizou' || canonicalSection === 'osusume' || canonicalSection === 'music') {
-  const num = numMap[canonicalSection];
-  updatedContent = replaceNumberedSection(updatedContent, num, canonicalSection, newSectionHtml);
+if (startCount === 1 && endCount === 1) {
+  const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->[\\s\\S]*?<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
+  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
   matchFound = true;
 } else {
-  // ---------------------------------------------------------------
-  // その他のセクション: 1個だけ存在すればコメント置換、無ければパターン
-  // ---------------------------------------------------------------
-  const startRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->`, 'gi');
-  const endRe = new RegExp(`<!-- SECTION:${canonicalSection}:END -->`, 'gi');
-  const startCount = (updatedContent.match(startRe) || []).length;
-  const endCount = (updatedContent.match(endRe) || []).length;
+  // 2. 【高精度】 見出しキーワード（「おすすめ音楽」「おすすめ映画」等）による限定置換
+  const keywordsMap = {
+    music: ['おすすめ音楽', 'ナショナルサウンドトラック', '⑩'],
+    osusume: ['おすすめ映画', '⑨'],
+    eizou: ['映像で知る', '⑧'],
+    seido: ['制度の9つの皿', '①'],
+    chiri_keizai: ['地理と経済', '②'],
+    chian: ['治安と平和', '③'],
+    boeki: ['貿易の衡量', '④'],
+    bukka: ['物価比較', '⑤'],
+    rekishi: ['歴史的背景', '⑥'],
+    doukou: ['直近の動向', '⑦']
+  };
 
-  if (startCount === 1 && endCount === 1) {
-    const commentRe = new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i');
-    updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
-    matchFound = true;
-  } else {
-    const sectionPatterns = {
-      deep_dive: [
-        /<!-- SECTION:deep_dive:START -->[\s\S]*?<!-- SECTION:deep_dive:END -->/i,
-        /<!-- START_DEEP_DIVE_SECTION -->[\s\S]*?<!-- END_DEEP_DIVE_SECTION -->/i,
-        /<div id="deep-dive"[\s\S]*$/i
-      ],
-      seido: [/<h2[^>]*id="section-1"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      chiri_keizai: [/<h2[^>]*id="section-2"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      chian: [/<h2[^>]*id="section-3"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      boeki: [/<h2[^>]*id="section-4"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      bukka: [/<h2[^>]*id="section-5"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      rekishi: [/<h2[^>]*id="section-6"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i],
-      doukou: [/<h2[^>]*id="section-7"[^>]*>[\s\S]*?(?=<h2|<!-- SECTION:|<!-- START_|$)/i]
-    };
+  const keywords = keywordsMap[canonicalSection] || [];
+  for (const kw of keywords) {
+    const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const h2Regex = new RegExp(`<h2[^>]*>(?:(?!<\\/h2>)[\\s\\S])*?${escapedKw}(?:(?!<\\/h2>)[\\s\\S])*?<\\/h2>`, 'i');
+    const h2Match = updatedContent.match(h2Regex);
+    if (h2Match) {
+      const startIndex = h2Match.index;
+      const tail = updatedContent.substring(startIndex);
+      const nextBoundaryMatch = tail.substring(h2Match[0].length).match(/<h2|<div id="deep-dive"|<!-- SECTION:/i);
+      const boundaryOffset = nextBoundaryMatch ? h2Match[0].length + nextBoundaryMatch.index : tail.length;
 
-    const patterns = sectionPatterns[canonicalSection] || [
-      new RegExp(`<!-- SECTION:${canonicalSection}:START -->[\\s\\S]*?<!-- SECTION:${canonicalSection}:END -->`, 'i')
-    ];
+      const before = updatedContent.substring(0, startIndex).trimEnd();
+      const after = updatedContent.substring(startIndex + boundaryOffset).trimStart();
 
-    for (const pattern of patterns) {
-      if (pattern.test(updatedContent)) {
-        updatedContent = updatedContent.replace(pattern, wrap(canonicalSection, newSectionHtml));
-        matchFound = true;
-        break;
-      }
+      updatedContent = before + '\n\n' + wrap(canonicalSection, newSectionHtml) + '\n\n' + after;
+      matchFound = true;
+      break;
     }
+  }
 
-    if (!matchFound) {
-      throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
-    }
+  if (!matchFound) {
+    throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
   }
 }
 
