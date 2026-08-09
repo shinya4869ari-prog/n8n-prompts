@@ -1373,6 +1373,8 @@ return [articleItem].map(item => {
   return {
     json: {
       article: finalArticleText,
+      output: finalArticleText,
+      text: finalArticleText,
       title: title,
       country: countryName,
       countryEn: countryEn,
