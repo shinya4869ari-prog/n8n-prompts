@@ -84,9 +84,9 @@ HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与する�
   JSON.stringify({
     "track_id": String($json.track_id || ''),
     "track_name": $json.track_name || '',
-    "track_name_en": $json.track_name_en || '',
+    "track_name_en": ($json.track_name_en && $json.track_name_en.trim().toLowerCase() !== String($json.track_name || '').trim().toLowerCase()) ? $json.track_name_en : '',
     "artist_name": $json.artist_name || '',
-    "artist_name_en": $json.artist_name_en || '',
+    "artist_name_en": ($json.artist_name_en && $json.artist_name_en.trim().toLowerCase() !== String($json.artist_name || '').trim().toLowerCase()) ? $json.artist_name_en : '',
     "country": $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR',
     "release_year": String($json.release_year || ''),
     "preview_url": $json.preview_url || '',
