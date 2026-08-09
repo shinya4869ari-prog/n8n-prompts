@@ -94,6 +94,9 @@ musicList.forEach((d, idx) => {
 
   const coverHtml = coverUrl ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${coverUrl}" alt="${trackName}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>` : '';
 
+  const artistPersonUrl = `https://map.seronworks.dev/?mode=person&q=${encodeURIComponent(artistName)}`;
+  const artistLinkBlog = `<a href="${artistPersonUrl}" target="history_gallery" style="color:#ff4081;text-decoration:underline;font-weight:bold;" title="${artistName}の人物アーカイブを見る">🎤 ${artistName}</a>`;
+
   html += `
 <div style="background:#ffffff;border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#ff4081;"></div>
@@ -103,7 +106,7 @@ musicList.forEach((d, idx) => {
         <span style="background:#ff4081;color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${idx + 1}</span>
         <span style="font-weight:800;font-size:17px;color:#111;">${titleLinkHtml}</span>
       </div>
-      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
+      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">${artistLinkBlog} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
       ${audioPlayerHtml}
       ${description ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">${description}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
