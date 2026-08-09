@@ -1180,8 +1180,11 @@ return [articleItem].map(item => {
       const coverUrl = d['ジャケット'] || d['album_cover'] || '';
       const description = d['概要'] || d['description'] || '';
 
-      const trackTitleSpan = (trackNameEn && trackNameEn !== trackName) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
-      const artistSpan = (artistNameEn && artistNameEn !== artistName) ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
+      const isSameTrack = !trackNameEn || trackNameEn.trim().toLowerCase() === trackName.trim().toLowerCase();
+      const isSameArtist = !artistNameEn || artistNameEn.trim().toLowerCase() === artistName.trim().toLowerCase();
+
+      const trackTitleSpan = !isSameTrack ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
+      const artistSpan = !isSameArtist ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
 
       function encText(t) {
         try { return btoa(unescape(encodeURIComponent(t || ''))); }

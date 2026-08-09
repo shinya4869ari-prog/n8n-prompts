@@ -57,8 +57,11 @@ musicList.forEach((d, idx) => {
   const coverUrl = d.album_cover || d.ジャケット || '';
   const description = d.description || d.概要 || '';
 
-  const trackTitleSpan = (trackNameEn && trackNameEn !== trackName) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
-  const artistSpan = (artistNameEn && artistNameEn !== artistName) ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
+  const isSameTrack = !trackNameEn || trackNameEn.trim().toLowerCase() === trackName.trim().toLowerCase();
+  const isSameArtist = !artistNameEn || artistNameEn.trim().toLowerCase() === artistName.trim().toLowerCase();
+
+  const trackTitleSpan = !isSameTrack ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
+  const artistSpan = !isSameArtist ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
 
   const searchQuery = `${artistName} ${trackName}`;
   const mapUrl = `https://map.seronworks.dev/?mode=music&q=${encodeURIComponent(searchQuery)}`;
