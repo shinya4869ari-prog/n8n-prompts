@@ -1,14 +1,23 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-const mainItem = allItems.find(i => i.json?.article != null);
-const deepDiveItem = allItems.find(i => i.json?.deepDiveArticle != null);
+let mainItem = allItems.find(i => i.json?.article != null || i.json?.mainArticle != null);
+let deepDiveItem = allItems.find(i => i.json?.deepDiveArticle != null);
 const articleItem = mainItem || allItems[0];
+
 return [articleItem].map(item => {
-  const inputData = item.json;
+  let inputData = item.json || {};
   const sheetData = $('整形ノード1').first().json;
   const moviesData = [];
+  
   let raw = inputData?.article ?? inputData?.output ?? "";
+  // 直列接続などで $input が response_extraction1 等の出力（===places===）に上書きされている場合の安全策
+  if (!raw || raw.startsWith('===places===')) {
+    try {
+      const writerNode = $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || {};
+      raw = writerNode.article || writerNode.output || writerNode.text || raw;
+    } catch(e) {}
+  }
   const rawLines = raw.split('\n');
 
   const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
@@ -1019,7 +1028,13 @@ return [articleItem].map(item => {
 
   // --- 14. Deep-Dive ---
   let deepDiveArticle = '';
-  try { deepDiveArticle = (deepDiveItem || articleItem).json?.deepDiveArticle || ''; } catch(e) {}
+  try {
+    deepDiveArticle = deepDiveItem?.json?.deepDiveArticle || inputData?.deepDiveArticle || '';
+    if (!deepDiveArticle) {
+      const ddNode = $('DeepDive整形').first()?.json || $('Edit Fields').first()?.json || $('DeepDive').first()?.json || {};
+      deepDiveArticle = ddNode.deepDiveArticle || ddNode.output || ddNode.text || '';
+    }
+  } catch(e) {}
   console.log('deepDiveArticle length:', deepDiveArticle.length);
 
   if (deepDiveArticle) {
