@@ -334,8 +334,46 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
 
 let recommendMusic = [];
 try {
-  const musicNode = $('音楽検索ワークフロー').first()?.json || $('Call \'音楽検索ワークフロー\'').first()?.json || $('音楽検索').first()?.json || $('Execute Workflow').first()?.json || {};
-  recommendMusic = musicNode.recommend_music || musicNode.tracks || [];
+  let musicItems = [];
+  const musicCandidateNodes = [
+    "Call '音楽検索ワークフロー'",
+    "音楽検索ワークフロー",
+    "Call '音楽検索'",
+    "音楽検索",
+    "Call '音楽検索ワークフロー iTunes Search API版'",
+    "Execute Workflow",
+    "Execute Sub-Workflow",
+    "Execute Workflow3",
+    "Execute Workflow2",
+    "Execute Workflow1",
+    "音楽"
+  ];
+  for (const nodeName of musicCandidateNodes) {
+    try {
+      const found = $(nodeName).all();
+      if (found && found.length > 0) {
+        musicItems = found;
+        break;
+      }
+    } catch (err) {}
+  }
+
+  if (musicItems.length === 0) {
+    try {
+      const inputs = $input.all();
+      const inputMusic = inputs.filter(i => i.json && (i.json.track_name || i.json.track_id || i.json.recommend_music));
+      if (inputMusic.length > 0) musicItems = inputMusic;
+    } catch (err) {}
+  }
+
+  if (musicItems.length > 0) {
+    if (musicItems.length > 1 && musicItems[0].json && (musicItems[0].json.track_name || musicItems[0].json.track_id)) {
+      recommendMusic = musicItems.map(i => i.json);
+    } else {
+      const firstJson = musicItems[0].json || {};
+      recommendMusic = firstJson.recommend_music || firstJson.tracks || (Array.isArray(firstJson) ? firstJson : []);
+    }
+  }
 } catch (e) {}
 
 const r2Merged = {

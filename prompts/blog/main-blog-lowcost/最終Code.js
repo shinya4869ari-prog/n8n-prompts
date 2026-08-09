@@ -298,7 +298,7 @@ return [articleItem].map(item => {
       .split(/\n{2,}/)
       .map(p => {
         const cleanP = p.trim().replace(/^[\s\n]+|[\s\n]+$/g, '');
-        if (!cleanP || cleanP.includes('FACT') || cleanP.startsWith('①')) return '';
+        if (!cleanP || cleanP.toUpperCase().includes('FACT') || cleanP.startsWith('①') || cleanP.includes('｜')) return '';
         return `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${cleanP.split('\n').join('<br>')}</p>`;
       })
       .filter(Boolean)
