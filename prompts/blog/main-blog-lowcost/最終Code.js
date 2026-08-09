@@ -1222,7 +1222,7 @@ return [articleItem].map(item => {
         <span style="background:#ff4081;color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${idx + 1}</span>
         <span style="font-weight:800;font-size:17px;color:#111;">${titleLinkHtml}</span>
       </div>
-      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>`;
+      <div style="font-size:13px;color:#ff4081;font-weight:bold;margin-bottom:8px;">🎤 ${artistName} ${artistSpan}${releaseYear ? ` &nbsp;•&nbsp; ${releaseYear}年` : ''}</div>
       ${audioPlayerHtml}
       ${description ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">${description}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
