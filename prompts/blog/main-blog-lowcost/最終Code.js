@@ -66,14 +66,14 @@ return [articleItem].map(item => {
       });
   }
 
-  // AIが出力した行（マークダウン太字、コロン/パイプ半角化、短縮項目名）を100%確実に検索するヘルパー
+  // AIが出力した行（マークダウン太字、コロン/パイプ半角化、タブ区切り、短縮項目名）を100%確実に検索するヘルパー
   function findMatchingLine(rawLines, itemKeyword) {
     if (!rawLines || !Array.isArray(rawLines)) return null;
     const cleanKeyword = itemKeyword.replace(/[\(（].*?[\)）]/g, '').trim();
     return rawLines.find(line => {
-      if (!line || (!line.includes('：') && !line.includes(':') && !line.includes('｜') && !line.includes('|'))) return false;
+      if (!line) return false;
       const cleaned = line.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
-      const firstPart = cleaned.split(/[｜|：:]/)[0].trim();
+      const firstPart = cleaned.split(/[｜|\t：:]/)[0].trim();
       return firstPart === itemKeyword || firstPart === cleanKeyword || firstPart.startsWith(cleanKeyword) || (cleanKeyword.length >= 4 && firstPart.includes(cleanKeyword));
     });
   }
@@ -82,7 +82,9 @@ return [articleItem].map(item => {
     if (!line) return { countryVal: 'データなし', japanVal: 'データなし' };
     const cleaned = line.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
     
-    const parts = cleaned.split(/[｜|]/);
+    // パイプ (｜ or |) または タブ (\t) または 2個以上の連続スペース で分割
+    const parts = cleaned.split(/[｜|\t]|\s{2,}/).map(p => p.trim()).filter(Boolean);
+    
     if (parts.length <= 1) {
       const idx = cleaned.search(/[：:]/);
       if (idx !== -1) {
@@ -95,7 +97,7 @@ return [articleItem].map(item => {
     let japanVal = 'データなし';
     
     for (let i = 1; i < parts.length; i++) {
-      const p = parts[i].trim();
+      const p = parts[i];
       const idx = p.search(/[：:]/);
       if (idx !== -1) {
         const k = p.substring(0, idx).trim();
@@ -105,6 +107,9 @@ return [articleItem].map(item => {
         } else {
           countryVal = v;
         }
+      } else {
+        if (i === 1) countryVal = p;
+        else if (i === 2) japanVal = p;
       }
     }
     
@@ -450,7 +455,7 @@ return [articleItem].map(item => {
 
   // --- 経済データ整形ヘルパー ---
   function formatEconValue(itemName, rawValue) {
-    if (!rawValue || rawValue === 'データなし' || typeof rawValue !== 'string') return rawValue;
+    if (!rawValue || rawValue === 'データなし' || typeof rawValue !== 'string' || /[万人億ドル%\$]/.test(rawValue)) return rawValue;
 
     // 数字とそれ以外（年号など）を分離
     const match = rawValue.match(/^([\d\.,-]+)(.*)$/);
