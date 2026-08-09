@@ -245,7 +245,9 @@ let recommendedMovies = [];
 try {
   let subItems = [];
   const candidateNodes = [
+    "Call '映画無限検索ワークフロー　おすすめ映画版'",
     "Call '映画無限検索ワークフロー おすすめ映画版'",
+    "映画無限検索ワークフロー　おすすめ映画版",
     "映画無限検索ワークフロー おすすめ映画版",
     "Call '映画無限検索ワークフロー'",
     "映画無限検索ワークフロー",
@@ -342,7 +344,11 @@ try {
   let musicItems = [];
   const musicCandidateNodes = [
     "Call '音楽検索ワークフロー'",
+    "Call '音楽検索ワークフロー　おすすめ音楽版'",
+    "Call '音楽検索ワークフロー おすすめ音楽版'",
     "音楽検索ワークフロー",
+    "音楽検索ワークフロー　おすすめ音楽版",
+    "音楽検索ワークフロー おすすめ音楽版",
     "Call '音楽検索'",
     "音楽検索",
     "Call '音楽検索ワークフロー iTunes Search API版'",
@@ -398,20 +404,30 @@ try {
         };
       });
     } else {
-      const firstJson = musicItems[0].json || {};
-      const rawList = firstJson.recommend_music || firstJson.tracks || firstJson.おすすめ音楽 || (Array.isArray(firstJson) ? firstJson : []);
-      if (Array.isArray(rawList)) {
-        recommendMusic = rawList.map(item => ({
-          "track_name": item.track_name || item.曲名 || "",
-          "track_name_en": item.track_name_en || item.曲名_英語 || "",
-          "artist_name": item.artist_name || item.アーティスト || "",
-          "artist_name_en": item.artist_name_en || item.アーティスト_英語 || "",
-          "release_year": item.release_year || item.年 || item.リリース年 || "",
-          "preview_url": item.preview_url || "",
-          "itunes_url": item.itunes_url || item.spotify_url || "",
-          "album_cover": item.album_cover || item.ジャケット || "",
-          "description": item.description || item.概要 || ""
-        }));
+      const firstJson = musicItems[0].json || musicItems[0] || {};
+      
+      let parsed = null;
+      try {
+        parsed = parseOutput(firstJson, '音楽検索ワークフロー');
+      } catch (err) {
+        parsed = firstJson;
+      }
+
+      if (parsed) {
+        const rawList = parsed.recommend_music || parsed.tracks || parsed.おすすめ音楽 || parsed.recommend_tracks || (Array.isArray(parsed) ? parsed : []);
+        if (Array.isArray(rawList)) {
+          recommendMusic = rawList.map(item => ({
+            "track_name": item.track_name || item.曲名 || "",
+            "track_name_en": item.track_name_en || item.曲名_英語 || "",
+            "artist_name": item.artist_name || item.アーティスト || "",
+            "artist_name_en": item.artist_name_en || item.アーティスト_英語 || "",
+            "release_year": item.release_year || item.年 || item.リリース年 || "",
+            "preview_url": item.preview_url || "",
+            "itunes_url": item.itunes_url || item.spotify_url || "",
+            "album_cover": item.album_cover || item.ジャケット || "",
+            "description": item.description || item.概要 || ""
+          }));
+        }
       }
     }
   }
