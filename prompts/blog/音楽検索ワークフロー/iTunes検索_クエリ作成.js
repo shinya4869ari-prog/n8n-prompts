@@ -38,7 +38,7 @@ const genreMap = {
   'Egypt': 'Egypt arabic classics',
   'Turkey': 'Turkey classic songs',
   'Mongolia': 'Mongolia folk music',
-  'Bhutan': 'Bhutan traditional music',
+  'Bhutan': 'Bhutanese music',
   'Greece': 'Greece classic songs',
   'Sweden': 'Sweden pop classics'
 };
@@ -52,8 +52,9 @@ for (const key in genreMap) {
 }
 
 // iTunes Search API Endpoint
-// 全世界のiTunesストアから代表曲を最大40件取得
-const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=${marketCode}&media=music&entity=song&limit=40`;
+// ※対象国ストア(countryCode)が小規模で楽曲が少ない国があるため、グローバル最大カタログを持つ'US'ストアをベースに検索
+const searchMarket = (marketCode === 'JP' || marketCode === 'KR' || marketCode === 'US' || marketCode === 'GB') ? marketCode : 'US';
+const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=${searchMarket}&media=music&entity=song&limit=40`;
 
 return [{
   json: {
