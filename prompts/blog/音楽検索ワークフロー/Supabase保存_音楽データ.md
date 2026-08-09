@@ -76,25 +76,31 @@ HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与する�
   - `Authorization`: `Bearer <YOUR_SUPABASE_ANON_OR_SERVICE_KEY>`
   - `Content-Type`: `application/json`
 
-### データのマッピングJSON (Body) - n8n式表現
+### データのマッピングJSON (Body)
 
-**【n8nの `jsonBody` パラメータ設定値】**
+#### 共通：一番簡単な貼り付け方法（標準JSONモード用）
+`JSON Body` の入力欄にそのまま貼り付けます（Expressionボタンを押す必要はありません）：
+
 ```json
-={{
-  JSON.stringify({
-    "track_id": String($json.track_id || ''),
-    "track_name": $json.track_name || '',
-    "track_name_en": ($json.track_name_en && $json.track_name_en.trim().toLowerCase() !== String($json.track_name || '').trim().toLowerCase()) ? $json.track_name_en : '',
-    "artist_name": $json.artist_name || '',
-    "artist_name_en": ($json.artist_name_en && $json.artist_name_en.trim().toLowerCase() !== String($json.artist_name || '').trim().toLowerCase()) ? $json.artist_name_en : '',
-    "country": $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR',
-    "release_year": String($json.release_year || ''),
-    "preview_url": $json.preview_url || '',
-    "itunes_url": $json.itunes_url || '',
-    "album_cover": $json.album_cover || '',
-    "description": $json.description || ''
-  })
-}}
+{
+  "track_id": "={{ String($json.track_id || '') }}",
+  "track_name": "={{ $json.track_name || '' }}",
+  "track_name_en": "={{ ($json.track_name_en && $json.track_name_en.trim().toLowerCase() !== String($json.track_name || '').trim().toLowerCase()) ? $json.track_name_en : '' }}",
+  "artist_name": "={{ $json.artist_name || '' }}",
+  "artist_name_en": "={{ ($json.artist_name_en && $json.artist_name_en.trim().toLowerCase() !== String($json.artist_name || '').trim().toLowerCase()) ? $json.artist_name_en : '' }}",
+  "country": "={{ $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR' }}",
+  "release_year": "={{ String($json.release_year || '') }}",
+  "preview_url": "={{ $json.preview_url || '' }}",
+  "itunes_url": "={{ $json.itunes_url || '' }}",
+  "album_cover": "={{ $json.album_cover || '' }}",
+  "description": "={{ $json.description || '' }}"
+}
+```
+
+※ もし `Expression` モード（`{{ }}` タブ）を有効にして設定する場合は、以下の1行式を貼り付けます：
+
+```json
+={{ JSON.stringify({ "track_id": String($json.track_id || ''), "track_name": $json.track_name || '', "track_name_en": ($json.track_name_en && $json.track_name_en.trim().toLowerCase() !== String($json.track_name || '').trim().toLowerCase()) ? $json.track_name_en : '', "artist_name": $json.artist_name || '', "artist_name_en": ($json.artist_name_en && $json.artist_name_en.trim().toLowerCase() !== String($json.artist_name || '').trim().toLowerCase()) ? $json.artist_name_en : '', "country": $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR', "release_year": String($json.release_year || ''), "preview_url": $json.preview_url || '', "itunes_url": $json.itunes_url || '', "album_cover": $json.album_cover || '', "description": $json.description || '' }) }}
 ```
 
 ---
