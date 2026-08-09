@@ -30,10 +30,12 @@
 | カラム名 | 型 | 説明 |
 | :--- | :--- | :--- |
 | `track_id` | `text` | **Primary Key (iTunes Track ID)** |
-| `track_name` | `text` | 曲名 |
-| `artist_name` | `text` | アーティスト名 (表示用) |
+| `track_name` | `text` | 曲名 (現地語表記) |
+| `track_name_en` | `text` | 曲名 (英語表記) |
+| `artist_name` | `text` | アーティスト名 (現地語表記 / 表示用) |
+| `artist_name_en` | `text` | アーティスト名 (英語表記) |
 | `person_id` | `uuid` / `integer` | `persons.id` への Foreign Key (歴史館紐付け用) |
-| `country` | `text` | 対象国名 |
+| `country` | `text` | 対象国名・国コード |
 | `release_year` | `text` | リリース年 (例: 2026) |
 | `preview_url` | `text` | 30秒音声試聴URL |
 | `itunes_url` | `text` | Apple Music / iTunes リンク |
@@ -74,20 +76,25 @@ HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与する�
   - `Authorization`: `Bearer <YOUR_SUPABASE_ANON_OR_SERVICE_KEY>`
   - `Content-Type`: `application/json`
 
-### データのマッピングJSON (Body)
+### データのマッピングJSON (Body) - n8n式表現
 
+**【n8nの `jsonBody` パラメータ設定値】**
 ```json
-{
-  "track_id": "={{ $json.track_id }}",
-  "track_name": "={{ $json.track_name }}",
-  "artist_name": "={{ $json.artist_name }}",
-  "country": "={{ $('iTunes検索_クエリ作成').first().json.countryJa }}",
-  "release_year": "={{ $json.release_year }}",
-  "preview_url": "={{ $json.preview_url }}",
-  "itunes_url": "={{ $json.itunes_url }}",
-  "album_cover": "={{ $json.album_cover }}",
-  "description": "={{ $json.description }}"
-}
+={{
+  JSON.stringify({
+    "track_id": String($json.track_id || ''),
+    "track_name": $json.track_name || '',
+    "track_name_en": $json.track_name_en || '',
+    "artist_name": $json.artist_name || '',
+    "artist_name_en": $json.artist_name_en || '',
+    "country": $('国名変換Code').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR',
+    "release_year": String($json.release_year || ''),
+    "preview_url": $json.preview_url || '',
+    "itunes_url": $json.itunes_url || '',
+    "album_cover": $json.album_cover || '',
+    "description": $json.description || ''
+  })
+}}
 ```
 
 ---
