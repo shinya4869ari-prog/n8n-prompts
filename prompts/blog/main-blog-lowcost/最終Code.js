@@ -277,15 +277,21 @@ return [articleItem].map(item => {
 </div>
 `;
 
-  // --- 5. 導入文（超頑強アルゴリズム ＋ HTML段落自動整形） ---
+  // --- 5. 導入文（「数字と事実（Fact）から〜」までの純粋な導入段落のみを抽出） ---
   let introText = "";
-  const firstSectionIdx = rawLines.findIndex(l => /(?:①|1\.?)\s*制度/.test(l) || /^[^\n｜]+｜[^\n｜]+｜[^\n｜]+｜/.test(l));
-  if (firstSectionIdx !== -1) {
-    introText = rawLines.slice(0, firstSectionIdx).join('\n').trim();
+  const factLineIdx = rawLines.findIndex(l => (l.includes('数字と事実') || l.includes('Fact') || l.includes('FACT')) && !l.startsWith('①'));
+  if (factLineIdx !== -1) {
+    introText = rawLines.slice(0, factLineIdx + 1).join('\n').trim();
   } else {
-    const fallbackIdx = rawLines.findIndex(l => l.includes('｜') && (l.includes('国家の形') || l.includes('行政トップ')));
+    const fallbackIdx = rawLines.findIndex(l => 
+      l.startsWith('①') || 
+      l.startsWith('位置：') || l.startsWith('位置:') ||
+      (l.includes('｜') && (l.includes('国家の形') || l.includes('行政トップ')))
+    );
     if (fallbackIdx !== -1) {
       introText = rawLines.slice(0, fallbackIdx).join('\n').trim();
+    } else {
+      introText = rawLines.slice(0, 10).join('\n').trim();
     }
   }
 
@@ -299,8 +305,7 @@ return [articleItem].map(item => {
       .split(/\n{2,}/)
       .map(p => {
         const cleanP = p.trim().replace(/^[\s\n]+|[\s\n]+$/g, '');
-        const isGeoLine = /^(位置|面積|公用語|日本からの飛行距離|外務省危険レベル)[：:]/.test(cleanP);
-        if (!cleanP || cleanP.toUpperCase().includes('FACT') || cleanP.startsWith('①') || cleanP.includes('｜') || isGeoLine) return '';
+        if (!cleanP || cleanP.startsWith('①') || cleanP.includes('｜')) return '';
         return `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${cleanP.split('\n').join('<br>')}</p>`;
       })
       .filter(Boolean)
@@ -1033,9 +1038,8 @@ return [articleItem].map(item => {
 
     // ディープダイブの「■ 主な出典」を全箇所まとめてメイン記事の出典スタイルに統一
     let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
-      let citeHtml = citeContent
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#00bcd4;text-decoration:underline;font-weight:bold;word-break:break-all;">$1</a>')
-        .replace(/(^|[^"'])((https?:\/\/[^\s<]+))/g, '$1<a href="$2" target="_blank" style="color:#00bcd4;text-decoration:underline;font-weight:bold;word-break:break-all;">$2</a>')
+      const citeHtml = citeContent
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
         .replace(/[-–]\s*/g, '')
         .replace(/\n+/g, '<br>')
         .trim();
@@ -1043,7 +1047,6 @@ return [articleItem].map(item => {
       return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
     });
     article += styledDD;
-    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
     article += `<!-- SECTION:deep_dive:END -->\n`;
   }
 
