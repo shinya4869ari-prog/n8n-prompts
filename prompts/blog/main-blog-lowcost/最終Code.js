@@ -1,8 +1,14 @@
 const promptBody = $input.first()?.json?.externalPrompt ?? "";
 
 const allItems = $input.all();
-let mainItem = allItems.find(i => i.json?.article != null || i.json?.mainArticle != null);
-let deepDiveItem = allItems.find(i => i.json?.deepDiveArticle != null);
+let mainItem = allItems.find(i => {
+  const txt = i.json?.article || i.json?.output || i.json?.text || '';
+  return txt.includes('①') || txt.includes('あなたはこの') || txt.includes('制度の9つの皿');
+});
+let deepDiveItem = allItems.find(i => {
+  const txt = i.json?.deepDiveArticle || i.json?.output || i.json?.text || '';
+  return txt.includes('✦ Deep Dive') || i.json?.deepDiveArticle != null;
+});
 const articleItem = mainItem || allItems[0];
 
 return [articleItem].map(item => {
@@ -10,11 +16,11 @@ return [articleItem].map(item => {
   const sheetData = $('整形ノード1').first().json;
   const moviesData = [];
   
-  let raw = inputData?.article ?? inputData?.output ?? "";
+  let raw = mainItem?.json?.article || mainItem?.json?.output || mainItem?.json?.text || inputData?.article || inputData?.output || "";
   // 直列接続などで $input が response_extraction1 等の出力（===places===）に上書きされている場合の安全策
   if (!raw || raw.startsWith('===places===')) {
     try {
-      const writerNode = $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || {};
+      const writerNode = $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || $('Writer').first()?.json || {};
       raw = writerNode.article || writerNode.output || writerNode.text || raw;
     } catch(e) {}
   }
