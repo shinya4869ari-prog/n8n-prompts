@@ -11,15 +11,12 @@ return [articleItem].map(item => {
   let raw = inputData?.article ?? inputData?.output ?? "";
   const rawLines = raw.split('\n');
 
-  // --- 1. 見出しの重複削除（AIが出したプレーンな見出しを消す） ---
-  raw = raw.replace(/^[①-⑨] .*$/gm, '');
-
   const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
   const currencySymbol = $('国名変換Code').first().json.currencySymbol || '';
   const rate = $('国名変換Code').first().json.rate || 1;
 
   // --- 1. 見出し・出典の重複削除（AIが出したプレーンな行を消す） ---
-  raw = raw.replace(/^[①-⑨] .*$/gm, '');
+  raw = raw.replace(/^[①-⑩] .*$/gm, '');
   raw = raw.replace(/^出典：.*$/gm, '');
   raw = raw.replace(/^(国家の形と統治機構|行政トップ|立法と選挙制度|司法と法制度|社会保障・医療・年金|教育制度|徴税・財政制度|安全保障と兵役|基本権と価値観)｜.*$/gm, '');
 
@@ -284,7 +281,7 @@ return [articleItem].map(item => {
     introText = rawLines.slice(0, factLineIdx + 1).join('\n').trim();
   } else {
     const fallbackIdx = rawLines.findIndex(l => 
-      l.startsWith('①') || 
+      l.match(/^(?:#+\s*)?(?:①|1\.)/) || 
       l.startsWith('位置：') || l.startsWith('位置:') ||
       (l.includes('｜') && (l.includes('国家の形') || l.includes('行政トップ')))
     );
