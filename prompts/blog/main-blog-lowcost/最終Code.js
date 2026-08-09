@@ -1145,6 +1145,7 @@ return [articleItem].map(item => {
       return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
     });
     article += styledDD;
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
     article += `<!-- SECTION:deep_dive:END -->\n`;
   }
 
