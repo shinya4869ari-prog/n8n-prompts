@@ -1297,8 +1297,10 @@ return [articleItem].map(item => {
         catch (e) { return ''; }
       }
 
+      const trackId = d['track_id'] || d['trackId'] || d['itunes_id'] || d['id'] || '';
       const searchQuery = `${artistName} ${trackName}`;
-      const mapUrl = `https://map.seronworks.dev/?mode=music&q=${encodeURIComponent(searchQuery)}`;
+      const idParam = trackId ? `&id=${encodeURIComponent(trackId)}` : '';
+      const mapUrl = `https://map.seronworks.dev/?mode=music${idParam}&q=${encodeURIComponent(searchQuery)}`;
       const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#ff4081;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const popupTitleStr = `${trackName} - ${artistName}`;
       const n = encText(popupTitleStr);
