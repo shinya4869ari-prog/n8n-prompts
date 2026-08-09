@@ -299,7 +299,8 @@ return [articleItem].map(item => {
       .split(/\n{2,}/)
       .map(p => {
         const cleanP = p.trim().replace(/^[\s\n]+|[\s\n]+$/g, '');
-        if (!cleanP || cleanP.toUpperCase().includes('FACT') || cleanP.startsWith('①') || cleanP.includes('｜')) return '';
+        const isGeoLine = /^(位置|面積|公用語|日本からの飛行距離|外務省危険レベル)[：:]/.test(cleanP);
+        if (!cleanP || cleanP.toUpperCase().includes('FACT') || cleanP.startsWith('①') || cleanP.includes('｜') || isGeoLine) return '';
         return `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${cleanP.split('\n').join('<br>')}</p>`;
       })
       .filter(Boolean)
@@ -1032,8 +1033,9 @@ return [articleItem].map(item => {
 
     // ディープダイブの「■ 主な出典」を全箇所まとめてメイン記事の出典スタイルに統一
     let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
-      const citeHtml = citeContent
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
+      let citeHtml = citeContent
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#00bcd4;text-decoration:underline;font-weight:bold;word-break:break-all;">$1</a>')
+        .replace(/(^|[^"'])((https?:\/\/[^\s<]+))/g, '$1<a href="$2" target="_blank" style="color:#00bcd4;text-decoration:underline;font-weight:bold;word-break:break-all;">$2</a>')
         .replace(/[-–]\s*/g, '')
         .replace(/\n+/g, '<br>')
         .trim();
@@ -1041,6 +1043,7 @@ return [articleItem].map(item => {
       return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
     });
     article += styledDD;
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
     article += `<!-- SECTION:deep_dive:END -->\n`;
   }
 
