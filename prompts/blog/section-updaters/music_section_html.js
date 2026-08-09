@@ -17,7 +17,7 @@ try {
   countryName = trig.country_name || trig.country_ja || trig.country || countryName;
 } catch (e) {}
 
-if ((countryName === '対象国' || countryName === 'BT') && items[0]) {
+if (countryName === '対象国' && items[0]) {
   countryName = items[0].countryJa || items[0].country_name || items[0].country_ja || items[0].country || countryName;
 }
 

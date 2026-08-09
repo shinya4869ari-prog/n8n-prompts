@@ -24,20 +24,12 @@ try {
 } catch (e) {}
 
 // countryNameのみ、items からのフォールバックを許可（section_typeは絶対に許可しない）
-if ((countryName === '対象国' || countryName === 'BT') && items[0]) {
+if (countryName === '対象国' && items[0]) {
   countryName = items[0].country_name || items[0].country_ja || items[0].country || countryName;
 }
 
 if (!sectionType) {
   throw new Error('[映画セクション生成エラー] トリガーから section_type（eizou/osusume）を取得できませんでした。items側のデータでの代用は行いません。呼び出し元ノードのパラメータを確認してください。');
-}
-
-// 国コード（ISO等）から日本語表記への簡易マッピング補正
-const countryCodeMap = {
-  'BT': 'ブータン', 'bt': 'ブータン', 'Bhutan': 'ブータン', 'bhutan': 'ブータン'
-};
-if (countryCodeMap[countryName]) {
-  countryName = countryCodeMap[countryName];
 }
 
 let sectionStr = String(sectionType).toLowerCase();
