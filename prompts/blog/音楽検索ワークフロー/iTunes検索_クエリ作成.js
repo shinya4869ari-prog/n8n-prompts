@@ -14,15 +14,46 @@ const countryCode = input.countryCode || input.iso2 || 'KR';
 const marketCode = (countryCode && countryCode.length === 2) ? countryCode.toUpperCase() : 'JP';
 
 // iTunes検索用クエリの生成
-// 単に国名「South Korea」だとストア内検索で0件になるため「Korea music」または「K-Pop」等の最適キーワードを設定
-let searchTerm = `${countryEn} music`;
-if (countryEn.includes('Korea')) {
-  searchTerm = 'K-Pop';
+// 世界各国の音楽ジャンル・特徴的キーワードのマッピングテーブル
+const genreMap = {
+  'Korea': 'K-Pop',
+  'South Korea': 'K-Pop',
+  'Japan': 'J-Pop',
+  'Jamaica': 'Reggae Jamaica',
+  'Brazil': 'Samba Bossa Nova Brazil',
+  'Nigeria': 'Afrobeats Nigeria',
+  'India': 'Bollywood India',
+  'Cuba': 'Salsa Cuba',
+  'Spain': 'Flamenco Spain',
+  'Argentina': 'Tango Argentina',
+  'Ireland': 'Celtic Irish music',
+  'United Kingdom': 'UK Pop',
+  'United States': 'US Pop',
+  'France': 'Chanson French music',
+  'Italy': 'Italian music',
+  'Mexico': 'Regional Mexican',
+  'Colombia': 'Cumbia Colombia',
+  'Puerto Rico': 'Reggaeton Puerto Rico',
+  'South Africa': 'Amapiano South Africa',
+  'Egypt': 'Arabic Egyptian music',
+  'Turkey': 'Turkish music',
+  'Mongolia': 'Mongolian music',
+  'Bhutan': 'Bhutanese music',
+  'Greece': 'Greek music',
+  'Sweden': 'Swedish pop'
+};
+
+let searchTerm = genreMap[countryEn] || `${countryEn} music`;
+for (const key in genreMap) {
+  if (countryEn.toLowerCase().includes(key.toLowerCase())) {
+    searchTerm = genreMap[key];
+    break;
+  }
 }
 
 // iTunes Search API Endpoint
-// country=KR に固定しすぎるとストア側のヒット数が0件になる場合があるため、汎用ストアで人気曲をヒットさせる
-const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&entity=song&limit=30`;
+// 全世界のiTunesストアから代表曲を最大40件取得
+const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=${marketCode}&media=music&entity=song&limit=40`;
 
 return [{
   json: {
