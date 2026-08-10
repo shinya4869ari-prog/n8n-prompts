@@ -82,6 +82,12 @@ return items.map((item, index) => {
     ? aiData.overview_en 
     : ((aiData.overview_en && (aiData.overview_en.length >= (source.overview_en || '').length)) ? aiData.overview_en : (source.overview_en || aiData.overview_en || null));
 
+  // ノイズ除去用関数 (例: "イ-・イダム" ➔ "イ・イダム" へ自動クレンジング)
+  const cleanKatakanaHyphens = (str) => {
+    if (!str) return str;
+    return String(str).replace(/([アカ-ンa-zA-Z])-・/g, '$1・').replace(/-・/g, '・');
+  };
+
   // 1. レコード構築
   const updatedRecord = {
     idx: source.idx ?? null,
@@ -91,13 +97,13 @@ return items.map((item, index) => {
     is_recommended: source.is_recommended ?? true,
     genres: source.genres || aiData.genres || null,
 
-    title: title,
+    title: cleanKatakanaHyphens(title),
     origin_title: origin_title,
 
-    director: director,
+    director: cleanKatakanaHyphens(director),
     director_en: director_en,
 
-    cast: cast,
+    cast: cleanKatakanaHyphens(cast),
     cast_en: cast_en,
 
     overview: overview,
