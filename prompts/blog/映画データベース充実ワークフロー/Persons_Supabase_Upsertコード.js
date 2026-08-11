@@ -1,20 +1,20 @@
 /**
  * 【n8n用】Persons（人物・キャスト・監督）Supabase Upsert用整形コード
  * 
- * 役割: 映画充実ワークフローから抽出された 監督(director, director_en) および
- *       キャスト(cast, cast_en) のデータから、Wikidata Search API を使って動的に
- *       各人物の Wikidata QID を全自動検索・補完し、Supabase "Persons" へ一括保存します。
+ * 役割: Wikidata人名検索 (HTTP Request) のレスポンスから抽出された本当の Wikidata QID (Q212990等)
+ *       および映画クレジット情報（顔写真・原語名・性別・国籍）を完全合体させ、
+ *       Supabase の "Persons" テーブルへ保存できる形式で出力します。
  */
 
 function getNodeData(name) {
   try { return $(name).first()?.json || $(name).item?.json || {}; } catch(e) { return {}; }
 }
 
-const inputData = $input.first()?.json || $input.item?.json || {};
-const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || inputData;
+const inputItems = $input.all();
 const credits = getNodeData('TMDb credits取得');
+const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || {};
 
-const movieCountry = String(shaped.country || inputData.country || '').toUpperCase();
+const movieCountry = String(shaped.country || '').toUpperCase();
 const targetCountries = ['JP', 'KR', 'US', 'GB'];
 
 const persons = [];
@@ -39,88 +39,47 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
-// Wikidata APIから人名のQIDを動的リアルタイム検索する非同期ヘルパー
-async function fetchWikidataQid(name, nameEn) {
-  if (!name && !nameEn) return null;
-  const query = nameEn || name;
-  const lang = /[\uac00-\ud7af]/.test(query) ? 'ko' : 'ja';
-  
-  try {
-    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(query)}&language=${lang}&format=json&origin=*`;
-    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
-    if (!r.ok) return null;
-    const d = await r.json();
-    if (d.search && d.search.length > 0) {
-      const item = d.search.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || d.search[0];
-      return item.id || null;
-    }
-  } catch(e) {}
-  return null;
-}
+// 手前の Code ノード（キャスト・監督抽出）からキャスト・監督の元データを安全取得
+const sourcePersonsNode = getNodeData('キャスト・監督抽出') || {};
+const sourcePersonsList = $input.all().map(it => it.json);
 
-const jaDirectors = splitNames(shaped.director);
-const enDirectors = splitNames(shaped.director_en);
-const jaCast = splitNames(shaped.cast);
-const enCast = splitNames(shaped.cast_en);
+// Wikidata人名検索から流れてきた各アイテムを安全処理
+inputItems.forEach((item, idx) => {
+  const j = item.json || {};
+  const searchName = j.searchinfo?.search || '';
+  const searchResults = j.search || [];
 
-async function main() {
-  // 1. 監督データの追加
-  for (let idx = 0; idx < jaDirectors.length; idx++) {
-    const name = jaDirectors[idx];
-    if (!name || seenNames.has(name)) continue;
-    seenNames.add(name);
+  // Wikidata QID の自動抽出（検索結果の一番上のID）
+  let qid = null;
+  if (searchResults.length > 0) {
+    // 俳優・監督の記述を優先、無ければ一番上のIDを採用
+    const matched = searchResults.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || searchResults[0];
+    qid = matched?.id || null;
+  }
 
-    const crewObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
-    const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
-    const nameEn = enDirectors[idx] || crewObj?.original_name || null;
+  // クレジット情報からのメタデータ復元
+  const crewObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
+  const castObj = Array.isArray(credits?.cast) 
+    ? credits.cast.find(c => (c.name && c.name.toLowerCase() === searchName.toLowerCase()) || (c.original_name && c.original_name.toLowerCase() === searchName.toLowerCase()))
+    : null;
 
-    // 動的QID全自動取得！
-    const qid = await fetchWikidataQid(name, nameEn);
+  const targetObj = crewObj || castObj || {};
+  const isDirector = !!crewObj && (crewObj.name === searchName || searchName === shaped.director);
+  const nameEn = targetObj.original_name || null;
+  const profilePath = targetObj.profile_path ? `https://image.tmdb.org/t/p/h630${targetObj.profile_path}` : null;
 
+  if (searchName && !seenNames.has(searchName)) {
+    seenNames.add(searchName);
     persons.push({
-      name: name,
+      name: searchName,
       name_en: nameEn,
-      occupation: '監督',
+      occupation: isDirector ? '監督' : '俳優',
       profile_url: profilePath,
-      gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
-      country: inferPersonCountry(name, nameEn, movieCountry),
-      wikidata_id: qid
+      gender: targetObj.gender === 1 ? 'female' : (targetObj.gender === 2 ? 'male' : null),
+      country: inferPersonCountry(searchName, nameEn, movieCountry),
+      wikidata_id: qid // 🎯【大成功】全自動で取れた Wikidata QID (Q212990, Q7385485等)
     });
   }
+});
 
-  // 2. キャスト（出演者）データの追加
-  const isTargetCastCountry = !movieCountry || targetCountries.includes(movieCountry);
-
-  if (isTargetCastCountry) {
-    for (let idx = 0; idx < jaCast.length; idx++) {
-      const name = jaCast[idx];
-      if (!name || seenNames.has(name)) continue;
-      seenNames.add(name);
-
-      const nameEn = enCast[idx] || '';
-      const castObj = Array.isArray(credits?.cast) 
-        ? credits.cast.find(c => (c.name && c.name.toLowerCase() === nameEn.toLowerCase()) || (c.original_name && c.original_name.toLowerCase() === nameEn.toLowerCase()))
-        : null;
-
-      const profilePath = castObj?.profile_path ? `https://image.tmdb.org/t/p/h630${castObj.profile_path}` : null;
-
-      // 動的QID全自動取得！
-      const qid = await fetchWikidataQid(name, nameEn);
-
-      persons.push({
-        name: name,
-        name_en: nameEn || castObj?.original_name || null,
-        occupation: '俳優',
-        profile_url: profilePath,
-        gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
-        country: inferPersonCountry(name, nameEn, movieCountry),
-        wikidata_id: qid
-      });
-    }
-  }
-
-  return persons.map(p => ({ json: p }));
-}
-
-// 🎯【重要】n8n非同期エンジンのため return await main() で待機させる！
-return await main();
+return persons.map(p => ({ json: p }));
