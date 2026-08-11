@@ -1,84 +1,89 @@
 ﻿/**
- * 補完ブリッジ整形コード
- * 役割: 映画DB充実ワークフローのSupabase保存後のデータを
- *       映画データ補完ワークフロー（Gemini）への入力形式に整形する
- * 
- * 接続: Supabaseへ保存 → [このコード] → Gemini補完ノード(PromptLoader) → 補完結果整形コード → Supabase UPDATE
+ * 補完ブリッジ整形コード（安全・完全取得版）
+ * 役割: 映画DB充実ワークフローの各ノード（TMDb/Brave/Geminiあらすじ等）のデータを安全に一括集約し、
+ *       映画データ補完ワークフロー（Gemini）への入力JSONに変換する
  */
-
-// 充実ワークフロー内の各ノードからデータを収集
-function getNodeData(nodeName) {
-  try {
-    return $(nodeName).first()?.json || $(nodeName).item?.json || {};
-  } catch (e) {
-    return {};
-  }
+function getNode(name) {
+  try { return $(name).first()?.json || $(name).item?.json || {}; } catch(e) { return {}; }
 }
 
-const shaped = getNodeData('映画データ整形コード_claude');
+// 映画データ整形コードの取得
+const shaped = (() => {
+  const d = getNode('映画データ整形コード_claude');
+  if (d.title || d.origin_title) return d;
+  return getNode('映画データ整形コード');
+})();
+
+// キャスト・監督翻訳AIの取得
+const castTrans = (() => {
+  const c = getNode('キャスト・監督翻訳AI1');
+  if (c.text || c.content || c.message) return c;
+  return getNode('キャスト・監督翻訳AI');
+})();
+
+const parsedCast = (() => {
+  try {
+    const raw = castTrans.text || (Array.isArray(castTrans.content) ? castTrans.content[0]?.text : castTrans.content) || '';
+    return JSON.parse(raw.replace(/```json/gi, '').replace(/```/g, '').trim());
+  } catch(e) { return {}; }
+})();
+
+// あらすじの取得（gemini_movie_db ➔ 整形コード の優先順で自動選択）
 const aiOverview = (() => {
   try {
-    // Gemini あらすじノードの出力を取得
-    const g = getNodeData('gemini_movie_db');
-    const raw = g?.text || g?.output
-      || (Array.isArray(g?.candidates)
-        ? g.candidates[0]?.content?.parts?.map(p => p.text).join('') : '')
-      || '';
-    if (raw && !raw.includes('申し訳') && !raw.includes('情報が') && raw.trim().length > 30) {
+    const g = getNode('gemini_movie_db');
+    let raw = g.text || g.output || '';
+    if (!raw && g.candidates?.[0]?.content?.parts) {
+      raw = g.candidates[0].content.parts.map(p => p.text || '').join('');
+    }
+    if (!raw && g.content?.parts) {
+      raw = g.content.parts.map(p => p.text || '').join('');
+    }
+    if (raw && !raw.includes('申し訳') && !raw.includes('情報が') && raw.trim().length > 20) {
       return raw.trim();
+    }
+  } catch(e) {}
+  return shaped.overview || '';
+})();
+
+// Brave 検索結果の取得
+const braveResult = (() => {
+  try {
+    const bList = [getNode('Brave Search web'), getNode('Brave Search_movie'), getNode('Brave Search')];
+    for (const b of bList) {
+      const res = b.web?.results || b.results;
+      if (Array.isArray(res) && res.length > 0) {
+        return res.slice(0, 5).map(r => r.movie?.description || r.description || '').filter(Boolean).join('\n');
+      }
     }
   } catch(e) {}
   return '';
 })();
 
-const castTranslation = (() => {
-  try {
-    const c = getNodeData('キャスト・監督翻訳AI');
-    const raw = c?.text || (Array.isArray(c?.content) ? c.content[0]?.text : c?.content) || '';
-    return JSON.parse(raw.replace(/```json/gi, '').replace(/```/g, '').trim());
-  } catch(e) { return {}; }
-})();
-
-const brave_search_result = (() => {
-  try {
-    const b = getNodeData('Brave Search_movie');
-    return (b?.web?.results || []).slice(0, 5).map(r => r.movie?.description || r.description || '').filter(Boolean).join('\n');
-  } catch(e) { return ''; }
-})();
-
-// 補完 Gemini への入力データを構築（既存データ + 初回 AI 生成データを統合）
 return [{
   json: {
-    // ID 系
     idx: shaped.idx || null,
     tmdb_id: shaped.tmdb_id || null,
     wikidata_id: shaped.wikidata_id || null,
 
-    // 基本情報
-    title: castTranslation.title || shaped.title || '',
+    title: parsedCast.title || shaped.title || shaped.origin_title || '',
     origin_title: shaped.origin_title || '',
     year: shaped.year || null,
     country: shaped.country || '',
     genres: shaped.genres || '',
 
-    // 監督・キャスト (日本語/英語)
-    director: castTranslation.director || shaped.director || '',
+    director: parsedCast.director || shaped.director || '',
     director_en: shaped.director_en || '',
-    cast: castTranslation.cast || shaped.cast || '',
+    cast: parsedCast.cast || shaped.cast || '',
     cast_en: shaped.cast_en || '',
 
-    // あらすじ (充実ワークフローで生成した日本語あらすじを overview として引き渡す)
     overview: aiOverview || shaped.overview || '',
     overview_en: shaped.overview_en || '',
 
-    // メディア URL
     poster_url: shaped.poster_url || '',
     trailer_url: shaped.trailer_url || '',
+    brave_search_result: braveResult,
 
-    // Brave 検索結果（補完 Gemini のコンテキストとして利用）
-    brave_search_result: brave_search_result,
-
-    // 補完前ステータス
     audit_status: 'PENDING_AUDIT'
   }
 }];
