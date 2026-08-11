@@ -128,7 +128,7 @@ const director = sourceData.director || fetchedDirector || null;
 const cast_en = sourceData.cast_en || fetchedCastEn || null;
 const director_en = sourceData.director_en || fetchedDirectorEn || null;
 
-// Braveの動画結果およびウェブ検索結果（動画が含まれるため）を統合して安全に取得
+// Braveの動画結果およびウェブ検索結果を統合して安全に取得
 const braveMovie = getNodeData('Brave Search_movie');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const videoResults = [
@@ -236,11 +236,43 @@ const genreMap = {
 const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
 const genres = (Array.isArray(rawGenreIds) && rawGenreIds.length > 0 ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : '') || sourceData.genres || sourceData.genre || null;
 
+// 変更理由ログ (update_reason) の記録
+const reasons = [];
+
+if (fetchedTrailerUrl) {
+  if (fetchedTrailerUrl !== sourceData.trailer_url) {
+    reasons.push('trailer_url: Brave検索の最新予告編で新規更新');
+  } else {
+    reasons.push('trailer_url: 既存URLが最新予告編と一致');
+  }
+} else if (sourceData.trailer_url) {
+  reasons.push('trailer_url: 既存URLを保護・維持');
+} else {
+  reasons.push('trailer_url: 予告編未検出のためnull');
+}
+
+if (result?.id && result.id !== sourceData.tmdb_id) {
+  reasons.push(`tmdb_id: TMDb検索結果(${result.id})で更新`);
+} else if (sourceData.tmdb_id) {
+  reasons.push(`tmdb_id: 既存ID(${sourceData.tmdb_id})を維持`);
+} else {
+  reasons.push('tmdb_id: 未検出のためnull');
+}
+
+if (sourceData.overview) {
+  reasons.push('overview: 既存日本語あらすじを保護');
+} else if (rawOverview) {
+  reasons.push('overview: TMDbあらすじを取得');
+}
+
+const update_reason = reasons.join(' / ');
+
 const escapeJsonString = (str) => {
   if (typeof str !== 'string') return str;
   return str.replace(/\r/g, '').replace(/\n/g, ' ').replace(/\\/g, '\\\\').replace(/"/g, '\\"').trim();
 };
 
+// is_recommended（リコメンドフラグ）のみ削除し、update_reason は維持
 const outputObj = {
   title: escapeJsonString(finalTitle),
   origin_title: escapeJsonString(finalOriginTitle),
@@ -256,6 +288,7 @@ const outputObj = {
   cast: escapeJsonString(cast),
   cast_en: escapeJsonString(cast_en),
   trailer_url,
-  country
+  country,
+  update_reason
 };
 return [{ json: outputObj }];
