@@ -111,13 +111,26 @@ if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
   fetchedWikidataId = credits.external_ids.wikidata_id;
 }
 
-// YouTube動画・予告編の抽出（本ノード＋後続の補完ブリッジノードで高精度取得）
+// 🎬 予告編ハイブリッド抽出（第1優先: TMDb公式動画キー、第2優先: Brave Search）
 let trailerUrl = '';
 let trailerTitle = '';
-const searchTitleLower = movieTitle.toLowerCase();
-const searchTitleClean = searchTitleLower.replace(/[\s:：・\-_]/g, '');
 
-if (Array.isArray(brave.results)) {
+// 1. 第1優先: TMDb公式動画 (videos / credits.videos) からYouTube予告編を取得 (誤検索0%)
+const tmdbVideos = credits.videos?.results || credits.videos || result?.videos?.results || [];
+if (Array.isArray(tmdbVideos) && tmdbVideos.length > 0) {
+  // Trailer または Teaser を最優先で探す
+  const officialTrailer = tmdbVideos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || tmdbVideos.find(v => v.site === 'YouTube');
+  if (officialTrailer && officialTrailer.key) {
+    trailerUrl = `https://www.youtube.com/watch?v=${officialTrailer.key}`;
+    trailerTitle = officialTrailer.name || `${movieTitle} 予告編`;
+  }
+}
+
+// 2. 第2優先 (フォールバック): TMDbに動画がない場合のみ Brave Search を活用
+if (!trailerUrl && Array.isArray(brave.results)) {
+  const searchTitleLower = movieTitle.toLowerCase();
+  const searchTitleClean = searchTitleLower.replace(/[\s:：・\-_]/g, '');
+
   const matchedVideo = brave.results.find(v => {
     const vt = (v.title || '').toLowerCase().replace(/[\s:：・\-_]/g, '');
     const vd = (v.description || '').toLowerCase();
@@ -144,7 +157,7 @@ let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
 return [{
   json: {
     tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id,
-    wikidata_id: fetchedWikidataId, // 🎯 映画の Wikidata ID (例: Q27581922)
+    wikidata_id: fetchedWikidataId,
     title: movieTitle,
     title_en: result?.original_title || credits.original_title || movieTitle,
     origin_title: result?.original_title || credits.original_title || movieTitle,
