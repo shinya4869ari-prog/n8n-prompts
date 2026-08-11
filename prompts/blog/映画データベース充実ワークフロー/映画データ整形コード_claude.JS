@@ -1,5 +1,5 @@
 /**
- * 【n8n用】映画データ整形コード（Brave依存を完全排除・TMDb一元化版）
+ * 【n8n用】映画データ整形コード（100%空防止・YouTube自動リンク補完版）
  * 
  * 役割: TMDb API から取得した映画情報・監督・キャスト・公式YouTube予告編を
  *       完全自動で安全に統合・整形し、Supabase "Movies" テーブルへ保存できる形式で出力します。
@@ -116,7 +116,7 @@ if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
   fetchedWikidataId = credits.external_ids.wikidata_id;
 }
 
-// 🎬 100%正確な TMDb 公式 YouTube 予告編の抽出（誤検索0%・Brave不使用）
+// 🎬 100%空にしない YouTube 予告編抽出（TMDb動画キー優先 ➔ 無ければ YouTube 検索自動生成URL）
 let trailerUrl = '';
 let trailerTitle = '';
 
@@ -127,6 +127,13 @@ if (Array.isArray(tmdbVideos) && tmdbVideos.length > 0) {
     trailerUrl = `https://www.youtube.com/watch?v=${officialTrailer.key}`;
     trailerTitle = officialTrailer.name || `${movieTitle} 公式予告編`;
   }
+}
+
+// 🎯 TMDb に動画登録がない作品でも、絶対に空にせず YouTube 直行リンクを全自動セット！
+if (!trailerUrl) {
+  const searchQuery = encodeURIComponent(`${movieTitle} 予告編`);
+  trailerUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+  trailerTitle = `${movieTitle} 予告編 (YouTubeで検索)`;
 }
 
 // 変更理由ログの作成
@@ -151,7 +158,7 @@ return [{
     overview: tmdbOverview,
     poster_path: credits.poster_path || result?.poster_path || '',
     backdrop_path: credits.backdrop_path || result?.backdrop_path || '',
-    trailer_url: trailerUrl,
+    trailer_url: trailerUrl, // 🎯 絶対に空っぽにならず、確実なYouTubeリンクが入る！
     trailer_title: trailerTitle,
     update_reason: updateReason
   }
