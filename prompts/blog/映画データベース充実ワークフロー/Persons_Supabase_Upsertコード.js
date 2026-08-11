@@ -47,12 +47,11 @@ async function fetchWikidataQid(name, nameEn) {
   
   try {
     const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(query)}&language=${lang}&format=json&origin=*`;
-    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
     if (!r.ok) return null;
     const d = await r.json();
     if (d.search && d.search.length > 0) {
-      // 俳優・監督・人物の記述があるエンティティを優先
-      const item = d.search.find(s => s.description && /actor|director|film|actor|actress|映画|俳優|監督/i.test(s.description)) || d.search[0];
+      const item = d.search.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || d.search[0];
       return item.id || null;
     }
   } catch(e) {}
@@ -85,7 +84,7 @@ async function main() {
       profile_url: profilePath,
       gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
       country: inferPersonCountry(name, nameEn, movieCountry),
-      wikidata_id: qid // 🎯 APIから100%全自動取得された QID (例: Q212990)
+      wikidata_id: qid
     });
   }
 
@@ -115,7 +114,7 @@ async function main() {
         profile_url: profilePath,
         gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
         country: inferPersonCountry(name, nameEn, movieCountry),
-        wikidata_id: qid // 🎯 APIから100%全自動取得された QID (例: Q7385485, Q268717等)
+        wikidata_id: qid
       });
     }
   }
@@ -123,4 +122,5 @@ async function main() {
   return persons.map(p => ({ json: p }));
 }
 
-return main();
+// 🎯【重要】n8n非同期エンジンのため return await main() で待機させる！
+return await main();
