@@ -11,25 +11,26 @@ function getNodeData(name) {
 
 const input = $input.first()?.json || $input.item?.json || {};
 const itunesRaw = getNodeData('iTunes検索');
-const wiki = getNodeData('Wikidataメンバー検索');
+const wikiRaw = getNodeData('Wikidataメンバー検索');
 
-// iTunes レスポンスの柔軟なパース
 let itunesData = {};
 try {
   if (itunesRaw.data) {
     itunesData = typeof itunesRaw.data === 'string' ? JSON.parse(itunesRaw.data) : itunesRaw.data;
-  } else {
-    itunesData = itunesRaw;
-  }
-} catch(e) {
-  itunesData = {};
-}
+  } else { itunesData = itunesRaw; }
+} catch(e) { itunesData = {}; }
+
+let wikiData = {};
+try {
+  if (wikiRaw.data) {
+    wikiData = typeof wikiRaw.data === 'string' ? JSON.parse(wikiRaw.data) : wikiRaw.data;
+  } else { wikiData = wikiRaw; }
+} catch(e) { wikiData = {}; }
 
 const itunesTracks = itunesData.results || (Array.isArray(itunesData) ? itunesData : []);
 const firstTrack = itunesTracks[0] || {};
 const artistQuery = input.artist || input['アーティスト名 / グループ名'] || input.body?.['アーティスト名 / グループ名'] || firstTrack.artistName || 'BLACKPINK';
 
-// 代表曲一覧の抽出（最大10曲）
 const topSongs = itunesTracks.slice(0, 10).map(t => ({
   track_name: t.trackName,
   album_name: t.collectionName,
@@ -38,19 +39,27 @@ const topSongs = itunesTracks.slice(0, 10).map(t => ({
   release_date: t.releaseDate ? t.releaseDate.substring(0, 4) : ''
 }));
 
-// グループかソロかの自動判別
-const hasMembers = wiki.results?.bindings && wiki.results.bindings.length > 0;
+// グループ判定：メンバーが存在するか、またはグループっぽい名前/ジャンルか
+const membersList = wikiData.results?.bindings || [];
+const hasMembers = membersList.length > 0;
+const genre = firstTrack.primaryGenreName || 'K-Pop';
+
+// 国籍補正（iTunesがUSAを返してしまう問題の補正）
+let country = 'KR';
+if (genre.toLowerCase().includes('k-pop') || /^[A-Z0-9\s]+$/i.test(artistQuery)) {
+  country = 'KR';
+} else if (firstTrack.country && firstTrack.country !== 'USA') {
+  country = firstTrack.country;
+}
 
 return [{
   json: {
     artist_name: firstTrack.artistName || artistQuery,
     artist_id: firstTrack.artistId || null,
-    genre: firstTrack.primaryGenreName || 'K-Pop',
-    country: firstTrack.country || 'KR',
+    genre: genre,
+    country: country,
     artwork_url: firstTrack.artworkUrl100 ? firstTrack.artworkUrl100.replace('100x100bb', '600x600bb') : '',
     top_songs: topSongs,
-    
-    // グループ・メンバー構造
     type: hasMembers ? 'group' : 'individual',
     has_members: hasMembers
   }

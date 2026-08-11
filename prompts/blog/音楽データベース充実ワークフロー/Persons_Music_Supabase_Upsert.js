@@ -17,46 +17,54 @@ let wikiData = {};
 try {
   if (wikiRaw.data) {
     wikiData = typeof wikiRaw.data === 'string' ? JSON.parse(wikiRaw.data) : wikiRaw.data;
-  } else {
-    wikiData = wikiRaw;
-  }
-} catch(e) {
-  wikiData = {};
-}
+  } else { wikiData = wikiRaw; }
+} catch(e) { wikiData = {}; }
 
 const persons = [];
 const artistName = musicData.artist_name;
 if (!artistName) return [];
 
+const bindings = wikiData.results?.bindings || [];
+const hasMembers = bindings.length > 0;
+const isGroup = hasMembers || musicData.type === 'group';
+
+// 国籍判定（K-Pop や 韓国系人名なら KR）
+const defaultCountry = (musicData.genre && musicData.genre.toLowerCase().includes('k-pop')) ? 'KR' : (musicData.country || 'KR');
+
 // 1. アーティスト / グループ 本体の登録
 persons.push({
   name: artistName,
   name_en: musicData.artist_name_en || null,
-  occupation: musicData.type === 'group' ? 'グループ' : '歌手',
-  type: musicData.type || 'group',
-  group_type: musicData.genre || '音楽アーティスト',
+  occupation: isGroup ? 'グループ' : '歌手',
+  type: isGroup ? 'group' : 'individual',
+  group_type: musicData.genre || '音楽グループ',
   profile_url: musicData.artwork_url || null,
-  country: musicData.country || null,
+  country: defaultCountry,
   members: null
 });
 
-// 2. Wikidata や 入力データからのメンバー自動分割保存
-if (wikiData && Array.isArray(wikiData.results?.bindings)) {
-  wikiData.results.bindings.forEach(b => {
-    const memName = b.memberLabel?.value;
-    if (!memName || /^Q\d+$/.test(memName)) return;
+// 2. Wikidata メンバーの個別登録
+bindings.forEach(b => {
+  const memName = b.memberLabel?.value;
+  if (!memName || /^Q\d+$/.test(memName)) return;
 
-    persons.push({
-      name: memName,
-      name_en: b.memberEnLabel?.value || null,
-      occupation: '歌手',
-      type: 'individual',
-      parent_group: artistName, // 🎯 BLACKPINK 等の親グループ名を自動紐づけ！
-      profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
-      gender: b.genderLabel?.value === 'female' ? 'female' : (b.genderLabel?.value === 'male' ? 'male' : null),
-      country: musicData.country || null
-    });
+  // 原語名（ハングル koLabel を最優先、無ければ 英語 enLabel）
+  const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
+
+  // 性別判定（"女性" / "female" ➔ female）
+  const rawGender = (b.genderLabel?.value || '').toLowerCase();
+  const gender = (rawGender === 'female' || rawGender === '女性') ? 'female' : ((rawGender === 'male' || rawGender === '男性') ? 'male' : null);
+
+  persons.push({
+    name: memName,
+    name_en: origName,  // 🎯 韓国系ならハングル(지수), 欧米系なら英語(Jisoo)
+    occupation: '歌手',
+    type: 'individual',
+    parent_group: artistName, // 🎯 親グループ（BLACKPINK等）を自動紐づけ！
+    profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
+    gender: gender,
+    country: defaultCountry
   });
-}
+});
 
 return persons.map(p => ({ json: p }));
