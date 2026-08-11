@@ -45,7 +45,7 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
 const jaDirectors = splitNames(shapedNode.director);
 const enDirectors = splitNames(shapedNode.director_en);
 const jaCast = splitNames(shapedNode.cast);
-const enCast = splitNames(shaped.cast_en);
+const enCast = splitNames(shapedNode.cast_en); // 🎯【タイポ修正】shaped ➔ shapedNode に修正
 
 const enNameMap = {};
 jaDirectors.forEach((name, idx) => { if (name) enNameMap[name] = enDirectors[idx] || null; });
