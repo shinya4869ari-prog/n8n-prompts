@@ -31,10 +31,20 @@ const isGroup = hasMembers || musicData.type === 'group';
 // 国籍判定（K-Pop や 韓国系人名なら KR）
 const defaultCountry = (musicData.genre && musicData.genre.toLowerCase().includes('k-pop')) ? 'KR' : (musicData.country || 'KR');
 
+// 🎯 映画DBと完全に統一: 韓国系のグループ・アーティストはハングル表記（例: "블랙핑크"）を原語名として格納
+const getKoreanOrOrigName = (jaName, enName, koName) => {
+  if (koName) return koName;
+  if (jaName === 'BLACKPINK' || jaName === 'ブラックピンク') return '블랙핑크';
+  if (jaName === 'BTS' || jaName === '防弾少年団') return '방탄소년단';
+  if (jaName === 'TWICE') return '트와이스';
+  if (jaName === 'NewJeans') return '뉴진스';
+  return enName || null;
+};
+
 // 1. アーティスト / グループ 本体の登録
 persons.push({
   name: artistName,
-  name_en: musicData.artist_name_en || null,
+  name_en: defaultCountry === 'KR' ? getKoreanOrOrigName(artistName, musicData.artist_name_en, null) : (musicData.artist_name_en || null),
   occupation: isGroup ? 'グループ' : '歌手',
   type: isGroup ? 'group' : 'individual',
   group_type: musicData.genre || '音楽グループ',
@@ -48,7 +58,7 @@ bindings.forEach(b => {
   const memName = b.memberLabel?.value;
   if (!memName || /^Q\d+$/.test(memName)) return;
 
-  // 原語名（ハングル koLabel を最優先、無ければ 英語 enLabel）
+  // 映画DB統一基準: ハングル(koLabel)を最優先！
   const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
 
   // 性別判定（"女性" / "female" ➔ female）
@@ -57,10 +67,10 @@ bindings.forEach(b => {
 
   persons.push({
     name: memName,
-    name_en: origName,  // 🎯 韓国系ならハングル(지수), 欧米系なら英語(Jisoo)
+    name_en: origName,  // 🎯 映画DBと統一: ハングル(지수, 제니, 로제, 리사)を格納！
     occupation: '歌手',
     type: 'individual',
-    parent_group: artistName, // 🎯 親グループ（BLACKPINK等）を自動紐づけ！
+    parent_group: artistName,
     profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
     gender: gender,
     country: defaultCountry
