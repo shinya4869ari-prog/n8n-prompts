@@ -15,6 +15,15 @@ const inputData = $input.first()?.json || $input.item?.json || {};
 const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || inputData;
 const credits = getNodeData('TMDb credits取得');
 
+// 🎯 対象国のフィルタリング設定 (日本・韓国・主要欧米作品のみDBに保存し、DBの品質を高く保つ)
+const targetCountries = ['JP', 'KR', 'US', 'GB']; // 必要に応じて 'JP', 'KR' だけにも調整可能
+const movieCountry = String(shaped.country || inputData.country || '').toUpperCase();
+
+// 指定した主要国以外のマイナー作品の場合は自前DBへの保存を安全にスキップ
+if (movieCountry && !targetCountries.includes(movieCountry)) {
+  return []; // 空配列を返して Supabase 登録をスキップ (アプリ側は従来通り Wikidata で動的表示されます)
+}
+
 const persons = [];
 const seenNames = new Set();
 
@@ -34,7 +43,6 @@ jaDirectors.forEach((name, idx) => {
   if (!name || seenNames.has(name)) return;
   seenNames.add(name);
 
-  // TMDb credits からプロフィールの画像等を探す
   const crewObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
   const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
 
@@ -44,8 +52,8 @@ jaDirectors.forEach((name, idx) => {
     occupation: '監督',
     profile_url: profilePath,
     gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
-    country: shaped.country || null,
-    wikidata_id: null // 後からWikidata連携可能
+    country: movieCountry || null,
+    wikidata_id: null
   });
 });
 
@@ -54,7 +62,6 @@ jaCast.forEach((name, idx) => {
   if (!name || seenNames.has(name)) return;
   seenNames.add(name);
 
-  // TMDb credits から一致するキャスト画像を探す
   const nameEn = enCast[idx] || '';
   const castObj = Array.isArray(credits?.cast) 
     ? credits.cast.find(c => (c.name && c.name.toLowerCase() === nameEn.toLowerCase()) || (c.original_name && c.original_name.toLowerCase() === nameEn.toLowerCase()))
@@ -68,7 +75,7 @@ jaCast.forEach((name, idx) => {
     occupation: '俳優',
     profile_url: profilePath,
     gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
-    country: shaped.country || null,
+    country: movieCountry || null,
     wikidata_id: null
   });
 });
