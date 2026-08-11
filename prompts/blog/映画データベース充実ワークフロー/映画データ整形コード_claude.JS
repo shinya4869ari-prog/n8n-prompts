@@ -1,4 +1,4 @@
-const brave = $input.first()?.json || $input.item?.json || {};
+﻿const brave = $input.first()?.json || $input.item?.json || {};
 const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
@@ -66,7 +66,7 @@ if (correctMovieId && resultsList.length > 0) {
     });
   }
 
-  // 3. 国・年の条件に一致しない場合、別作品（例: 同タイトルの旧作アメリカ映画等）で誤上書きするのを防ぐため、危険なフォールバック(resultsList[0])を行わずnullのままとします
+  // 3. 国・年の条件に一致しない場合、別作品で誤上書きするのを防ぐためnullのままとします
   if (!result) {
     result = null;
   }
@@ -81,33 +81,13 @@ const langToCountry = {
   'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
 };
 const nameToCountryCode = {
-  'ブータン': 'BT',
-  '韓国': 'KR',
-  '大韓民国': 'KR',
-  'アメリカ': 'US',
-  'アメリカ合衆国': 'US',
-  '日本': 'JP',
-  'フランス': 'FR',
-  'ドイツ': 'DE',
-  '中国': 'CN',
-  '中華人民共和国': 'CN',
-  'インド': 'IN',
-  'イギリス': 'GB',
-  'グレートブリテン': 'GB',
-  'イタリア': 'IT',
-  'カナダ': 'CA',
-  'オーストラリア': 'AU',
-  'スペイン': 'ES',
-  'ロシア': 'RU',
-  'ロシア連邦': 'RU',
-  '台湾': 'TW',
-  'タイ': 'TH',
-  'ベトナム': 'VN',
-  'インドネシア': 'ID',
-  'トルコ': 'TR',
-  'ブラジル': 'BR',
-  'メキシコ': 'MX',
-  'ニュージーランド': 'NZ',
+  'ブータン': 'BT', '韓国': 'KR', '大韓民国': 'KR', 'アメリカ': 'US',
+  'アメリカ合衆国': 'US', '日本': 'JP', 'フランス': 'FR', 'ドイツ': 'DE',
+  '中国': 'CN', '中華人民共和国': 'CN', 'インド': 'IN', 'イギリス': 'GB',
+  'グレートブリテン': 'GB', 'イタリア': 'IT', 'カナダ': 'CA', 'オーストラリア': 'AU',
+  'スペイン': 'ES', 'ロシア': 'RU', 'ロシア連邦': 'RU', '台湾': 'TW',
+  'タイ': 'TH', 'ベトナム': 'VN', 'インドネシア': 'ID', 'トルコ': 'TR',
+  'ブラジル': 'BR', 'メキシコ': 'MX', 'ニュージーランド': 'NZ',
 };
 const lang = result?.original_language;
 
@@ -164,25 +144,21 @@ const youtubeVideo = videoResults.find(v => {
   const url = v.url || v.profile?.url || '';
   const videoTitle = (v.title || '') + ' ' + (v.description || '');
   
-  // YouTubeの動画リンク（通常の動画、短縮URL、またはShorts）であること
   const isYouTube = url.includes('youtube.com/watch') || url.includes('youtu.be/') || url.includes('youtube.com/shorts/');
   if (!isYouTube) return false;
   
-  // YouTubeのエラー画面（ノイズ）を除外する
   const isNoise = videoTitle.toLowerCase().includes('not currently available') || videoTitle.toLowerCase().includes('利用できません') || videoTitle.toLowerCase().includes('device');
   if (isNoise) return false;
   
-  // 映画の予告編に関連するキーワードが含まれているものを厳格に判定
   const hasKeyword = videoTitle.toLowerCase().includes('予告') || 
                     videoTitle.toLowerCase().includes('特報') || 
                     videoTitle.toLowerCase().includes('trailer') || 
                     videoTitle.toLowerCase().includes('teaser') || 
                     videoTitle.toLowerCase().includes('preview') || 
                     videoTitle.toLowerCase().includes('promo') || 
-                    videoTitle.toLowerCase().includes('예고'); // 韓国語の「予告」
+                    videoTitle.toLowerCase().includes('예고');
   if (!hasKeyword) return false;
 
-  // 比較のためにスペースや記号を除去・小文字化するヘルパー関数
   const normalize = (str) => {
     if (!str) return '';
     return String(str).toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]]/g, '');
@@ -190,7 +166,6 @@ const youtubeVideo = videoResults.find(v => {
 
   const normalizedVideo = normalize(videoTitle);
 
-  // 映画固有のキーワード（"Khekpa" 等）のみで判定し、"hunt" 等の一般的な単語による他映画の誤爆を防ぐ
   const rawTitles = [
     sourceData.title,
     sourceData.origin_title,
@@ -211,7 +186,6 @@ const youtubeVideo = videoResults.find(v => {
 });
 
 const fetchedTrailerUrl = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
-// 最新のBrave検索予告編(fetchedTrailerUrl)で上書き更新し、無ければ既存URLを保持
 const trailer_url = fetchedTrailerUrl || sourceData.trailer_url || null;
 
 const rawOverview = result?.overview || 
@@ -220,7 +194,6 @@ const rawOverview = result?.overview ||
                     result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
                     null;
 
-// あらすじ（日本語）の取得：入力(sourceData.overview)を最優先、次いでTMDb(rawOverview)
 const finalOverview = sourceData.overview || rawOverview || null;
 const finalOverviewEn = (rawOverview && rawOverview !== finalOverview) ? rawOverview : null;
 
@@ -231,7 +204,6 @@ const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 ==
 const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || null;
 const finalTitle = (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || (isTmdbTitleJapanese ? result?.title : null) || tmdbEnTitle || (result?.original_language === 'en' ? result?.original_title : null) || inputTitle || result?.title || result?.original_title || null;
 
-// オリジナルタイトルの言語判定（日本語、ハングル、英語/ラテン文字のみ許可）
 const isAllowedOriginTitle = (str) => {
   if (!str || typeof str !== 'string') return false;
   return /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\u0020-\u007E\u00C0-\u024F\u1E00-\u1EFF\s\-_:'",\.!\?&\(\)]+$/.test(str.trim());
@@ -255,7 +227,6 @@ if (!isAllowedOriginTitle(finalOriginTitle)) {
   finalOriginTitle = null;
 }
 
-// TMDbのジャンルID ➔ 日本語変換マッピング
 const genreMap = {
   28: "アクション", 12: "アドベンチャー", 16: "アニメ", 35: "コメディ", 80: "犯罪",
   99: "ドキュメンタリー", 18: "ドラマ", 10751: "ファミリー", 14: "ファンタジー", 36: "歴史",
@@ -265,38 +236,6 @@ const genreMap = {
 const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
 const genres = (Array.isArray(rawGenreIds) && rawGenreIds.length > 0 ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : '') || sourceData.genres || sourceData.genre || null;
 
-// 変更理由ログの記録
-const reasons = [];
-
-if (fetchedTrailerUrl) {
-  if (fetchedTrailerUrl !== sourceData.trailer_url) {
-    reasons.push('trailer_url: Brave検索の最新予告編で新規更新');
-  } else {
-    reasons.push('trailer_url: 既存URLが最新予告編と一致');
-  }
-} else if (sourceData.trailer_url) {
-  reasons.push('trailer_url: 既存URLを保護・維持');
-} else {
-  reasons.push('trailer_url: 予告編未検出のためnull');
-}
-
-if (result?.id && result.id !== sourceData.tmdb_id) {
-  reasons.push(`tmdb_id: TMDb検索結果(${result.id})で更新`);
-} else if (sourceData.tmdb_id) {
-  reasons.push(`tmdb_id: 既存ID(${sourceData.tmdb_id})を維持`);
-} else {
-  reasons.push('tmdb_id: 未検出のためnull');
-}
-
-if (sourceData.overview) {
-  reasons.push('overview: 既存日本語あらすじを保護');
-} else if (rawOverview) {
-  reasons.push('overview: TMDbあらすじを取得');
-}
-
-const update_reason = reasons.join(' / ');
-
-// JSONパースエラーや改行ゴミ(\r\n)を防ぐため、文字列をトリム・エスケープするヘルパー関数
 const escapeJsonString = (str) => {
   if (typeof str !== 'string') return str;
   return str.replace(/\r/g, '').replace(/\n/g, ' ').replace(/\\/g, '\\\\').replace(/"/g, '\\"').trim();
@@ -317,8 +256,6 @@ const outputObj = {
   cast: escapeJsonString(cast),
   cast_en: escapeJsonString(cast_en),
   trailer_url,
-  country,
-  is_recommended: sourceData.is_recommended ?? false,
-  update_reason,
+  country
 };
 return [{ json: outputObj }];
