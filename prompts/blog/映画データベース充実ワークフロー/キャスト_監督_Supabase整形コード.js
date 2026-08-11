@@ -1,10 +1,9 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード (Wikimedia Commons 完全対応版)
+ * 【n8n用】キャスト・監督 Supabase整形コード (Wikimedia Commons 完全合体対応版)
  * 
- * 役割: 「Wikidata人名検索」でヒットした QID (Q212990, Q7385485等) を元に、
- *       Wikidata から Wikimedia Commons の最高品質・直リンク画像 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
- *       を全自動で一括引き出し、最優先で `profile_url` にセットします！
- *       Wikimedia に画像が無い人物のみ TMDb 画像でバックアップ補填します。
+ * 役割: 「Wikidata画像取得」ノードから届いた Wikimedia Commons の直リンク最高画質写真 URL
+ *       (https://commons.wikimedia.org/wiki/Special:FilePath/...) を最優先で読み込み、
+ *       Supabase へ保存する完全な人物 JSON を完成させます！
  */
 
 function getNodeData(name) {
@@ -12,6 +11,8 @@ function getNodeData(name) {
 }
 
 const inputItems = $input.all();
+const wikiPersonNode = getNodeData('Wikidata人名検索') || {};
+const wikiPersonItems = $input.all();
 const credits = getNodeData('TMDb credits取得');
 const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || {};
 
@@ -39,31 +40,6 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
-// 全QIDから一括でWikimedia Commons最高画質直リンク画像を引くSPARQLヘルパー
-async function fetchWikimediaImages(qids) {
-  if (!qids || qids.length === 0) return {};
-  const values = qids.map(q => `wd:${q}`).join(' ');
-  const sparql = `SELECT ?person ?image WHERE { VALUES ?person { ${values} } ?person wdt:P18 ?image . }`;
-  
-  try {
-    const url = 'https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json';
-    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
-    if (!r.ok) return {};
-    const d = await r.json();
-    const map = {};
-    d.results?.bindings?.forEach(b => {
-      const qid = b.person?.value?.split('/')?.pop();
-      if (qid && b.image?.value) {
-        // HTTPSの直リンクURLに統一変換
-        map[qid] = b.image.value.replace('http://', 'https://');
-      }
-    });
-    return map;
-  } catch(e) {
-    return {};
-  }
-}
-
 const jaDirectors = splitNames(shaped.director);
 const enDirectors = splitNames(shaped.director_en);
 const jaCast = splitNames(shaped.cast);
@@ -73,72 +49,61 @@ const enNameMap = {};
 jaDirectors.forEach((name, idx) => { if (name) enNameMap[name] = enDirectors[idx] || null; });
 jaCast.forEach((name, idx) => { if (name) enNameMap[name] = enCast[idx] || null; });
 
-async function main() {
-  const intermediateList = [];
-  const qidList = [];
+inputItems.forEach((item, idx) => {
+  // Wikidata画像取得 ノードからの画像URL抽出
+  let rawData = item.json?.data || item.json;
+  if (typeof rawData === 'string') {
+    try { rawData = JSON.parse(rawData); } catch(e) {}
+  }
+  
+  const bindings = rawData?.results?.bindings || [];
+  let wikiImage = bindings[0]?.image?.value || null;
+  if (wikiImage) {
+    wikiImage = wikiImage.replace('http://', 'https://');
+  }
 
-  inputItems.forEach((item) => {
-    const j = item.json || {};
-    const searchName = j.searchinfo?.search || j.name || '';
-    const searchResults = j.search || [];
+  // Wikidata人名検索の元の名前・QIDを抽出
+  const searchName = jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
+  if (!searchName || seenNames.has(searchName)) return;
+  seenNames.add(searchName);
 
-    if (!searchName || seenNames.has(searchName)) return;
-    seenNames.add(searchName);
+  const isDirector = jaDirectors.includes(searchName);
+  let personObj = null;
 
-    let qid = null;
-    if (searchResults.length > 0) {
-      const matched = searchResults.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || searchResults[0];
-      qid = matched?.id || null;
-    }
+  if (isDirector) {
+    personObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
+  } else {
+    const castIndex = jaCast.indexOf(searchName);
+    const targetEnName = enNameMap[searchName] || '';
+    
+    if (Array.isArray(credits?.cast)) {
+      personObj = credits.cast.find(c => 
+        (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())) ||
+        (c.name && c.name.includes(searchName))
+      );
 
-    if (qid) qidList.push(qid);
-    intermediateList.push({ searchName, qid, searchResults });
-  });
-
-  // 🎯【最高解像度】Wikidata SPARQLからWikimedia Commons画像を全自動一括取得！
-  const wikiImageMap = await fetchWikimediaImages(qidList);
-
-  intermediateList.forEach(({ searchName, qid }) => {
-    const isDirector = jaDirectors.includes(searchName);
-    let personObj = null;
-
-    if (isDirector) {
-      personObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
-    } else {
-      const castIndex = jaCast.indexOf(searchName);
-      const targetEnName = enNameMap[searchName] || '';
-      
-      if (Array.isArray(credits?.cast)) {
-        personObj = credits.cast.find(c => 
-          (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())) ||
-          (c.name && c.name.includes(searchName))
-        );
-
-        if (!personObj && castIndex >= 0 && castIndex < credits.cast.length) {
-          personObj = credits.cast[castIndex];
-        }
+      if (!personObj && castIndex >= 0 && castIndex < credits.cast.length) {
+        personObj = credits.cast[castIndex];
       }
     }
+  }
 
-    const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
-    const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
-    
-    // 📸 1. 音楽データと全く同じ Wikimedia Commons 直リンク画像を最優先！ 2. 無い場合は TMDb 画像
-    const finalProfileUrl = (qid && wikiImageMap[qid]) ? wikiImageMap[qid] : tmdbImg;
-    const genderVal = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
+  const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
+  const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
+  
+  // 📸 🎯 【音楽と完全同一】Wikimedia Commons 直リンク最高画質写真を最優先採用！
+  const finalProfileUrl = wikiImage || tmdbImg;
+  const genderVal = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
 
-    persons.push({
-      name: searchName,
-      name_en: nameEn,
-      occupation: isDirector ? '監督' : '俳優',
-      profile_url: finalProfileUrl, // 🎯 音楽データと同じ https://commons.wikimedia.org/... の直リンク最高品質画像！
-      gender: genderVal,
-      country: inferPersonCountry(searchName, nameEn, movieCountry),
-      wikidata_id: qid
-    });
+  persons.push({
+    name: searchName,
+    name_en: nameEn,
+    occupation: isDirector ? '監督' : '俳優',
+    profile_url: finalProfileUrl, // 🎯 クリックで一瞬で画像が開ける最高画質URL！
+    gender: genderVal,
+    country: inferPersonCountry(searchName, nameEn, movieCountry),
+    wikidata_id: null
   });
+});
 
-  return persons.map(p => ({ json: p }));
-}
-
-return await main();
+return persons.map(p => ({ json: p }));
