@@ -1,9 +1,9 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード
+ * 【n8n用】キャスト・監督 Supabase整形コード (Wikimedia Commons 高品質写真対応版)
  * 
- * 役割: 「Wikidata人名検索」ノードから出力された本当の Wikidata QID (Q212990, Q7385485等) と、
- *       映画のクレジット情報（各自の顔写真・原語名・性別・国籍）をそれぞれ正しく個別ドッキングさせ、
- *       Supabase の "Persons" テーブルへ一括保存 (UPSERT) できる完全な人物JSONを出力します。
+ * 役割: 「Wikidata人名検索」で得られた QID から、音楽データと同様の
+ *       Wikimedia Commons 直リンク高解像度顔写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
+ *       を最優先で取得・合体させ、無い場合は TMDb 顔写真をバックアップ採用します。
  */
 
 function getNodeData(name) {
@@ -39,12 +39,24 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
+// Wikidata QIDからWikimedia Commonsの直リンク高品質画像URLを安全生成するヘルパー
+function getWikimediaImageUrl(item) {
+  const searchResults = item.json?.search || [];
+  if (searchResults.length > 0) {
+    const matched = searchResults.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || searchResults[0];
+    // Wikidataの検索結果に画像ファイル名が含まれている場合
+    if (matched?.image) {
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(matched.image)}`;
+    }
+  }
+  return null;
+}
+
 const jaDirectors = splitNames(shaped.director);
 const enDirectors = splitNames(shaped.director_en);
 const jaCast = splitNames(shaped.cast);
 const enCast = splitNames(shaped.cast_en);
 
-// 人名から対応する英語/原語名を引くマッピング辞書
 const enNameMap = {};
 jaDirectors.forEach((name, idx) => { if (name) enNameMap[name] = enDirectors[idx] || null; });
 jaCast.forEach((name, idx) => { if (name) enNameMap[name] = enCast[idx] || null; });
@@ -64,14 +76,12 @@ inputItems.forEach((item) => {
     qid = matched?.id || null;
   }
 
-  // 監督かキャストかを正確に判定
   const isDirector = jaDirectors.includes(searchName);
   
   let personObj = null;
   if (isDirector) {
     personObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
   } else {
-    // キャストの場合、インデックスや名前でTMDbの対応キャストを特定
     const castIndex = jaCast.indexOf(searchName);
     const targetEnName = enNameMap[searchName] || '';
     
@@ -81,7 +91,6 @@ inputItems.forEach((item) => {
         (c.name && c.name.includes(searchName))
       );
 
-      // 名前で直に引っかからなかった場合、順番(インデックス)でマッピング
       if (!personObj && castIndex >= 0 && castIndex < credits.cast.length) {
         personObj = credits.cast[castIndex];
       }
@@ -89,17 +98,22 @@ inputItems.forEach((item) => {
   }
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
-  const profilePath = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
+  
+  // 📸 【超高品質】1. Wikimedia Commonsの直リンク画像を優先 ➔ 2. 無い場合は TMDb 画像でバックアップ
+  const wikiCommonsImg = getWikimediaImageUrl(item);
+  const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
+  const finalProfileUrl = wikiCommonsImg || tmdbImg;
+
   const genderVal = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
 
   persons.push({
     name: searchName,
     name_en: nameEn,
     occupation: isDirector ? '監督' : '俳優',
-    profile_url: profilePath, // 🎯 それぞれの俳優個人の高画質写真URL
+    profile_url: finalProfileUrl, // 🎯 音楽データと同じ Wikimedia Commons 直リンク高品質画像！
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
-    wikidata_id: qid // 🎯 それぞれの俳優個人の Wikidata QID
+    wikidata_id: qid
   });
 });
 
