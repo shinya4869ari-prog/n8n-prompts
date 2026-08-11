@@ -1,9 +1,14 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード (QID & Wikimedia Commons 100%完全ドッキング版)
+ * 【n8n用】キャスト・監督 Supabase整形コード (SNS 4大リンク＆Wikimedia Commons フル対応版)
  * 
- * 役割: 直前の「Wikidata画像取得」ノードから直接届いた QID (Q212990等) および
- *       Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
- *       を 100% 確実に抽出し、Supabase 保存用の人物 JSON を作成します。
+ * 役割: 直前の「Wikidata画像取得」ノードから届いた
+ *       1. QID (Q212990等)
+ *       2. Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
+ *       3. X (Twitter) アカウント ID
+ *       4. Instagram アカウント ID
+ *       5. YouTube チャンネル ID
+ *       6. 公式ウェブサイト URL
+ *       をすべて全自動で完全抽出・結合し、Supabase "Persons" テーブルへ一括保存する人物 JSON を作成します。
  */
 
 function getNodeData(name) {
@@ -72,6 +77,18 @@ inputItems.forEach((item, idx) => {
     qid = matched?.id || null;
   }
 
+  // 🌐 SNS / 公式サイト ID の全自動抽出
+  let xId = bindingObj.twitter?.value || null;
+  if (xId) xId = xId.split('/').pop().replace('@', '');
+
+  let instaId = bindingObj.instagram?.value || null;
+  if (instaId) instaId = instaId.split('/').pop().replace('@', '');
+
+  let ytId = bindingObj.youtube?.value || null;
+  if (ytId) ytId = ytId.split('/').pop();
+
+  let officialSite = bindingObj.website?.value || null;
+
   const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
   
   if (!searchName || seenNames.has(searchName)) return;
@@ -111,7 +128,11 @@ inputItems.forEach((item, idx) => {
     profile_url: finalProfileUrl,
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
-    wikidata_id: qid // 🎯 100%確実ドッキングされた QID (Q212990等)
+    wikidata_id: qid,
+    x_id: xId,               // 🎯 X (Twitter) アカウント名 (例: @seungbum)
+    instagram_id: instaId,   // 🎯 Instagram アカウント名
+    youtube_id: ytId,        // 🎯 YouTube チャンネル ID
+    official_site: officialSite // 🎯 公式ウェブサイト URL
   });
 });
 
