@@ -2,6 +2,8 @@ const brave = $input.first()?.json || $input.item?.json || {};
 const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
+const wikiNode = getNodeData('Wikidata検索') || getNodeData('Wikidata') || {};
+
 const resultsList = [
   ...(t1?.results || t1?.movie_results || (t1?.id ? [t1] : [])),
   ...(t2?.results || t2?.movie_results || (t2?.id ? [t2] : []))
@@ -18,7 +20,7 @@ function getNodeData(nodeName) {
 
 let sourceData = {};
 function getSourceNodeData() {
-  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview || d.query || d.id || d.tmdb_id);
+  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview || d.query || d.id || d.tmdb_id || d.wikidata_id || d.qid);
   
   let d = $input.first()?.json || $input.item?.json;
   if (isValid(d)) return d;
@@ -44,13 +46,12 @@ if (correctMovieId && resultsList.length > 0) {
   result = resultsList.find(m => m.id === correctMovieId);
 }
 if (!result && resultsList.length > 0) {
-  result = resultsList[0]; // TMDb検索結果の一番上を採用
+  result = resultsList[0];
 }
 
-// 🎯 TMDb IDのみ入力された場合でも、creditsやTMDb検索からタイトルを自動補完！
 const movieTitle = sourceData.title || sourceData.query || sourceData.name || credits.title || result?.title || t1.title || '';
 
-if (!movieTitle && !credits.id) return []; // タイトルもIDも一切無い完全空の場合のみ安全スキップ
+if (!movieTitle && !credits.id) return [];
 
 const langToCountry = {
   'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
@@ -104,7 +105,13 @@ const castEnNames = Array.isArray(credits.cast)
 // TMDb の概要文 (overview) 取得
 const tmdbOverview = credits.overview || result?.overview || '';
 
-// YouTube動画・予告編の抽出
+// 🎯 Wikidata ID (QID) の動的抽出
+let fetchedWikidataId = sourceData.wikidata_id || sourceData.qid || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || credits.wikidata_id || null;
+if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
+  fetchedWikidataId = credits.external_ids.wikidata_id;
+}
+
+// YouTube動画・予告編の抽出（本ノード＋後続の補完ブリッジノードで高精度取得）
 let trailerUrl = '';
 let trailerTitle = '';
 const searchTitleLower = movieTitle.toLowerCase();
@@ -137,6 +144,7 @@ let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
 return [{
   json: {
     tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id,
+    wikidata_id: fetchedWikidataId, // 🎯 映画の Wikidata ID (例: Q27581922)
     title: movieTitle,
     title_en: result?.original_title || credits.original_title || movieTitle,
     origin_title: result?.original_title || credits.original_title || movieTitle,
