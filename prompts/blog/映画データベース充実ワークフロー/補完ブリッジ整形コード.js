@@ -46,7 +46,30 @@ const aiOverview = (() => {
   return shaped.overview || '';
 })();
 
-// Brave 検索結果の取得
+// Brave Search_trailer からの予告編 URL 抽出（過剰フィルタを除外して取れた本物URLを採用）
+const trailerUrl = (() => {
+  if (shaped.trailer_url) return shaped.trailer_url;
+  try {
+    const b = getNode('Brave Search_trailer');
+    const videos = b?.videos?.results || b?.results || (Array.isArray(b) ? b : []);
+    if (videos && videos.length > 0) {
+      const ytTrailer = videos.find(v => {
+        const u = v.url || v.profile?.url || '';
+        const t = (v.title || '').toLowerCase();
+        return u.includes('youtube.com') && (t.includes('trailer') || t.includes('予告') || t.includes('teaser'));
+      });
+      if (ytTrailer) return ytTrailer.url || ytTrailer.profile?.url;
+
+      const anyYt = videos.find(v => (v.url || '').includes('youtube.com'));
+      if (anyYt) return anyYt.url;
+
+      return videos[0].url || null;
+    }
+  } catch(e) {}
+  return null;
+})();
+
+// Brave 検索結果の取得（Webテキスト）
 const braveResult = (() => {
   try {
     const bList = [getNode('Brave Search web'), getNode('Brave Search_movie'), getNode('Brave Search')];
@@ -81,7 +104,7 @@ return [{
     overview_en: shaped.overview_en || '',
 
     poster_url: shaped.poster_url || '',
-    trailer_url: shaped.trailer_url || '',
+    trailer_url: trailerUrl || '',
     brave_search_result: braveResult,
 
     audit_status: 'PENDING_AUDIT'
