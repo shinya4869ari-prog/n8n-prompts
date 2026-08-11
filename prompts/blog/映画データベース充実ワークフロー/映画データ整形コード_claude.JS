@@ -1,4 +1,18 @@
-const brave = $input.first()?.json || $input.item?.json || {};
+/**
+ * 【n8n用】映画データ整形コード（Brave依存を完全排除・TMDb一元化版）
+ * 
+ * 役割: TMDb API から取得した映画情報・監督・キャスト・公式YouTube予告編を
+ *       完全自動で安全に統合・整形し、Supabase "Movies" テーブルへ保存できる形式で出力します。
+ */
+
+function getNodeData(nodeName) {
+  try {
+    return $(nodeName).first()?.json || $(nodeName).item?.json || {};
+  } catch (e) {
+    return {};
+  }
+}
+
 const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
@@ -8,15 +22,6 @@ const resultsList = [
   ...(t1?.results || t1?.movie_results || (t1?.id ? [t1] : [])),
   ...(t2?.results || t2?.movie_results || (t2?.id ? [t2] : []))
 ];
-
-// 実行されていないノードでも安全にデータを取得するヘルパー関数
-function getNodeData(nodeName) {
-  try {
-    return $(nodeName).first()?.json || $(nodeName).item?.json || {};
-  } catch (e) {
-    return {};
-  }
-}
 
 let sourceData = {};
 function getSourceNodeData() {
@@ -111,40 +116,16 @@ if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
   fetchedWikidataId = credits.external_ids.wikidata_id;
 }
 
-// 🎬 予告編ハイブリッド抽出（第1優先: TMDb公式動画キー、第2優先: Brave Search）
+// 🎬 100%正確な TMDb 公式 YouTube 予告編の抽出（誤検索0%・Brave不使用）
 let trailerUrl = '';
 let trailerTitle = '';
 
-// 1. 第1優先: TMDb公式動画 (videos / credits.videos) からYouTube予告編を取得 (誤検索0%)
 const tmdbVideos = credits.videos?.results || credits.videos || result?.videos?.results || [];
 if (Array.isArray(tmdbVideos) && tmdbVideos.length > 0) {
-  // Trailer または Teaser を最優先で探す
   const officialTrailer = tmdbVideos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || tmdbVideos.find(v => v.site === 'YouTube');
   if (officialTrailer && officialTrailer.key) {
     trailerUrl = `https://www.youtube.com/watch?v=${officialTrailer.key}`;
-    trailerTitle = officialTrailer.name || `${movieTitle} 予告編`;
-  }
-}
-
-// 2. 第2優先 (フォールバック): TMDbに動画がない場合のみ Brave Search を活用
-if (!trailerUrl && Array.isArray(brave.results)) {
-  const searchTitleLower = movieTitle.toLowerCase();
-  const searchTitleClean = searchTitleLower.replace(/[\s:：・\-_]/g, '');
-
-  const matchedVideo = brave.results.find(v => {
-    const vt = (v.title || '').toLowerCase().replace(/[\s:：・\-_]/g, '');
-    const vd = (v.description || '').toLowerCase();
-    const isTrailer = vt.includes('予告') || vt.includes('特報') || vt.includes('trailer') || vd.includes('予告') || vd.includes('trailer');
-    const isTitleMatch = vt.includes(searchTitleClean) || searchTitleClean.split('').every(char => vt.includes(char));
-    return isTrailer && isTitleMatch;
-  });
-
-  if (matchedVideo) {
-    trailerUrl = matchedVideo.url || (matchedVideo.video?.url) || '';
-    trailerTitle = matchedVideo.title || '';
-  } else if (brave.results[0]) {
-    trailerUrl = brave.results[0].url || '';
-    trailerTitle = brave.results[0].title || '';
+    trailerTitle = officialTrailer.name || `${movieTitle} 公式予告編`;
   }
 }
 
