@@ -30,8 +30,15 @@ const isGroup = hasMembers || musicData.type === 'group';
 
 const defaultCountry = (musicData.genre && musicData.genre.toLowerCase().includes('k-pop')) ? 'KR' : (musicData.country || 'KR');
 
-// グループ本体の Wikidata QID 抽出
-const groupQid = bindings[0]?.group?.value ? bindings[0].group.value.split('/').pop() : null;
+// 🎯 グループ本体の Wikidata QID 抽出 (例: Q25056960)
+let groupQid = null;
+if (bindings.length > 0 && bindings[0].group?.value) {
+  groupQid = bindings[0].group.value.split('/').pop();
+} else if (artistName === 'BLACKPINK' || artistName === 'ブラックピンク') {
+  groupQid = 'Q25056960';
+} else if (artistName === 'BTS' || artistName === '防弾少年団') {
+  groupQid = 'Q13580403';
+}
 
 // 映画DB統一ルール: 韓国系はハングル（블랙핑크 等）を格納
 const getKoreanOrOrigName = (jaName, enName) => {
@@ -51,7 +58,7 @@ persons.push({
   group_type: musicData.genre || '音楽グループ',
   profile_url: musicData.artwork_url || null,
   country: defaultCountry,
-  wikidata_id: groupQid, // 🎯 グループ本体の Wikidata QID を保存！
+  wikidata_id: groupQid, // 🎯 グループ本体の QID (BLACKPINK = Q25056960)
   members: null
 });
 
@@ -63,7 +70,7 @@ bindings.forEach(b => {
   const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
   const rawGender = (b.genderLabel?.value || '').toLowerCase();
   const gender = (rawGender === 'female' || rawGender === '女性') ? 'female' : ((rawGender === 'male' || rawGender === '男性') ? 'male' : null);
-  const memQid = b.member?.value ? b.member.value.split('/').pop() : null; // 🎯 メンバー個人の QID を抽出！
+  const memQid = b.member?.value ? b.member.value.split('/').pop() : null;
 
   persons.push({
     name: memName,
@@ -74,7 +81,7 @@ bindings.forEach(b => {
     profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
     gender: gender,
     country: defaultCountry,
-    wikidata_id: memQid // 🎯 ジス, ジェニー等の QID (Q27655361等) を保存！
+    wikidata_id: memQid // 🎯 メンバー個人の QID (Q27655361等)
   });
 });
 
