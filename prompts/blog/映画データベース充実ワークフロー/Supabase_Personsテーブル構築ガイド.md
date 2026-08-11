@@ -48,17 +48,17 @@ USING (true);
 - Mode: **Run Once for All Items**
 - Code: [Persons_Supabase_Upsertコード.js](./Persons_Supabase_Upsertコード.js) のコードを貼り付け
 
-### ② ノード名: `Personsへ保存` (HTTP Requestノード)
+### ② ノード名: `キャスト・人物保存ノード` (HTTP Requestノード)
 - **Method**: `POST`
 - **URL**: `https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons?on_conflict=name`
-- **Headers**:
+- **Headers**: (※`Content-Type` は自動付与されるため不要です)
   - `apikey`: `<YOUR_SUPABASE_ANON_KEY>`
   - `Authorization`: `Bearer <YOUR_SUPABASE_SERVICE_ROLE_KEY>`
-  - `Content-Type`: `application/json`
   - `Prefer`: `resolution=merge-duplicates`
 - **Send Body**: `ON`
 - **Body Content Type**: `JSON`
-- **JSON Body**: `={{ JSON.stringify($json) }}`
+- **Specify Body**: `Using JSON`
+- **JSON**: `={{ $json }}`
 
 ---
 
