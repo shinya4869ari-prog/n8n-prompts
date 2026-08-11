@@ -37,7 +37,7 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   const isKoreanName = /^(キム|パク|チョン|ソン|イ|チェ|カン|ハン|イ・|キム・|パク・|チョン・|ソン・|チェ・|カン・|ハン・|ユン|ユン・)/.test(n) || /[\uac00-\ud7af]/.test(ne);
   if (isKoreanName) return 'KR';
 
-  const isJapaneseName = /^[ぁ-んァ-ヶー一-龠\s・]+$/.test(n) && !isKoreanName && !/^[A-Za-z\s]+$/.test(n);
+  const isJapaneseName = /^[ぁ- Japanese ぁ-んァ-ヶー一-龠\s・]+$/.test(n) && !isKoreanName && !/^[A-Za-z\s]+$/.test(n);
   if (isJapaneseName && (defaultCountry === 'JP' || !defaultCountry)) return 'JP';
 
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
@@ -57,8 +57,8 @@ jaDirectors.forEach((name, idx) => {
   const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
   const nameEn = enDirectors[idx] || crewObj?.original_name || null;
 
-  // 動的QID抽出（ワークフロー内のWikidata検索ノードから動的に取得）
-  const fetchedQid = wikiPerson.qid || wikiPerson.wikidata_id || (shaped.director === name ? shaped.director_qid : null);
+  // 動的QID抽出（Wikidata検索またはTMDb Person external_ids から完全自動取得）
+  const fetchedQid = crewObj?.wikidata_id || crewObj?.external_ids?.wikidata_id || wikiPerson.qid || wikiPerson.wikidata_id || (shaped.director === name ? shaped.director_qid : null);
 
   persons.push({
     name: name,
@@ -67,7 +67,7 @@ jaDirectors.forEach((name, idx) => {
     profile_url: profilePath,
     gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
     country: inferPersonCountry(name, nameEn, movieCountry),
-    wikidata_id: fetchedQid || null // 🎯 ハードコードを完全撤廃し、APIから動的取得したQIDをセット！
+    wikidata_id: fetchedQid || null // 🎯 APIから動的に取得したQIDをセット！
   });
 });
 
@@ -86,6 +86,9 @@ if (isTargetCastCountry) {
 
     const profilePath = castObj?.profile_path ? `https://image.tmdb.org/t/p/h630${castObj.profile_path}` : null;
 
+    // 動的QID抽出（キャスト個人の external_ids / wikidata_id をAPIから全自動で抽出）
+    const castQid = castObj?.wikidata_id || castObj?.external_ids?.wikidata_id || (wikiPerson.cast_qids && wikiPerson.cast_qids[name]) || null;
+
     persons.push({
       name: name,
       name_en: nameEn || castObj?.original_name || null,
@@ -93,7 +96,7 @@ if (isTargetCastCountry) {
       profile_url: profilePath,
       gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
       country: inferPersonCountry(name, nameEn, movieCountry),
-      wikidata_id: null // 後からWikidataノードを接続することで動的に埋まります
+      wikidata_id: castQid || null // 🎯 キャスト個人の QID を全自動でセット！
     });
   });
 }
