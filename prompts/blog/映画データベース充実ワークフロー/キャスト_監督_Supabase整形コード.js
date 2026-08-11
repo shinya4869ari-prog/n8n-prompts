@@ -1,25 +1,18 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード (QID & Wikimedia Commons 完全結合版)
+ * 【n8n用】キャスト・監督 Supabase整形コード (QID & Wikimedia Commons 100%完全ドッキング版)
  * 
- * 役割: 前段の「Wikidata画像取得」から得られた Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
- *       および「Wikidata人名検索」から得られた Wikidata QID (Q212990, Q7385485等) を
- *       100%確実に抽出・合体させ、Supabase へ一括保存する完全な人物 JSON を完成させます！
+ * 役割: 直前の「Wikidata画像取得」ノードから直接届いた QID (Q212990等) および
+ *       Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
+ *       を 100% 確実に抽出し、Supabase 保存用の人物 JSON を作成します。
  */
 
-function getSafeNodeAll(name) {
-  try { return $(name).all() || []; } catch(e) {
-    try { return $node[name]?.all() || []; } catch(err) { return []; }
-  }
+function getNodeData(name) {
+  try { return $(name).first()?.json || $(name).item?.json || {}; } catch(e) { return {}; }
 }
 
 const inputItems = $input.all();
-const creditsNode = $( 'TMDb credits取得' ).first()?.json || {};
-const shapedNode = $( '補完結果整形コード' ).first()?.json || $( '映画データ整形コード_claude' ).first()?.json || {};
-
-// 「Wikidata人名検索」ノードの出力を安全取得
-let wikiPersonItems = getSafeNodeAll('Wikidata人名検索');
-if (wikiPersonItems.length === 0) wikiPersonItems = getSafeNodeAll('Wikidata人名');
-if (wikiPersonItems.length === 0) wikiPersonItems = getSafeNodeAll('Wikidata検索');
+const creditsNode = getNodeData('TMDb credits取得');
+const shapedNode = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || {};
 
 const movieCountry = String(shapedNode.country || '').toUpperCase();
 
@@ -55,32 +48,34 @@ jaDirectors.forEach((name, idx) => { if (name) enNameMap[name] = enDirectors[idx
 jaCast.forEach((name, idx) => { if (name) enNameMap[name] = enCast[idx] || null; });
 
 inputItems.forEach((item, idx) => {
-  // Wikidata画像取得 ノードからの画像URL抽出
   let rawData = item.json?.data || item.json;
   if (typeof rawData === 'string') {
     try { rawData = JSON.parse(rawData); } catch(e) {}
   }
   
   const bindings = rawData?.results?.bindings || [];
-  let wikiImage = bindings[0]?.image?.value || null;
+  const bindingObj = bindings[0] || {};
+  
+  // 📸 画像URLの抽出
+  let wikiImage = bindingObj.image?.value || null;
   if (wikiImage) {
     wikiImage = wikiImage.replace('http://', 'https://');
   }
 
-  // 人名および QID の安全合体
-  const personItem = wikiPersonItems[idx]?.json || {};
-  const searchName = personItem.searchinfo?.search || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
+  // 🎯 QID のダイレクト抽出 (http://www.wikidata.org/entity/Q212990 ➔ Q212990)
+  let qid = bindingObj.person?.value ? bindingObj.person.value.split('/').pop() : null;
   
-  if (!searchName || seenNames.has(searchName)) return;
-  seenNames.add(searchName);
-
-  // 🎯【完全復元】QID の確実な抽出
-  let qid = null;
-  const searchResults = personItem.search || [];
-  if (searchResults.length > 0) {
+  // 前段アイテムからの補填
+  if (!qid && item.json?.searchinfo?.search) {
+    const searchResults = item.json.search || [];
     const matched = searchResults.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || searchResults[0];
     qid = matched?.id || null;
   }
+
+  const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
+  
+  if (!searchName || seenNames.has(searchName)) return;
+  seenNames.add(searchName);
 
   const isDirector = jaDirectors.includes(searchName);
   let personObj = null;
@@ -106,7 +101,6 @@ inputItems.forEach((item, idx) => {
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
   const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
   
-  // 📸 🎯 音楽データと全く同じ Wikimedia Commons 直リンク最高画質写真を最優先採用！
   const finalProfileUrl = wikiImage || tmdbImg;
   const genderVal = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
 
@@ -114,10 +108,10 @@ inputItems.forEach((item, idx) => {
     name: searchName,
     name_en: nameEn,
     occupation: isDirector ? '監督' : '俳優',
-    profile_url: finalProfileUrl, // 🎯 音楽データと同じ https://commons.wikimedia.org/... の直リンク最高品質画像！
+    profile_url: finalProfileUrl,
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
-    wikidata_id: qid // 🎯【完全復活】Q212990, Q7385485等の本当のWikidata QID
+    wikidata_id: qid // 🎯 100%確実ドッキングされた QID (Q212990等)
   });
 });
 
