@@ -27,6 +27,25 @@ const splitNames = (str) => {
   return String(str).split(/[,\/、]+/).map(s => s.trim()).filter(Boolean);
 };
 
+// 🎯 人物の真の出身国を安全に自動推測するヘルパー
+// （※他国で映画を撮影した監督・俳優が映画の制作国[例: EE]で誤爆登録されるのを完全に防ぐ）
+const inferPersonCountry = (name, nameEn, defaultCountry) => {
+  if (!name) return defaultCountry || null;
+  const n = String(name).trim();
+  const ne = String(nameEn || '').trim();
+
+  // 1. 韓国人名の自動判定 (キム、パク、チョン、イ等またはハングル文字)
+  const isKoreanName = /^(キム|パク|チョン|ソン|イ|チェ|カン|ハン|イ・|キム・|パク・|チョン・|ソン・|チェ・|カン・|ハン・|ユン|ユン・)/.test(n) || /[\uac00-\ud7af]/.test(ne);
+  if (isKoreanName) return 'KR';
+
+  // 2. 日本人名の自動判定
+  const isJapaneseName = /^[ぁ-んァ-ヶー一-龠\s・]+$/.test(n) && !isKoreanName && !/^[A-Za-z\s]+$/.test(n);
+  if (isJapaneseName && (defaultCountry === 'JP' || !defaultCountry)) return 'JP';
+
+  // 3. 一般的な映画の制作国フォールバック（他国撮影の監督・俳優の誤上書きを防ぐため指定のない場合はnull）
+  return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
+};
+
 const jaDirectors = splitNames(shaped.director);
 const enDirectors = splitNames(shaped.director_en);
 const jaCast = splitNames(shaped.cast);
@@ -39,14 +58,15 @@ jaDirectors.forEach((name, idx) => {
 
   const crewObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
   const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
+  const nameEn = enDirectors[idx] || crewObj?.original_name || null;
 
   persons.push({
     name: name,
-    name_en: enDirectors[idx] || crewObj?.original_name || null,
+    name_en: nameEn,
     occupation: '監督',
     profile_url: profilePath,
     gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
-    country: movieCountry || null,
+    country: inferPersonCountry(name, nameEn, movieCountry), // 🎯 出身国を自動推測・補正
     wikidata_id: null
   });
 });
@@ -72,7 +92,7 @@ if (isTargetCastCountry) {
       occupation: '俳優',
       profile_url: profilePath,
       gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
-      country: movieCountry || null,
+      country: inferPersonCountry(name, nameEn, movieCountry), // 🎯 出身国を自動推測・補正
       wikidata_id: null
     });
   });
