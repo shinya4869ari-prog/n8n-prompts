@@ -1,10 +1,9 @@
 /**
- * 【n8n用】音楽アーティスト＆メンバー Persons Supabase Upsert用整形コード (SNS 4大リンク対応版)
+ * 【n8n用】音楽アーティスト＆メンバー Persons Supabase Upsert用整形コード (重複排除＆安全ガード版)
  * 
- * 役割: 音楽データベース充実ワークフローから出力されたグループ（例: BLACKPINK）および
- *       構成メンバー（例: ジス、ジェニー、ロゼ、リサ）の情報に加え、
- *       X (Twitter), Instagram, YouTube, 公式ウェブサイトの 4大リンクを自動抽出・結合して
- *       Supabase の "Persons" テーブルへ一括自動保存します。
+ * 役割: 音楽データベース充実ワークフローから出力されたグループおよび
+ *       構成メンバーの情報から重複を完全に排除し、SNS 4大リンクと共に
+ *       Supabase の "Persons" テーブルへ一括保存する完全な人物 JSON を作成します。
  */
 
 function getNodeData(name) {
@@ -23,16 +22,19 @@ try {
 } catch(e) { wikiData = {}; }
 
 const persons = [];
+const seenNames = new Set();
 const artistName = musicData.artist_name;
 if (!artistName) return [];
 
 const bindings = wikiData.results?.bindings || [];
 const hasMembers = bindings.length > 0;
-const isGroup = hasMembers || musicData.type === 'group';
+
+// 🎯 コラボ歌手（例: Mad Clown & Kim Na Young）などの場合、誤って前回のグループQIDが混ざらないよう判定
+const isRealGroup = hasMembers || (musicData.type === 'group' && !artistName.includes('&') && !artistName.includes('with'));
 
 const defaultCountry = (musicData.genre && musicData.genre.toLowerCase().includes('k-pop')) ? 'KR' : (musicData.country || 'KR');
 
-// 🎯 API（Wikidata）の検索結果から動的に QID や SNS リンクを自動抽出！
+// 🎯 QID や SNS リンクを自動抽出
 let groupQid = null;
 let groupTwitter = null;
 let groupInsta = null;
@@ -49,52 +51,56 @@ if (bindings.length > 0) {
 }
 
 // 1. アーティスト / グループ 本体の登録
+seenNames.add(artistName);
 persons.push({
   name: artistName,
   name_en: (defaultCountry === 'KR' && musicData.artist_name_en) ? musicData.artist_name_en : (musicData.artist_name_en || null),
-  occupation: isGroup ? 'グループ' : '歌手',
-  type: isGroup ? 'group' : 'individual',
+  occupation: isRealGroup ? 'グループ' : '歌手',
+  type: isRealGroup ? 'group' : 'individual',
   group_type: musicData.genre || '音楽グループ',
   profile_url: musicData.artwork_url || null,
   country: defaultCountry,
-  wikidata_id: groupQid,
-  x_id: groupTwitter,               // 🎯 X (Twitter) アカウント
-  instagram_id: groupInsta,          // 🎯 Instagram アカウント
-  youtube_id: groupYt,               // 🎯 YouTube チャンネル
-  official_site: groupWeb,           // 🎯 公式ウェブサイト
+  wikidata_id: isRealGroup ? groupQid : null,
+  x_id: isRealGroup ? groupTwitter : null,
+  instagram_id: isRealGroup ? groupInsta : null,
+  youtube_id: isRealGroup ? groupYt : null,
+  official_site: isRealGroup ? groupWeb : null,
   members: null
 });
 
-// 2. 構成メンバー（原語名・ハングル、動的 QID、SNS 4大リンク）
-bindings.forEach(b => {
-  const memName = b.memberLabel?.value;
-  if (!memName || /^Q\d+$/.test(memName)) return;
+// 2. 構成メンバー（重複排除＆安全合体）
+if (isRealGroup) {
+  bindings.forEach(b => {
+    const memName = b.memberLabel?.value;
+    if (!memName || /^Q\d+$/.test(memName) || seenNames.has(memName)) return;
+    seenNames.add(memName);
 
-  const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
-  const rawGender = (b.genderLabel?.value || '').toLowerCase();
-  const gender = (rawGender === 'female' || rawGender === '女性') ? 'female' : ((rawGender === 'male' || rawGender === '男性') ? 'male' : null);
-  const memQid = b.member?.value ? b.member.value.split('/').pop() : null;
+    const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
+    const rawGender = (b.genderLabel?.value || '').toLowerCase();
+    const gender = (rawGender === 'female' || rawGender === '女性') ? 'female' : ((rawGender === 'male' || rawGender === '男性') ? 'male' : null);
+    const memQid = b.member?.value ? b.member.value.split('/').pop() : null;
 
-  let memTwitter = b.memberTwitter?.value ? b.memberTwitter.value.split('/').pop().replace('@', '') : null;
-  let memInsta = b.memberInstagram?.value ? b.memberInstagram.value.split('/').pop().replace('@', '') : null;
-  let memYt = b.memberYoutube?.value ? b.memberYoutube.value.split('/').pop() : null;
-  let memWeb = b.memberWebsite?.value || null;
+    let memTwitter = b.memberTwitter?.value ? b.memberTwitter.value.split('/').pop().replace('@', '') : null;
+    let memInsta = b.memberInstagram?.value ? b.memberInstagram.value.split('/').pop().replace('@', '') : null;
+    let memYt = b.memberYoutube?.value ? b.memberYoutube.value.split('/').pop() : null;
+    let memWeb = b.memberWebsite?.value || null;
 
-  persons.push({
-    name: memName,
-    name_en: origName,
-    occupation: '歌手',
-    type: 'individual',
-    parent_group: artistName,
-    profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
-    gender: gender,
-    country: defaultCountry,
-    wikidata_id: memQid,
-    x_id: memTwitter,             // 🎯 各メンバーの X (Twitter)
-    instagram_id: memInsta,        // 🎯 各メンバーの Instagram
-    youtube_id: memYt,             // 🎯 各メンバーの YouTube
-    official_site: memWeb          // 🎯 各メンバーの 公式ウェブサイト
+    persons.push({
+      name: memName,
+      name_en: origName,
+      occupation: '歌手',
+      type: 'individual',
+      parent_group: artistName,
+      profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
+      gender: gender,
+      country: defaultCountry,
+      wikidata_id: memQid,
+      x_id: memTwitter,
+      instagram_id: memInsta,
+      youtube_id: memYt,
+      official_site: memWeb
+    });
   });
-});
+}
 
 return persons.map(p => ({ json: p }));
