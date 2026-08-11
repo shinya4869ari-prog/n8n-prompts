@@ -46,41 +46,44 @@ return items.map((item, index) => {
     aiData = item.json || {};
   }
 
+  // aiDataが配列の場合は現在のインデックス(index)のデータを取り出す
+  const targetAi = Array.isArray(aiData) ? (aiData[index] || aiData[0] || {}) : aiData;
+
   // ID / メディアURLの安全判定
-  const isCorrected = aiData.audit_status && String(aiData.audit_status).includes('CORRECTED');
+  const isCorrected = targetAi.audit_status && String(targetAi.audit_status).includes('CORRECTED');
 
   // 本当に異なる映画の誤データとAIが検証・判定した場合はクリアし、それ以外はAI/元の入力データの正常な値を採択
-  const tmdb_id = (isCorrected && aiData.tmdb_id === null) ? null : (aiData.tmdb_id || source.tmdb_id || null);
-  const poster_url = (isCorrected && (aiData.poster_url === "" || aiData.poster_url === null)) ? "" : (aiData.poster_url || source.poster_url || "");
-  const trailer_url = (isCorrected && (aiData.trailer_url === "" || aiData.trailer_url === null)) ? "" : (aiData.trailer_url || source.trailer_url || "");
+  const tmdb_id = (isCorrected && targetAi.tmdb_id === null) ? null : (targetAi.tmdb_id || source.tmdb_id || null);
+  const poster_url = (isCorrected && (targetAi.poster_url === "" || targetAi.poster_url === null)) ? "" : (targetAi.poster_url || source.poster_url || "");
+  const trailer_url = (isCorrected && (targetAi.trailer_url === "" || targetAi.trailer_url === null)) ? "" : (targetAi.trailer_url || source.trailer_url || "");
 
   // ハングル判定関数
   const isHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
   // 日本語判定関数
   const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
 
-  const isKorea = (source.country === 'KR' || aiData.country === 'KR');
+  const isKorea = (source.country === 'KR' || targetAi.country === 'KR');
 
   // title: AIが公式邦題/日本語タイトルを返した場合はそちらを最優先採択
-  const title = (aiData.title && isJapanese(aiData.title)) ? aiData.title : (source.title || aiData.title || null);
+  const title = (targetAi.title && isJapanese(targetAi.title)) ? targetAi.title : (source.title || targetAi.title || null);
   // origin_title: 韓国映画の場合はハングル原題を優先採択
-  const origin_title = (isKorea && aiData.origin_title && isHangul(aiData.origin_title)) ? aiData.origin_title : (source.origin_title || aiData.origin_title || (!isJapanese(source.title) ? source.title : null));
+  const origin_title = (isKorea && targetAi.origin_title && isHangul(targetAi.origin_title)) ? targetAi.origin_title : (source.origin_title || targetAi.origin_title || (!isJapanese(source.title) ? source.title : null));
 
   // director: AIが日本語カタカナを返した場合はそちらを優先採択
-  const director = (aiData.director && isJapanese(aiData.director)) ? aiData.director : (source.director || aiData.director || null);
-  const director_en = (isKorea && aiData.director_en && isHangul(aiData.director_en)) ? aiData.director_en : ((aiData.director_en && !isJapanese(aiData.director_en)) ? aiData.director_en : (source.director_en || null));
+  const director = (targetAi.director && isJapanese(targetAi.director)) ? targetAi.director : (source.director || targetAi.director || null);
+  const director_en = (isKorea && targetAi.director_en && isHangul(targetAi.director_en)) ? targetAi.director_en : ((targetAi.director_en && !isJapanese(targetAi.director_en)) ? targetAi.director_en : (source.director_en || null));
 
   // cast: AIが日本語カタカナを返した場合はそちらを優先採択
-  const cast = (aiData.cast && isJapanese(aiData.cast)) ? aiData.cast : (source.cast || aiData.cast || null);
-  const cast_en = (isKorea && aiData.cast_en && isHangul(aiData.cast_en)) ? aiData.cast_en : ((aiData.cast_en && !isJapanese(aiData.cast_en)) ? aiData.cast_en : (source.cast_en || null));
+  const cast = (targetAi.cast && isJapanese(targetAi.cast)) ? targetAi.cast : (source.cast || targetAi.cast || null);
+  const cast_en = (isKorea && targetAi.cast_en && isHangul(targetAi.cast_en)) ? targetAi.cast_en : ((targetAi.cast_en && !isJapanese(targetAi.cast_en)) ? targetAi.cast_en : (source.cast_en || null));
 
   // overview: AIが詳細化・補完した場合はAIの出力を優先採択
-  const overview = (aiData.overview && (aiData.overview.length >= (source.overview || '').length)) ? aiData.overview : (source.overview || aiData.overview || null);
+  const overview = (targetAi.overview && (targetAi.overview.length >= (source.overview || '').length)) ? targetAi.overview : (source.overview || targetAi.overview || null);
 
   // overview_en: 韓国映画の場合はハングルを優先、通常はAIが詳細化・補完した出力を優先採択
-  const overview_en = (isKorea && aiData.overview_en && isHangul(aiData.overview_en)) 
-    ? aiData.overview_en 
-    : ((aiData.overview_en && (aiData.overview_en.length >= (source.overview_en || '').length)) ? aiData.overview_en : (source.overview_en || aiData.overview_en || null));
+  const overview_en = (isKorea && targetAi.overview_en && isHangul(targetAi.overview_en)) 
+    ? targetAi.overview_en 
+    : ((targetAi.overview_en && (targetAi.overview_en.length >= (source.overview_en || '').length)) ? targetAi.overview_en : (source.overview_en || targetAi.overview_en || null));
 
   // ノイズ除去用関数 (例: "イ-・イダム" ➔ "イ・イダム" へ自動クレンジング)
   const cleanKatakanaHyphens = (str) => {
@@ -88,14 +91,57 @@ return items.map((item, index) => {
     return String(str).replace(/([アカ-ンa-zA-Z])-・/g, '$1・').replace(/-・/g, '・');
   };
 
+  // ジャンル自動翻訳＆クレンジング関数 (例: ["Historical","Drama"] ➔ "時代劇, ドラマ")
+  const cleanGenres = (raw) => {
+    if (!raw) return null;
+    let str = String(raw);
+    try {
+      if (str.startsWith('[')) {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) str = parsed.join(', ');
+      }
+    } catch(e) {}
+
+    const genreMap = {
+      'Historical': '時代劇',
+      'Drama': 'ドラマ',
+      'Thriller': 'スリラー',
+      'Dark Comedy': 'ブラックコメディ',
+      'Comedy': 'コメディ',
+      'Action': 'アクション',
+      'Horror': 'ホラー',
+      'Mystery': 'ミステリー',
+      'Romance': 'ロマンス',
+      'Documentary': 'ドキュメンタリー',
+      'Animation': 'アニメ',
+      'Sci-Fi': 'SF',
+      'Crime': '犯罪',
+      'Adventure': 'アドベンチャー',
+      'Fantasy': 'ファンタジー',
+      'Family': 'ファミリー',
+      'Music': '音楽',
+      'War': '戦争',
+      'Western': '西部劇'
+    };
+
+    Object.keys(genreMap).forEach(eng => {
+      const reg = new RegExp('\\b' + eng + '\\b', 'gi');
+      str = str.replace(reg, genreMap[eng]);
+    });
+
+    return str.replace(/[\[\]"']/g, '').trim();
+  };
+
+  const rawGenre = targetAi.genres || source.genres || null;
+
   // 1. レコード構築
   const updatedRecord = {
     idx: source.idx ?? null,
     created_at: source.created_at || null,
-    country: aiData.country || source.country || null,
-    year: source.year || aiData.year || null,
+    country: targetAi.country || source.country || null,
+    year: source.year || targetAi.year || null,
     is_recommended: source.is_recommended ?? true,
-    genres: source.genres || aiData.genres || null,
+    genres: cleanGenres(rawGenre),
 
     title: cleanKatakanaHyphens(title),
     origin_title: origin_title,
@@ -114,11 +160,11 @@ return items.map((item, index) => {
 
     tmdb_id: tmdb_id,
     wikidata_id: (() => {
-      const rawId = source.wikidata_id || aiData.wikidata_id || null;
+      const rawId = source.wikidata_id || targetAi.wikidata_id || null;
       return (rawId && /^Q\d+$/.test(rawId)) ? rawId : null;
     })(),
 
-    audit_status: aiData.audit_status || "OK"
+    audit_status: targetAi.audit_status || "OK"
   };
 
   // 2. 変更履歴 (changes_summary) の自動解析
