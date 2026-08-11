@@ -12,7 +12,7 @@ function getNodeData(name) {
 
 // 入力データの安全取得
 const inputData = $input.first()?.json || $input.item?.json || {};
-const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || inputData;
+const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || inputData;
 const credits = getNodeData('TMDb credits取得');
 const wikiPerson = getNodeData('Wikidata人物検索') || getNodeData('Wikidata検索');
 
@@ -43,6 +43,22 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
+// Wikidata 検索ノードや前段ノードから QID マップを構築
+const qidMap = {};
+if (wikiPerson.results?.bindings) {
+  wikiPerson.results.bindings.forEach(b => {
+    if (b.personLabel?.value && b.person?.value) {
+      qidMap[b.personLabel.value] = b.person.value.split('/').pop();
+    }
+    if (b.personKoLabel?.value && b.person?.value) {
+      qidMap[b.personKoLabel.value] = b.person.value.split('/').pop();
+    }
+    if (b.personEnLabel?.value && b.person?.value) {
+      qidMap[b.personEnLabel.value] = b.person.value.split('/').pop();
+    }
+  });
+}
+
 const jaDirectors = splitNames(shaped.director);
 const enDirectors = splitNames(shaped.director_en);
 const jaCast = splitNames(shaped.cast);
@@ -57,8 +73,8 @@ jaDirectors.forEach((name, idx) => {
   const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
   const nameEn = enDirectors[idx] || crewObj?.original_name || null;
 
-  // 動的QID抽出（Wikidata検索またはTMDb Person external_ids から完全自動取得）
-  const fetchedQid = crewObj?.wikidata_id || crewObj?.external_ids?.wikidata_id || wikiPerson.qid || wikiPerson.wikidata_id || (shaped.director === name ? shaped.director_qid : null);
+  // 動的QID抽出（Wikidata検索またはマップから自動マッチング）
+  const fetchedQid = qidMap[name] || qidMap[nameEn] || wikiPerson.qid || wikiPerson.wikidata_id || (shaped.director === name ? shaped.director_qid : null);
 
   persons.push({
     name: name,
@@ -86,8 +102,8 @@ if (isTargetCastCountry) {
 
     const profilePath = castObj?.profile_path ? `https://image.tmdb.org/t/p/h630${castObj.profile_path}` : null;
 
-    // 動的QID抽出
-    const castQid = castObj?.wikidata_id || castObj?.external_ids?.wikidata_id || (wikiPerson.cast_qids && wikiPerson.cast_qids[name]) || null;
+    // 動的QID抽出（WikidataマップやAPIから全自動で抽出）
+    const castQid = qidMap[name] || qidMap[nameEn] || castObj?.wikidata_id || castObj?.external_ids?.wikidata_id || null;
 
     persons.push({
       name: name,
