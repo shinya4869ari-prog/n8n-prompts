@@ -1,7 +1,7 @@
 /**
  * 【n8n用】個別の音楽・アーティストデータ統合整形コード
  * 
- * 役割: アーティスト名/グループ名（例: BLACKPINK）を入力とし、
+ * 役割: アーティスト名/グループ名を入力とし、
  *       iTunes API + Wikidata からグループ情報・メンバー一覧・代表曲・ジャケット画像・試聴URLを統合して出力します。
  */
 
@@ -29,7 +29,13 @@ try {
 
 const itunesTracks = itunesData.results || (Array.isArray(itunesData) ? itunesData : []);
 const firstTrack = itunesTracks[0] || {};
-const artistQuery = input.artist || input['アーティスト名 / グループ名'] || input.body?.['アーティスト名 / グループ名'] || firstTrack.artistName || 'BLACKPINK';
+const artistQuery = input.artist || input.q || input['アーティスト名 / グループ名'] || input.body?.['アーティスト名 / グループ名'] || 'BLACKPINK';
+
+// 🎯 検索された名前（artistQuery）を尊重する。1曲目のコラボ相手（FTISLAND等）に化けないよう判定
+let targetArtistName = artistQuery;
+if (firstTrack.artistName && (firstTrack.artistName.toLowerCase().includes(artistQuery.toLowerCase()) || artistQuery.toLowerCase().includes(firstTrack.artistName.toLowerCase()))) {
+  targetArtistName = firstTrack.artistName;
+}
 
 const topSongs = itunesTracks.slice(0, 10).map(t => ({
   track_name: t.trackName,
@@ -39,14 +45,12 @@ const topSongs = itunesTracks.slice(0, 10).map(t => ({
   release_date: t.releaseDate ? t.releaseDate.substring(0, 4) : ''
 }));
 
-// グループ判定：メンバーが存在するか、またはグループっぽい名前/ジャンルか
 const membersList = wikiData.results?.bindings || [];
 const hasMembers = membersList.length > 0;
 const genre = firstTrack.primaryGenreName || 'K-Pop';
 
-// 国籍補正（iTunesがUSAを返してしまう問題の補正）
 let country = 'KR';
-if (genre.toLowerCase().includes('k-pop') || /^[A-Z0-9\s]+$/i.test(artistQuery)) {
+if (genre.toLowerCase().includes('k-pop') || /^[A-Z0-9\s]+$/i.test(targetArtistName)) {
   country = 'KR';
 } else if (firstTrack.country && firstTrack.country !== 'USA') {
   country = firstTrack.country;
@@ -54,7 +58,7 @@ if (genre.toLowerCase().includes('k-pop') || /^[A-Z0-9\s]+$/i.test(artistQuery))
 
 return [{
   json: {
-    artist_name: firstTrack.artistName || artistQuery,
+    artist_name: targetArtistName,
     artist_id: firstTrack.artistId || null,
     genre: genre,
     country: country,
