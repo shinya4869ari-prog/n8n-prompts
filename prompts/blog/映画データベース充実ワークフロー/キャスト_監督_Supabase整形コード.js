@@ -1,21 +1,24 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード (Wikimedia Commons 写真 & Wikidata QID 完全対応版)
+ * 【n8n用】キャスト・監督 Supabase整形コード (完全安全フェイルセーフ版)
  * 
- * 役割: 「Wikidata人名検索」でヒットした QID (Q212990, Q7385485等) と、
- *       「Wikidata画像取得」から得られた Wikimedia Commons 直リンク最高品質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
- *       を完全ドッキングさせ、Supabase へ保存する最終人物 JSON を完成させます！
+ * 役割: 前段の「Wikidata画像取得」から得られた Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
+ *       および QID を安全に取得し、Supabase へ保存する最終人物 JSON を作成します。
  */
 
 function getNodeData(name) {
-  try { return $(name).first()?.json || $(name).item?.json || {}; } catch(e) { return {}; }
+  try { return $(name).all() || []; } catch(e) { return []; }
 }
 
 const inputItems = $input.all();
-const wikiPersonItems = $( 'Wikidata人名検索' ).all();
-const credits = getNodeData('TMDb credits取得');
-const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || getNodeData('映画データ整形コード_claude') || {};
+const creditsNode = $( 'TMDb credits取得' ).first()?.json || {};
+const shapedNode = $( '補完結果整形コード' ).first()?.json || $( '映画データ整形コード_claude' ).first()?.json || {};
 
-const movieCountry = String(shaped.country || '').toUpperCase();
+// ノード名の表記揺れに対応する安全取得
+let wikiPersonItems = getNodeData('Wikidata人名検索');
+if (wikiPersonItems.length === 0) wikiPersonItems = getNodeData('Wikidata人名');
+if (wikiPersonItems.length === 0) wikiPersonItems = getNodeData('Wikidata検索');
+
+const movieCountry = String(shapedNode.country || '').toUpperCase();
 
 const persons = [];
 const seenNames = new Set();
@@ -39,9 +42,9 @@ const inferPersonCountry = (name, nameEn, defaultCountry) => {
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
-const jaDirectors = splitNames(shaped.director);
-const enDirectors = splitNames(shaped.director_en);
-const jaCast = splitNames(shaped.cast);
+const jaDirectors = splitNames(shapedNode.director);
+const enDirectors = splitNames(shapedNode.director_en);
+const jaCast = splitNames(shapedNode.cast);
 const enCast = splitNames(shaped.cast_en);
 
 const enNameMap = {};
@@ -61,9 +64,9 @@ inputItems.forEach((item, idx) => {
     wikiImage = wikiImage.replace('http://', 'https://');
   }
 
-  // Wikidata人名検索 ノードからの QID 安全抽出 (Q212990, Q7385485等)
-  const personItem = wikiPersonItems[idx]?.json || {};
-  const searchName = personItem.searchinfo?.search || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
+  // 人名・QIDの安全抽出
+  const personItem = wikiPersonItems[idx]?.json || item.json || {};
+  const searchName = personItem.searchinfo?.search || personItem.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
   
   if (!searchName || seenNames.has(searchName)) return;
   seenNames.add(searchName);
@@ -79,19 +82,19 @@ inputItems.forEach((item, idx) => {
   let personObj = null;
 
   if (isDirector) {
-    personObj = Array.isArray(credits?.crew) ? credits.crew.find(c => c.job === 'Director') : null;
+    personObj = Array.isArray(creditsNode?.crew) ? creditsNode.crew.find(c => c.job === 'Director') : null;
   } else {
     const castIndex = jaCast.indexOf(searchName);
     const targetEnName = enNameMap[searchName] || '';
     
-    if (Array.isArray(credits?.cast)) {
-      personObj = credits.cast.find(c => 
+    if (Array.isArray(creditsNode?.cast)) {
+      personObj = creditsNode.cast.find(c => 
         (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())) ||
         (c.name && c.name.includes(searchName))
       );
 
-      if (!personObj && castIndex >= 0 && castIndex < credits.cast.length) {
-        personObj = credits.cast[castIndex];
+      if (!personObj && castIndex >= 0 && castIndex < creditsNode.cast.length) {
+        personObj = creditsNode.cast[castIndex];
       }
     }
   }
@@ -110,7 +113,7 @@ inputItems.forEach((item, idx) => {
     profile_url: finalProfileUrl, // 🎯 音楽データと同じ https://commons.wikimedia.org/... の直リンク最高品質画像！
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
-    wikidata_id: qid // 🎯【完全結合】Q212990, Q7385485等の本当のWikidata ID
+    wikidata_id: qid // 🎯 QID（Q212990等）
   });
 });
 
