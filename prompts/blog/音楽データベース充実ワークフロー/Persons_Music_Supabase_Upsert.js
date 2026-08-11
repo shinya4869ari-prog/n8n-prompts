@@ -11,7 +11,18 @@ function getNodeData(name) {
 
 const input = $input.first()?.json || $input.item?.json || {};
 const musicData = getNodeData('iTunes_Wikidata_Music_Enhancer') || input;
-const wikiData = getNodeData('Wikidataメンバー検索');
+const wikiRaw = getNodeData('Wikidataメンバー検索');
+
+let wikiData = {};
+try {
+  if (wikiRaw.data) {
+    wikiData = typeof wikiRaw.data === 'string' ? JSON.parse(wikiRaw.data) : wikiRaw.data;
+  } else {
+    wikiData = wikiRaw;
+  }
+} catch(e) {
+  wikiData = {};
+}
 
 const persons = [];
 const artistName = musicData.artist_name;
@@ -26,7 +37,7 @@ persons.push({
   group_type: musicData.genre || '音楽アーティスト',
   profile_url: musicData.artwork_url || null,
   country: musicData.country || null,
-  members: musicData.members || null
+  members: null
 });
 
 // 2. Wikidata や 入力データからのメンバー自動分割保存
