@@ -1,4 +1,4 @@
-﻿const brave = $input.first()?.json || $input.item?.json || {};
+const brave = $input.first()?.json || $input.item?.json || {};
 const credits = getNodeData('TMDb credits取得');
 const t1 = getNodeData('TMDb検索');
 const t2 = getNodeData('TMDb検索_タイトル');
@@ -6,32 +6,6 @@ const resultsList = [
   ...(t1?.results || t1?.movie_results || (t1?.id ? [t1] : [])),
   ...(t2?.results || t2?.movie_results || (t2?.id ? [t2] : []))
 ];
-let sourceData = {};
-function getSourceNodeData() {
-  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview);
-  
-  // 1. First, check direct input
-  let d = $input.first()?.json || $input.item?.json;
-  if (isValid(d)) return d;
-
-  // 2. Check fallback nodes if direct input doesn't have movie data
-  try {
-    d = $('Loop Over Items').first()?.json || $('Loop Over Items').item?.json;
-    if (isValid(d)) return d;
-  } catch (e) {}
-  try {
-    d = $('Loop Over Items1').first()?.json || $('Loop Over Items1').item?.json;
-    if (isValid(d)) return d;
-  } catch (e) {}
-  try {
-    d = $('映画ごとにループ実行').first()?.json || $('映画ごとにループ実行').item?.json;
-    if (isValid(d)) return d;
-  } catch (e) {}
-  
-  // 3. Ultimate fallback
-  return $input.first()?.json || $input.item?.json || {};
-}
-sourceData = getSourceNodeData();
 
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
 function getNodeData(nodeName) {
@@ -42,36 +16,41 @@ function getNodeData(nodeName) {
   }
 }
 
+let sourceData = {};
+function getSourceNodeData() {
+  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview || d.query || d.id || d.tmdb_id);
+  
+  let d = $input.first()?.json || $input.item?.json;
+  if (isValid(d)) return d;
+
+  try {
+    d = $('Loop Over Items').first()?.json || $('Loop Over Items').item?.json;
+    if (isValid(d)) return d;
+  } catch (e) {}
+  try {
+    d = $('映画ごとにループ実行').first()?.json || $('映画ごとにループ実行').item?.json;
+    if (isValid(d)) return d;
+  } catch (e) {}
+  
+  return $input.first()?.json || $input.item?.json || {};
+}
+sourceData = getSourceNodeData();
+
 const correctMovieId = credits?.id;
 
 // 対象国と言語にマッチする映画を検索結果（resultsList）から探す
 let result = null;
 if (correctMovieId && resultsList.length > 0) {
-  // 0. creditsのIDと完全一致するものを最優先（最も確実）
   result = resultsList.find(m => m.id === correctMovieId);
 }
+if (!result && resultsList.length > 0) {
+  result = resultsList[0]; // TMDb検索結果の一番上を採用
+}
 
-  // 1. 国コードまたは言語が一致するものを検索
-  result = resultsList.find(m => 
-    (m.original_language && sourceData.target_lang && m.original_language === sourceData.target_lang) || 
-    (m.origin_country && sourceData.target_country && m.origin_country.includes(sourceData.target_country))
-  );
+// 🎯 TMDb IDのみ入力された場合でも、creditsやTMDb検索からタイトルを自動補完！
+const movieTitle = sourceData.title || sourceData.query || sourceData.name || credits.title || result?.title || t1.title || '';
 
-  // 2. 公開年（year）が近しいもの（±2年以内）を検証検索
-  if (!result && sourceData.year) {
-    const targetY = parseInt(sourceData.year, 10);
-    result = resultsList.find(m => {
-      const y = m.release_date ? parseInt(m.release_date.substring(0, 4), 10) : null;
-      return y && Math.abs(y - targetY) <= 2;
-    });
-  }
-
-  // 3. 国・年の条件に一致しない場合、別作品で誤上書きするのを防ぐためnullのままとします
-  if (!result) {
-    result = null;
-  }
-
-if (!sourceData?.title && !result?.title) return [];
+if (!movieTitle && !credits.id) return []; // タイトルもIDも一切無い完全空の場合のみ安全スキップ
 
 const langToCountry = {
   'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
@@ -89,206 +68,89 @@ const nameToCountryCode = {
   'タイ': 'TH', 'ベトナム': 'VN', 'インドネシア': 'ID', 'トルコ': 'TR',
   'ブラジル': 'BR', 'メキシコ': 'MX', 'ニュージーランド': 'NZ',
 };
-const lang = result?.original_language;
 
-// カタカナ国名が流れてきた場合は2文字コードに変換する
+const lang = result?.original_language || credits.original_language;
+
 let rawCountry = sourceData.target_country || sourceData.country || '';
 if (nameToCountryCode[rawCountry]) {
   rawCountry = nameToCountryCode[rawCountry];
 }
 
 const tmdbOriginCountry = (Array.isArray(result?.origin_country) && result.origin_country[0]) || (typeof result?.origin_country === 'string' ? result.origin_country : null);
-const country = (rawCountry && rawCountry.length === 2 ? rawCountry.toUpperCase() : null) || 
-                (tmdbOriginCountry && tmdbOriginCountry.length === 2 ? tmdbOriginCountry.toUpperCase() : null) ||
-                langToCountry[lang] || 
-                lang?.toUpperCase() || 
-                null;
-const posterPath = result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null;
-let wikidata_id = result?.external_ids?.wikidata_id || null;
-if (!wikidata_id) {
-  try {
-    const wikiJson1 = getNodeData('Wikidata検索');
-    let fallbackId = wikiJson1?.query?.search?.[0]?.title || wikiJson1?.search?.[0]?.id || null;
-    
-    const wikiJson2 = getNodeData('Wikidata検索 (タイトル検索用)');
-    if (!fallbackId && wikiJson2) {
-      fallbackId = wikiJson2?.search?.[0]?.id || wikiJson2?.query?.[0]?.title || null;
-    }
-    
-    wikidata_id = fallbackId;
-  } catch (e) {}
-}
-const fetchedCast = (Array.isArray(credits?.cast) && credits.cast.length > 0) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
-const fetchedDirector = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
-const fetchedCastEn = (Array.isArray(credits?.cast) && credits.cast.length > 0) ? credits.cast.map(c => c.original_name).join(', ') : null;
-const fetchedDirectorEn = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
 
-const cast = sourceData.cast || fetchedCast || null;
-const director = sourceData.director || fetchedDirector || null;
-const cast_en = sourceData.cast_en || fetchedCastEn || null;
-const director_en = sourceData.director_en || fetchedDirectorEn || null;
+const finalCountry = 
+  rawCountry || 
+  tmdbOriginCountry || 
+  (lang ? langToCountry[lang] : null) || 
+  '';
 
-// Braveの動画結果およびウェブ検索結果を統合して安全に取得
-const braveMovie = getNodeData('Brave Search_movie');
-const braveTrailer = getNodeData('Brave Search_trailer');
-const videoResults = [
-  ...(braveMovie?.videos?.results || []),
-  ...(braveMovie?.web?.results || []),
-  ...(braveMovie?.results || []),
-  ...(braveTrailer?.videos?.results || []),
-  ...(braveTrailer?.web?.results || []),
-  ...(braveTrailer?.results || [])
-];
+// キャストと監督の取得（TMDb credits優先）
+const directorName = Array.isArray(credits.crew) 
+  ? credits.crew.filter(c => c.job === 'Director').map(c => c.name).join(', ')
+  : '';
 
-const youtubeVideo = videoResults.find(v => {
-  const url = v.url || v.profile?.url || '';
-  const videoTitle = (v.title || '') + ' ' + (v.description || '');
-  
-  const isYouTube = url.includes('youtube.com/watch') || url.includes('youtu.be/') || url.includes('youtube.com/shorts/');
-  if (!isYouTube) return false;
-  
-  const isNoise = videoTitle.toLowerCase().includes('not currently available') || videoTitle.toLowerCase().includes('利用できません') || videoTitle.toLowerCase().includes('device');
-  if (isNoise) return false;
-  
-  const hasKeyword = videoTitle.toLowerCase().includes('予告') || 
-                    videoTitle.toLowerCase().includes('特報') || 
-                    videoTitle.toLowerCase().includes('trailer') || 
-                    videoTitle.toLowerCase().includes('teaser') || 
-                    videoTitle.toLowerCase().includes('preview') || 
-                    videoTitle.toLowerCase().includes('promo') || 
-                    videoTitle.toLowerCase().includes('예고');
-  if (!hasKeyword) return false;
+const directorEnName = Array.isArray(credits.crew) 
+  ? credits.crew.filter(c => c.job === 'Director').map(c => c.original_name || c.name).join(', ')
+  : '';
 
-  const normalize = (str) => {
-    if (!str) return '';
-    return String(str).toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]]/g, '');
-  };
+const castNames = Array.isArray(credits.cast) 
+  ? credits.cast.slice(0, 10).map(c => c.name).join(', ')
+  : '';
 
-  const normalizedVideo = normalize(videoTitle);
+const castEnNames = Array.isArray(credits.cast) 
+  ? credits.cast.slice(0, 10).map(c => c.original_name || c.name).join(', ')
+  : '';
 
-  const rawTitles = [
-    sourceData.title,
-    sourceData.origin_title,
-    ...(sourceData.title ? sourceData.title.split(/[:\-\s]+/).filter(w => w.toLowerCase() !== 'hunt' && w.toLowerCase() !== 'the' && w.length >= 4) : []),
-    ...(sourceData.origin_title ? sourceData.origin_title.split(/[:\-\s]+/).filter(w => w.toLowerCase() !== 'hunt' && w.toLowerCase() !== 'the' && w.length >= 4) : []),
-    result?.title,
-    result?.original_title
-  ].filter(Boolean);
+// TMDb の概要文 (overview) 取得
+const tmdbOverview = credits.overview || result?.overview || '';
 
-  const movieTitleKeywords = rawTitles.map(normalize);
+// YouTube動画・予告編の抽出
+let trailerUrl = '';
+let trailerTitle = '';
+const searchTitleLower = movieTitle.toLowerCase();
+const searchTitleClean = searchTitleLower.replace(/[\s:：・\-_]/g, '');
 
-  const containsMovieTitle = movieTitleKeywords.some(keyword => {
-    if (keyword.length <= 2 || keyword === 'hunt' || keyword === 'the') return false;
-    return normalizedVideo.includes(keyword);
+if (Array.isArray(brave.results)) {
+  const matchedVideo = brave.results.find(v => {
+    const vt = (v.title || '').toLowerCase().replace(/[\s:：・\-_]/g, '');
+    const vd = (v.description || '').toLowerCase();
+    const isTrailer = vt.includes('予告') || vt.includes('特報') || vt.includes('trailer') || vd.includes('予告') || vd.includes('trailer');
+    const isTitleMatch = vt.includes(searchTitleClean) || searchTitleClean.split('').every(char => vt.includes(char));
+    return isTrailer && isTitleMatch;
   });
 
-  return containsMovieTitle;
-});
-
-const fetchedTrailerUrl = youtubeVideo?.url || youtubeVideo?.profile?.url || null;
-const trailer_url = fetchedTrailerUrl || sourceData.trailer_url || null;
-
-const rawOverview = result?.overview || 
-                    result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || 
-                    result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || 
-                    result?.translations?.translations?.find(t => t.data?.overview)?.data?.overview || 
-                    null;
-
-const finalOverview = sourceData.overview || rawOverview || null;
-const finalOverviewEn = (rawOverview && rawOverview !== finalOverview) ? rawOverview : null;
-
-const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
-const isInputTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(inputTitle || '');
-const isTmdbTitleJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(result?.title || '');
-const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
-const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || null;
-const finalTitle = (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || (isTmdbTitleJapanese ? result?.title : null) || tmdbEnTitle || (result?.original_language === 'en' ? result?.original_title : null) || inputTitle || result?.title || result?.original_title || null;
-
-const isAllowedOriginTitle = (str) => {
-  if (!str || typeof str !== 'string') return false;
-  return /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3005-\u3006\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\u0020-\u007E\u00C0-\u024F\u1E00-\u1EFF\s\-_:'",\.!\?&\(\)]+$/.test(str.trim());
-};
-
-const rawTmdbOrigin = result?.original_title || null;
-const rawSourceOrigin = sourceData.origin_title || null;
-
-let finalOriginTitle = null;
-if (isAllowedOriginTitle(rawTmdbOrigin)) {
-  finalOriginTitle = rawTmdbOrigin;
-} else if (isAllowedOriginTitle(tmdbEnTitle)) {
-  finalOriginTitle = tmdbEnTitle;
-} else if (isAllowedOriginTitle(rawSourceOrigin)) {
-  finalOriginTitle = rawSourceOrigin;
-} else if (isAllowedOriginTitle(result?.title)) {
-  finalOriginTitle = result.title;
-}
-
-if (!isAllowedOriginTitle(finalOriginTitle)) {
-  finalOriginTitle = null;
-}
-
-const genreMap = {
-  28: "アクション", 12: "アドベンチャー", 16: "アニメ", 35: "コメディ", 80: "犯罪",
-  99: "ドキュメンタリー", 18: "ドラマ", 10751: "ファミリー", 14: "ファンタジー", 36: "歴史",
-  27: "ホラー", 10402: "音楽", 9648: "ミステリー", 10749: "ロマンス", 878: "SF",
-  10770: "テレビ映画", 53: "スリラー", 10752: "戦争", 37: "西部劇"
-};
-const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
-const genres = (Array.isArray(rawGenreIds) && rawGenreIds.length > 0 ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : '') || sourceData.genres || sourceData.genre || null;
-
-// 変更理由ログ (update_reason) の記録
-const reasons = [];
-
-if (fetchedTrailerUrl) {
-  if (fetchedTrailerUrl !== sourceData.trailer_url) {
-    reasons.push('trailer_url: Brave検索の最新予告編で新規更新');
-  } else {
-    reasons.push('trailer_url: 既存URLが最新予告編と一致');
+  if (matchedVideo) {
+    trailerUrl = matchedVideo.url || (matchedVideo.video?.url) || '';
+    trailerTitle = matchedVideo.title || '';
+  } else if (brave.results[0]) {
+    trailerUrl = brave.results[0].url || '';
+    trailerTitle = brave.results[0].title || '';
   }
-} else if (sourceData.trailer_url) {
-  reasons.push('trailer_url: 既存URLを保護・維持');
-} else {
-  reasons.push('trailer_url: 予告編未検出のためnull');
 }
 
-if (result?.id && result.id !== sourceData.tmdb_id) {
-  reasons.push(`tmdb_id: TMDb検索結果(${result.id})で更新`);
-} else if (sourceData.tmdb_id) {
-  reasons.push(`tmdb_id: 既存ID(${sourceData.tmdb_id})を維持`);
-} else {
-  reasons.push('tmdb_id: 未検出のためnull');
-}
+// 変更理由ログの作成
+const existingDb = getNodeData('Supabaseから既存データを取得');
+const isExisting = existingDb && existingDb.id;
 
-if (sourceData.overview) {
-  reasons.push('overview: 既存日本語あらすじを保護');
-} else if (rawOverview) {
-  reasons.push('overview: TMDbあらすじを取得');
-}
+let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
 
-const update_reason = reasons.join(' / ');
-
-const escapeJsonString = (str) => {
-  if (typeof str !== 'string') return str;
-  return str.replace(/\r/g, '').replace(/\n/g, ' ').replace(/\\/g, '\\\\').replace(/"/g, '\\"').trim();
-};
-
-// is_recommended（リコメンドフラグ）のみ削除し、update_reason は維持
-const outputObj = {
-  title: escapeJsonString(finalTitle),
-  origin_title: escapeJsonString(finalOriginTitle),
-  year: (result?.release_date ? result.release_date.substring(0, 4) : null) || sourceData.year || null,
-  tmdb_id: result?.id || sourceData.tmdb_id || null,
-  wikidata_id,
-  poster_url: posterPath,
-  overview: escapeJsonString(finalOverview),
-  overview_en: escapeJsonString(finalOverviewEn),
-  genres: escapeJsonString(genres),
-  director: escapeJsonString(director),
-  director_en: escapeJsonString(director_en),
-  cast: escapeJsonString(cast),
-  cast_en: escapeJsonString(cast_en),
-  trailer_url,
-  country,
-  update_reason
-};
-return [{ json: outputObj }];
+return [{
+  json: {
+    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id,
+    title: movieTitle,
+    title_en: result?.original_title || credits.original_title || movieTitle,
+    origin_title: result?.original_title || credits.original_title || movieTitle,
+    year: (result?.release_date || credits.release_date || sourceData.year || '').substring(0, 4),
+    country: finalCountry,
+    director: directorName,
+    director_en: directorEnName,
+    cast: castNames,
+    cast_en: castEnNames,
+    overview: tmdbOverview,
+    poster_path: credits.poster_path || result?.poster_path || '',
+    backdrop_path: credits.backdrop_path || result?.backdrop_path || '',
+    trailer_url: trailerUrl,
+    trailer_title: trailerTitle,
+    update_reason: updateReason
+  }
+}];
