@@ -42,20 +42,20 @@ USING (true);
 
 ## 2. n8n ワークフローへのノード追加
 
-映画充実ワークフローの末尾（または `Supabaseへ保存` ノードの直後）に、以下の2つのノードを接続します：
+映画充実ワークフローの末尾に以下の2つのノードを接続します：
 
-### ① ノード名: `キャスト・監督抽出整形` (Codeノード)
+### ① ノード名: `キャスト・監督抽出` (Codeノード)
 - Mode: **Run Once for All Items**
 - Code: [Persons_Supabase_Upsertコード.js](./Persons_Supabase_Upsertコード.js) のコードを貼り付け
 
 ### ② ノード名: `Personsへ保存` (HTTP Requestノード)
 - **Method**: `POST`
-- **URL**: `https://<YOUR_SUPABASE_PROJECT>.supabase.co/rest/v1/Persons?on_conflict=name`
+- **URL**: `https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons?on_conflict=name`
 - **Headers**:
   - `apikey`: `<YOUR_SUPABASE_ANON_KEY>`
   - `Authorization`: `Bearer <YOUR_SUPABASE_SERVICE_ROLE_KEY>`
   - `Content-Type`: `application/json`
-  - `Prefer`: `resolution=merge-duplicates`  ← ※重要: 既存の人物なら写真や情報を自動更新(Upsert)
+  - `Prefer`: `resolution=merge-duplicates`
 - **Send Body**: `ON`
 - **Body Content Type**: `JSON`
 - **JSON Body**: `={{ JSON.stringify($json) }}`

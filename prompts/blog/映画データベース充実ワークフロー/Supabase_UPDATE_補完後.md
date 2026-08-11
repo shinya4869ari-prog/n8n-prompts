@@ -1,99 +1,29 @@
-﻿# Supabase UPDATE ノード設定（補完後・完全版保存）
+# 🎬 映画データ保存（Moviesテーブル）HTTP Request 設定ガイド
 
-## ノード種別
-HTTP Request ノード（PATCH / UPDATE）
+ユーザー様のプロジェクト情報に合わせて更新した、映画データ（`Movies` テーブル）自動保存用の確実な HTTP Request ノードの設定値です。
 
-## URL
-```
-https://[YOUR_SUPABASE_URL]/rest/v1/Movies?tmdb_id=eq.{{ $json.tmdb_id }}
-```
+---
 
-※ tmdb_id が null の場合は wikidata_id で照合：
-```
-https://[YOUR_SUPABASE_URL]/rest/v1/Movies?wikidata_id=eq.{{ $json.wikidata_id }}
-```
+## HTTP Request ノード設定値 (映画データ保存用)
 
-## Method
-`PATCH`
-
-## Headers
+* **Node Name**: `Supabaseへ保存`
+* **Method**: `POST`  *(※`on_conflict` を使用するため POST に設定)*
+* **URL**: `https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Movies?on_conflict=tmdb_id`
+* **Headers**:
+  - `apikey`: `<YOUR_SUPABASE_ANON_KEY>`
+  - `Authorization`: `Bearer <YOUR_SUPABASE_SERVICE_ROLE_KEY>`
+  - `Content-Type`: `application/json`
+  - `Prefer`: `resolution=merge-duplicates`  *(※重複時に最新データで自動上書き更新)*
+* **Send Body**: `ON`
+* **Body Content Type**: `JSON`
+* **JSON Body**:
 ```json
-{
-  "apikey": "[YOUR_SUPABASE_ANON_KEY]",
-  "Authorization": "Bearer [YOUR_SUPABASE_ANON_KEY]",
-  "Content-Type": "application/json",
-  "Prefer": "return=representation"
-}
-```
-
-## Body (JSON)
-```json
-{
-  "title": "{{ $json.title }}",
-  "origin_title": "{{ $json.origin_title }}",
-  "year": "{{ $json.year }}",
-  "country": "{{ $json.country }}",
-  "genres": "{{ $json.genres }}",
-  "director": "{{ $json.director }}",
-  "director_en": "{{ $json.director_en }}",
-  "cast": "{{ $json.cast }}",
-  "cast_en": "{{ $json.cast_en }}",
-  "overview": "{{ $json.overview }}",
-  "overview_en": "{{ $json.overview_en }}",
-  "poster_url": "{{ $json.poster_url }}",
-  "trailer_url": "{{ $json.trailer_url }}",
-  "tmdb_id": {{ $json.tmdb_id || null }},
-  "wikidata_id": "{{ $json.wikidata_id }}"
-}
+={{ JSON.stringify($json) }}
 ```
 
 ---
 
-## ワークフロー接続順序（充実 + 補完 統合フロー）
-
-```
-[On form submission]
-       │
-[入力統一・分割コード]
-       │
-[Wikidata検索] → [Wiki検索ヒット判定]
-       │
-[TMDb検索_ID/Wikidata] または [TMDb検索_タイトル]
-       │
-[ID検索ヒット判定]
-       │
-[TMDb検索] → [TMDb credits取得]
-       │
-[Brave Search_trailer]
-       │
-[Supabaseから既存データを取得]
-       │
-[映画データ整形コード_claude]
-       │
-[キャスト・監督翻訳AI] (Claude or Gemini)
-       │
-[Brave Search_movie]  ←── Gemini あらすじ生成のコンテキスト用
-       │
-[gemini_movie_db] ← 新規追加: Gemini があらすじ日本語生成
-       │
-[あらすじあり？] (If/Else 判定)
-       │
-[Supabaseへ保存] (POST / INSERT) ← 初回保存
-       │
-[補完ブリッジ整形コード] ← 新規追加: INSERT 後のデータを補完用に整形
-       │
-[PromptLoader_MovieAudit] ← 映画データ補完ワークフローから流用
-       │
-[Gemini 補完ノード] ← gemini_prompt.md を System Prompt に設定
-       │
-[補完結果整形コード] ← 映画データ補完ワークフローから流用
-       │
-[Supabase UPDATE（完全版）] ← このノード（PATCH で上書き）
-```
-
----
-
-## 注意点
-- `Supabaseから既存データを取得` ノードの Settings で **Always Output Data = ON** にすること（新規映画でも止まらないように）
-- `Supabaseへ保存` は INSERT（POST）、`Supabase UPDATE（完全版）` は UPDATE（PATCH）
-- 補完 Gemini は Gemini 2.5 Pro / Flash 推奨（長いJSONを処理するため）
+## 特長
+`on_conflict=tmdb_id` と `Prefer: resolution=merge-duplicates` を指定することにより：
+- 該当する `tmdb_id` の映画が未保存の場合は **新規追加 (INSERT)** されます。
+- 該当する `tmdb_id` の映画が既に保存されている場合は **自動上書き更新 (UPDATE)** されます。
