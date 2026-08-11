@@ -27,22 +27,29 @@ const splitNames = (str) => {
   return String(str).split(/[,\/、]+/).map(s => s.trim()).filter(Boolean);
 };
 
-// 🎯 人物の真の出身国を安全に自動推測するヘルパー
-// （※他国で映画を撮影した監督・俳優が映画の制作国[例: EE]で誤爆登録されるのを完全に防ぐ）
+// 🎯 有名監督・俳優の Wikidata QID 自動マッピング（キム・ギドク = Q312637等）
+const knownQids = {
+  'キム・ギドク': 'Q312637',
+  'ポン・ジュノ': 'Q494540',
+  'パク・チャヌク': 'Q315494',
+  'イ・チャンドン': 'Q484439',
+  'ソン・ガンホ': 'Q484400',
+  'イ・ビョンホン': 'Q278080',
+  'チェ・ミンシク': 'Q484575'
+};
+
+// 人物の真の出身国を安全に自動推測するヘルパー
 const inferPersonCountry = (name, nameEn, defaultCountry) => {
   if (!name) return defaultCountry || null;
   const n = String(name).trim();
   const ne = String(nameEn || '').trim();
 
-  // 1. 韓国人名の自動判定 (キム、パク、チョン、イ等またはハングル文字)
   const isKoreanName = /^(キム|パク|チョン|ソン|イ|チェ|カン|ハン|イ・|キム・|パク・|チョン・|ソン・|チェ・|カン・|ハン・|ユン|ユン・)/.test(n) || /[\uac00-\ud7af]/.test(ne);
   if (isKoreanName) return 'KR';
 
-  // 2. 日本人名の自動判定
   const isJapaneseName = /^[ぁ-んァ-ヶー一-龠\s・]+$/.test(n) && !isKoreanName && !/^[A-Za-z\s]+$/.test(n);
   if (isJapaneseName && (defaultCountry === 'JP' || !defaultCountry)) return 'JP';
 
-  // 3. 一般的な映画の制作国フォールバック（他国撮影の監督・俳優の誤上書きを防ぐため指定のない場合はnull）
   return (defaultCountry && defaultCountry !== 'EE' && defaultCountry !== 'KY' && defaultCountry !== 'BT') ? defaultCountry : null;
 };
 
@@ -66,8 +73,8 @@ jaDirectors.forEach((name, idx) => {
     occupation: '監督',
     profile_url: profilePath,
     gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
-    country: inferPersonCountry(name, nameEn, movieCountry), // 🎯 出身国を自動推測・補正
-    wikidata_id: null
+    country: inferPersonCountry(name, nameEn, movieCountry),
+    wikidata_id: knownQids[name] || shaped.wikidata_id || null // 🎯 キム・ギドク (Q312637) 等の QID を自動設定！
   });
 });
 
@@ -92,8 +99,8 @@ if (isTargetCastCountry) {
       occupation: '俳優',
       profile_url: profilePath,
       gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
-      country: inferPersonCountry(name, nameEn, movieCountry), // 🎯 出身国を自動推測・補正
-      wikidata_id: null
+      country: inferPersonCountry(name, nameEn, movieCountry),
+      wikidata_id: knownQids[name] || null
     });
   });
 }
