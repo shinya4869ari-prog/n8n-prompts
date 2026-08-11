@@ -18,16 +18,11 @@ try {
   const rawData = {};
   keys.forEach((key, index) => { rawData[key] = responses[index]; });
 
-  const base = $input.first().json;
+  const items = $input.all();
   const now = new Date();
-  const context = {
-    ...base,
-    now_date: `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`,
-    now_year: String(now.getFullYear())
-  };
 
   // {{ $json.countryJa }} 等の変数を動的置換するテンプレート関数
-  const evaluateTemplate = (text, data) => {
+  const evaluateTemplate = (text, data, context) => {
     if (!text) return "";
     return text.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, expression) => {
       if (expression.includes('$now.toFormat')) return context.now_date;
@@ -45,18 +40,27 @@ try {
     });
   };
 
-  const results = {};
-  Object.keys(rawData).forEach(key => {
-    results[key] = evaluateTemplate(rawData[key], context);
-  });
+  return items.map(item => {
+    const base = item.json;
+    const context = {
+      ...base,
+      now_date: `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`,
+      now_year: String(now.getFullYear())
+    };
 
-  return [{
-    json: {
-      ...results,
-      ...context
-    }
-  }];
+    const results = {};
+    Object.keys(rawData).forEach(key => {
+      results[key] = evaluateTemplate(rawData[key], base, context);
+    });
+
+    return {
+      json: {
+        ...results,
+        ...context
+      }
+    };
+  });
 } catch (error) {
   console.error("PromptLoader Error:", error);
-  return [{ json: { error: error.message, ...$input.first().json } }];
+  return $input.all().map(item => ({ json: { error: error.message, ...item.json } }));
 }

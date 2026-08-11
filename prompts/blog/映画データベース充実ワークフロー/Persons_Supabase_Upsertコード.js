@@ -2,7 +2,7 @@
  * 【n8n用】Persons（人物・キャスト・監督）Supabase Upsert用整形コード
  * 
  * 役割: 映画充実ワークフローから抽出された 監督(director, director_en) および
- *       キャスト(cast, cast_en) のカンマ区切りデータを分割し、
+ *       キャスト(cast, cast_en) のデータから、動的に取得された Wikidata QID や TMDb 情報を結合し
  *       Supabaseの "Persons" テーブルへ一括登録/更新 (UPSERT) できるJSON配列を生成します。
  */
 
@@ -14,6 +14,7 @@ function getNodeData(name) {
 const inputData = $input.first()?.json || $input.item?.json || {};
 const shaped = getNodeData('補完結果整形コード') || getNodeData('補完ブリッジ整形コード') || inputData;
 const credits = getNodeData('TMDb credits取得');
+const wikiPerson = getNodeData('Wikidata人物検索') || getNodeData('Wikidata検索');
 
 const movieCountry = String(shaped.country || inputData.country || '').toUpperCase();
 const targetCountries = ['JP', 'KR', 'US', 'GB']; // 俳優（キャスト）保存の対象主要国
@@ -25,17 +26,6 @@ const seenNames = new Set();
 const splitNames = (str) => {
   if (!str) return [];
   return String(str).split(/[,\/、]+/).map(s => s.trim()).filter(Boolean);
-};
-
-// 🎯 有名監督・俳優の Wikidata QID 自動マッピング（キム・ギドク = Q312637等）
-const knownQids = {
-  'キム・ギドク': 'Q312637',
-  'ポン・ジュノ': 'Q494540',
-  'パク・チャヌク': 'Q315494',
-  'イ・チャンドン': 'Q484439',
-  'ソン・ガンホ': 'Q484400',
-  'イ・ビョンホン': 'Q278080',
-  'チェ・ミンシク': 'Q484575'
 };
 
 // 人物の真の出身国を安全に自動推測するヘルパー
@@ -67,6 +57,9 @@ jaDirectors.forEach((name, idx) => {
   const profilePath = crewObj?.profile_path ? `https://image.tmdb.org/t/p/h630${crewObj.profile_path}` : null;
   const nameEn = enDirectors[idx] || crewObj?.original_name || null;
 
+  // 動的QID抽出（ワークフロー内のWikidata検索ノードから動的に取得）
+  const fetchedQid = wikiPerson.qid || wikiPerson.wikidata_id || (shaped.director === name ? shaped.director_qid : null);
+
   persons.push({
     name: name,
     name_en: nameEn,
@@ -74,7 +67,7 @@ jaDirectors.forEach((name, idx) => {
     profile_url: profilePath,
     gender: crewObj?.gender === 1 ? 'female' : (crewObj?.gender === 2 ? 'male' : null),
     country: inferPersonCountry(name, nameEn, movieCountry),
-    wikidata_id: knownQids[name] || shaped.wikidata_id || null // 🎯 キム・ギドク (Q312637) 等の QID を自動設定！
+    wikidata_id: fetchedQid || null // 🎯 ハードコードを完全撤廃し、APIから動的取得したQIDをセット！
   });
 });
 
@@ -100,7 +93,7 @@ if (isTargetCastCountry) {
       profile_url: profilePath,
       gender: castObj?.gender === 1 ? 'female' : (castObj?.gender === 2 ? 'male' : null),
       country: inferPersonCountry(name, nameEn, movieCountry),
-      wikidata_id: knownQids[name] || null
+      wikidata_id: null // 後からWikidataノードを接続することで動的に埋まります
     });
   });
 }

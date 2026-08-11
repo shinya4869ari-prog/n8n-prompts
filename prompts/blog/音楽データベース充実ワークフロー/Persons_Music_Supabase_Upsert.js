@@ -30,39 +30,26 @@ const isGroup = hasMembers || musicData.type === 'group';
 
 const defaultCountry = (musicData.genre && musicData.genre.toLowerCase().includes('k-pop')) ? 'KR' : (musicData.country || 'KR');
 
-// 🎯 グループ本体の Wikidata QID 抽出 (例: Q25056960)
+// 🎯 ハードコードを完全に排除し、API（Wikidata）の検索結果から動的に QID を自動抽出！
 let groupQid = null;
 if (bindings.length > 0 && bindings[0].group?.value) {
   groupQid = bindings[0].group.value.split('/').pop();
-} else if (artistName === 'BLACKPINK' || artistName === 'ブラックピンク') {
-  groupQid = 'Q25056960';
-} else if (artistName === 'BTS' || artistName === '防弾少年団') {
-  groupQid = 'Q13580403';
 }
 
-// 映画DB統一ルール: 韓国系はハングル（블랙핑크 等）を格納
-const getKoreanOrOrigName = (jaName, enName) => {
-  if (jaName === 'BLACKPINK' || jaName === 'ブラックピンク') return '블랙핑크';
-  if (jaName === 'BTS' || jaName === '防弾少年団') return '방탄소년단';
-  if (jaName === 'TWICE') return '트와이스';
-  if (jaName === 'NewJeans') return '뉴진스';
-  return enName || null;
-};
-
-// 1. グループ本体（原語名にハングル "블랙핑크", QID抽出）
+// 1. アーティスト / グループ 本体の登録
 persons.push({
   name: artistName,
-  name_en: defaultCountry === 'KR' ? getKoreanOrOrigName(artistName, musicData.artist_name_en) : (musicData.artist_name_en || null),
+  name_en: (defaultCountry === 'KR' && musicData.artist_name_en) ? musicData.artist_name_en : (musicData.artist_name_en || null),
   occupation: isGroup ? 'グループ' : '歌手',
   type: isGroup ? 'group' : 'individual',
   group_type: musicData.genre || '音楽グループ',
   profile_url: musicData.artwork_url || null,
   country: defaultCountry,
-  wikidata_id: groupQid, // 🎯 グループ本体の QID (BLACKPINK = Q25056960)
+  wikidata_id: groupQid, // 🎯 APIから動的に取得された QID を自動格納！
   members: null
 });
 
-// 2. 構成メンバー（原語名にハングル "지수", "제니", "로제", "리사", 各QID抽出）
+// 2. 構成メンバー（原語名・ハングル、動的 QID）
 bindings.forEach(b => {
   const memName = b.memberLabel?.value;
   if (!memName || /^Q\d+$/.test(memName)) return;
@@ -70,7 +57,7 @@ bindings.forEach(b => {
   const origName = b.memberKoLabel?.value || b.memberEnLabel?.value || null;
   const rawGender = (b.genderLabel?.value || '').toLowerCase();
   const gender = (rawGender === 'female' || rawGender === '女性') ? 'female' : ((rawGender === 'male' || rawGender === '男性') ? 'male' : null);
-  const memQid = b.member?.value ? b.member.value.split('/').pop() : null;
+  const memQid = b.member?.value ? b.member.value.split('/').pop() : null; // 🎯 動的に取得された各メンバーの QID
 
   persons.push({
     name: memName,
@@ -81,7 +68,7 @@ bindings.forEach(b => {
     profile_url: b.memberImage?.value ? b.memberImage.value.replace(/^http:\/\//i, 'https://') : null,
     gender: gender,
     country: defaultCountry,
-    wikidata_id: memQid // 🎯 メンバー個人の QID (Q27655361等)
+    wikidata_id: memQid // 🎯 APIから動的に取得された QID
   });
 });
 
