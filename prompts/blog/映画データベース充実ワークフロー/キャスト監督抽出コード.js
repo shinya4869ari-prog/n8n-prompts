@@ -40,7 +40,7 @@ inputItems.forEach((item) => {
   const searchName = j.searchinfo?.search || '';
   const searchResults = j.search || [];
 
-  // Wikidata QID の自動抽出（例: キム・ギドク ➔ Q212990, リュ・スンボム ➔ Q7385485）
+  // Wikidata QID の自動抽出（例: キム・ギドク ➔ Q212990, リュック・スンボム ➔ Q7385485）
   let qid = null;
   if (searchResults.length > 0) {
     const matched = searchResults.find(s => s.description && /actor|director|film|artist|映画|俳優|監督/i.test(s.description)) || searchResults[0];
