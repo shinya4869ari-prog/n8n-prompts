@@ -1,8 +1,8 @@
 /**
- * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・数字IDタイトル排除＆重複監督除外版）
+ * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・あらすじ＆予告編安全継承版）
  * 
  * 役割: Supabaseに保存されている完成済み既存データ（カタカナキャスト・日本語監督名・あらすじ等）を最優先で保護し、
- *       数字のみのID文字列（"282631"等）がタイトルに設定される事故を100%防止します。
+ *       未登録項目のみ TMDb / Wikidata から自動補完します。
  */
 
 function getNodeData(nodeName) {
@@ -219,7 +219,6 @@ return [{
     tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
     wikidata_id: fetchedWikidataId,
     title: movieTitle,
-    title_en: finalOriginTitle,
     origin_title: finalOriginTitle,
     year: String(releaseDateStr).substring(0, 4),
     country: finalCountry,
