@@ -7,7 +7,7 @@ const baseUrl = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompt
 
 const files = {
   geminiPrompt: baseUrl + 'gemini_movie_db.md',
-  castTransPrompt: baseUrl + '%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%83%BB%E7%9B%A3%E7%9D%A3%E6%97%A5%E6%9C%AC%E8%AA%9E%E5%8C%96%E3%83%97%E3%83%AD%E3%83%B3%E3%83%97%E3%83%88.md'
+  castTransPrompt: baseUrl + encodeURIComponent('キャスト・監督日本語化プロンプト.md')
 };
 
 try {
