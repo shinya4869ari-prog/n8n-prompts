@@ -1,11 +1,6 @@
-【TMDb credits取得 (HTTP Request ノード) 用設定】
+# TMDb credits取得 ノード設定
 
-400エラーの原因: URLに `?` を直書きしたことでn8nのQuery Parametersと重複したため。
-URLから `?` を外し、n8nの Query Parameters 欄で `append_to_response` を指定します。
-
----
-
-### 1. URL 欄（末尾の ? 以降を削除）
+## 1. URL 欄（Expression fx）
 
 ```text
 https://api.themoviedb.org/3/{{
@@ -62,11 +57,8 @@ https://api.themoviedb.org/3/{{
 }}
 ```
 
----
+## 2. Query Parameters 欄（追加設定）
 
-### 2. Query Parameters 欄（n8n画面内のパラメータ追加）
-
-`TMDb credits取得` ノードの **Query Parameters**（クエリパラメータ）に項目を追加します：
-
-* **Name**: `append_to_response`
-* **Value**: `credits,external_ids,videos`
+| Name | Value |
+|---|---|
+| `append_to_response` | `credits,external_ids,videos` |
