@@ -1,8 +1,8 @@
 /**
- * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・あらすじ＆予告編安全継承版）
+ * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・数字IDタイトル排除＆重複監督除外版）
  * 
  * 役割: Supabaseに保存されている完成済み既存データ（カタカナキャスト・日本語監督名・あらすじ等）を最優先で保護し、
- *       未登録項目のみ TMDb / Wikidata から自動補完します。
+ *       数字のみのID文字列（"282631"等）がタイトルに設定される事故を100%防止します。
  */
 
 function getNodeData(nodeName) {
@@ -58,8 +58,24 @@ if (!result && resultsList.length > 0) {
 // 日本語判定関数
 const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
 
-// タイトル決定（既存DB ➔ 入力データ ➔ TMDb）
-const movieTitle = existingDb.title || sourceData.title || sourceData.query || sourceData.name || credits.title || credits.name || result?.title || result?.name || t1.title || t1.name || '';
+// 数字のみの文字列（"282631"等のID）をタイトル候補から除外する関数
+const isCleanTitle = (t) => t && !/^\d+$/.test(String(t).trim());
+
+// 🎯【タイトル決定】（数字IDは排除し、本物の映画タイトルを最優先選択）
+const movieTitle = 
+  (isCleanTitle(existingDb.title) ? existingDb.title : null) ||
+  (isCleanTitle(sourceData.title) ? sourceData.title : null) ||
+  (isCleanTitle(sourceData.name) ? sourceData.name : null) ||
+  (isCleanTitle(result?.title) ? result.title : null) ||
+  (isCleanTitle(result?.name) ? result.name : null) ||
+  (isCleanTitle(credits.title) ? credits.title : null) ||
+  (isCleanTitle(credits.name) ? credits.name : null) ||
+  (isCleanTitle(t1.title) ? t1.title : null) ||
+  (isCleanTitle(t1.name) ? t1.name : null) ||
+  (isCleanTitle(t2.title) ? t2.title : null) ||
+  (isCleanTitle(t2.name) ? t2.name : null) ||
+  (isCleanTitle(sourceData.query) ? sourceData.query : null) ||
+  '';
 
 if (!movieTitle && !credits.id && !existingDb.id) return [];
 
@@ -96,32 +112,35 @@ const finalCountry =
   (lang ? langToCountry[lang] : null) || 
   '';
 
-// 🎯【監督/制作陣の安全マージ】
+// 🎯【監督/制作陣の安全マージ & 重複除去】
 let directorName = '';
 let directorEnName = '';
 
 if (Array.isArray(credits.crew) && credits.crew.length > 0) {
-  const directors = credits.crew.filter(c => c.job === 'Director' || c.job === 'Executive Producer');
-  if (directors.length > 0) {
-    directorName = directors.map(c => c.name).join(', ');
-    directorEnName = directors.map(c => c.original_name || c.name).join(', ');
+  const directors = credits.crew.filter(c => c.job === 'Director');
+  const execProducers = credits.crew.filter(c => c.job === 'Executive Producer');
+  const dirList = directors.length > 0 ? directors : (execProducers.length > 0 ? execProducers : []);
+  
+  if (dirList.length > 0) {
+    directorName = Array.from(new Set(dirList.map(c => c.name).filter(Boolean))).join(', ');
+    directorEnName = Array.from(new Set(dirList.map(c => c.original_name || c.name).filter(Boolean))).join(', ');
   }
 }
 if (!directorName && Array.isArray(credits.created_by) && credits.created_by.length > 0) {
-  directorName = credits.created_by.map(c => c.name).join(', ');
-  directorEnName = credits.created_by.map(c => c.original_name || c.name).join(', ');
+  directorName = Array.from(new Set(credits.created_by.map(c => c.name).filter(Boolean))).join(', ');
+  directorEnName = Array.from(new Set(credits.created_by.map(c => c.original_name || c.name).filter(Boolean))).join(', ');
 }
 
 const finalDirector = (existingDb.director && isJapanese(existingDb.director)) ? existingDb.director : (directorName || existingDb.director || '');
 const finalDirectorEn = existingDb.director_en || directorEnName || '';
 
-// 🎯【キャスト一覧の安全マージ】(全員分取得)
+// 🎯【キャスト一覧の安全マージ & 重複除去】
 const tmdbCastNames = (Array.isArray(credits.cast) && credits.cast.length > 0)
-  ? credits.cast.map(c => c.name).join(', ')
+  ? Array.from(new Set(credits.cast.map(c => c.name).filter(Boolean))).join(', ')
   : '';
 
 const tmdbCastEnNames = (Array.isArray(credits.cast) && credits.cast.length > 0)
-  ? credits.cast.map(c => c.original_name || c.name).join(', ')
+  ? Array.from(new Set(credits.cast.map(c => c.original_name || c.name).filter(Boolean))).join(', ')
   : '';
 
 const finalCast = (existingDb.cast && isJapanese(existingDb.cast)) ? existingDb.cast : (tmdbCastNames || existingDb.cast || '');
