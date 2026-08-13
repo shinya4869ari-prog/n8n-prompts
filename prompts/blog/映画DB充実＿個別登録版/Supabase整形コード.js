@@ -175,42 +175,33 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  // 🏢 Supabase 既存データの参照 (すでに Supabase に登録済みの画像・QID・SNS情報があれば優先利用)
-  const existingPerson = (() => {
-    try {
-      const possibleNodes = ['Supabase Persons取得', 'Supabase Persons', '既存Persons', 'Supabase人名取得', 'Persons取得'];
-      for (const pNode of possibleNodes) {
-        let pItems = null;
-        try { pItems = $(pNode).all(); } catch(e) {}
-        if (Array.isArray(pItems)) {
-          const found = pItems.find(it => it.json?.name === searchName || (it.json?.name_en && nameEn && it.json.name_en.toLowerCase() === nameEn.toLowerCase()));
-          if (found?.json) return found.json;
-        }
-      }
-    } catch(e) {}
-    return null;
-  })();
+  const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
+  const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/w500${personObj.profile_path}` : null;
+  const finalProfileUrl = tmdbImg || wikiImage;
 
-  const savedProfileUrl = existingPerson?.profile_url || finalProfileUrl;
-  const savedQid = existingPerson?.wikidata_id || qid;
-  const savedOfficialSite = existingPerson?.official_site || officialSite;
-  const savedXId = existingPerson?.x_id || xId;
-  const savedInstaId = existingPerson?.instagram_id || instaId;
-  const savedYtId = existingPerson?.youtube_id || ytId;
-  const savedGender = existingPerson?.gender || genderVal;
+  // 🎯 性別 (gender) の強固な解決 (TMDB gender 1=female, 2=male ＋ Wikidata 性別判定の相互フォールバック)
+  let genderVal = null;
+  if (personObj?.gender === 1) genderVal = 'female';
+  else if (personObj?.gender === 2) genderVal = 'male';
+
+  if (!genderVal) {
+    const wikiGender = bindingObj?.genderLabel?.value || bindingObj?.gender?.value || '';
+    if (/female|女性|Q6581072/i.test(wikiGender)) genderVal = 'female';
+    else if (/male|男性|Q6581097/i.test(wikiGender)) genderVal = 'male';
+  }
 
   persons.push({
     name: searchName,
     name_en: nameEn,
     occupation: isDirector ? '監督' : '俳優',
-    profile_url: savedProfileUrl,
-    gender: savedGender,
+    profile_url: finalProfileUrl,
+    gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
-    wikidata_id: savedQid,
-    x_id: savedXId,
-    instagram_id: savedInstaId,
-    youtube_id: savedYtId,
-    official_site: savedOfficialSite
+    wikidata_id: qid,
+    x_id: xId,
+    instagram_id: instaId,
+    youtube_id: ytId,
+    official_site: officialSite
   });
 });
 
