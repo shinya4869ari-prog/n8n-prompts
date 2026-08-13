@@ -126,29 +126,28 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  // 🎯 汎用動的バリデーション (個別の QID ハードコードを完全排除)
-  const wikiDesc = bindingObj.description?.value || bindingObj.occupationLabel?.value || '';
-  const wikiGender = bindingObj?.genderLabel?.value || bindingObj?.gender?.value || '';
+  // 🎯 汎用動的バリデーション (名前・写真ファイル名の類似度検証)
+  // 映画キャスト名 (searchName, targetEnName, original_name) と、取得した画像名 / サイトURL の名前が完全に無関係な場合は誤マッチと判定
+  if (wikiImage || officialSite || qid) {
+    const targetEn = (enNameMap[searchName] || personObj?.name || personObj?.original_name || '').toLowerCase().replace(/[^a-z]/g, '');
+    const imgName = wikiImage ? wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '') : '';
+    const siteName = officialSite ? officialSite.toLowerCase().replace(/[^a-z]/g, '') : '';
 
-  // 1. 性別の不整合チェック (TMDBで女性なのにWikidataが男性、またはその逆なら誤マッチと判定)
-  const tmdbGender = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
-  const isWikiFemale = /female|女性|Q6581072/i.test(wikiGender);
-  const isWikiMale = /male|男性|Q6581097/i.test(wikiGender);
-  
-  let genderMismatch = false;
-  if (tmdbGender === 'female' && isWikiMale) genderMismatch = true;
-  if (tmdbGender === 'male' && isWikiFemale) genderMismatch = true;
+    if (targetEn && targetEn.length >= 3) {
+      const targetPrefix = targetEn.slice(0, 3);
+      const isImgMatch = !imgName || imgName.includes(targetPrefix);
+      const isSiteMatch = !siteName || siteName.includes(targetPrefix);
 
-  // 2. 職業チェック (映画・エンタメ関係者以外の学者・政治家・経済学者等は誤マッチと判定)
-  const isNonEntertainment = /economist|politician|academic|physicist|professor|経済学|政治家|学者|教授/i.test(wikiDesc);
-
-  if (genderMismatch || isNonEntertainment) {
-    qid = null;
-    wikiImage = null;
-    officialSite = null;
-    xId = null;
-    instaId = null;
-    ytId = null;
+      // 写真またはサイトURLが存在するのに、名前の主要アルファベットが含まれていない場合は誤マッチとして全破棄
+      if (!isImgMatch || !isSiteMatch) {
+        qid = null;
+        wikiImage = null;
+        officialSite = null;
+        xId = null;
+        instaId = null;
+        ytId = null;
+      }
+    }
   }
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
