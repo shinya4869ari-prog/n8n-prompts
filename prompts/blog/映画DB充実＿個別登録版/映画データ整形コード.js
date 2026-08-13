@@ -1,0 +1,215 @@
+/**
+ * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・あらすじ＆予告編安全継承版）
+ * 
+ * 役割: Supabaseに保存されている完成済み既存データ（カタカナキャスト・日本語監督名・あらすじ等）を最優先で保護し、
+ *       未登録項目のみ TMDb / Wikidata から自動補完します。
+ *       ※キャスト人数制限(slice)は排除し、TMDbに存在する全員分のデータを取り扱います。
+ */
+
+function getNodeData(nodeName) {
+  try {
+    return $(nodeName).first()?.json || $(nodeName).item?.json || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+const credits = getNodeData('TMDb credits取得');
+const t1 = getNodeData('TMDb検索');
+const t2 = getNodeData('TMDb検索_タイトル');
+const wikiNode = getNodeData('Wikidata検索') || getNodeData('Wikidata') || {};
+const existingDb = getNodeData('Supabaseから既存データを取得');
+
+const resultsList = [
+  ...(t1?.results || t1?.movie_results || t1?.tv_results || (t1?.id ? [t1] : [])),
+  ...(t2?.results || t2?.movie_results || t2?.tv_results || (t2?.id ? [t2] : []))
+];
+
+let sourceData = {};
+function getSourceNodeData() {
+  const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview || d.query || d.id || d.tmdb_id || d.wikidata_id || d.qid);
+  
+  let d = $input.first()?.json || $input.item?.json;
+  if (isValid(d)) return d;
+
+  try {
+    d = $('入力統一・分割コード').first()?.json || $('入力統一・分割コード').item?.json;
+    if (isValid(d)) return d;
+  } catch (e) {}
+  try {
+    d = $('On form submission1').first()?.json || $('On form submission1').item?.json;
+    if (isValid(d)) return d;
+  } catch (e) {}
+  
+  return $input.first()?.json || $input.item?.json || {};
+}
+sourceData = getSourceNodeData();
+
+const correctMovieId = credits?.id;
+
+// 対象国と言語にマッチする映画・ドラマを検索結果（resultsList）から探す
+let result = null;
+if (correctMovieId && resultsList.length > 0) {
+  result = resultsList.find(m => m.id === correctMovieId);
+}
+if (!result && resultsList.length > 0) {
+  result = resultsList[0];
+}
+
+// 日本語判定関数
+const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
+
+// タイトル決定（既存DB ➔ 入力データ ➔ TMDb）
+const movieTitle = existingDb.title || sourceData.title || sourceData.query || sourceData.name || credits.title || credits.name || result?.title || result?.name || t1.title || t1.name || '';
+
+if (!movieTitle && !credits.id && !existingDb.id) return [];
+
+const langToCountry = {
+  'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
+  'zh': 'CN', 'ar': 'SA', 'fa': 'IR', 'hi': 'IN', 'th': 'TH',
+  'vi': 'VN', 'id': 'ID', 'tr': 'TR', 'ru': 'RU', 'es': 'ES',
+  'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
+  'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
+};
+const nameToCountryCode = {
+  'ブータン': 'BT', '韓国': 'KR', '大韓民国': 'KR', 'アメリカ': 'US',
+  'アメリカ合衆国': 'US', '日本': 'JP', 'フランス': 'FR', 'ドイツ': 'DE',
+  '中国': 'CN', '中華人民共和国': 'CN', 'インド': 'IN', 'イギリス': 'GB',
+  'グレートブリテン': 'GB', 'イタリア': 'IT', 'カナダ': 'CA', 'オーストラリア': 'AU',
+  'スペイン': 'ES', 'ロシア': 'RU', 'ロシア連邦': 'RU', '台湾': 'TW',
+  'タイ': 'TH', 'ベトナム': 'VN', 'インドネシア': 'ID', 'トルコ': 'TR',
+  'ブラジル': 'BR', 'メキシコ': 'MX', 'ニュージーランド': 'NZ',
+};
+
+const lang = result?.original_language || credits.original_language;
+
+let rawCountry = sourceData.target_country || sourceData.country || existingDb.country || '';
+if (nameToCountryCode[rawCountry]) {
+  rawCountry = nameToCountryCode[rawCountry];
+}
+
+const tmdbOriginCountry = (Array.isArray(result?.origin_country) && result.origin_country[0]) || (Array.isArray(credits?.origin_country) && credits.origin_country[0]) || (typeof result?.origin_country === 'string' ? result.origin_country : null);
+
+const finalCountry = 
+  existingDb.country ||
+  rawCountry || 
+  tmdbOriginCountry || 
+  (lang ? langToCountry[lang] : null) || 
+  '';
+
+// 🎯【監督/制作陣の安全マージ】
+let directorName = '';
+let directorEnName = '';
+
+if (Array.isArray(credits.crew) && credits.crew.length > 0) {
+  const directors = credits.crew.filter(c => c.job === 'Director' || c.job === 'Executive Producer');
+  if (directors.length > 0) {
+    directorName = directors.map(c => c.name).join(', ');
+    directorEnName = directors.map(c => c.original_name || c.name).join(', ');
+  }
+}
+if (!directorName && Array.isArray(credits.created_by) && credits.created_by.length > 0) {
+  directorName = credits.created_by.map(c => c.name).join(', ');
+  directorEnName = credits.created_by.map(c => c.original_name || c.name).join(', ');
+}
+
+const finalDirector = (existingDb.director && isJapanese(existingDb.director)) ? existingDb.director : (directorName || existingDb.director || '');
+const finalDirectorEn = existingDb.director_en || directorEnName || '';
+
+// 🎯【キャスト一覧の安全マージ】(人数制限なし・全員分取得！)
+const tmdbCastNames = (Array.isArray(credits.cast) && credits.cast.length > 0)
+  ? credits.cast.map(c => c.name).join(', ')
+  : '';
+
+const tmdbCastEnNames = (Array.isArray(credits.cast) && credits.cast.length > 0)
+  ? credits.cast.map(c => c.original_name || c.name).join(', ')
+  : '';
+
+const finalCast = (existingDb.cast && isJapanese(existingDb.cast)) ? existingDb.cast : (tmdbCastNames || existingDb.cast || '');
+const finalCastEn = existingDb.cast_en || tmdbCastEnNames || '';
+
+// 🎯【原題の安全マージ】(既存DB ➔ TMDb)
+const tmdbOrigTitle = result?.original_title || result?.original_name || credits.original_title || credits.original_name || '';
+const finalOriginTitle = existingDb.origin_title || tmdbOrigTitle || movieTitle;
+
+// 🎯【あらすじ (overview / overview_en) の安全継承】
+const tmdbOverview = credits.overview || result?.overview || '';
+const finalOverview = (existingDb.overview && isJapanese(existingDb.overview)) ? existingDb.overview : (isJapanese(tmdbOverview) ? tmdbOverview : (sourceData.overview || existingDb.overview || ''));
+
+const rawOverviewEn = sourceData.overview_en || credits.overview_en || (!isJapanese(tmdbOverview) ? tmdbOverview : '');
+const finalOverviewEn = existingDb.overview_en || rawOverviewEn || '';
+
+// 🎯【Wikidata ID (QID) の安全継承】
+let fetchedWikidataId = existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || credits.wikidata_id || null;
+if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
+  fetchedWikidataId = credits.external_ids.wikidata_id;
+}
+
+// 🎬【YouTube 予告編の安全継承】
+let finalTrailerUrl = '';
+let finalTrailerTitle = '';
+
+const tmdbVideos = credits.videos?.results || credits.videos || result?.videos?.results || [];
+if (Array.isArray(tmdbVideos) && tmdbVideos.length > 0) {
+  const officialTrailer = tmdbVideos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || tmdbVideos.find(v => v.site === 'YouTube');
+  if (officialTrailer && officialTrailer.key) {
+    finalTrailerUrl = `https://www.youtube.com/watch?v=${officialTrailer.key}`;
+    finalTrailerTitle = officialTrailer.name || `${movieTitle} 公式予告編`;
+  }
+}
+
+if (existingDb.trailer_url && existingDb.trailer_url.includes('watch?v=')) {
+  finalTrailerUrl = existingDb.trailer_url;
+  finalTrailerTitle = existingDb.trailer_title || `${movieTitle} 予告編`;
+} else if (!finalTrailerUrl) {
+  const searchQuery = encodeURIComponent(`${movieTitle} 予告編`);
+  finalTrailerUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+  finalTrailerTitle = `${movieTitle} 予告編 (YouTubeで検索)`;
+}
+
+// 🎯【ジャンル (genres) の抽出・継承】
+const genreIdMap = {
+  28: 'アクション', 12: 'アドベンチャー', 16: 'アニメ', 35: 'コメディ', 80: '犯罪',
+  99: 'ドキュメンタリー', 18: 'ドラマ', 10751: 'ファミリー', 14: 'ファンタジー', 36: '歴史',
+  27: 'ホラー', 10402: '音楽', 9648: 'ミステリー', 10749: 'ロマンス', 878: 'SF',
+  10770: 'テレビ映画', 53: 'スリラー', 10752: '戦争', 37: '西部劇',
+  10759: 'アクション', 10762: 'キッズ', 10765: 'SF', 10768: '戦争'
+};
+
+let finalGenres = '';
+const tmdbGenreObjs = credits.genres || result?.genres;
+if (Array.isArray(tmdbGenreObjs) && tmdbGenreObjs.length > 0) {
+  finalGenres = tmdbGenreObjs.map(g => g.name).join(', ');
+} else if (Array.isArray(result?.genre_ids) && result.genre_ids.length > 0) {
+  finalGenres = result.genre_ids.map(id => genreIdMap[id]).filter(Boolean).join(', ');
+}
+finalGenres = existingDb.genres || finalGenres || sourceData.genres || '';
+
+const isExisting = existingDb && (existingDb.id || existingDb.created_at);
+let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
+
+const releaseDateStr = result?.release_date || result?.first_air_date || credits.release_date || credits.first_air_date || sourceData.year || existingDb.year || '';
+
+return [{
+  json: {
+    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
+    wikidata_id: fetchedWikidataId,
+    title: movieTitle,
+    title_en: finalOriginTitle,
+    origin_title: finalOriginTitle,
+    year: String(releaseDateStr).substring(0, 4),
+    country: finalCountry,
+    genres: finalGenres,
+    director: finalDirector,
+    director_en: finalDirectorEn,
+    cast: finalCast,
+    cast_en: finalCastEn,
+    overview: finalOverview,
+    overview_en: finalOverviewEn,
+    poster_path: credits.poster_path || result?.poster_path || existingDb.poster_path || '',
+    backdrop_path: credits.backdrop_path || result?.backdrop_path || existingDb.backdrop_path || '',
+    trailer_url: finalTrailerUrl,
+    trailer_title: finalTrailerTitle,
+    update_reason: updateReason
+  }
+}];

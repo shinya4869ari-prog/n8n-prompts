@@ -9,17 +9,22 @@
         tmdb = $('Get TMDb Details').first().json;
       } catch(e2) {}
     }
-    try {
-      sourceData = $('Loop Over Items').item.json;
-    } catch(e) {
+    
+    const nodeNames = ['入力統一・分割コード', 'On form submission1', 'Loop Over Items', '映画ごとにループ実行'];
+    for (const name of nodeNames) {
       try {
-        sourceData = $('Loop Over Items1').item.json;
-      } catch(e2) {
-        sourceData = $json;
-      }
+        const d = $(name).first()?.json || $(name).item?.json;
+        if (d && (d.title || d.origin_title || d.query)) {
+          sourceData = d;
+          break;
+        }
+      } catch(e) {}
+    }
+    if (!sourceData.title && !sourceData.origin_title) {
+      sourceData = $json || {};
     }
     
-    const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []);
+    const resultsList = tmdb.results || tmdb.movie_results || tmdb.tv_results || (tmdb.id ? [tmdb] : []);
     let result = resultsList.length > 0 ? resultsList.find(m => 
       (m.original_language === sourceData.target_lang) || 
       (m.origin_country && m.origin_country.includes(sourceData.target_country))
@@ -30,17 +35,19 @@
     }
     
     const inputTitle = sourceData.title;
-    const officialTitle = result?.title;
+    // 💡 映画なら title、ドラマなら name
+    const officialTitle = result?.title || result?.name;
     const resolvedTitle = (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || '';
     
-    const originalTitle = result?.original_title || '';
-    const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || '';
+    // 💡 映画なら original_title、ドラマなら original_name
+    const originalTitle = result?.original_title || result?.original_name || '';
+    const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.name || '';
     
-    // 監督名を取得して検索精度を向上
+    // 監督名を取得して検索精度を向上（映画・ドラマ両対応）
     let directorName = '';
     try {
       const credits = $('TMDb credits取得').first().json;
-      const dirObj = credits?.crew?.find(c => c.job === 'Director');
+      const dirObj = credits?.crew?.find(c => c.job === 'Director' || c.job === 'Executive Producer') || credits?.created_by?.[0];
       if (dirObj?.name) directorName = dirObj.name;
     } catch(e) {}
 

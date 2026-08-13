@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 補完ブリッジ整形コード（安全・完全取得版）
  * 役割: 映画DB充実ワークフローの各ノード（TMDb/Brave/Geminiあらすじ等）のデータを安全に一括集約し、
  *       映画データ補完ワークフロー（Gemini）への入力JSONに変換する
@@ -9,8 +9,6 @@ function getNode(name) {
 
 // 映画データ整形コードの取得
 const shaped = (() => {
-  const d = getNode('映画データ整形コード_claude');
-  if (d.title || d.origin_title) return d;
   return getNode('映画データ整形コード');
 })();
 

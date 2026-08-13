@@ -98,7 +98,18 @@ inputItems.forEach((item, idx) => {
   let personObj = null;
 
   if (isDirector) {
-    personObj = Array.isArray(creditsNode?.crew) ? creditsNode.crew.find(c => c.job === 'Director') : null;
+    const targetEnName = enNameMap[searchName] || '';
+    if (Array.isArray(creditsNode?.crew)) {
+      personObj = creditsNode.crew.find(c => 
+        (c.job === 'Director' || c.job === 'Executive Producer') &&
+        (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase()))
+      ) || creditsNode.crew.find(c => c.job === 'Director');
+    }
+    if (!personObj && Array.isArray(creditsNode?.created_by)) {
+      personObj = creditsNode.created_by.find(c => 
+        targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())
+      ) || creditsNode.created_by[0];
+    }
   } else {
     const castIndex = jaCast.indexOf(searchName);
     const targetEnName = enNameMap[searchName] || '';

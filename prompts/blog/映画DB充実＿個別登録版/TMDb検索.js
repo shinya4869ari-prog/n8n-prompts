@@ -20,6 +20,8 @@ const rawRes1 = $('TMDb検索_ID/Wikidata').isExecuted ? ($('TMDb検索_ID/Wikid
 const res1 = JSON.parse(JSON.stringify(rawRes1));
 if (res1.movie_results && res1.movie_results.length > 0) {
   Object.assign(res1, res1.movie_results[0]);
+} else if (res1.tv_results && res1.tv_results.length > 0) {
+  Object.assign(res1, res1.tv_results[0]);
 }
 
 // 2. タイトル検索結果 (res2) の取得
@@ -31,20 +33,22 @@ const candidates = [];
 if (res1 && res1.id) candidates.push(res1);
 if (Array.isArray(res2List)) candidates.push(...res2List);
 
-// 検証関数：国名・公開年の合致判定
+// 検証関数：国名・公開年/放送年の合致判定（映画・ドラマ両対応）
 function isValidMatch(movie) {
   if (!movie || !movie.id) return false;
 
-  const releaseYear = movie.release_date ? parseInt(movie.release_date.substring(0, 4), 10) : null;
+  const releaseDate = movie.release_date || movie.first_air_date || '';
+  const releaseYear = releaseDate ? parseInt(releaseDate.substring(0, 4), 10) : null;
 
-  // 公開年（year）の判定：年指定がある場合、±2年以上離れていたら明確に別作品（例: 2005年想定なのに1975年映画）
+  // 公開年・放送年の判定：年指定がある場合、±2年以上離れていたら明確に別作品
   if (targetYear && releaseYear && Math.abs(releaseYear - targetYear) > 2) {
     return false;
   }
 
   // 国コード（origin_country）の判定：国指定がある場合、含まれていなければ別作品
-  if (targetCountry && movie.origin_country && Array.isArray(movie.origin_country) && movie.origin_country.length > 0) {
-    if (!movie.origin_country.includes(targetCountry) && (!releaseYear || !targetYear || Math.abs(releaseYear - targetYear) > 0)) {
+  const originCountries = movie.origin_country || (movie.production_countries ? movie.production_countries.map(c => c.iso_3166_1) : []);
+  if (targetCountry && Array.isArray(originCountries) && originCountries.length > 0) {
+    if (!originCountries.includes(targetCountry) && (!releaseYear || !targetYear || Math.abs(releaseYear - targetYear) > 0)) {
       return false;
     }
   }

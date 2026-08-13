@@ -64,7 +64,6 @@
   "created_at": "2026-07-05 00:14:41.041215+00",
   "country": "BT",
   "year": "2014",
-  "is_recommended": true,
   "genres": "ドラマ, 文化",
   "title": "アローズ・オブ・ザ・サンダー・ドラゴン",
   "origin_title": "Arrows of the Thunder Dragon",
