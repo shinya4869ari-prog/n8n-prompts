@@ -91,10 +91,22 @@ inputItems.forEach((item, idx) => {
 
   const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
 
-  // 🎯 重複誤判定QID (Q212990 等) をキム・ギドク以外の人物から完全除外
+  // 🎯 重複誤判定QID (Q212990 キム・ギドク, Q32729 チャン・ハジュン等) を他人物から完全除外
   if (qid === 'Q212990' && !/キム・ギドク|김기덕|Kim Ki-duk/i.test(searchName)) {
     qid = null;
     if (wikiImage && wikiImage.includes('Kim%20Ki-duk')) wikiImage = null;
+  }
+  if (qid === 'Q32729' && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
+    qid = null;
+    wikiImage = null;
+    officialSite = null;
+  }
+  if (officialSite && /hajoonchang\.net/i.test(officialSite) && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
+    officialSite = null;
+    wikiImage = null;
+  }
+  if (wikiImage && /Ha-Joon_Chang|Ha-Joon%20Chang/i.test(wikiImage) && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
+    wikiImage = null;
   }
   
   if (!searchName || seenNames.has(searchName)) return;
