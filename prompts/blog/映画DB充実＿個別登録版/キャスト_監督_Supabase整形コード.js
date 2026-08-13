@@ -126,19 +126,28 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  // 🎯 汎用動的バリデーション (名前・写真ファイル名の類似度検証)
-  // 映画キャスト名 (searchName, targetEnName, original_name) と、取得した画像名 / サイトURL の名前が完全に無関係な場合は誤マッチと判定
+  // 🎯 汎用動的バリデーション (アルファベット人名と画像・サイトURLの類似度検証)
   if (wikiImage || officialSite || qid) {
-    const targetEn = (enNameMap[searchName] || personObj?.name || personObj?.original_name || '').toLowerCase().replace(/[^a-z]/g, '');
+    let targetEnLetters = '';
+    const candidates = [personObj?.name, enNameMap[searchName], searchName, personObj?.original_name];
+    for (const cand of candidates) {
+      if (!cand) continue;
+      const cleanLetters = String(cand).toLowerCase().replace(/[^a-z]/g, '');
+      if (cleanLetters && cleanLetters.length >= 2) {
+        targetEnLetters = cleanLetters;
+        break;
+      }
+    }
+
     const imgName = wikiImage ? wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '') : '';
     const siteName = officialSite ? officialSite.toLowerCase().replace(/[^a-z]/g, '') : '';
 
-    if (targetEn && targetEn.length >= 3) {
-      const targetPrefix = targetEn.slice(0, 3);
+    if (targetEnLetters && targetEnLetters.length >= 3) {
+      const targetPrefix = targetEnLetters.slice(0, 3);
       const isImgMatch = !imgName || imgName.includes(targetPrefix);
       const isSiteMatch = !siteName || siteName.includes(targetPrefix);
 
-      // 写真またはサイトURLが存在するのに、名前の主要アルファベットが含まれていない場合は誤マッチとして全破棄
+      // 写真またはサイトURLが存在するのに、キャストのアルファベット名が含まれていない場合は誤マッチとして全破棄
       if (!isImgMatch || !isSiteMatch) {
         qid = null;
         wikiImage = null;
