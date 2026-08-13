@@ -126,35 +126,37 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  // 🎯 汎用動的バリデーション (アルファベット人名と画像・サイトURLの類似度検証)
-  if (wikiImage || officialSite || qid) {
-    let targetEnLetters = '';
-    const candidates = [personObj?.name, enNameMap[searchName], searchName, personObj?.original_name];
-    for (const cand of candidates) {
-      if (!cand) continue;
-      const cleanLetters = String(cand).toLowerCase().replace(/[^a-z]/g, '');
-      if (cleanLetters && cleanLetters.length >= 2) {
-        targetEnLetters = cleanLetters;
-        break;
+  // 🎯 汎用動的バリデーション (ドメイン名・写真ファイル名の類似度検証)
+  if (officialSite || wikiImage || qid) {
+    const cleanSearchName = searchName.toLowerCase().replace(/[\s・]/g, '');
+    const cleanEn = (personObj?.name || enNameMap[searchName] || searchName || '').toLowerCase().replace(/[^a-z]/g, '');
+    const cleanOrig = (personObj?.original_name || '').toLowerCase().replace(/[\s・-]/g, '');
+
+    // 1. 公式サイトドメインの検証 (例: hajoonchang.net vs ハ・ヨン)
+    if (officialSite) {
+      const siteDomain = officialSite.toLowerCase().replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+      const isDomainMatch = (cleanEn && cleanEn.length >= 3 && siteDomain.includes(cleanEn.slice(0, 3))) ||
+                            (cleanOrig && siteDomain.includes(cleanOrig)) ||
+                            (cleanSearchName && siteDomain.includes(cleanSearchName));
+
+      const isGenericAgency = /h-andent|jwide|namooactors|artistcompany|kingkong|fantagio|keyeast|hook|management|agency|portfolio|profile|actor|artist|blog|cafe|naver|daum|tistory/i.test(siteDomain);
+
+      if (!isDomainMatch && !isGenericAgency) {
+        officialSite = null;
+        qid = null;
+        wikiImage = null;
       }
     }
 
-    const imgName = wikiImage ? wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '') : '';
-    const siteName = officialSite ? officialSite.toLowerCase().replace(/[^a-z]/g, '') : '';
-
-    if (targetEnLetters && targetEnLetters.length >= 3) {
-      const targetPrefix = targetEnLetters.slice(0, 3);
-      const isImgMatch = !imgName || imgName.includes(targetPrefix);
-      const isSiteMatch = !siteName || siteName.includes(targetPrefix);
-
-      // 写真またはサイトURLが存在するのに、キャストのアルファベット名が含まれていない場合は誤マッチとして全破棄
-      if (!isImgMatch || !isSiteMatch) {
-        qid = null;
-        wikiImage = null;
-        officialSite = null;
-        xId = null;
-        instaId = null;
-        ytId = null;
+    // 2. 画像ファイル名の検証
+    if (wikiImage) {
+      const imgName = wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '');
+      if (cleanEn && cleanEn.length >= 3) {
+        const prefix = cleanEn.slice(0, 3);
+        if (!imgName.includes(prefix)) {
+          wikiImage = null;
+          qid = null;
+        }
       }
     }
   }
