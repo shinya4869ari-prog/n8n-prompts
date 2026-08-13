@@ -90,25 +90,6 @@ inputItems.forEach((item, idx) => {
   let officialSite = bindingObj.website?.value || null;
 
   const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
-
-  // 🎯 重複誤判定QID (Q212990 キム・ギドク, Q32729 チャン・ハジュン等) を他人物から完全除外
-  if (qid === 'Q212990' && !/キム・ギドク|김기덕|Kim Ki-duk/i.test(searchName)) {
-    qid = null;
-    if (wikiImage && wikiImage.includes('Kim%20Ki-duk')) wikiImage = null;
-  }
-  if (qid === 'Q32729' && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
-    qid = null;
-    wikiImage = null;
-    officialSite = null;
-  }
-  if (officialSite && /hajoonchang\.net/i.test(officialSite) && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
-    officialSite = null;
-    wikiImage = null;
-  }
-  if (wikiImage && /Ha-Joon_Chang|Ha-Joon%20Chang/i.test(wikiImage) && !/チャン・ハジュン|장하준|Ha-Joon Chang/i.test(searchName)) {
-    wikiImage = null;
-  }
-  
   if (!searchName || seenNames.has(searchName)) return;
   seenNames.add(searchName);
 
@@ -143,6 +124,31 @@ inputItems.forEach((item, idx) => {
         personObj = castList[castIndex];
       }
     }
+  }
+
+  // 🎯 汎用動的バリデーション (個別の QID ハードコードを完全排除)
+  const wikiDesc = bindingObj.description?.value || bindingObj.occupationLabel?.value || '';
+  const wikiGender = bindingObj?.genderLabel?.value || bindingObj?.gender?.value || '';
+
+  // 1. 性別の不整合チェック (TMDBで女性なのにWikidataが男性、またはその逆なら誤マッチと判定)
+  const tmdbGender = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
+  const isWikiFemale = /female|女性|Q6581072/i.test(wikiGender);
+  const isWikiMale = /male|男性|Q6581097/i.test(wikiGender);
+  
+  let genderMismatch = false;
+  if (tmdbGender === 'female' && isWikiMale) genderMismatch = true;
+  if (tmdbGender === 'male' && isWikiFemale) genderMismatch = true;
+
+  // 2. 職業チェック (映画・エンタメ関係者以外の学者・政治家・経済学者等は誤マッチと判定)
+  const isNonEntertainment = /economist|politician|academic|physicist|professor|経済学|政治家|学者|教授/i.test(wikiDesc);
+
+  if (genderMismatch || isNonEntertainment) {
+    qid = null;
+    wikiImage = null;
+    officialSite = null;
+    xId = null;
+    instaId = null;
+    ytId = null;
   }
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
