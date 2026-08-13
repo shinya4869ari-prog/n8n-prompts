@@ -148,16 +148,17 @@ if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
   fetchedWikidataId = credits.external_ids.wikidata_id;
 }
 
-// 🎬【YouTube 予告編の安全継承】
+// 🎬【YouTube 予告編の安全継承（日本国内再生可能な動画のみ採用）】
 let finalTrailerUrl = '';
 let finalTrailerTitle = '';
 
 const tmdbVideos = credits.videos?.results || credits.videos || result?.videos?.results || [];
 if (Array.isArray(tmdbVideos) && tmdbVideos.length > 0) {
-  const officialTrailer = tmdbVideos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || tmdbVideos.find(v => v.site === 'YouTube');
-  if (officialTrailer && officialTrailer.key) {
-    finalTrailerUrl = `https://www.youtube.com/watch?v=${officialTrailer.key}`;
-    finalTrailerTitle = officialTrailer.name || `${movieTitle} 公式予告編`;
+  // 日本語の公式予告編のみ抽出（海外動画はジオブロックされるため除外）
+  const jpTrailer = tmdbVideos.find(v => v.site === 'YouTube' && (v.iso_639_1 === 'ja' || v.iso_3166_1 === 'JP') && (v.type === 'Trailer' || v.type === 'Teaser'));
+  if (jpTrailer && jpTrailer.key) {
+    finalTrailerUrl = `https://www.youtube.com/watch?v=${jpTrailer.key}`;
+    finalTrailerTitle = jpTrailer.name || `${movieTitle} 公式予告編`;
   }
 }
 
@@ -165,6 +166,7 @@ if (existingDb.trailer_url && existingDb.trailer_url.includes('watch?v=')) {
   finalTrailerUrl = existingDb.trailer_url;
   finalTrailerTitle = existingDb.trailer_title || `${movieTitle} 予告編`;
 } else if (!finalTrailerUrl) {
+  // 海外ジオブロック動画を回避し、日本検索リンクをフォールバックに設定
   const searchQuery = encodeURIComponent(`${movieTitle} 予告編`);
   finalTrailerUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
   finalTrailerTitle = `${movieTitle} 予告編 (YouTubeで検索)`;
