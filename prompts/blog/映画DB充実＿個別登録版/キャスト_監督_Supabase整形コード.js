@@ -147,7 +147,7 @@ inputItems.forEach((item, idx) => {
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
   const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/w500${personObj.profile_path}` : null;
-  const finalProfileUrl = wikiImage || tmdbImg;
+  const finalProfileUrl = tmdbImg || wikiImage;
 
   // 🎯 性別 (gender) の強固な解決 (TMDB gender 1=female, 2=male ＋ Wikidata 性別判定の相互フォールバック)
   let genderVal = null;
