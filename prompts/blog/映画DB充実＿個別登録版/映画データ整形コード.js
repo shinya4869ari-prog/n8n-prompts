@@ -1,8 +1,8 @@
 /**
- * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・あらすじ＆予告編安全継承版）
+ * 【n8n用】映画データ整形コード（Supabase既存データ最優先保護・Wikidata QID強固自動取得版）
  * 
  * 役割: Supabaseに保存されている完成済み既存データ（カタカナキャスト・日本語監督名・あらすじ等）を最優先で保護し、
- *       未登録項目のみ TMDb / Wikidata から自動補完します。
+ *       TMDB external_ids から Wikidata QID (Q16930989 等) を自動取得します。
  */
 
 function getNodeData(nodeName) {
@@ -161,11 +161,20 @@ const finalOverviewEn = existingDb.overview_en || rawOverviewEn || '';
 const rawPoster = credits.poster_path || result?.poster_path || existingDb.poster_url || existingDb.poster_path || '';
 const finalPosterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https://image.tmdb.org/t/p/w500${rawPoster}`) : '';
 
-// 🎯【Wikidata ID (QID) の安全継承】
-let fetchedWikidataId = existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || credits.wikidata_id || null;
-if (!fetchedWikidataId && credits.external_ids?.wikidata_id) {
-  fetchedWikidataId = credits.external_ids.wikidata_id;
-}
+// 🎯【Wikidata ID (QID) の強固な自動抽出】
+let fetchedWikidataId = 
+  existingDb.wikidata_id || 
+  sourceData.wikidata_id || 
+  sourceData.qid || 
+  wikiNode.qid || 
+  wikiNode.wikidata_id || 
+  wikiNode.id || 
+  credits.wikidata_id || 
+  credits.external_ids?.wikidata_id || 
+  result?.external_ids?.wikidata_id || 
+  t1?.external_ids?.wikidata_id || 
+  t2?.external_ids?.wikidata_id || 
+  null;
 
 // 🎬【YouTube 予告編の安全継承（日本国内再生可能な動画のみ採用）】
 let finalTrailerUrl = '';
