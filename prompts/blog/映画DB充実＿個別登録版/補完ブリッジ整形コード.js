@@ -115,7 +115,7 @@ return [{
     overview: aiOverview || shaped.overview || '',
     overview_en: shaped.overview_en || '',
 
-    poster_url: shaped.poster_url || '',
+    poster_url: shaped.poster_url || (shaped.poster_path ? (shaped.poster_path.startsWith('http') ? shaped.poster_path : `https://image.tmdb.org/t/p/w500${shaped.poster_path}`) : ''),
     trailer_url: trailerUrl || '',
     brave_search_result: braveResult,
 

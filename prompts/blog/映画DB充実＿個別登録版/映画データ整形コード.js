@@ -3,7 +3,6 @@
  * 
  * 役割: Supabaseに保存されている完成済み既存データ（カタカナキャスト・日本語監督名・あらすじ等）を最優先で保護し、
  *       未登録項目のみ TMDb / Wikidata から自動補完します。
- *       ※キャスト人数制限(slice)は排除し、TMDbに存在する全員分のデータを取り扱います。
  */
 
 function getNodeData(nodeName) {
@@ -116,7 +115,7 @@ if (!directorName && Array.isArray(credits.created_by) && credits.created_by.len
 const finalDirector = (existingDb.director && isJapanese(existingDb.director)) ? existingDb.director : (directorName || existingDb.director || '');
 const finalDirectorEn = existingDb.director_en || directorEnName || '';
 
-// 🎯【キャスト一覧の安全マージ】(人数制限なし・全員分取得！)
+// 🎯【キャスト一覧の安全マージ】(全員分取得)
 const tmdbCastNames = (Array.isArray(credits.cast) && credits.cast.length > 0)
   ? credits.cast.map(c => c.name).join(', ')
   : '';
@@ -138,6 +137,10 @@ const finalOverview = (existingDb.overview && isJapanese(existingDb.overview)) ?
 
 const rawOverviewEn = sourceData.overview_en || credits.overview_en || (!isJapanese(tmdbOverview) ? tmdbOverview : '');
 const finalOverviewEn = existingDb.overview_en || rawOverviewEn || '';
+
+// 🎯【ポスターURL (poster_url) の自動構築】
+const rawPoster = credits.poster_path || result?.poster_path || existingDb.poster_url || existingDb.poster_path || '';
+const finalPosterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https://image.tmdb.org/t/p/w500${rawPoster}`) : '';
 
 // 🎯【Wikidata ID (QID) の安全継承】
 let fetchedWikidataId = existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || credits.wikidata_id || null;
@@ -206,7 +209,8 @@ return [{
     cast_en: finalCastEn,
     overview: finalOverview,
     overview_en: finalOverviewEn,
-    poster_path: credits.poster_path || result?.poster_path || existingDb.poster_path || '',
+    poster_path: rawPoster,
+    poster_url: finalPosterUrl,
     backdrop_path: credits.backdrop_path || result?.backdrop_path || existingDb.backdrop_path || '',
     trailer_url: finalTrailerUrl,
     trailer_title: finalTrailerTitle,
