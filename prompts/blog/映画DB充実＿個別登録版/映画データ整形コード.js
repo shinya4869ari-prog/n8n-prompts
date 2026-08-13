@@ -162,19 +162,19 @@ const rawPoster = credits.poster_path || result?.poster_path || existingDb.poste
 const finalPosterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https://image.tmdb.org/t/p/w500${rawPoster}`) : '';
 
 // 🎯【Wikidata ID (QID) の強固な自動抽出】
-let fetchedWikidataId = 
-  existingDb.wikidata_id || 
-  sourceData.wikidata_id || 
-  sourceData.qid || 
-  wikiNode.qid || 
-  wikiNode.wikidata_id || 
-  wikiNode.id || 
-  credits.wikidata_id || 
+// APIから新しく取れたQIDを最優先保護（Supabaseの古いnullデータによる上書き消滅を100%ブロック）
+const freshQid = 
   credits.external_ids?.wikidata_id || 
+  credits.wikidata_id || 
   result?.external_ids?.wikidata_id || 
   t1?.external_ids?.wikidata_id || 
   t2?.external_ids?.wikidata_id || 
+  wikiNode.qid || 
+  wikiNode.wikidata_id || 
+  wikiNode.id || 
   null;
+
+let fetchedWikidataId = freshQid || existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || null;
 
 // 🎬【YouTube 予告編の安全継承（日本国内再生可能な動画のみ採用）】
 let finalTrailerUrl = '';
