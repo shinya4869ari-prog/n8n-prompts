@@ -12,11 +12,22 @@ const shaped = (() => {
   return getNode('映画データ整形コード');
 })();
 
-// キャスト・監督翻訳AIの取得
+// キャスト・監督翻訳AIの取得（ノード名の変更・リネームに柔軟対応）
 const castTrans = (() => {
-  const c1 = getNode('キャスト・監督翻訳AI1');
-  if (c1 && (c1.text || c1.content || c1.message)) return c1;
-  return getNode('キャスト・監督翻訳AI');
+  const possibleNames = [
+    'キャスト・監督翻訳AI',
+    'キャスト・監督日本語化',
+    'キャスト・監督翻訳',
+    'キャスト監督翻訳AI',
+    'キャスト翻訳AI',
+    'キャスト・監督翻訳AI1',
+    'Gemini_Cast_Translator'
+  ];
+  for (const name of possibleNames) {
+    const c = getNode(name);
+    if (c && (c.text || c.content || c.message || c.output || c.candidates)) return c;
+  }
+  return {};
 })();
 
 const parsedCast = (() => {
