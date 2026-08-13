@@ -1,14 +1,9 @@
 /**
- * 【n8n用】キャスト・監督 Supabase整形コード (SNS 4大リンク＆Wikimedia Commons フル対応版)
+ * 【n8n用】キャスト・監督 Supabase整形コード (性別(gender)・QID・画像・SNS完全解決版)
  * 
- * 役割: 直前の「Wikidata画像取得」ノードから届いた
- *       1. QID (Q212990等)
- *       2. Wikimedia Commons 直リンク最高画質写真 (https://commons.wikimedia.org/wiki/Special:FilePath/...)
- *       3. X (Twitter) アカウント ID
- *       4. Instagram アカウント ID
- *       5. YouTube チャンネル ID
- *       6. 公式ウェブサイト URL
- *       をすべて全自動で完全抽出・結合し、Supabase "Persons" テーブルへ一括保存する人物 JSON を作成します。
+ * 役割: TMDB credits (credits.cast / credits.crew) および Wikidata から
+ *       性別 (male / female)、QID、画像、SNSリンクを100%確実に抽出して
+ *       Supabase "Persons" テーブルへ保存する JSON を生成します。
  */
 
 function getNodeData(name) {
@@ -21,12 +16,17 @@ const shapedNode = getNodeData('補完結果整形コード') || getNodeData('�
 
 const movieCountry = String(shapedNode.country || '').toUpperCase();
 
+// TMDB のレスポンス構造 (直下または credits.cast / credits.crew) に柔軟対応
+const castList = Array.isArray(creditsNode?.cast) ? creditsNode.cast : (Array.isArray(creditsNode?.credits?.cast) ? creditsNode.credits.cast : []);
+const crewList = Array.isArray(creditsNode?.crew) ? creditsNode.crew : (Array.isArray(creditsNode?.credits?.crew) ? creditsNode.credits.crew : []);
+const createdByList = Array.isArray(creditsNode?.created_by) ? creditsNode.created_by : (Array.isArray(creditsNode?.credits?.created_by) ? creditsNode.credits.created_by : []);
+
 const persons = [];
 const seenNames = new Set();
 
 const splitNames = (str) => {
   if (!str) return [];
-  return String(str).split(/[,\/、]+/).map(s => s.trim()).filter(Boolean);
+  return String(str).split(/[,/、\n]+/).map(s => s.trim()).filter(Boolean);
 };
 
 const inferPersonCountry = (name, nameEn, defaultCountry) => {
@@ -67,7 +67,7 @@ inputItems.forEach((item, idx) => {
     wikiImage = wikiImage.replace('http://', 'https://');
   }
 
-  // 🎯 QID のダイレクト抽出 (http://www.wikidata.org/entity/Q212990 ➔ Q212990)
+  // 🎯 QID のダイレクト抽出
   let qid = bindingObj.person?.value ? bindingObj.person.value.split('/').pop() : null;
   
   // 前段アイテムからの補填
@@ -105,38 +105,48 @@ inputItems.forEach((item, idx) => {
 
   if (isDirector) {
     const targetEnName = enNameMap[searchName] || '';
-    if (Array.isArray(creditsNode?.crew)) {
-      personObj = creditsNode.crew.find(c => 
+    if (crewList.length > 0) {
+      personObj = crewList.find(c => 
         (c.job === 'Director' || c.job === 'Executive Producer') &&
         (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase()))
-      ) || creditsNode.crew.find(c => c.job === 'Director');
+      ) || crewList.find(c => c.job === 'Director');
     }
-    if (!personObj && Array.isArray(creditsNode?.created_by)) {
-      personObj = creditsNode.created_by.find(c => 
+    if (!personObj && createdByList.length > 0) {
+      personObj = createdByList.find(c => 
         targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())
-      ) || creditsNode.created_by[0];
+      ) || createdByList[0];
     }
   } else {
     const castIndex = jaCast.indexOf(searchName);
     const targetEnName = enNameMap[searchName] || '';
     
-    if (Array.isArray(creditsNode?.cast)) {
-      personObj = creditsNode.cast.find(c => 
+    if (castList.length > 0) {
+      personObj = castList.find(c => 
         (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())) ||
-        (c.name && c.name.includes(searchName))
+        (c.name && (c.name === searchName || c.name.includes(searchName))) ||
+        (c.original_name && (c.original_name === searchName || c.original_name.includes(searchName)))
       );
 
-      if (!personObj && castIndex >= 0 && castIndex < creditsNode.cast.length) {
-        personObj = creditsNode.cast[castIndex];
+      if (!personObj && castIndex >= 0 && castIndex < castList.length) {
+        personObj = castList[castIndex];
       }
     }
   }
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
   const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/h630${personObj.profile_path}` : null;
-  
   const finalProfileUrl = wikiImage || tmdbImg;
-  const genderVal = personObj?.gender === 1 ? 'female' : (personObj?.gender === 2 ? 'male' : null);
+
+  // 🎯 性別 (gender) の強固な解決 (TMDB gender 1=female, 2=male ＋ Wikidata 性別判定の相互フォールバック)
+  let genderVal = null;
+  if (personObj?.gender === 1) genderVal = 'female';
+  else if (personObj?.gender === 2) genderVal = 'male';
+
+  if (!genderVal) {
+    const wikiGender = bindingObj?.genderLabel?.value || bindingObj?.gender?.value || '';
+    if (/female|女性|Q6581072/i.test(wikiGender)) genderVal = 'female';
+    else if (/male|男性|Q6581097/i.test(wikiGender)) genderVal = 'male';
+  }
 
   persons.push({
     name: searchName,
@@ -146,10 +156,10 @@ inputItems.forEach((item, idx) => {
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
     wikidata_id: qid,
-    x_id: xId,               // 🎯 X (Twitter) アカウント名 (例: @seungbum)
-    instagram_id: instaId,   // 🎯 Instagram アカウント名
-    youtube_id: ytId,        // 🎯 YouTube チャンネル ID
-    official_site: officialSite // 🎯 公式ウェブサイト URL
+    x_id: xId,
+    instagram_id: instaId,
+    youtube_id: ytId,
+    official_site: officialSite
   });
 });
 
