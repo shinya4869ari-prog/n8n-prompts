@@ -148,15 +148,23 @@ inputItems.forEach((item, idx) => {
       }
     }
 
-    // 2. 画像ファイル名の検証
+    // 2. 画像ファイル名の検証 (例: ハ・ヨン [Ha Young] に対して ハ・ヨンジュ [Ha Yeon-joo] 等の似た名前の別人が誤マッチするのを阻止)
     if (wikiImage) {
       const imgName = wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '');
-      if (cleanEn && cleanEn.length >= 3) {
-        const prefix = cleanEn.slice(0, 3);
-        if (!imgName.includes(prefix)) {
-          wikiImage = null;
-          qid = null;
+      const nameTokens = (personObj?.name || enNameMap[searchName] || searchName || '').toLowerCase().split(/[\s・-]+/).filter(t => t.length >= 3);
+      
+      let isImgMatch = true;
+      if (nameTokens.length > 0) {
+        // 名前のラストトークン (例: "young") が画像ファイル名に含まれていない場合は誤マッチと判定
+        const keyToken = nameTokens[nameTokens.length - 1].replace(/[^a-z]/g, '');
+        if (keyToken && keyToken.length >= 3 && !imgName.includes(keyToken)) {
+          isImgMatch = false;
         }
+      }
+
+      if (!isImgMatch) {
+        wikiImage = null;
+        qid = null;
       }
     }
   }
