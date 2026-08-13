@@ -77,6 +77,18 @@ inputItems.forEach((item, idx) => {
     qid = matched?.id || null;
   }
 
+  // 🌐 SNS / 公式サイト ID の全自動抽出
+  let xId = bindingObj.twitter?.value || null;
+  if (xId) xId = xId.split('/').pop().replace('@', '');
+
+  let instaId = bindingObj.instagram?.value || null;
+  if (instaId) instaId = instaId.split('/').pop().replace('@', '');
+
+  let ytId = bindingObj.youtube?.value || null;
+  if (ytId) ytId = ytId.split('/').pop();
+
+  let officialSite = bindingObj.website?.value || null;
+
   const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
 
   // 🎯 重複誤判定QID (Q212990 等) をキム・ギドク以外の人物から完全除外
