@@ -1,4 +1,4 @@
-あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ $('映画データ整形コード').item?.json?.title || $('映画データ整形コード').first()?.json?.title || '' }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
+あなたは映画紹介ライターです。提供された「検索結果のテキスト」と「公式あらすじ」に記載されている事実のみを使い、映画「{{ (() => { try { return $('映画データ整形コード').first()?.json?.title || $('映画データ整形コード').item?.json?.title || $json.title || ''; } catch(e) { return $json.title || ''; } })() }}」の紹介文（解説・ストーリー紹介）を日本語で作成してください。
 
 ルール：
 - 提供された情報に書かれていない情報は絶対に含めないでください。
@@ -13,4 +13,4 @@
 {{ ($json.web?.results || $json.results || []).map(r => (r.title || '') + '\n' + (r.description || '')).filter(Boolean).join('\n\n') }}
 
 公式あらすじ：
-{{ $('映画データ整形コード').item?.json?.overview_en || $('映画データ整形コード').item?.json?.overview || 'なし' }}
+{{ (() => { try { return $('映画データ整形コード').first()?.json?.overview_en || $('映画データ整形コード').first()?.json?.overview || 'なし'; } catch(e) { return 'なし'; } })() }}
