@@ -77,19 +77,13 @@ inputItems.forEach((item, idx) => {
     qid = matched?.id || null;
   }
 
-  // 🌐 SNS / 公式サイト ID の全自動抽出
-  let xId = bindingObj.twitter?.value || null;
-  if (xId) xId = xId.split('/').pop().replace('@', '');
-
-  let instaId = bindingObj.instagram?.value || null;
-  if (instaId) instaId = instaId.split('/').pop().replace('@', '');
-
-  let ytId = bindingObj.youtube?.value || null;
-  if (ytId) ytId = ytId.split('/').pop();
-
-  let officialSite = bindingObj.website?.value || null;
-
   const searchName = item.json?.searchinfo?.search || item.json?.name || jaDirectors[idx] || jaCast[idx - jaDirectors.length] || '';
+
+  // 🎯 重複誤判定QID (Q212990 等) をキム・ギドク以外の人物から完全除外
+  if (qid === 'Q212990' && !/キム・ギドク|김기덕|Kim Ki-duk/i.test(searchName)) {
+    qid = null;
+    if (wikiImage && wikiImage.includes('Kim%20Ki-duk')) wikiImage = null;
+  }
   
   if (!searchName || seenNames.has(searchName)) return;
   seenNames.add(searchName);
