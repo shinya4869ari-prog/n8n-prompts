@@ -1,3 +1,8 @@
+【TMDb credits取得 (HTTP Request ノード) 用 URL】
+
+※ URL の末尾を `/credits` から `?append_to_response=credits,external_ids,videos` に変更することで、キャスト・監督・予告編に加え、Wikidata ID (Q16930989) を100%自動取得します。
+
+```text
 https://api.themoviedb.org/3/{{
   (() => {
     // 1. 直前のノードから直接 id と media_type がある場合
@@ -24,18 +29,15 @@ https://api.themoviedb.org/3/{{
     
     for (const movie of results) {
       let score = 0;
-      // 💡 映画なら title / ドラマなら name
       const movieTitle = (movie.title || movie.name || '').toLowerCase().trim();
       const movieOrigTitle = (movie.original_title || movie.original_name || '').toLowerCase().trim();
       
-      // ①タイトルが完全一致すれば高得点
       if (movieTitle === targetTitle || movieOrigTitle === targetTitle) {
         score += 100;
       } else if (movieTitle.includes(targetTitle) || movieOrigTitle.includes(targetTitle)) {
         score += 50;
       }
       
-      // ②公開年/放送年が近ければ加点（映画: release_date / ドラマ: first_air_date）
       const rDate = movie.release_date || movie.first_air_date;
       if (targetYear && rDate) {
         const releaseYear = parseInt(rDate.substring(0, 4));
@@ -51,8 +53,8 @@ https://api.themoviedb.org/3/{{
       }
     }
     
-    // 💡 映画なら 'movie/ID'、ドラマなら 'tv/ID' を動的に返す
     const mediaType = bestMatch.media_type || (bestMatch.name && !bestMatch.title ? 'tv' : 'movie');
     return `${mediaType}/${bestMatch.id}`;
   })()
-}}/credits
+}}?append_to_response=credits,external_ids,videos
+```
