@@ -1,6 +1,6 @@
 /**
  * 補完ブリッジ整形コード（安全・完全取得版）
- * 役割: 映画DB充実ワークフローの各ノード（TMDb/Brave/Geminiあらすじ等）のデータを安全に一括集約し、
+ * 役割: 映画DB充実ワークフローの各ノード（TMDb/Brave/Geminiあらすじ/キャスト翻訳AI等）のデータを安全に一括集約し、
  *       映画データ補完ワークフロー（Gemini）への入力JSONに変換する
  */
 function getNode(name) {
@@ -14,15 +14,29 @@ const shaped = (() => {
 
 // キャスト・監督翻訳AIの取得
 const castTrans = (() => {
-  const c = getNode('キャスト・監督翻訳AI1');
-  if (c.text || c.content || c.message) return c;
+  const c1 = getNode('キャスト・監督翻訳AI1');
+  if (c1 && (c1.text || c1.content || c1.message)) return c1;
   return getNode('キャスト・監督翻訳AI');
 })();
 
 const parsedCast = (() => {
   try {
-    const raw = castTrans.text || (Array.isArray(castTrans.content) ? castTrans.content[0]?.text : castTrans.content) || '';
-    return JSON.parse(raw.replace(/```json/gi, '').replace(/```/g, '').trim());
+    let raw = castTrans.text || castTrans.output || '';
+    if (!raw && castTrans.content?.parts && Array.isArray(castTrans.content.parts)) {
+      raw = castTrans.content.parts.map(p => p.text || '').join('');
+    } else if (!raw && castTrans.content?.parts?.[0]?.text) {
+      raw = castTrans.content.parts[0].text;
+    } else if (!raw && Array.isArray(castTrans.content)) {
+      raw = castTrans.content[0]?.text || '';
+    } else if (!raw && typeof castTrans.content === 'string') {
+      raw = castTrans.content;
+    } else if (!raw && castTrans.message?.content) {
+      raw = typeof castTrans.message.content === 'string' ? castTrans.message.content : JSON.stringify(castTrans.message.content);
+    }
+    if (!raw) return {};
+
+    const clean = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(clean);
   } catch(e) { return {}; }
 })();
 
@@ -92,6 +106,18 @@ const braveResult = (() => {
   return '';
 })();
 
+// 日本語判定
+const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
+
+// AIが翻訳した日本語カタカナキャストを最優先。もしAIに不備があればshapedのデータを使用
+const finalCast = (parsedCast.cast && isJapanese(parsedCast.cast)) 
+  ? parsedCast.cast 
+  : (isJapanese(shaped.cast) ? shaped.cast : (parsedCast.cast || shaped.cast || ''));
+
+const finalCastEn = parsedCast.cast_en || shaped.cast_en || '';
+const finalDirector = (parsedCast.director && isJapanese(parsedCast.director)) ? parsedCast.director : (shaped.director || parsedCast.director || '');
+const finalDirectorEn = parsedCast.director_en || shaped.director_en || '';
+
 return [{
   json: {
     idx: shaped.idx || null,
@@ -104,10 +130,10 @@ return [{
     country: shaped.country || 'KR',
     genres: shaped.genres || '',
 
-    director: parsedCast.director || shaped.director || '',
-    director_en: parsedCast.director_en || shaped.director_en || '',
-    cast: parsedCast.cast || shaped.cast || '',
-    cast_en: parsedCast.cast_en || shaped.cast_en || '',
+    director: finalDirector,
+    director_en: finalDirectorEn,
+    cast: finalCast,
+    cast_en: finalCastEn,
 
     overview: aiOverview || shaped.overview || '',
     overview_en: shaped.overview_en || '',
