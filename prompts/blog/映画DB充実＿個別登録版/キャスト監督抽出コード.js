@@ -36,7 +36,11 @@ jaDirectors.forEach((name, idx) => {
   seenNames.add(name);
 
   const enName = enDirectors[idx] || '';
-  const tmdbMatch = crewList.find(c => c.job === 'Director' || c.job === 'Executive Producer');
+  const tmdbMatch = crewList.find(c => c.job === 'Director' && (
+    (enName && (c.name?.toLowerCase() === enName.toLowerCase() || c.original_name?.toLowerCase() === enName.toLowerCase())) ||
+    (c.name && c.name.includes(name))
+  )) || crewList.find(c => c.job === 'Director') || crewList[idx];
+
   const searchKey = tmdbMatch?.original_name || tmdbMatch?.name || enName || name;
 
   persons.push({ name: name, name_en: enName, search_key: searchKey, occupation: '監督' });
