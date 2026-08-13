@@ -126,13 +126,13 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  // 🎯 汎用動的バリデーション (ドメイン名・写真ファイル名の類似度検証)
+  // 🎯 厳格な安全第一バリデーション (不確実・曖昧なWikidataマッチは即座に破棄して空文字/nullにする)
   if (officialSite || wikiImage || qid) {
     const cleanSearchName = searchName.toLowerCase().replace(/[\s・]/g, '');
     const cleanEn = (personObj?.name || enNameMap[searchName] || searchName || '').toLowerCase().replace(/[^a-z]/g, '');
     const cleanOrig = (personObj?.original_name || '').toLowerCase().replace(/[\s・-]/g, '');
 
-    // 1. 公式サイトドメインの検証 (例: hajoonchang.net vs ハ・ヨン)
+    // 1. 公式サイトの厳格検証 (本人の名前要素または認定芸能事務所ドメイン以外はすべて安全に破棄)
     if (officialSite) {
       const siteDomain = officialSite.toLowerCase().replace(/^https?:\/\//i, '').replace(/^www\./i, '');
       const isDomainMatch = (cleanEn && cleanEn.length >= 3 && siteDomain.includes(cleanEn.slice(0, 3))) ||
@@ -145,17 +145,20 @@ inputItems.forEach((item, idx) => {
         officialSite = null;
         qid = null;
         wikiImage = null;
+        xId = null;
+        instaId = null;
+        ytId = null;
       }
     }
 
-    // 2. 画像ファイル名の検証 (例: ハ・ヨン [Ha Young] に対して ハ・ヨンジュ [Ha Yeon-joo] 等の似た名前の別人が誤マッチするのを阻止)
+    // 2. 画像ファイル名の厳格検証 (名前要素が100%照合できないものは安全第一ですべて破棄)
     if (wikiImage) {
       const imgName = wikiImage.split('/').pop().toLowerCase().replace(/[^a-z]/g, '');
       const nameTokens = (personObj?.name || enNameMap[searchName] || searchName || '').toLowerCase().split(/[\s・-]+/).filter(t => t.length >= 3);
       
       let isImgMatch = true;
       if (nameTokens.length > 0) {
-        // 名前のラストトークン (例: "young") が画像ファイル名に含まれていない場合は誤マッチと判定
+        // 名前のラストトークン (例: "young") が画像ファイル名に含まれていない場合は完全破棄
         const keyToken = nameTokens[nameTokens.length - 1].replace(/[^a-z]/g, '');
         if (keyToken && keyToken.length >= 3 && !imgName.includes(keyToken)) {
           isImgMatch = false;
@@ -165,6 +168,9 @@ inputItems.forEach((item, idx) => {
       if (!isImgMatch) {
         wikiImage = null;
         qid = null;
+        xId = null;
+        instaId = null;
+        ytId = null;
       }
     }
   }
