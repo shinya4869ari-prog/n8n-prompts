@@ -1,8 +1,3 @@
-# TMDb credits取得 ノード設定
-
-## 1. URL 欄（Expression fx）
-
-```text
 https://api.themoviedb.org/3/{{
   (() => {
     if ($json.id) {
@@ -55,10 +50,3 @@ https://api.themoviedb.org/3/{{
     return `${mediaType}/${bestMatch.id}`;
   })()
 }}
-```
-
-## 2. Query Parameters 欄（追加設定）
-
-| Name | Value |
-|---|---|
-| `append_to_response` | `credits,external_ids,videos` |
