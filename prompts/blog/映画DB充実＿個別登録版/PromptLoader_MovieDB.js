@@ -28,10 +28,23 @@ try {
 
   const brave = (() => {
     try {
-      const b = $('Brave Search_movie').first()?.json || $('Brave Search').first()?.json || $input.first()?.json || {};
-      const resList = b?.web?.results || b?.results || [];
-      if (Array.isArray(resList) && resList.length > 0) {
-        return resList.slice(0, 5).map(r => r.movie?.description || r.description || '').filter(Boolean).join('\n');
+      const possibleNodes = ['Brave Search', 'Brave Search_movie', 'Brave Search web', 'Brave Search_trailer'];
+      for (const name of possibleNodes) {
+        let b = null;
+        try { b = $(name).first()?.json || $(name).item?.json; } catch(err) {}
+        if (!b) continue;
+        const resList = b?.web?.results || b?.results || (Array.isArray(b) ? b : []);
+        if (Array.isArray(resList) && resList.length > 0) {
+          const textStr = resList.slice(0, 8).map(r => r.description || r.extra_snippets?.join(' ') || r.title || '').filter(Boolean).join('\n\n');
+          if (textStr && textStr.length > 20) return textStr;
+        }
+      }
+      if ($input.first()?.json) {
+        const b = $input.first().json;
+        const resList = b?.web?.results || b?.results || (Array.isArray(b) ? b : []);
+        if (Array.isArray(resList) && resList.length > 0) {
+          return resList.slice(0, 8).map(r => r.description || r.title || '').filter(Boolean).join('\n\n');
+        }
       }
     } catch(e) { return ''; }
     return '';
