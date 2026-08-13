@@ -1,11 +1,15 @@
-【TMDb credits取得 (HTTP Request ノード) 用 URL】
+【TMDb credits取得 (HTTP Request ノード) 用設定】
 
-※ URL の末尾を `/credits` から `?append_to_response=credits,external_ids,videos` に変更することで、キャスト・監督・予告編に加え、Wikidata ID (Q16930989) を100%自動取得します。
+400エラーの原因: URLに `?` を直書きしたことでn8nのQuery Parametersと重複したため。
+URLから `?` を外し、n8nの Query Parameters 欄で `append_to_response` を指定します。
+
+---
+
+### 1. URL 欄（末尾の ? 以降を削除）
 
 ```text
 https://api.themoviedb.org/3/{{
   (() => {
-    // 1. 直前のノードから直接 id と media_type がある場合
     if ($json.id) {
       const type = $json.media_type || ($json.name ? 'tv' : 'movie');
       return `${type}/${$json.id}`;
@@ -14,7 +18,6 @@ https://api.themoviedb.org/3/{{
     const results = $json.results || $json.movie_results || $json.tv_results || [];
     if (results.length === 0) return 'movie/0';
     
-    // 入力データの取得（ノード名のフォールバック対応）
     let sourceNode = {};
     try { sourceNode = $('映画ごとにループ実行').item?.json || {}; } catch(e) {
       try { sourceNode = $('Loop Over Items').item?.json || {}; } catch(e2) {
@@ -56,5 +59,14 @@ https://api.themoviedb.org/3/{{
     const mediaType = bestMatch.media_type || (bestMatch.name && !bestMatch.title ? 'tv' : 'movie');
     return `${mediaType}/${bestMatch.id}`;
   })()
-}}?append_to_response=credits,external_ids,videos
+}}
 ```
+
+---
+
+### 2. Query Parameters 欄（n8n画面内のパラメータ追加）
+
+`TMDb credits取得` ノードの **Query Parameters**（クエリパラメータ）に項目を追加します：
+
+* **Name**: `append_to_response`
+* **Value**: `credits,external_ids,videos`
