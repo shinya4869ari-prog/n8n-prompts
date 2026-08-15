@@ -480,7 +480,7 @@ const r2Merged = {
   直近の動向: r2.直近の動向,
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
-  映像作品: r25.映像作品,
+  映像作品: (recommendedMovies && recommendedMovies.length > 0) ? recommendedMovies : (r25.映像作品 || []),
   おすすめ映画: recommendedMovies,
   おすすめ音楽: recommendMusic
 };
