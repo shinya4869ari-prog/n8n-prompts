@@ -1,18 +1,1 @@
-# Wikidata 人物情報一括取得ノード (`Wikidata人物情報取得`)
-
-QIDがある場合はQIDで直接取得し、`wikidata_id` が `null` の場合は **日本語名またはハングル名から「人間(P31=Q5)」に限定して自動検索** する安全な SPARQL HTTP Request 設定です。（兵器や地名などの誤ヒットを100%防止）
-
----
-
-## 1. HTTP Request ノード設定
-
-* **Node Name**: `Wikidata人物情報取得`
-* **Method**: `GET`
-* **URL**:
-```text
-https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?personLabel ?personEnLabel ?personJaLabel ?personKoLabel ?genderLabel ?birthDate ?deathDate ?countryLabel ?occupationLabel ?image ?instagram ?twitter ?youtube ?website WHERE { ${$json.wikidata_id ? `BIND(wd:${$json.wikidata_id} AS ?person) .` : `?person wdt:P31 wd:Q5 . { ?person rdfs:label "${$json.name}"@ja . } UNION { ?person rdfs:label "${$json.name_en}"@ko . }`} OPTIONAL { ?person wdt:P21 ?gender . } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person wdt:P27 ?country . } OPTIONAL { ?person wdt:P106 ?occupation . } OPTIONAL { ?person wdt:P18 ?image . } OPTIONAL { ?person wdt:P2003 ?instagram . } OPTIONAL { ?person wdt:P2002 ?twitter . } OPTIONAL { ?person wdt:P2397 ?youtube . } OPTIONAL { ?person wdt:P856 ?website . } OPTIONAL { ?person rdfs:label ?personJaLabel . FILTER(LANG(?personJaLabel) = "ja") } OPTIONAL { ?person rdfs:label ?personEnLabel . FILTER(LANG(?personEnLabel) = "en") } OPTIONAL { ?person rdfs:label ?personKoLabel . FILTER(LANG(?personKoLabel) = "ko") } SERVICE wikibase:label { bd:serviceParam wikibase:language "ja,ko,en" . } } LIMIT 5`) }}&format=json
-```
-
-* **Headers**:
-  * `User-Agent`: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`
-  * `Accept`: `application/sparql-results+json`
+https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?personLabel ?personEnLabel ?personJaLabel ?personKoLabel ?genderLabel ?birthDate ?deathDate ?countryLabel ?occupationLabel ?image ?instagram ?twitter ?youtube ?website (GROUP_CONCAT(DISTINCT ?memberLabel; separator=", ") AS ?membersList) WHERE { ${$json.wikidata_id ? `BIND(wd:${$json.wikidata_id} AS ?person) .` : `{ ?person wdt:P31 wd:Q5 . } UNION { ?person wdt:P31/wdt:P279* wd:Q215380 . } ${($json.country === 'KR' || $json.country === '韓国' || ($json.occupation && $json.occupation.includes('韓国'))) ? `?person (wdt:P27|wdt:P495) wd:Q884 .` : ($json.country === 'JP' || $json.country === '日本') ? `?person (wdt:P27|wdt:P495) wd:Q17 .` : ``} { ?person (rdfs:label|skos:altLabel) "${$json.name}"@ja . } UNION { ?person (rdfs:label|skos:altLabel) "${$json.name_en || $json.name}"@ko . } UNION { ?person (rdfs:label|skos:altLabel) "${$json.name_en || $json.name}"@en . }`} OPTIONAL { ?person wdt:P21 ?gender . } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P571 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person (wdt:P27|wdt:P495) ?country . } OPTIONAL { ?person wdt:P106 ?occupation . } OPTIONAL { ?person wdt:P18 ?image . } OPTIONAL { ?person wdt:P2003 ?instagram . } OPTIONAL { ?person wdt:P2002 ?twitter . } OPTIONAL { ?person wdt:P2397 ?youtube . } OPTIONAL { ?person wdt:P856 ?website . } OPTIONAL { ?person wdt:P527 ?member . ?member rdfs:label ?memberLabel . FILTER(LANG(?memberLabel) = "ja") } OPTIONAL { ?person rdfs:label ?personJaLabel . FILTER(LANG(?personJaLabel) = "ja") } OPTIONAL { ?person rdfs:label ?personEnLabel . FILTER(LANG(?personEnLabel) = "en") } OPTIONAL { ?person rdfs:label ?personKoLabel . FILTER(LANG(?personKoLabel) = "ko") } SERVICE wikibase:label { bd:serviceParam wikibase:language "ja,ko,en" . } } GROUP BY ?person ?personLabel ?personEnLabel ?personJaLabel ?personKoLabel ?genderLabel ?birthDate ?deathDate ?countryLabel ?occupationLabel ?image ?instagram ?twitter ?youtube ?website LIMIT 5`) }}&format=json
