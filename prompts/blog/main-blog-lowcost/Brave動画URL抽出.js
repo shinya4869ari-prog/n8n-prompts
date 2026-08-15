@@ -258,18 +258,33 @@ const results = await Promise.all(braveItems.map(async (item, index) => {
     country = country.toUpperCase();
   }
 
-  // 🎯 映画の Wikidata QID 自動特定（原題・タイトルから検索）
+  // 🎯 映画の Wikidata QID 自動特定（原題・タイトル・IMDbから確実に検索）
   let wikidata_id = movieData.wikidata_id || null;
   if (!wikidata_id) {
     try {
-      const searchKey = movieData.origin_title || movieData.title;
-      if (searchKey && searchKey !== 'タイトル不明' && searchKey !== '原題不明') {
-        const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(searchKey)}&language=ko&limit=5&format=json`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'NationalScalesBot/1.0 (contact@example.com)' } }).then(r => r.json());
-        const hit = (res.search || []).find(s => {
+      const keysToTry = [movieData.origin_title, movieData.title].filter(k => k && k !== 'タイトル不明' && k !== '原題不明');
+      for (const searchKey of keysToTry) {
+        if (wikidata_id) break;
+        const cleanKey = searchKey.replace(/[〜～\-:：].*$/, '').trim(); // サブタイトルを除去してヒット率UP
+        const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(cleanKey)}&language=ko&limit=5&format=json`;
+        
+        let resData = null;
+        if (typeof this?.helpers?.httpRequest === 'function') {
+          resData = await this.helpers.httpRequest({
+            method: 'GET',
+            url: url,
+            headers: { 'User-Agent': 'NationalScalesBot/1.0 (contact@example.com)' },
+            json: true
+          });
+        } else if (typeof fetch === 'function') {
+          resData = await fetch(url, { headers: { 'User-Agent': 'NationalScalesBot/1.0 (contact@example.com)' } }).then(r => r.json());
+        }
+
+        const hit = (resData?.search || []).find(s => {
           const desc = (s.description || '').toLowerCase();
           return desc.includes('film') || desc.includes('movie') || desc.includes('映画') || desc.includes('영화');
-        }) || res.search?.[0];
+        }) || resData?.search?.[0];
+
         if (hit && hit.id) {
           wikidata_id = hit.id;
         }
