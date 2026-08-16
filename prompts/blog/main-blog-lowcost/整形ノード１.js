@@ -245,10 +245,16 @@ let recommendedMovies = [];
 try {
   let subItems = [];
   const candidateNodes = [
+    "Call '映画無限検索ワークフロー　おすすめ映画版 gemini'",
+    "Call '映画無限検索ワークフロー おすすめ映画版 gemini'",
+    "映画無限検索ワークフロー　おすすめ映画版 gemini",
+    "映画無限検索ワークフロー おすすめ映画版 gemini",
     "Call '映画無限検索ワークフロー　おすすめ映画版'",
     "Call '映画無限検索ワークフロー おすすめ映画版'",
     "映画無限検索ワークフロー　おすすめ映画版",
     "映画無限検索ワークフロー おすすめ映画版",
+    "Call '映画無限検索ワークフロー gemini'",
+    "映画無限検索ワークフロー gemini",
     "Call '映画無限検索ワークフロー'",
     "映画無限検索ワークフロー",
     "Call 'おすすめ映画'",
@@ -258,7 +264,8 @@ try {
     "Execute Workflow",
     "Execute Sub-Workflow",
     "Execute Workflow1",
-    "Execute Workflow2"
+    "Execute Workflow2",
+    "Execute Workflow3"
   ];
   for (const nodeName of candidateNodes) {
     try {
