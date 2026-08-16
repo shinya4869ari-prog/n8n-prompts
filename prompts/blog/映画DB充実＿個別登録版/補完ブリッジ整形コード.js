@@ -12,29 +12,55 @@ const shaped = (() => {
   return getNode('映画データ整形コード');
 })();
 
-// キャスト・監督翻訳AIの取得（ノード名: キャスト・監督翻訳AI）
-const castTrans = (() => {
-  return getNode('キャスト・監督翻訳AI');
-})();
+// AI抽出ヘルパー関数
+function extractTextFromAiNode(node) {
+  if (!node) return '';
+  if (typeof node === 'string') return node;
+  if (node.text) return node.text;
+  if (node.output) return node.output;
+  if (node.content?.parts && Array.isArray(node.content.parts)) {
+    return node.content.parts.map(p => p.text || '').join('\n');
+  }
+  if (node.candidates?.[0]?.content?.parts) {
+    return node.candidates[0].content.parts.map(p => p.text || '').join('\n');
+  }
+  if (node.message?.content) {
+    return typeof node.message.content === 'string' ? node.message.content : JSON.stringify(node.message.content);
+  }
+  return '';
+}
 
+// 🎯 キャスト・監督翻訳AIのパース（$input最優先で確実にAIのカタカナ翻訳を採用）
 const parsedCast = (() => {
   try {
-    let raw = castTrans.text || castTrans.output || '';
-    if (!raw && castTrans.content?.parts && Array.isArray(castTrans.content.parts)) {
-      raw = castTrans.content.parts.map(p => p.text || '').join('');
-    } else if (!raw && castTrans.content?.parts?.[0]?.text) {
-      raw = castTrans.content.parts[0].text;
-    } else if (!raw && Array.isArray(castTrans.content)) {
-      raw = castTrans.content[0]?.text || '';
-    } else if (!raw && typeof castTrans.content === 'string') {
-      raw = castTrans.content;
-    } else if (!raw && castTrans.message?.content) {
-      raw = typeof castTrans.message.content === 'string' ? castTrans.message.content : JSON.stringify(castTrans.message.content);
-    }
-    if (!raw) return {};
+    const candidates = [
+      $input.first()?.json,
+      $input.item?.json,
+      getNode('キャスト・監督翻訳AI'),
+      getNode('キャスト監督翻訳AI'),
+      getNode('gemini_movie_db'),
+      getNode('Google Gemini'),
+      getNode('Gemini'),
+      getNode('claude_movie_db'),
+      getNode('Claude')
+    ];
 
-    const clean = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();
-    return JSON.parse(clean);
+    for (const c of candidates) {
+      if (!c) continue;
+      if (c.cast && typeof c.cast === 'string' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(c.cast) && !c.idx) {
+        return c;
+      }
+      const raw = extractTextFromAiNode(c);
+      if (raw && (raw.includes('"cast"') || raw.includes('cast'))) {
+        const clean = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();
+        const jsonMatch = clean.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed && (parsed.cast || parsed.title)) return parsed;
+        }
+      }
+    }
+    return {};
   } catch(e) { return {}; }
 })();
 
