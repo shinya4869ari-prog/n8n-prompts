@@ -287,12 +287,16 @@ const finalCastEn = existingDb.cast_en || tmdbCastEnNames || '';
 const tmdbOrigTitle = result?.original_title || result?.original_name || credits.original_title || credits.original_name || '';
 const finalOriginTitle = existingDb.origin_title || tmdbOrigTitle || movieTitle;
 
-// 🎯【あらすじ (overview / overview_en) の安全継承】
-const tmdbOverview = credits.overview || result?.overview || '';
-const finalOverview = (existingDb.overview && isJapanese(existingDb.overview)) ? existingDb.overview : (isJapanese(tmdbOverview) ? tmdbOverview : (sourceData.overview || existingDb.overview || ''));
+// 🎯【あらすじ (overview / overview_en) の安全継承 & 英語・原語あらすじの自動抽出】
+const rawJaOverview = credits?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview || result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview;
+const tmdbJaOverview = isJapanese(rawJaOverview) ? rawJaOverview : (isJapanese(credits?.overview) ? credits.overview : (isJapanese(result?.overview) ? result.overview : null));
 
-const rawOverviewEn = sourceData.overview_en || credits.overview_en || (!isJapanese(tmdbOverview) ? tmdbOverview : '');
-const finalOverviewEn = existingDb.overview_en || rawOverviewEn || '';
+const rawEnOverview = credits?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || (!isJapanese(credits?.overview) ? credits?.overview : (!isJapanese(result?.overview) ? result?.overview : null));
+const rawKoOverview = credits?.translations?.translations?.find(t => t.iso_639_1 === 'ko')?.data?.overview || result?.translations?.translations?.find(t => t.iso_639_1 === 'ko')?.data?.overview;
+const rawForeignOverview = rawEnOverview || rawKoOverview || sourceData.overview_en || credits.overview_en || null;
+
+const finalOverview = (existingDb.overview && isJapanese(existingDb.overview)) ? existingDb.overview : (tmdbJaOverview || sourceData.overview || null);
+const finalOverviewEn = existingDb.overview_en || rawForeignOverview || '';
 
 // 🎯【ポスターURL (poster_url) の自動構築】
 const rawPoster = credits.poster_path || result?.poster_path || existingDb.poster_url || existingDb.poster_path || '';
