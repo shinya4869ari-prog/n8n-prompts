@@ -325,6 +325,10 @@ let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
 
 const releaseDateStr = result?.release_date || result?.first_air_date || credits.release_date || credits.first_air_date || sourceData.year || existingDb.year || '';
 
+// 🎯【IMDb ID / URL の自動抽出】
+const imdbId = credits.external_ids?.imdb_id || result?.external_ids?.imdb_id || t1?.external_ids?.imdb_id || t2?.external_ids?.imdb_id || existingDb.imdb_id || null;
+const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : (existingDb.imdb_url || null);
+
 return [{
   json: {
     tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
@@ -345,6 +349,8 @@ return [{
     backdrop_path: credits.backdrop_path || result?.backdrop_path || existingDb.backdrop_path || '',
     trailer_url: finalTrailerUrl,
     trailer_title: finalTrailerTitle,
+    imdb_id: imdbId,
+    imdb_url: imdbUrl,
     update_reason: updateReason
   }
 }];
