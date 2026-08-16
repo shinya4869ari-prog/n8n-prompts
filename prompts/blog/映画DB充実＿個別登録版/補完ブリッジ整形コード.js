@@ -1,57 +1,33 @@
 /**
- * 補完ブリッジ整形コード（安全・完全取得版）
- * 役割: 映画DB充実ワークフローの各ノード（TMDb/Brave/Geminiあらすじ/キャスト翻訳AI等）のデータを安全に一括集約し、
- *       映画データ補完ワークフロー（Gemini）への入力JSONに変換する
+ * 補完ブリッジ整形コード（スリム＆高速版）
+ * 役割: 各ノード（TMDb/Brave/Geminiあらすじ/キャスト翻訳等）のデータを集約し、後続の補完AIノードへ渡す
  */
 function getNode(name) {
   try { return $(name).first()?.json || $(name).item?.json || {}; } catch(e) { return {}; }
 }
 
-// 映画データ整形コードの取得
-const shaped = (() => {
-  return getNode('映画データ整形コード');
-})();
-
-// AI抽出ヘルパー関数
-function extractTextFromAiNode(node) {
+function extractAiText(node) {
   if (!node) return '';
   if (typeof node === 'string') return node;
   if (node.text) return node.text;
   if (node.output) return node.output;
-  if (node.content?.parts && Array.isArray(node.content.parts)) {
-    return node.content.parts.map(p => p.text || '').join('\n');
-  }
-  if (node.candidates?.[0]?.content?.parts) {
-    return node.candidates[0].content.parts.map(p => p.text || '').join('\n');
-  }
-  if (node.message?.content) {
-    return typeof node.message.content === 'string' ? node.message.content : JSON.stringify(node.message.content);
-  }
+  if (Array.isArray(node.content?.parts)) return node.content.parts.map(p => p.text || '').join('\n');
+  if (Array.isArray(node.candidates?.[0]?.content?.parts)) return node.candidates[0].content.parts.map(p => p.text || '').join('\n');
+  if (node.message?.content) return typeof node.message.content === 'string' ? node.message.content : JSON.stringify(node.message.content);
   return '';
 }
 
-// 🎯 キャスト・監督翻訳AIのパース（$input最優先で確実にAIのカタカナ翻訳を採用）
+// 1. 映画データ整形コードの取得
+const shaped = getNode('映画データ整形コード');
+
+// 2. 🎯 キャスト翻訳AIのパース（$input最優先 ➔ キャスト翻訳ノード）
 const parsedCast = (() => {
   try {
-    const candidates = [
-      $input.first()?.json,
-      $input.item?.json,
-      getNode('キャスト翻訳'),
-      getNode('キャスト・監督翻訳AI'),
-      getNode('キャスト監督翻訳AI'),
-      getNode('gemini_movie_db'),
-      getNode('Google Gemini'),
-      getNode('Gemini'),
-      getNode('claude_movie_db'),
-      getNode('Claude')
-    ];
-
+    const candidates = [$input.first()?.json, $input.item?.json, getNode('キャスト翻訳')];
     for (const c of candidates) {
       if (!c) continue;
-      if (c.cast && typeof c.cast === 'string' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(c.cast) && !c.idx) {
-        return c;
-      }
-      const raw = extractTextFromAiNode(c);
+      if (c.cast && typeof c.cast === 'string' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(c.cast) && !c.idx) return c;
+      const raw = extractAiText(c);
       if (raw && (raw.includes('"cast"') || raw.includes('cast'))) {
         const clean = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();
         const jsonMatch = clean.match(/\{[\s\S]*\}/);
@@ -65,17 +41,10 @@ const parsedCast = (() => {
   } catch(e) { return {}; }
 })();
 
-// あらすじの取得（gemini_movie_db ➔ 整形コード の優先順で自動選択）
+// 3. あらすじの取得（gemini_movie_db ➔ shaped）
 const aiOverview = (() => {
   try {
-    const g = getNode('gemini_movie_db');
-    let raw = g.text || g.output || '';
-    if (!raw && g.candidates?.[0]?.content?.parts) {
-      raw = g.candidates[0].content.parts.map(p => p.text || '').join('');
-    }
-    if (!raw && g.content?.parts) {
-      raw = g.content.parts.map(p => p.text || '').join('');
-    }
+    const raw = extractAiText(getNode('gemini_movie_db'));
     if (raw && !raw.includes('申し訳') && !raw.includes('情報が') && raw.trim().length > 20) {
       return raw.trim();
     }
@@ -83,18 +52,13 @@ const aiOverview = (() => {
   return shaped.overview || '';
 })();
 
-// Brave Search_trailer からの予告編 URL 抽出（日本国内で再生可能な公式予告編を優先取得）
+// 4. Brave Search_trailer からの予告編 URL 抽出
 const trailerUrl = (() => {
   try {
     const b = getNode('Brave Search_trailer');
     const videos = b?.results || b?.videos?.results || (Array.isArray(b) ? b : []);
     if (Array.isArray(videos) && videos.length > 0) {
-      const kwList = [
-        shaped.title, shaped.origin_title, shaped.director,
-        '予告', '予告編', 'PV', '公式', '日本'
-      ].filter(Boolean).map(s => String(s).toLowerCase());
-
-      // 1. タイトル＋「予告」または「公式」が含まれる YouTube 動画（日本国内再生可能な公式予告編）を最優先
+      const kwList = [shaped.title, shaped.origin_title, shaped.director, '予告', '予告編', 'PV', '公式', '日本'].filter(Boolean).map(s => String(s).toLowerCase());
       const matchedVid = videos.find(v => {
         const url = v.url || v.profile?.url || '';
         if (!url.includes('youtube.com')) return false;
@@ -103,7 +67,6 @@ const trailerUrl = (() => {
       });
       if (matchedVid) return matchedVid.url || matchedVid.profile?.url;
 
-      // 2. 予告編キーワード(trailer/予告)を含む YouTube 動画
       const trailerVid = videos.find(v => {
         const url = v.url || v.profile?.url || '';
         const text = ((v.title || '') + ' ' + (v.description || '')).toLowerCase();
@@ -112,29 +75,24 @@ const trailerUrl = (() => {
       if (trailerVid) return trailerVid.url || trailerVid.profile?.url;
     }
   } catch(e) {}
-  
-  if (shaped.trailer_url && shaped.trailer_url.includes('youtube.com')) return shaped.trailer_url;
-  return null;
+  return (shaped.trailer_url && shaped.trailer_url.includes('youtube.com')) ? shaped.trailer_url : null;
 })();
 
-// Brave 検索結果の取得（Webテキスト）
+// 5. Brave 検索結果の取得
 const braveResult = (() => {
   try {
-    const bList = [getNode('Brave Search web'), getNode('Brave Search_movie'), getNode('Brave Search')];
-    for (const b of bList) {
-      const res = b.web?.results || b.results;
-      if (Array.isArray(res) && res.length > 0) {
-        return res.slice(0, 5).map(r => r.movie?.description || r.description || '').filter(Boolean).join('\n');
-      }
+    const b = getNode('Brave Search_movie') || getNode('Brave Search web');
+    const res = b.web?.results || b.results;
+    if (Array.isArray(res) && res.length > 0) {
+      return res.slice(0, 5).map(r => r.movie?.description || r.description || '').filter(Boolean).join('\n');
     }
   } catch(e) {}
   return '';
 })();
 
-// 日本語判定
+// 日本語判定 & キャスト・監督のマージ
 const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
 
-// AIが翻訳した日本語カタカナキャストを最優先。もしAIに不備があればshapedのデータを使用
 const finalCast = (parsedCast.cast && isJapanese(parsedCast.cast)) 
   ? parsedCast.cast 
   : (isJapanese(shaped.cast) ? shaped.cast : (parsedCast.cast || shaped.cast || ''));
