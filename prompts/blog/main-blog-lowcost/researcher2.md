@@ -31,13 +31,18 @@
 
 ---
 
-## 【⑥ 直近の動向（最新6ヶ月）】
-- 最新の政治・経済・社会の動向（大規模な外交・通商協定の批准、重要な法改正、税制改革など、国家のあり方を変える重大なニュースを優先すること）。
-- 読者が驚くような特徴的な統計や習慣（記事未登場のものを優先）
-- 日本との関連性・影響
-- 検索クエリ：「{{ $json.countryEn }} latest news and current affairs {{ $json.now_year }}」
-- 検索クエリ：「{{ $json.countryEn }} major political developments economic reforms latest news」
-- 検索クエリ：「{{ $json.countryEn }} international agreement treaty EU relations latest news 2026」
+## 【⑥ 直近の動向（最新の情勢・社会・文化・日本との関わり）】
+以下の3項目をWeb検索して**必ず具体的に記述すること（「欠測」「なし」は厳禁）**。
+
+1. **政治経済社会**：最新の政治情勢、選挙、法改正、経済政策、主要な社会問題など、国家の現状を象徴する重要な動き。
+2. **驚く統計や習慣**：その国特有の驚くべき文化・習慣・ライフスタイル・最新の社会的トレンド。
+3. **日本との関連**：日本との外交関係、貿易・投資、観光・ワーキングホリデー、文化交流や共通の課題。
+
+**推奨検索クエリ：**
+- 「{{ $json.country }} 最新ニュース 政治 経済 社会 {{ $json.now_year }}」
+- 「{{ $json.country }} 文化 習慣 トレンド 特徴」
+- 「{{ $json.country }} 日本 関係 外交 貿易 交流」
+- 「{{ $json.countryEn }} latest news political economic developments」
 
 ---
 
