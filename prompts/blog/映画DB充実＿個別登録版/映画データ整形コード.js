@@ -385,6 +385,10 @@ const detectPlatform = () => {
 };
 const finalPlatform = detectPlatform();
 
+// 🎯【IMDb ID / URL の自動抽出】
+const imdbId = credits.external_ids?.imdb_id || result?.external_ids?.imdb_id || t1?.external_ids?.imdb_id || t2?.external_ids?.imdb_id || existingDb.imdb_id || null;
+const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : (existingDb.imdb_url || null);
+
 return [{
   json: {
     idx: existingDb.idx || sourceData.idx || null,
