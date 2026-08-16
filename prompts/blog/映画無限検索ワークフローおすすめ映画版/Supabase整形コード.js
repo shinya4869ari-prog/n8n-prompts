@@ -110,11 +110,36 @@ function hangulToKatakanaChar(char) {
   return baseKata + jongKata;
 }
 
+const SPECIAL_NAMES = {
+  '지니': 'ジニ',
+  'ジ・ニ': 'ジニ',
+  'アイ・ユー': 'アイユー',
+  '아이유': 'アイユー',
+  '수지': 'スジ',
+  '보아': 'BoA',
+  '싸이': 'PSY',
+  '원빈': 'ウォンビン',
+  '현빈': 'ヒョンビン',
+  '비': 'ピ',
+  '태양': 'テヤン',
+  '지드래곤': 'G-DRAGON',
+  '윤아': 'ユナ',
+  '서현': 'ソヒョン',
+  '유리': 'ユリ',
+  '수영': 'スヨン',
+  '효연': 'ヒョヨン',
+  '써니': 'サニー',
+  '티파니': 'ティファニー',
+  '태연': 'テヨン',
+  '공유': 'コン・ユ'
+};
+
 const toKatakanaIfHangul = (text) => {
   if (!text || typeof text !== 'string') return text;
-  return text.split(/([,/、\n\s|]+)/).map(segment => {
+  let converted = text.split(/([,/、\n\s|]+)/).map(segment => {
     if (/^[,/、\n\s|]+$/.test(segment)) return segment;
     const trimmed = segment.trim();
+    if (SPECIAL_NAMES[trimmed]) return SPECIAL_NAMES[trimmed];
     if (!/[\uac00-\ud7af]/.test(trimmed)) return segment;
 
     const chars = Array.from(trimmed);
@@ -126,6 +151,14 @@ const toKatakanaIfHangul = (text) => {
     }
     return chars.map(c => /[\uac00-\ud7af]/.test(c) ? hangulToKatakanaChar(c) : c).join('');
   }).join('').replace(/,\s*/g, ', ');
+
+  converted = converted
+    .replace(/(^|[,/、\n\s|])ジョ・/g, '$1チョ・')
+    .replace(/(^|[,/、\n\s|])ジュ・/g, '$1チュ・')
+    .replace(/(^|[,/、\n\s|])ジャ・/g, '$1チャ・')
+    .replace(/(^|[,/、\n\s|])ジ・ニ(?=[,/、\n\s|]|$)/g, '$1ジニ');
+
+  return converted;
 };
 
 const splitNames = (str) => {
