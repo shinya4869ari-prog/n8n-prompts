@@ -15,18 +15,34 @@ try {
   trig = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
 } catch (e) {}
 
-const countryName = input.country_name || input.country || trig.country_name || trig.country || '対象国';
+// 2. AI(Perplexity/Claude/Gemini)の文字列化されたJSONレスポンスを安全に展開
+let parsedData = {};
+const rawStringCandidates = [input.message, input.text, input.output, input.article, input.content];
+for (const cand of rawStringCandidates) {
+  if (typeof cand === 'string') {
+    const cleanCand = cand.replace(/```json/gi, '').replace(/```/g, '').trim();
+    if (cleanCand.startsWith('{') && cleanCand.endsWith('}')) {
+      try {
+        parsedData = JSON.parse(cleanCand);
+        break;
+      } catch (e) {}
+    }
+  }
+}
 
-// 2. 直近の動向データの取得（手入力フォーム or AIオブジェクト両対応）
-const doukouObj = input.直近の動向 || input.doukou || input.data?.対象国データ_記事?.直近の動向 || input;
+const merged = { ...input, ...parsedData };
+const countryName = merged.country_name || merged.country || trig.country_name || trig.country || '対象国';
 
-let politics = doukouObj.政治経済社会 || doukouObj.political_social || trig.政治経済社会 || trig.politics || '';
+// 3. 直近の動向データの取得（手入力フォーム、AIオブジェクト、Perplexityレスポンス全対応）
+const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged;
+
+let politics = doukouObj.政治経済社会 || doukouObj.political_social || doukouObj.politics || trig.政治経済社会 || trig.politics || '';
 let stats = doukouObj['驚きの統計・習慣'] || doukouObj.驚く統計や習慣 || doukouObj.驚きの統計 || doukouObj.stats || trig['驚きの統計・習慣'] || trig.stats || '';
 let japan = doukouObj.日本との関連 || doukouObj.japan_relation || doukouObj.japan || trig.日本との関連 || trig.japan || '';
 let cite = doukouObj.出典 || doukouObj.source || doukouObj.cite || trig.出典 || trig.source || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
 
 // 全体の直接入力テキストがある場合（<p>【政治経済社会】</p>...等が含まれる場合）
-let rawText = input.raw_text || input.article || input.text || trig.raw_text || '';
+let rawText = merged.raw_text || merged.article || merged.text || trig.raw_text || '';
 
 // 3. エラーネコの一言
 let nekoComment = input.neko || input.error_neko || input.エラーネコ || trig.neko || trig.error_neko || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
