@@ -115,7 +115,7 @@ return [{
   json: {
     section_type: 'doukou',
     country: countryName,
-    post_id: merged.post_id || trig.post_id || input.post_id || '2022',
+    post_id: merged.post_id || trig.post_id || input.post_id || null,
     section_html: sectionHtml,
     html: sectionHtml
   }
