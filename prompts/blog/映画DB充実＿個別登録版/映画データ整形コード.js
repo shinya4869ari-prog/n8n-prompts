@@ -370,26 +370,34 @@ const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : (existingDb.i
 
 return [{
   json: {
-    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
-    wikidata_id: fetchedWikidataId,
+    idx: existingDb.idx || sourceData.idx || null,
+    created_at: existingDb.created_at || sourceData.created_at || null,
+    country: finalCountry,
+    year: String(releaseDateStr).substring(0, 4),
+    genres: finalGenres,
+
     title: movieTitle,
     origin_title: finalOriginTitle,
-    year: String(releaseDateStr).substring(0, 4),
-    country: finalCountry,
-    genres: finalGenres,
+
     director: finalDirector,
     director_en: finalDirectorEn,
     cast: finalCast,
     cast_en: finalCastEn,
+
     overview: finalOverview,
     overview_en: finalOverviewEn,
+
     poster_path: rawPoster,
     poster_url: finalPosterUrl,
     backdrop_path: credits.backdrop_path || result?.backdrop_path || existingDb.backdrop_path || '',
     trailer_url: finalTrailerUrl,
     trailer_title: finalTrailerTitle,
+
     imdb_id: imdbId,
     imdb_url: imdbUrl,
-    update_reason: updateReason
+    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
+    wikidata_id: fetchedWikidataId,
+
+    raw_response: isExisting ? { status: updateReason, id: existingDb.id } : { status: updateReason }
   }
 }];

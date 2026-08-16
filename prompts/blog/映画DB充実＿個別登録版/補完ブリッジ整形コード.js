@@ -104,14 +104,13 @@ const finalDirectorEn = parsedCast.director_en || shaped.director_en || '';
 return [{
   json: {
     idx: shaped.idx || null,
-    tmdb_id: shaped.tmdb_id || null,
-    wikidata_id: shaped.wikidata_id || null,
+    created_at: shaped.created_at || null,
+    country: shaped.country || 'KR',
+    year: shaped.year || '',
+    genres: shaped.genres || '',
 
     title: parsedCast.title || shaped.title || shaped.origin_title || '',
     origin_title: shaped.origin_title || shaped.title || '',
-    year: shaped.year || '',
-    country: shaped.country || 'KR',
-    genres: shaped.genres || '',
 
     director: finalDirector,
     director_en: finalDirectorEn,
@@ -125,8 +124,10 @@ return [{
     trailer_url: trailerUrl || '',
     imdb_id: shaped.imdb_id || null,
     imdb_url: shaped.imdb_url || (shaped.imdb_id ? `https://www.imdb.com/title/${shaped.imdb_id}/` : null),
-    brave_search_result: braveResult,
+    tmdb_id: shaped.tmdb_id || null,
+    wikidata_id: shaped.wikidata_id || null,
 
+    brave_search_result: braveResult,
     audit_status: 'PENDING_AUDIT'
   }
 }];

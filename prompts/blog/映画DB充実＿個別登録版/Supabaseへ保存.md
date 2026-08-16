@@ -1,9 +1,9 @@
 {
+  "country": {{ JSON.stringify($json.country || '') }},
+  "year": {{ JSON.stringify(String($json.year || '')) }},
+  "genres": {{ JSON.stringify($json.genres || '') }},
   "title": {{ JSON.stringify($json.title || '') }},
   "origin_title": {{ JSON.stringify($json.origin_title || '') }},
-  "year": {{ JSON.stringify(String($json.year || '')) }},
-  "country": {{ JSON.stringify($json.country || '') }},
-  "genres": {{ JSON.stringify($json.genres || '') }},
   "director": {{ JSON.stringify($json.director || '') }},
   "director_en": {{ JSON.stringify($json.director_en || '') }},
   "cast": {{ JSON.stringify($json.cast || '') }},
