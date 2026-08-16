@@ -1070,7 +1070,6 @@ return [articleItem].map(item => {
       const movieInfo = (
         apiData?.概要 || 
         apiData?.overview || 
-        apiData?.ai_summary || 
         moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
         ''
       ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
@@ -1201,7 +1200,6 @@ return [articleItem].map(item => {
       const rankingInfo = (
         apiData?.概要 || 
         apiData?.overview || 
-        apiData?.ai_summary || 
         moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
         ''
       ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
