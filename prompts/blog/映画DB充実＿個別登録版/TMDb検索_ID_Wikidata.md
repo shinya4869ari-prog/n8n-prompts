@@ -1,8 +1,3 @@
-【TMDb検索_ID/Wikidata ノード URL 設定】
-
-### 💻 URL 欄に貼り付けるコード（Expression `fx`）
-
-```text
 https://api.themoviedb.org/3/{{
   (() => {
     let sourceNode = {};
@@ -30,7 +25,6 @@ https://api.themoviedb.org/3/{{
     let selectedQid = null;
 
     if (Array.isArray(searchList) && searchList.length > 0) {
-      // スニペットとキーワードの一致度スコアリング
       let bestItem = null;
       let maxScore = -1;
 
@@ -52,7 +46,6 @@ https://api.themoviedb.org/3/{{
       if (bestItem && maxScore > 0) {
         selectedQid = bestItem.title;
       } else {
-        // キーワード一致がない場合は、TVシリーズのID候補（末尾）または先頭を選択
         selectedQid = searchList[searchList.length - 1]?.title || searchList[0]?.title;
       }
     }
@@ -66,4 +59,3 @@ https://api.themoviedb.org/3/{{
     return `find/${tmdbId}`;
   })()
 }}
-```
