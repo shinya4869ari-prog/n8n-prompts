@@ -138,6 +138,8 @@ return [{
 
     poster_url: shaped.poster_url || (shaped.poster_path ? (shaped.poster_path.startsWith('http') ? shaped.poster_path : `https://image.tmdb.org/t/p/w500${shaped.poster_path}`) : ''),
     trailer_url: trailerUrl || '',
+    imdb_id: shaped.imdb_id || null,
+    imdb_url: shaped.imdb_url || (shaped.imdb_id ? `https://www.imdb.com/title/${shaped.imdb_id}/` : null),
     brave_search_result: braveResult,
 
     audit_status: 'PENDING_AUDIT'

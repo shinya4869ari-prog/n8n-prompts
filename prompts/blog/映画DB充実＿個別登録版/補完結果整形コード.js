@@ -143,6 +143,9 @@ return items.map((item, index) => {
     poster_url: poster_url,
     trailer_url: trailer_url,
 
+    imdb_id: source.imdb_id || targetAi.imdb_id || null,
+    imdb_url: source.imdb_url || targetAi.imdb_url || (source.imdb_id ? `https://www.imdb.com/title/${source.imdb_id}/` : null),
+
     tmdb_id: tmdb_id,
     wikidata_id: (() => {
       const rawId = source.wikidata_id || targetAi.wikidata_id || null;
@@ -165,6 +168,7 @@ return items.map((item, index) => {
   if ((!source.genres || source.genres !== updatedRecord.genres) && updatedRecord.genres) changes.push("補完: genres");
   if ((!source.wikidata_id || source.wikidata_id !== updatedRecord.wikidata_id) && updatedRecord.wikidata_id) changes.push("補完: wikidata_id");
   if ((!source.tmdb_id || source.tmdb_id !== updatedRecord.tmdb_id) && updatedRecord.tmdb_id) changes.push("補完: tmdb_id");
+  if ((!source.imdb_id || source.imdb_id !== updatedRecord.imdb_id) && updatedRecord.imdb_id) changes.push("補完: imdb_id");
 
   if (source.tmdb_id && updatedRecord.tmdb_id === null) changes.push("誤データ削除: tmdb_id");
   if (source.poster_url && updatedRecord.poster_url === "") changes.push("誤データ削除: poster_url");
