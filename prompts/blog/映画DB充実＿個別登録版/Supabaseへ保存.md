@@ -2,6 +2,8 @@
   "country": {{ JSON.stringify($json.country || '') }},
   "year": {{ JSON.stringify(String($json.year || '')) }},
   "genres": {{ JSON.stringify($json.genres || '') }},
+  "wikidata_id": {{ JSON.stringify($json.wikidata_id || '') }},
+  "tmdb_id": {{ $json.tmdb_id || null }},
   "title": {{ JSON.stringify($json.title || '') }},
   "origin_title": {{ JSON.stringify($json.origin_title || '') }},
   "director": {{ JSON.stringify($json.director || '') }},
@@ -13,7 +15,5 @@
   "poster_url": {{ JSON.stringify($json.poster_url || '') }},
   "trailer_url": {{ JSON.stringify($json.trailer_url || '') }},
   "imdb_id": {{ JSON.stringify($json.imdb_id || null) }},
-  "imdb_url": {{ JSON.stringify($json.imdb_url || '') }},
-  "tmdb_id": {{ $json.tmdb_id || null }},
-  "wikidata_id": {{ JSON.stringify($json.wikidata_id || '') }}
+  "imdb_url": {{ JSON.stringify($json.imdb_url || '') }}
 }

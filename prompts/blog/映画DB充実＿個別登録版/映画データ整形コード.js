@@ -376,6 +376,9 @@ return [{
     year: String(releaseDateStr).substring(0, 4),
     genres: finalGenres,
 
+    wikidata_id: fetchedWikidataId,
+    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
+
     title: movieTitle,
     origin_title: finalOriginTitle,
 
@@ -395,8 +398,6 @@ return [{
 
     imdb_id: imdbId,
     imdb_url: imdbUrl,
-    tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
-    wikidata_id: fetchedWikidataId,
 
     raw_response: isExisting ? { status: updateReason, id: existingDb.id } : { status: updateReason }
   }

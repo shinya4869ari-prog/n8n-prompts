@@ -109,6 +109,9 @@ return [{
     year: shaped.year || '',
     genres: shaped.genres || '',
 
+    wikidata_id: shaped.wikidata_id || null,
+    tmdb_id: shaped.tmdb_id || null,
+
     title: parsedCast.title || shaped.title || shaped.origin_title || '',
     origin_title: shaped.origin_title || shaped.title || '',
 
@@ -124,8 +127,6 @@ return [{
     trailer_url: trailerUrl || '',
     imdb_id: shaped.imdb_id || null,
     imdb_url: shaped.imdb_url || (shaped.imdb_id ? `https://www.imdb.com/title/${shaped.imdb_id}/` : null),
-    tmdb_id: shaped.tmdb_id || null,
-    wikidata_id: shaped.wikidata_id || null,
 
     brave_search_result: braveResult,
     audit_status: 'PENDING_AUDIT'

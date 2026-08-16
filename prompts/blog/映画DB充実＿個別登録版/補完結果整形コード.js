@@ -128,6 +128,12 @@ return items.map((item, index) => {
     year: targetAi.year || source.year || null,
     genres: cleanGenres(rawGenre),
 
+    wikidata_id: (() => {
+      const rawId = source.wikidata_id || targetAi.wikidata_id || null;
+      return (rawId && /^Q\d+$/.test(rawId)) ? rawId : null;
+    })(),
+    tmdb_id: tmdb_id,
+
     title: cleanKatakanaHyphens(title),
     origin_title: origin_title,
 
@@ -145,12 +151,6 @@ return items.map((item, index) => {
 
     imdb_id: source.imdb_id || targetAi.imdb_id || null,
     imdb_url: source.imdb_url || targetAi.imdb_url || (source.imdb_id ? `https://www.imdb.com/title/${source.imdb_id}/` : null),
-
-    tmdb_id: tmdb_id,
-    wikidata_id: (() => {
-      const rawId = source.wikidata_id || targetAi.wikidata_id || null;
-      return (rawId && /^Q\d+$/.test(rawId)) ? rawId : null;
-    })(),
 
     audit_status: targetAi.audit_status || "OK"
   };
