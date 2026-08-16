@@ -48,7 +48,7 @@ if (rawPosterPath && (rawPosterPath.includes('v6v6v6') || rawPosterPath.includes
 }
 const posterPath = rawPosterPath;
 
-// 2. 🎯 本物の Wikidata ID（QID）の抽出（TMDb external_ids優先・ダミーID自動除外）
+// 2. 🎯 本物の Wikidata ID（QID）& IMDb ID の抽出
 let wikidata_id = null;
 const tmdbWikiId = result?.external_ids?.wikidata_id || tmdb?.external_ids?.wikidata_id;
 if (tmdbWikiId && /^Q\d+$/.test(tmdbWikiId)) {
@@ -56,6 +56,10 @@ if (tmdbWikiId && /^Q\d+$/.test(tmdbWikiId)) {
 } else if (sourceData.wikidata_id && /^Q\d+$/.test(sourceData.wikidata_id) && !sourceData.wikidata_id.startsWith('Q_TMDB_')) {
   wikidata_id = sourceData.wikidata_id;
 }
+
+const tmdbImdbId = result?.external_ids?.imdb_id || tmdb?.external_ids?.imdb_id;
+let imdb_id = (tmdbImdbId && /^tt\d+$/.test(tmdbImdbId)) ? tmdbImdbId : (sourceData.imdb_id || null);
+const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}/` : (sourceData.imdb_url || null);
 
 const tmdb_id = sourceData.tmdb_id || result?.id || null;
 
@@ -265,5 +269,7 @@ return [{
     cast_en: cleanStr(sourceData.cast_en || fetchedCastEn || null),
     poster_url: posterPath,
     trailer_url,
+    imdb_id,
+    imdb_url
   }
 }];

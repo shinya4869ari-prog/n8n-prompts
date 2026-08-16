@@ -111,8 +111,12 @@ items.forEach(d => {
       if (cleanId) imdbUrl = `https://www.imdb.com/title/${cleanId}/`;
     }
   }
-  if (!imdbUrl && (titleOrig || titleJa)) {
-    imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(titleOrig || titleJa)}`;
+  if (!imdbUrl) {
+    const isHangul = /[\uac00-\ud7af]/.test(titleOrig);
+    const searchTarget = (!isHangul && titleOrig) ? titleOrig : (d.title_en || d.english_title || titleJa || titleOrig);
+    if (searchTarget) {
+      imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(searchTarget)}`;
+    }
   }
 
   const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
