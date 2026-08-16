@@ -1,35 +1,22 @@
 /**
- * 【⑦ 直近の動向 セクション個別更新 HTML生成コード】
+ * 【⑦ 直近の動向 セクション個別更新 HTML生成コード（万能自動仕分け版）】
  * 
  * 役割:
- * 1. フォームからの直接手入力（政治経済社会、驚きの統計、日本との関連、出典、エラーネコ）
- * 2. または AI / Perplexity / DB からのデータ
- * を受け取り、WordPress の <!-- SECTION:doukou:START --> ... <!-- SECTION:doukou:END --> を美しく構築します。
+ * 1. 1つの入力欄にまとめて貼り付けられた文章（【政治経済社会】、驚きの統計、日本との関連、出典、ネコ）
+ * 2. または Perplexity / AI の生JSON
+ * 3. または 各種個別フィールド
+ * を完全自動で判別・仕分けし、WordPress の <!-- SECTION:doukou:START --> ... <!-- SECTION:doukou:END --> を構築します。
  */
 
-const rawInput = $input.first()?.json || {};
+const input = $input.first()?.json || {};
 
-// 1. テスト実行用（INPUTが「No data」のときに自動採用されるデータ）
-const defaultData = {
-  section_type: 'doukou',
-  post_id: '2022',
-  country: '韓国',
-  '政治経済社会': '2026年3月18日のEU・韓国共同委員会では、安全保障防衛パートナーシップの下での協力継続とデジタル貿易協定の実施、Horizon Europe参加に関する成果が確認された。4月17日には韓国とEUが「戦略的経済パートナーシップ」を形成し、貿易・経済安全保障・供給網・技術協力を深める方向で一致。6月10日にはEUと韓国がデジタル貿易協定に正式署名した。',
-  '驚きの統計・習慣': 'EU・韓国の自由貿易協定は2011年以降、2025年まで年平均5.3%で物品貿易が増加した。また、韓国はEUにとって第3位の貿易相手であり、EUは韓国にとって第8位の主要貿易相手と位置づけられている。',
-  '日本との関連': '韓国の対EU経済・安全保障連携の深化は、先端産業のサプライチェーン、デジタル規制、経済安全保障の面で日本企業や日本の対外戦略にも大きな影響を与える。',
-  '出典': 'EU-Republic of Korea Summit Joint Statement / 韓国産業通商資源部（MOTIR）/ EEAS',
-  'neko': '米中対立の狭間で揺れる中、韓国がEUとデジタル貿易協定を結んで先端産業のサプライチェーンをガッチリ固めにかかっているニャ！同じハイテク立国の日本もうかうかしてられないニャ…'
-};
-
-const input = (Object.keys(rawInput).length > 0) ? rawInput : defaultData;
-
-// 2. トリガーまたは入力データから情報を取得
+// 1. トリガーまたは入力データから情報を取得
 let trig = {};
 try {
   trig = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
 } catch (e) {}
 
-// 2. AI(Perplexity/Claude/Gemini)の文字列化されたJSONレスポンスを安全に展開
+// 2. AI(Perplexity/Claude/Gemini)の文字列化されたJSONレスポンスがあれば展開
 let parsedData = {};
 const rawStringCandidates = [input.message, input.text, input.output, input.article, input.content, input.response, input.body];
 for (const cand of rawStringCandidates) {
@@ -50,10 +37,46 @@ for (const cand of rawStringCandidates) {
 const merged = { ...trig, ...input, ...parsedData };
 const countryName = merged.country_name || merged.country || trig.country_name || trig.country || '対象国';
 
-// 3. 直近の動向データの取得（手入力フォーム、AIオブジェクト、Perplexityレスポンス全対応）
+// 3. まとめて貼り付けられた生テキストの自動仕分けパーサー
+function parseAllInOneText(text) {
+  if (!text || typeof text !== 'string') return {};
+  
+  let politics = '';
+  let stats = '';
+  let japan = '';
+  let cite = '';
+  let neko = '';
+
+  const polMatch = text.match(/【政治経済社会】([\s\S]*?)(?=(?:🔍|•|・|\*|-)?\s*(?:驚き|驚く|統計|日本|出典|🐱|エラーネコ|$))/i);
+  if (polMatch) politics = polMatch[1].trim();
+
+  const statsMatch = text.match(/(?:🔍|•|・|\*|-)?\s*(?:驚き|驚く|統計).*?[：:\n]([\s\S]*?)(?=(?:🇯🇵|•|・|\*|-)?\s*日本|出典|🐱|エラーネコ|$)/i);
+  if (statsMatch) stats = statsMatch[1].trim();
+
+  const japMatch = text.match(/(?:🇯🇵|•|・|\*|-)?\s*日本との関連.*?[：:\n]([\s\S]*?)(?=(?:出典|🐱|エラーネコ|$))/i);
+  if (japMatch) japan = japMatch[1].trim();
+
+  const citeMatch = text.match(/出典\s*[：:]([\s\S]*?)(?=(?:🐱|エラーネコ|$))/i);
+  if (citeMatch) cite = citeMatch[1].trim();
+
+  const nekoMatch = text.match(/(?:🐱\s*)?エラーネコ(?:の一言)?[：:]([\s\S]*)$/i);
+  if (nekoMatch) neko = nekoMatch[1].trim();
+
+  return { politics, stats, japan, cite, neko };
+}
+
+// まとめて入力されたテキスト（content, text, raw_text, body等）を探す
+let rawBlock = merged.content || merged.text || merged.raw_text || merged.article || merged.doukou_text || trig.content || trig.text || '';
+let parsedFromText = {};
+if (rawBlock && typeof rawBlock === 'string' && (rawBlock.includes('【政治経済社会】') || rawBlock.includes('政治') || rawBlock.includes('動向'))) {
+  parsedFromText = parseAllInOneText(rawBlock);
+}
+
+// 4. 直近の動向オブジェクトの抽出（オブジェクト、一括テキスト、個別フィールドの統合）
 const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged.data?.直近の動向 || merged;
 
-const getField = (keys) => {
+const getField = (keys, fallbackFromText = '') => {
+  if (fallbackFromText) return fallbackFromText;
   for (const k of keys) {
     if (doukouObj && doukouObj[k]) return doukouObj[k];
     if (merged && merged[k]) return merged[k];
@@ -62,16 +85,11 @@ const getField = (keys) => {
   return '';
 };
 
-let politics = getField(['政治経済社会', '政治・経済・社会', '政治経済', 'political_social', 'politics', 'text1']);
-let stats = getField(['驚きの統計・習慣', '驚く統計や習慣', '驚きの統計', '統計・習慣', 'stats', 'culture', 'text2']);
-let japan = getField(['日本との関連', '日本関係', '対日関係', 'japan_relation', 'japan', 'text3']);
-let cite = getField(['出典', 'source', 'cite']) || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
-
-// 全体の直接入力テキストがある場合（<p>【政治経済社会】</p>...等が含まれる場合）
-let rawText = merged.raw_text || merged.article || merged.text || trig.raw_text || '';
-
-// 4. エラーネコの一言
-let nekoComment = getField(['neko', 'error_neko', 'エラーネコ', 'ネコの一言', 'comment']) || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
+let politics = getField(['政治経済社会', '政治・経済・社会', '政治経済', 'political_social', 'politics', 'text1'], parsedFromText.politics);
+let stats = getField(['驚きの統計・習慣', '驚く統計や習慣', '驚きの統計', '統計・習慣', 'stats', 'culture', 'text2'], parsedFromText.stats);
+let japan = getField(['日本との関連', '日本関係', '対日関係', 'japan_relation', 'japan', 'text3'], parsedFromText.japan);
+let cite = getField(['出典', 'source', 'cite'], parsedFromText.cite) || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
+let nekoComment = getField(['neko', 'error_neko', 'エラーネコ', 'ネコの一言', 'comment'], parsedFromText.neko) || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
 nekoComment = String(nekoComment).replace(/^🐱\s*エラーネコ[：:]\s*/, '').trim();
 
 // 5. HTMLスタイルの定義（最終Code.jsと完全同一）
@@ -91,31 +109,22 @@ function makeNekoBubble(text) {
 </div>`;
 }
 
-// 6. 本文HTMLの構築（ブログ全体の標準フォント・行間に完全一致）
-let contentHtml = '';
+// 6. 本文HTMLの構築
+const formatP = (txt) => {
+  if (!txt) return '';
+  return txt.split(/\n\s*\n|\n/).filter(Boolean).map(p => `<p style="margin-bottom:1.5em;">${p.trim()}</p>`).join('\n');
+};
 
-if (rawText && rawText.includes('【政治経済社会】')) {
-  // 生テキストが直接渡された場合
-  contentHtml = rawText
-    .replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
-} else {
-  // 項目ごとに渡された場合
-  const formatP = (txt) => {
-    if (!txt) return '';
-    return txt.split(/\n\s*\n|\n/).filter(Boolean).map(p => `<p style="margin-bottom:1.5em;">${p.trim()}</p>`).join('\n');
-  };
+const politicsHtml = formatP(politics);
+const statsHtml = stats ? `<p style="margin-bottom:1.5em;">🔍 <strong>驚きの統計・習慣：</strong><br>${stats.replace(/\n/g, '<br>')}</p>` : '';
+const japanHtml = japan ? `<p style="margin-bottom:1.5em;">• <strong>日本との関連：</strong><br>${japan.replace(/\n/g, '<br>')}</p>` : '';
 
-  const politicsHtml = formatP(politics);
-  const statsHtml = stats ? `<p style="margin-bottom:1.5em;">🔍 <strong>驚きの統計・習慣：</strong><br>${stats.replace(/\n/g, '<br>')}</p>` : '';
-  const japanHtml = japan ? `<p style="margin-bottom:1.5em;">• <strong>日本との関連：</strong><br>${japan.replace(/\n/g, '<br>')}</p>` : '';
-
-  contentHtml = `
+let contentHtml = `
 <p>【政治経済社会】</p>
 ${politicsHtml}
 ${statsHtml}
 ${japanHtml}
 `;
-}
 
 let sectionHtml = `<!-- SECTION:doukou:START -->
 <h2 id="section-7" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>
