@@ -137,6 +137,8 @@ return items.map((item, index) => {
     return source.platform || '劇場公開';
   };
 
+  const rawGenre = targetAi.genres || source.genres || null;
+
   // 5. レコード構築
   const updatedRecord = {
     idx: source.idx ?? null,
