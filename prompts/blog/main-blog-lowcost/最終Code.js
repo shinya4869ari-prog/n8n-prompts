@@ -1278,21 +1278,23 @@ return [articleItem].map(item => {
     const musicH2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #ff4081;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
     article += `<h2 id="section-10" style="${musicH2Style}"><span style="background:#ff4081;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑩</span> 特別枠：${countryName} おすすめ音楽・ナショナルサウンドトラック</h2>\n`;
     musicData.forEach((d, idx) => {
-      const trackName = d['曲名'] || d['track_name'] || '';
-      const trackNameEn = d['曲名_英語'] || d['track_name_en'] || '';
-      const artistName = d['アーティスト'] || d['artist_name'] || '';
-      const artistNameEn = d['アーティスト_英語'] || d['artist_name_en'] || '';
-      const releaseYear = d['リリース年'] || d['release_year'] || '';
-      const previewUrl = d['preview_url'] || '';
-      const itunesUrl = d['itunes_url'] || '';
-      const coverUrl = d['ジャケット'] || d['album_cover'] || '';
-      const description = d['概要'] || d['description'] || '';
+      const origItem = Array.isArray(musicData2) ? (musicData2.find(m => (m.track_name && (m.track_name === d['曲名'] || m.track_name === d['track_name'])) || (m.artist_name && (m.artist_name === d['アーティスト'] || m.artist_name === d['artist_name']))) || musicData2[idx]) : null;
+
+      const trackName = d['曲名'] || d['track_name'] || origItem?.track_name || '';
+      const trackNameEn = d['曲名_英語'] || d['track_name_en'] || origItem?.track_name_en || '';
+      const artistName = d['アーティスト'] || d['artist_name'] || origItem?.artist_name || '';
+      const artistNameEn = d['アーティスト_英語'] || d['artist_name_en'] || origItem?.artist_name_en || '';
+      const releaseYear = d['リリース年'] || d['release_year'] || origItem?.release_year || '';
+      const previewUrl = d['preview_url'] || origItem?.preview_url || '';
+      const itunesUrl = d['itunes_url'] || origItem?.itunes_url || '';
+      const coverUrl = d['ジャケット'] || d['album_cover'] || origItem?.album_cover || '';
+      const description = d['概要'] || d['description'] || origItem?.description || '';
 
       const isSameTrack = !trackNameEn || trackNameEn.trim().toLowerCase() === trackName.trim().toLowerCase();
       const isSameArtist = !artistNameEn || artistNameEn.trim().toLowerCase() === artistName.trim().toLowerCase();
 
       const trackTitleSpan = !isSameTrack ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${trackNameEn})</span>` : '';
-      const artistSpan = !isSameArtist ? `<span style="font-size:12px;color:#888;font-weight:normal;margin-left:4px;">(${artistNameEn})</span>` : '';
+      const artistSpan = !isSameArtist ? `<span style="font-size:13px;color:#555;font-weight:bold;margin-left:4px;">(${artistNameEn})</span>` : '';
 
       function encText(t) {
         try { return btoa(unescape(encodeURIComponent(t || ''))); }
