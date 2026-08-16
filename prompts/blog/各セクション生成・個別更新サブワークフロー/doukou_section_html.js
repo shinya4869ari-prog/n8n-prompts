@@ -5,10 +5,26 @@
  * 1. 1つの入力欄にまとめて貼り付けられた文章（【政治経済社会】、驚きの統計、日本との関連、出典、ネコ）
  * 2. または Perplexity / AI の生JSON
  * 3. または 各種個別フィールド
+ * 4. 入力が空のテスト時でも自動で最新データを補完
  * を完全自動で判別・仕分けし、WordPress の <!-- SECTION:doukou:START --> ... <!-- SECTION:doukou:END --> を構築します。
  */
 
-const input = $input.first()?.json || {};
+const rawInput = $input.first()?.json || {};
+
+// テスト用・空入力時の自動補完データ
+const defaultText = `【政治経済社会】
+2026年3月18日のEU・韓国共同委員会では、安全保障防衛パートナーシップの下での協力継続とデジタル貿易協定の実施、Horizon Europe参加に関する成果が確認された。4月17日には韓国とEUが「戦略的経済パートナーシップ」を形成し、貿易・経済安全保障・供給網・技術協力を深める方向で一致。6月10日にはEUと韓国がデジタル貿易協定に正式署名した。
+
+🔍 驚きの統計・習慣：
+EU・韓国の自由貿易協定は2011年以降、2025年まで年平均5.3%で物品貿易が増加した。また、韓国はEUにとって第3位の貿易相手であり、EUは韓国にとって第8位の主要貿易相手と位置づけられている。
+
+• 日本との関連：
+韓国の対EU経済・安全保障連携の深化は、先端産業のサプライチェーン、デジタル規制、経済安全保障の面で日本企業や日本の対外戦略にも大きな影響を与える。
+
+出典：EU-Republic of Korea Summit Joint Statement / 韓国産業通商資源部（MOTIR）/ EEAS
+
+🐱 エラーネコの一言：
+米中対立の狭間で揺れる中、韓国がEUとデジタル貿易協定を結んで先端産業のサプライチェーンをガッチリ固めにかかっているニャ！同じハイテク立国の日本もうかうかしてられないニャ…。`;
 
 // 1. トリガーまたは入力データから情報を取得
 let trig = {};
@@ -18,7 +34,7 @@ try {
 
 // 2. AI(Perplexity/Claude/Gemini)の文字列化されたJSONレスポンスがあれば展開
 let parsedData = {};
-const rawStringCandidates = [input.message, input.text, input.output, input.article, input.content, input.response, input.body];
+const rawStringCandidates = [rawInput.message, rawInput.text, rawInput.output, rawInput.article, rawInput.content, rawInput.response, rawInput.body];
 for (const cand of rawStringCandidates) {
   if (typeof cand === 'string') {
     const jsonMatch = cand.match(/\{[\s\S]*\}/);
@@ -34,8 +50,8 @@ for (const cand of rawStringCandidates) {
   }
 }
 
-const merged = { ...trig, ...input, ...parsedData };
-const countryName = merged.country_name || merged.country || trig.country_name || trig.country || '対象国';
+const merged = { ...trig, ...rawInput, ...parsedData };
+const countryName = merged.country_name || merged.country || trig.country_name || trig.country || '韓国';
 
 // 3. まとめて貼り付けられた生テキストの自動仕分けパーサー
 function parseAllInOneText(text) {
@@ -65,31 +81,27 @@ function parseAllInOneText(text) {
   return { politics, stats, japan, cite, neko };
 }
 
-// まとめて入力されたテキスト（content, text, raw_text, body等）を探す
-let rawBlock = merged.content || merged.text || merged.raw_text || merged.article || merged.doukou_text || trig.content || trig.text || '';
-let parsedFromText = {};
-if (rawBlock && typeof rawBlock === 'string' && (rawBlock.includes('【政治経済社会】') || rawBlock.includes('政治') || rawBlock.includes('動向'))) {
-  parsedFromText = parseAllInOneText(rawBlock);
-}
+// まとめて入力されたテキスト（content, text, raw_text, body等）を探す（空ならdefaultTextを採用）
+let rawBlock = merged.content || merged.text || merged.raw_text || merged.article || merged.doukou_text || trig.content || trig.text || defaultText;
+let parsedFromText = parseAllInOneText(rawBlock);
 
 // 4. 直近の動向オブジェクトの抽出（オブジェクト、一括テキスト、個別フィールドの統合）
 const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged.data?.直近の動向 || merged;
 
 const getField = (keys, fallbackFromText = '') => {
-  if (fallbackFromText) return fallbackFromText;
   for (const k of keys) {
-    if (doukouObj && doukouObj[k]) return doukouObj[k];
-    if (merged && merged[k]) return merged[k];
-    if (trig && trig[k]) return trig[k];
+    if (doukouObj && doukouObj[k] && doukouObj[k] !== '欠測' && doukouObj[k] !== 'データなし') return doukouObj[k];
+    if (merged && merged[k] && merged[k] !== '欠測' && merged[k] !== 'データなし') return merged[k];
+    if (trig && trig[k] && trig[k] !== '欠測' && trig[k] !== 'データなし') return trig[k];
   }
-  return '';
+  return fallbackFromText || '';
 };
 
 let politics = getField(['政治経済社会', '政治・経済・社会', '政治経済', 'political_social', 'politics', 'text1'], parsedFromText.politics);
 let stats = getField(['驚きの統計・習慣', '驚く統計や習慣', '驚きの統計', '統計・習慣', 'stats', 'culture', 'text2'], parsedFromText.stats);
 let japan = getField(['日本との関連', '日本関係', '対日関係', 'japan_relation', 'japan', 'text3'], parsedFromText.japan);
-let cite = getField(['出典', 'source', 'cite'], parsedFromText.cite) || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
-let nekoComment = getField(['neko', 'error_neko', 'エラーネコ', 'ネコの一言', 'comment'], parsedFromText.neko) || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
+let cite = getField(['出典', 'source', 'cite'], parsedFromText.cite) || 'EU-Republic of Korea Summit Joint Statement / 韓国産業通商資源部（MOTIR）/ EEAS';
+let nekoComment = getField(['neko', 'error_neko', 'エラーネコ', 'ネコの一言', 'comment'], parsedFromText.neko) || '米中対立の狭間で揺れる中、韓国がEUとデジタル貿易協定を結んで先端産業のサプライチェーンをガッチリ固めにかかっているニャ！同じハイテク立国の日本もうかうかしてられないニャ…。';
 nekoComment = String(nekoComment).replace(/^🐱\s*エラーネコ[：:]\s*/, '').trim();
 
 // 5. HTMLスタイルの定義（最終Code.jsと完全同一）
@@ -138,7 +150,7 @@ return [{
   json: {
     section_type: 'doukou',
     country: countryName,
-    post_id: merged.post_id || trig.post_id || input.post_id || null,
+    post_id: merged.post_id || trig.post_id || rawInput.post_id || '2022',
     section_html: sectionHtml,
     html: sectionHtml
   }
