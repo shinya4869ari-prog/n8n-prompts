@@ -1,37 +1,51 @@
 https://api.themoviedb.org/3/{{
   (() => {
-    if ($json.id) {
-      const type = $json.media_type || ($json.name ? 'tv' : 'movie');
-      return `${type}/${$json.id}`;
+    let sourceNode = {};
+    const nodeNames = ['入力統一・分割コード', 'On form submission1', '映画ごとにループ実行', 'Loop Over Items'];
+    for (const name of nodeNames) {
+      try {
+        const d = $(name).first()?.json || $(name).item?.json;
+        if (d && (d.title || d.origin_title || d.tmdb_id)) {
+          sourceNode = d;
+          break;
+        }
+      } catch(e) {}
+    }
+    if (!sourceNode.title && !sourceNode.origin_title && !sourceNode.tmdb_id) {
+      sourceNode = $input.item?.json || $input.first()?.json || {};
     }
 
-    const results = $json.results || $json.movie_results || $json.tv_results || [];
-    if (results.length === 0) return 'movie/0';
-    
-    let sourceNode = {};
-    try { sourceNode = $('映画ごとにループ実行').item?.json || {}; } catch(e) {
-      try { sourceNode = $('Loop Over Items').item?.json || {}; } catch(e2) {
-        sourceNode = $input.item?.json || {};
-      }
+    // TMDb検索ノード群から最良の一致を取得
+    let t = {};
+    try { t = $('TMDb検索').first()?.json || $('TMDb検索').item?.json || {}; } catch(e) {}
+    if (!t.id && !t.results) {
+      try { t = $('TMDb検索_タイトル').first()?.json || $('TMDb検索_タイトル').item?.json || {}; } catch(e2) {}
     }
+    
+    const results = t.results || $json.results || t.movie_results || t.tv_results || (t.id ? [t] : ($json.id ? [$json] : []));
+    if (results.length === 0) {
+      const fallbackId = sourceNode.tmdb_id || sourceNode.id || $json.tmdb_id || $json.id || 0;
+      return `movie/${fallbackId}`;
+    }
+    
     const targetTitle = (sourceNode.origin_title || sourceNode.title || '').toLowerCase().trim();
     const targetYear = parseInt(sourceNode.year);
     
     let bestMatch = results[0];
     let bestScore = -Infinity;
     
-    for (const movie of results) {
+    for (const item of results) {
       let score = 0;
-      const movieTitle = (movie.title || movie.name || '').toLowerCase().trim();
-      const movieOrigTitle = (movie.original_title || movie.original_name || '').toLowerCase().trim();
+      const mTitle = (item.title || item.name || '').toLowerCase().trim();
+      const mOrigTitle = (item.original_title || item.original_name || '').toLowerCase().trim();
       
-      if (movieTitle === targetTitle || movieOrigTitle === targetTitle) {
+      if (targetTitle && (mTitle === targetTitle || mOrigTitle === targetTitle)) {
         score += 100;
-      } else if (movieTitle.includes(targetTitle) || movieOrigTitle.includes(targetTitle)) {
+      } else if (targetTitle && (mTitle.includes(targetTitle) || mOrigTitle.includes(targetTitle))) {
         score += 50;
       }
       
-      const rDate = movie.release_date || movie.first_air_date;
+      const rDate = item.release_date || item.first_air_date;
       if (targetYear && rDate) {
         const releaseYear = parseInt(rDate.substring(0, 4));
         if (releaseYear) {
@@ -42,11 +56,12 @@ https://api.themoviedb.org/3/{{
       
       if (score > bestScore) {
         bestScore = score;
-        bestMatch = movie;
+        bestMatch = item;
       }
     }
     
-    const mediaType = bestMatch.media_type || (bestMatch.name && !bestMatch.title ? 'tv' : 'movie');
-    return `${mediaType}/${bestMatch.id}`;
+    const mediaType = bestMatch.media_type || (bestMatch.first_air_date || (bestMatch.name && !bestMatch.title) ? 'tv' : 'movie');
+    const id = bestMatch.id || sourceNode.tmdb_id || $json.tmdb_id || $json.id || 0;
+    return `${mediaType}/${id}`;
   })()
 }}
