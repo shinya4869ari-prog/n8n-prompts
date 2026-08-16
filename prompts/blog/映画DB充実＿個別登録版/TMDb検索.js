@@ -57,9 +57,20 @@ function isValidMatch(movie) {
 }
 
 // 最も合致する1件を探索
-const matchedMovie = candidates.find(isValidMatch);
+let matchedMovie = candidates.find(isValidMatch);
 
-// 一致する映画が存在しない場合は、空配列 [] を返して後続ノード（Brave SearchやCredits取得等）の実行を安全に即時ストップ（APIコスト回避）
+// 🎯【TMDb ID 直接指定時の安全パススルー】
+// TMDb ID が手動入力されていた場合、Wikidataやタイトル検索が空でも、直接そのIDでCredits取得へ進む
+if (!matchedMovie && (sourceData.tmdb_id || /^\d+$/.test(sourceData.query || ''))) {
+  const directId = sourceData.tmdb_id || parseInt(sourceData.query, 10);
+  matchedMovie = {
+    id: directId,
+    tmdb_id: directId,
+    media_type: sourceData.media_type || 'movie'
+  };
+}
+
+// 一致する映画も直接IDも存在しない場合のみ、安全に終了
 if (!matchedMovie) {
   return [];
 }
