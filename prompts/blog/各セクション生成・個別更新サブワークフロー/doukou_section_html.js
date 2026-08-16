@@ -17,24 +17,27 @@ try {
 
 // 2. AI(Perplexity/Claude/Gemini)の文字列化されたJSONレスポンスを安全に展開
 let parsedData = {};
-const rawStringCandidates = [input.message, input.text, input.output, input.article, input.content];
+const rawStringCandidates = [input.message, input.text, input.output, input.article, input.content, input.response, input.body];
 for (const cand of rawStringCandidates) {
   if (typeof cand === 'string') {
-    const cleanCand = cand.replace(/```json/gi, '').replace(/```/g, '').trim();
-    if (cleanCand.startsWith('{') && cleanCand.endsWith('}')) {
+    const jsonMatch = cand.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
       try {
-        parsedData = JSON.parse(cleanCand);
-        break;
+        const p = JSON.parse(jsonMatch[0]);
+        if (p && (p.直近の動向 || p.doukou || p.政治経済社会 || p.country)) {
+          parsedData = p;
+          break;
+        }
       } catch (e) {}
     }
   }
 }
 
-const merged = { ...input, ...parsedData };
+const merged = { ...trig, ...input, ...parsedData };
 const countryName = merged.country_name || merged.country || trig.country_name || trig.country || '対象国';
 
 // 3. 直近の動向データの取得（手入力フォーム、AIオブジェクト、Perplexityレスポンス全対応）
-const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged;
+const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged.data?.直近の動向 || merged;
 
 let politics = doukouObj.政治経済社会 || doukouObj.political_social || doukouObj.politics || trig.政治経済社会 || trig.politics || '';
 let stats = doukouObj['驚きの統計・習慣'] || doukouObj.驚く統計や習慣 || doukouObj.驚きの統計 || doukouObj.stats || trig['驚きの統計・習慣'] || trig.stats || '';
