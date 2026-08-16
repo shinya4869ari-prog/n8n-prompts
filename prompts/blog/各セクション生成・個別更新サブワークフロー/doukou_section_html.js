@@ -39,19 +39,28 @@ const countryName = merged.country_name || merged.country || trig.country_name |
 // 3. 直近の動向データの取得（手入力フォーム、AIオブジェクト、Perplexityレスポンス全対応）
 const doukouObj = merged.直近の動向 || merged.doukou || merged.data?.対象国データ_記事?.直近の動向 || merged.data?.直近の動向 || merged;
 
-let politics = doukouObj.政治経済社会 || doukouObj.political_social || doukouObj.politics || trig.政治経済社会 || trig.politics || '';
-let stats = doukouObj['驚きの統計・習慣'] || doukouObj.驚く統計や習慣 || doukouObj.驚きの統計 || doukouObj.stats || trig['驚きの統計・習慣'] || trig.stats || '';
-let japan = doukouObj.日本との関連 || doukouObj.japan_relation || doukouObj.japan || trig.日本との関連 || trig.japan || '';
-let cite = doukouObj.出典 || doukouObj.source || doukouObj.cite || trig.出典 || trig.source || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
+const getField = (keys) => {
+  for (const k of keys) {
+    if (doukouObj && doukouObj[k]) return doukouObj[k];
+    if (merged && merged[k]) return merged[k];
+    if (trig && trig[k]) return trig[k];
+  }
+  return '';
+};
+
+let politics = getField(['政治経済社会', '政治・経済・社会', '政治経済', 'political_social', 'politics', 'text1']);
+let stats = getField(['驚きの統計・習慣', '驚く統計や習慣', '驚きの統計', '統計・習慣', 'stats', 'culture', 'text2']);
+let japan = getField(['日本との関連', '日本関係', '対日関係', 'japan_relation', 'japan', 'text3']);
+let cite = getField(['出典', 'source', 'cite']) || '日本経済新聞 / 首相官邸 / 総務省 / 外務省';
 
 // 全体の直接入力テキストがある場合（<p>【政治経済社会】</p>...等が含まれる場合）
 let rawText = merged.raw_text || merged.article || merged.text || trig.raw_text || '';
 
-// 3. エラーネコの一言
-let nekoComment = input.neko || input.error_neko || input.エラーネコ || trig.neko || trig.error_neko || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
+// 4. エラーネコの一言
+let nekoComment = getField(['neko', 'error_neko', 'エラーネコ', 'ネコの一言', 'comment']) || `${countryName}の最新動向は、これからの社会や国際関係を考える上で見逃せないポイントだニャ！`;
 nekoComment = String(nekoComment).replace(/^🐱\s*エラーネコ[：:]\s*/, '').trim();
 
-// 4. HTMLスタイルの定義（最終Code.jsと完全同一）
+// 5. HTMLスタイルの定義（最終Code.jsと完全同一）
 const h2Style = `margin-top:60px;padding:14px 20px;background:#f5f5f5;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
 const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
 
@@ -68,7 +77,7 @@ function makeNekoBubble(text) {
 </div>`;
 }
 
-// 5. 本文HTMLの構築（ブログ全体の標準フォント・行間に完全一致）
+// 6. 本文HTMLの構築（ブログ全体の標準フォント・行間に完全一致）
 let contentHtml = '';
 
 if (rawText && rawText.includes('【政治経済社会】')) {
@@ -106,7 +115,7 @@ return [{
   json: {
     section_type: 'doukou',
     country: countryName,
-    post_id: input.post_id || trig.post_id || null,
+    post_id: merged.post_id || trig.post_id || input.post_id || '2022',
     section_html: sectionHtml,
     html: sectionHtml
   }
