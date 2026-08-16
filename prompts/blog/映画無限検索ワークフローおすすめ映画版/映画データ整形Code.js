@@ -180,9 +180,12 @@ const genreMap = {
   10770: "テレビ映画", 53: "スリラー", 10752: "戦争", 37: "西部劇"
 };
 const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
-const genres = (Array.isArray(result?.genres) && result.genres.length > 0 && result.genres[0].name)
-  ? result.genres.map(g => g.name).join(', ')
+let rawGenres = (Array.isArray(result?.genres) && result.genres.length > 0 && result.genres[0].name)
+  ? result.genres.map(g => (g.id && genreMap[g.id]) ? genreMap[g.id] : g.name).join(', ')
   : ((Array.isArray(rawGenreIds) && rawGenreIds.length > 0) ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : (sourceData.genres || null));
+
+// TMDbの誤訳「履歴」を「歴史」に自動修正
+const genres = rawGenres ? rawGenres.replace(/履歴/g, '歴史') : null;
 
 // 9. ハングルを自動でカタカナに変換する高精度トランスレータ
 const SURNAMES_MAP = {
