@@ -87,7 +87,8 @@ items.forEach(d => {
   const searchQuery = titleOrig || titleJa;
   const popupTitleStr = titleOrig ? `${titleJa} (${titleOrig})` : titleJa;
 
-  const mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(searchQuery)}`;
+  const idParam = (d.wikidata_id || d.qid) ? `&qid=${encodeURIComponent(d.wikidata_id || d.qid)}` : (d.tmdb_id ? `&tmdb_id=${encodeURIComponent(d.tmdb_id)}` : '');
+  const mapUrl = `https://map.seronworks.dev/?mode=movie${idParam}&q=${encodeURIComponent(searchQuery)}`;
   const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
   const n = enc(popupTitleStr);
   const i = enc(linkHTML);
