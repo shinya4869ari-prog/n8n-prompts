@@ -183,7 +183,16 @@ const genreMap = {
   27: "ホラー", 10402: "音楽", 9648: "ミステリー", 10749: "ロマンス", 878: "SF",
   10770: "テレビ映画", 53: "スリラー", 10752: "戦争", 37: "西部劇"
 };
-con// 9. ハングルを自動でカタカナに変換する高精度トランスレータ (全11,172文字完全対応版)
+
+const rawGenreIds = result?.genre_ids || (result?.genres ? result.genres.map(g => g.id) : []);
+let rawGenres = (Array.isArray(result?.genres) && result.genres.length > 0 && result.genres[0].name)
+  ? result.genres.map(g => (g.id && genreMap[g.id]) ? genreMap[g.id] : g.name).join(', ')
+  : ((Array.isArray(rawGenreIds) && rawGenreIds.length > 0) ? rawGenreIds.map(id => genreMap[id]).filter(Boolean).join(', ') : (sourceData.genres || null));
+
+// TMDbの誤訳「履歴」を「歴史」に自動修正
+const genres = rawGenres ? rawGenres.replace(/履歴/g, '歴史') : null;
+
+// 9. ハングルを自動でカタカナに変換する高精度トランスレータ (全11,172文字完全対応版)
 const SURNAMES_MAP = {
   '김': 'キム', '이': 'イ', '박': 'パク', '최': 'チェ', '정': 'チョン', '강': 'カン', '조': 'チョ',
   '윤': 'ユン', '장': 'チャン', '임': 'イム', '한': 'ハン', '오': 'オ', '서': 'ソ', '신': 'シン',
@@ -280,32 +289,6 @@ const toKatakanaIfHangul = (text) => {
       return `${surname}・${given}`;
     }
     return chars.map(c => /[\uac00-\ud7af]/.test(c) ? hangulToKatakanaChar(c) : c).join('');
-  }).join('').replace(/,\s*/g, ', ');
-}; '유': 'ユ', '야': 'ヤ', '여': 'ヨ', '예': 'イェ',
-  '경': 'ギョン', '정': 'チョン', '성': 'ソン', '영': 'ヨン', '명': 'ミョン', '병': 'ビョン', '형': 'ヒョン', '종': 'ジョン', '용': 'ヨン', '동': 'ドン', '봉': 'ボン', '송': 'ソン', '홍': 'ホン',
-  '강': 'カン', '상': 'サン', '장': 'チャン', '방': 'パン', '광': 'クァン', '창': 'チャン', '황': 'ファン', '양': 'ヤン', '당': 'ダン', '망': 'マン', '항': 'ハン',
-  '진': 'ジン', '민': 'ミン', '신': 'シン', '인': 'イン', '빈': 'ビン', '린': 'リン', '은': 'ウン', '윤': 'ユン', '준': 'ジュン', '순': 'スン', '훈': 'フン', '문': 'ムン',
-  '원': 'ウォン', '권': 'クォン', '선': 'ソン', '연': 'ヨン', '현': 'ヒョン', '건': 'ゴン', '전': 'チョン', '천': 'チョン', '변': 'ピョン', '련': 'リョン',
-  '석': 'ソク', '혁': 'ヒョク', '익': 'イク', '식': 'シク', '직': 'ジク', '복': 'ボク', '득': 'ドゥク', '록': 'ロク', '옥': 'オク', '덕': 'ドク', '백': 'ペク', '택': 'テク',
-  '열': 'ヨル', '철': 'チョル', '일': 'イル', '필': 'ピル', '길': 'キル', '달': 'ダル', '팔': 'パル', '환': 'ファン', '관': 'クァン', '완': 'ウォン', '솔': 'ソル', '한': 'ハン',
-  '중': 'ジュン', '담': 'ダム', '희': 'ヒ', '의': 'ウィ', '의성': 'ウィソン', '유진': 'ユジン'
-};
-
-const toKatakanaIfHangul = (text) => {
-  if (!text || typeof text !== 'string') return text;
-  return text.split(/([,/、\n]+)/).map(segment => {
-    if (/^[,/、\n]+$/.test(segment)) return segment;
-    const trimmed = segment.trim();
-    if (!/[\uac00-\ud7af]/.test(trimmed)) return trimmed;
-
-    const chars = Array.from(trimmed);
-    if (chars.length >= 2 && SURNAMES_MAP[chars[0]]) {
-      const surname = SURNAMES_MAP[chars[0]];
-      const givenChars = chars.slice(1);
-      const given = givenChars.map(c => SYLLABLES_MAP[c] || c).join('');
-      return `${surname}・${given}`;
-    }
-    return chars.map(c => SYLLABLES_MAP[c] || c).join('');
   }).join('').replace(/,\s*/g, ', ');
 };
 

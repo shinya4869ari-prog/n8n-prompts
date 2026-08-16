@@ -23,7 +23,11 @@ const movieCountry = String(shapedNode.country || 'KR').toUpperCase();
 
 // TMDB のレスポンス構造に柔軟対応
 const castList = Array.isArray(creditsNode?.cast) ? creditsNode.cast : (Array.isArray(creditsNode?.credits?.cast) ? creditsNode.credits.cast : []);
-const crewList = Array.isArray(creditsNode?.crew) ? creditsNode.crew : (Array.isArray(creditsNode?.credits?.crew) const seenNames = new Set();
+const crewList = Array.isArray(creditsNode?.crew) ? creditsNode.crew : (Array.isArray(creditsNode?.credits?.crew) ? creditsNode.credits.crew : []);
+const createdByList = Array.isArray(creditsNode?.created_by) ? creditsNode.created_by : (Array.isArray(creditsNode?.credits?.created_by) ? creditsNode.credits.created_by : []);
+
+const persons = [];
+const seenNames = new Set();
 
 const SURNAMES_MAP = {
   '김': 'キム', '이': 'イ', '박': 'パク', '최': 'チェ', '정': 'チョン', '강': 'カン', '조': 'チョ',
@@ -121,33 +125,6 @@ const toKatakanaIfHangul = (text) => {
       return `${surname}・${given}`;
     }
     return chars.map(c => /[\uac00-\ud7af]/.test(c) ? hangulToKatakanaChar(c) : c).join('');
-  }).join('').replace(/,\s*/g, ', ');
-};
-
-const splitNames = (str) => {
-  if (!str) return [];
-  return String(str).split(/[,/、\n]+/).map(s => s.trim()).filter(Boolean);ミン', '신': 'シン', '인': 'イン', '빈': 'ビン', '린': 'リン', '은': 'ウン', '윤': 'ユン', '준': 'ジュン', '순': 'スン', '훈': 'フン', '문': 'ムン',
-  '원': 'ウォン', '권': 'クォン', '선': 'ソン', '연': 'ヨン', '현': 'ヒョン', '건': 'ゴン', '전': 'チョン', '천': 'チョン', '변': 'ピョン', '련': 'リョン',
-  '석': 'ソク', '혁': 'ヒョク', '익': 'イク', '식': 'シク', '직': 'ジク', '복': 'ボク', '득': 'ドゥク', '록': 'ロク', '옥': 'オク', '덕': 'ドク', '백': 'ペク', '택': 'テク',
-  '열': 'ヨル', '철': 'チョル', '일': 'イル', '필': 'ピル', '길': 'キル', '달': 'ダル', '팔': 'パル', '환': 'ファン', '관': 'クァン', '완': 'ウォン', '솔': 'ソル', '한': 'ハン',
-  '중': 'ジュン', '담': 'ダム', '희': 'ヒ', '의': 'ウィ', '의성': 'ウィソン', '유진': 'ユジン'
-};
-
-const toKatakanaIfHangul = (text) => {
-  if (!text || typeof text !== 'string') return text;
-  return text.split(/([,/、\n]+)/).map(segment => {
-    if (/^[,/、\n]+$/.test(segment)) return segment;
-    const trimmed = segment.trim();
-    if (!/[\uac00-\ud7af]/.test(trimmed)) return trimmed;
-
-    const chars = Array.from(trimmed);
-    if (chars.length >= 2 && SURNAMES_MAP[chars[0]]) {
-      const surname = SURNAMES_MAP[chars[0]];
-      const givenChars = chars.slice(1);
-      const given = givenChars.map(c => SYLLABLES_MAP[c] || c).join('');
-      return `${surname}・${given}`;
-    }
-    return chars.map(c => SYLLABLES_MAP[c] || c).join('');
   }).join('').replace(/,\s*/g, ', ');
 };
 
