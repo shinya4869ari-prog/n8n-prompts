@@ -264,8 +264,12 @@ try {
     try {
       const found = $(nodeName).all();
       if (found && found.length > 0) {
-        subItems = found;
-        break;
+        // 人物保存ノード等の空レスポンスを除外し、映画データのみを厳選
+        const validMovies = found.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
+        if (validMovies.length > 0) {
+          subItems = validMovies;
+          break;
+        }
       }
     } catch (err) {}
   }
@@ -480,7 +484,7 @@ const r2Merged = {
   直近の動向: r2.直近の動向,
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
-  映像作品: (recommendedMovies && recommendedMovies.length > 0) ? recommendedMovies : (r25.映像作品 || []),
+  映像作品: r25.映像作品,
   おすすめ映画: recommendedMovies,
   おすすめ音楽: recommendMusic
 };
