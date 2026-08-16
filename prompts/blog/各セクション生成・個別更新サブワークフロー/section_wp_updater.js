@@ -31,7 +31,7 @@ if (!postId) {
 }
 
 if (!newSectionHtml) {
-  const possibleSectionNodes = ['deep_dive_section_html', 'ディープダイブHTML', 'music_section_html', 'movie_section_html', '音楽セクションHTML', '映画セクションHTML', '映画セクションHTML生成', 'Code', '映画10本の一括取得'];
+  const possibleSectionNodes = ['doukou_section_html', '直近の動向HTML', '動向セクションHTML', 'deep_dive_section_html', 'ディープダイブHTML', 'music_section_html', 'movie_section_html', '音楽セクションHTML', '映画セクションHTML', '映画セクションHTML生成', 'Code', '映画10本の一括取得'];
   for (const name of possibleSectionNodes) {
     try {
       const n = $(name).first()?.json;
