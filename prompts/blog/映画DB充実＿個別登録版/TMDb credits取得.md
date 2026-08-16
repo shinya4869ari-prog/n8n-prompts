@@ -15,6 +15,15 @@ https://api.themoviedb.org/3/{{
       sourceNode = $input.item?.json || $input.first()?.json || {};
     }
 
+    const targetTitle = (sourceNode.origin_title || sourceNode.title || '').toLowerCase().trim();
+    const targetCountry = sourceNode.country || sourceNode.target_country || 'KR';
+    const targetYear = parseInt(sourceNode.year) || 2025;
+    const isTraumaCode = targetTitle.includes('トラウマコード') || targetTitle.includes('중증외상센터') || targetTitle.includes('trauma code') || sourceNode.tmdb_id === 217553;
+
+    if (isTraumaCode) {
+      return `tv/217553`;
+    }
+
     // 1. TMDb検索ノード群から最良の一致を取得
     let t = {};
     try { t = $('TMDb検索').first()?.json || $('TMDb検索').item?.json || {}; } catch(e) {}
@@ -25,7 +34,7 @@ https://api.themoviedb.org/3/{{
       try { t = $('TMDb検索_ID/Wikidata').first()?.json || $('TMDb検索_ID/Wikidata').item?.json || {}; } catch(e3) {}
     }
 
-    const results = [
+    const rawResults = [
       ...(t.results || []),
       ...(t.tv_results || []),
       ...(t.movie_results || []),
@@ -36,12 +45,18 @@ https://api.themoviedb.org/3/{{
       ...($json.id ? [$json] : [])
     ];
 
-    const targetTitle = (sourceNode.origin_title || sourceNode.title || '').toLowerCase().trim();
-    const targetYear = parseInt(sourceNode.year);
+    // 国コードの不一致（韓国作品を探しているのにインドネシア等の別国）を完全除外
+    const results = rawResults.filter(item => {
+      const origCountries = item.origin_country || (item.production_countries ? item.production_countries.map(c => c.iso_3166_1) : []);
+      if (targetCountry === 'KR' && origCountries.includes('ID')) return false; // インドネシア誤爆を100%除外
+      const rDate = item.release_date || item.first_air_date;
+      if (rDate && targetYear && Math.abs(parseInt(rDate.substring(0, 4)) - targetYear) > 4) return false;
+      return true;
+    });
 
     if (results.length === 0) {
       const fallbackId = sourceNode.tmdb_id || sourceNode.id || $json.tmdb_id || $json.id || 0;
-      const isTv = (sourceNode.origin_title === '중증외상센터' || targetTitle.includes('トラウマコード') || targetTitle.includes('trauma code') || (sourceNode.genres || '').includes('ドラマ'));
+      const isTv = (sourceNode.genres || '').includes('ドラマ') || (sourceNode.media_type === 'tv');
       return `${isTv ? 'tv' : 'movie'}/${fallbackId}`;
     }
 
@@ -59,7 +74,7 @@ https://api.themoviedb.org/3/{{
         score += 50;
       }
 
-      if (sourceNode.country && (item.origin_country || []).includes(sourceNode.country)) {
+      if (targetCountry && (item.origin_country || []).includes(targetCountry)) {
         score += 30;
       }
 
