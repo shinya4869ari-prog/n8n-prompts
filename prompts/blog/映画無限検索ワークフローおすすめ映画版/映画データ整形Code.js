@@ -50,18 +50,18 @@ const posterPath = rawPosterPath;
 
 // 2. 🎯 本物の Wikidata ID（QID）& IMDb ID の抽出
 let wikidata_id = null;
-const tmdbWikiId = result?.external_ids?.wikidata_id || tmdb?.external_ids?.wikidata_id;
+const tmdbWikiId = credits?.external_ids?.wikidata_id || credits?.wikidata_id || result?.external_ids?.wikidata_id || tmdb?.external_ids?.wikidata_id;
 if (tmdbWikiId && /^Q\d+$/.test(tmdbWikiId)) {
   wikidata_id = tmdbWikiId;
 } else if (sourceData.wikidata_id && /^Q\d+$/.test(sourceData.wikidata_id) && !sourceData.wikidata_id.startsWith('Q_TMDB_')) {
   wikidata_id = sourceData.wikidata_id;
 }
 
-const tmdbImdbId = result?.external_ids?.imdb_id || tmdb?.external_ids?.imdb_id;
+const tmdbImdbId = credits?.imdb_id || credits?.external_ids?.imdb_id || result?.external_ids?.imdb_id || tmdb?.external_ids?.imdb_id;
 let imdb_id = (tmdbImdbId && /^tt\d+$/.test(tmdbImdbId)) ? tmdbImdbId : (sourceData.imdb_id || null);
 const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}/` : (sourceData.imdb_url || null);
 
-const tmdb_id = sourceData.tmdb_id || result?.id || null;
+const tmdb_id = sourceData.tmdb_id || credits?.id || result?.id || null;
 
 // 3. キャスト・監督の抽出（取得できたキャスト全員を保存）
 const fetchedCast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
