@@ -108,6 +108,7 @@ return [{
     country: shaped.country || 'KR',
     year: shaped.year || '',
     genres: shaped.genres || '',
+    platform: shaped.platform || '劇場公開',
 
     wikidata_id: shaped.wikidata_id || null,
     tmdb_id: shaped.tmdb_id || null,

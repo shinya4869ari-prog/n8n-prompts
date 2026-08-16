@@ -127,6 +127,7 @@ return items.map((item, index) => {
     country: targetAi.country || source.country || null,
     year: targetAi.year || source.year || null,
     genres: cleanGenres(rawGenre),
+    platform: targetAi.platform || source.platform || '劇場公開',
 
     wikidata_id: (() => {
       const rawId = source.wikidata_id || targetAi.wikidata_id || null;

@@ -364,9 +364,26 @@ let updateReason = isExisting ? 'データ補完・更新' : '新規登録';
 
 const releaseDateStr = result?.release_date || result?.first_air_date || credits.release_date || credits.first_air_date || sourceData.year || existingDb.year || '';
 
-// 🎯【IMDb ID / URL の自動抽出】
-const imdbId = credits.external_ids?.imdb_id || result?.external_ids?.imdb_id || t1?.external_ids?.imdb_id || t2?.external_ids?.imdb_id || existingDb.imdb_id || null;
-const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : (existingDb.imdb_url || null);
+// 🎯【配信プラットフォーム（Netflix / Disney+ 等）の自動判別】
+const detectPlatform = () => {
+  if (existingDb.platform) return existingDb.platform;
+  const companies = credits.production_companies || result?.production_companies || [];
+  const networks = credits.networks || result?.networks || [];
+  const searchCorpus = [
+    movieTitle, finalOriginTitle, finalOverview, finalOverviewEn,
+    ...companies.map(c => c.name || ''),
+    ...networks.map(n => n.name || '')
+  ].join(' ').toLowerCase();
+
+  if (searchCorpus.includes('netflix') || searchCorpus.includes('ネットフリックス')) return 'Netflix';
+  if (searchCorpus.includes('disney') || searchCorpus.includes('ディズニー')) return 'Disney+';
+  if (searchCorpus.includes('prime video') || searchCorpus.includes('amazon') || searchCorpus.includes('アマプラ')) return 'Amazon Prime';
+  if (searchCorpus.includes('apple tv') || searchCorpus.includes('アップルtv')) return 'Apple TV+';
+  if (searchCorpus.includes('tving') || searchCorpus.includes('ティービング')) return 'TVING';
+  if (searchCorpus.includes('watcha') || searchCorpus.includes('ワッチャ')) return 'Watcha';
+  return '劇場公開';
+};
+const finalPlatform = detectPlatform();
 
 return [{
   json: {
@@ -375,6 +392,7 @@ return [{
     country: finalCountry,
     year: String(releaseDateStr).substring(0, 4),
     genres: finalGenres,
+    platform: finalPlatform,
 
     wikidata_id: fetchedWikidataId,
     tmdb_id: credits.id || result?.id || sourceData.tmdb_id || sourceData.id || existingDb.tmdb_id,
