@@ -118,7 +118,24 @@ return items.map((item, index) => {
     return str.replace(/[\[\]"']/g, '').trim();
   };
 
-  const rawGenre = targetAi.genres || source.genres || null;
+  // プラットフォームの自動判別（AI判定 ➔ 既存/検出値 ➔ 検索テキストからの自動抽出）
+  const resolvePlatform = () => {
+    if (targetAi.platform && targetAi.platform !== 'その他') return targetAi.platform;
+    const corpus = [
+      title, origin_title, overview, overview_en, source.platform || '',
+      JSON.stringify(targetAi), JSON.stringify(source)
+    ].join(' ').toLowerCase();
+
+    if (corpus.includes('netflix') || corpus.includes('ネットフリックス')) return 'Netflix';
+    if (corpus.includes('disney') || corpus.includes('ディズニー')) return 'Disney+';
+    if (corpus.includes('prime video') || corpus.includes('amazon') || corpus.includes('アマプラ')) return 'Amazon Prime';
+    if (corpus.includes('apple tv') || corpus.includes('アップルtv')) return 'Apple TV+';
+    if (corpus.includes('tving') || corpus.includes('ティービング')) return 'TVING';
+    if (corpus.includes('watcha') || corpus.includes('ワッチャ')) return 'Watcha';
+    if (corpus.includes('u-next') || corpus.includes('ユーネクスト')) return 'U-NEXT';
+
+    return source.platform || '劇場公開';
+  };
 
   // 5. レコード構築
   const updatedRecord = {
@@ -127,7 +144,7 @@ return items.map((item, index) => {
     country: targetAi.country || source.country || null,
     year: targetAi.year || source.year || null,
     genres: cleanGenres(rawGenre),
-    platform: targetAi.platform || source.platform || '劇場公開',
+    platform: resolvePlatform(),
 
     wikidata_id: (() => {
       const rawId = source.wikidata_id || targetAi.wikidata_id || null;

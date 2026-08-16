@@ -372,7 +372,9 @@ const detectPlatform = () => {
     movieTitle, finalOriginTitle, finalOverview, finalOverviewEn, sourceData.overview || '', sourceData.query || '',
     JSON.stringify(companies),
     JSON.stringify(networks),
-    JSON.stringify(credits)
+    JSON.stringify(credits),
+    JSON.stringify(t1),
+    JSON.stringify(t2)
   ].join(' ').toLowerCase();
 
   if (searchCorpus.includes('netflix') || searchCorpus.includes('ネットフリックス')) return 'Netflix';
@@ -383,8 +385,8 @@ const detectPlatform = () => {
   if (searchCorpus.includes('watcha') || searchCorpus.includes('ワッチャ')) return 'Watcha';
   if (searchCorpus.includes('u-next') || searchCorpus.includes('ユーネクスト')) return 'U-NEXT';
 
-  if (existingDb.platform && existingDb.platform !== '劇場公開') return existingDb.platform;
-  return existingDb.platform || '劇場公開';
+  if (existingDb.platform) return existingDb.platform;
+  return null; // 未検出時は null にして後続AIに委ねる
 };
 const finalPlatform = detectPlatform();
 
