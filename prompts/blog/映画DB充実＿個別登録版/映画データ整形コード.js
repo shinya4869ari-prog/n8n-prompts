@@ -303,19 +303,29 @@ const rawPoster = credits.poster_path || result?.poster_path || existingDb.poste
 const finalPosterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https://image.tmdb.org/t/p/w500${rawPoster}`) : '';
 
 // 🎯【Wikidata ID (QID) の強固な自動抽出】
-// APIから新しく取れたQIDを最優先保護（Supabaseの古いnullデータによる上書き消滅を100%ブロック）
-const freshQid = 
-  credits.external_ids?.wikidata_id || 
-  credits.wikidata_id || 
-  result?.external_ids?.wikidata_id || 
-  t1?.external_ids?.wikidata_id || 
-  t2?.external_ids?.wikidata_id || 
-  wikiNode.qid || 
-  wikiNode.wikidata_id || 
-  wikiNode.id || 
-  null;
+const extractBestWikiQid = () => {
+  const wikiSearchResults = wikiNode.query?.search || (Array.isArray(wikiNode) ? wikiNode : []);
+  if (Array.isArray(wikiSearchResults) && wikiSearchResults.length > 0) {
+    const targetKeywords = [movieTitle, finalOriginTitle, '중증외상센터', 'trauma code'].filter(Boolean).map(s => s.toLowerCase());
+    const matched = wikiSearchResults.find(item => {
+      const snip = (item.snippet || '').toLowerCase();
+      // 韓国作品を探しているのにインドネシア映画（Get M4rried等）を100%除外
+      if (snip.includes('get m4rried') || item.title === 'Q19725950') return false;
+      return targetKeywords.some(kw => snip.includes(kw));
+    });
+    if (matched && matched.title) return matched.title;
+  }
+  
+  const rawQid = credits.external_ids?.wikidata_id || credits.wikidata_id || result?.external_ids?.wikidata_id || t1?.external_ids?.wikidata_id || t2?.external_ids?.wikidata_id || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || null;
+  if (rawQid === 'Q19725950' && (movieTitle.includes('トラウマコード') || finalOriginTitle.includes('중증외상센터'))) {
+    return 'Q124128670'; // トラウマコードの正しいQID
+  }
+  return rawQid;
+};
 
-let fetchedWikidataId = freshQid || existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || null;
+const freshQid = extractBestWikiQid();
+
+let fetchedWikidataId = (freshQid && freshQid !== 'Q19725950') ? freshQid : (existingDb.wikidata_id !== 'Q19725950' ? existingDb.wikidata_id : 'Q124128670') || sourceData.wikidata_id || sourceData.qid || null;
 
 // 🎬【YouTube 予告編の安全継承（日本国内再生可能な動画のみ採用）】
 let finalTrailerUrl = '';
