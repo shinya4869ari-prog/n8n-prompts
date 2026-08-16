@@ -16,13 +16,8 @@ https://api.themoviedb.org/3/{{
     }
 
     const targetTitle = (sourceNode.origin_title || sourceNode.title || '').toLowerCase().trim();
-    const targetCountry = sourceNode.country || sourceNode.target_country || 'KR';
-    const targetYear = parseInt(sourceNode.year) || 2025;
-    const isTraumaCode = targetTitle.includes('トラウマコード') || targetTitle.includes('중증외상센터') || targetTitle.includes('trauma code') || sourceNode.tmdb_id === 217553;
-
-    if (isTraumaCode) {
-      return `tv/217553`;
-    }
+    const targetCountry = sourceNode.country || sourceNode.target_country || null;
+    const targetYear = parseInt(sourceNode.year);
 
     // 1. TMDb検索ノード群から最良の一致を取得
     let t = {};
@@ -45,12 +40,13 @@ https://api.themoviedb.org/3/{{
       ...($json.id ? [$json] : [])
     ];
 
-    // 国コードの不一致（韓国作品を探しているのにインドネシア等の別国）を完全除外
+    // 国コードの不一致（指定国がある場合のみ）と年代の乖離をフィルタリング
     const results = rawResults.filter(item => {
       const origCountries = item.origin_country || (item.production_countries ? item.production_countries.map(c => c.iso_3166_1) : []);
-      if (targetCountry === 'KR' && origCountries.includes('ID')) return false; // インドネシア誤爆を100%除外
-      const rDate = item.release_date || item.first_air_date;
-      if (rDate && targetYear && Math.abs(parseInt(rDate.substring(0, 4)) - targetYear) > 4) return false;
+      if (targetCountry && origCountries.length > 0 && !origCountries.includes(targetCountry)) {
+        const rDate = item.release_date || item.first_air_date;
+        if (rDate && targetYear && Math.abs(parseInt(rDate.substring(0, 4)) - targetYear) > 2) return false;
+      }
       return true;
     });
 

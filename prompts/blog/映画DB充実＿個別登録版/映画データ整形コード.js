@@ -302,30 +302,34 @@ const finalOverviewEn = existingDb.overview_en || rawForeignOverview || '';
 const rawPoster = credits.poster_path || result?.poster_path || existingDb.poster_url || existingDb.poster_path || '';
 const finalPosterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https://image.tmdb.org/t/p/w500${rawPoster}`) : '';
 
-// 🎯【Wikidata ID (QID) の強固な自動抽出】
+// 🎯【Wikidata ID (QID) の強固な自動抽出（完全汎用・ハードコードなし）】
 const extractBestWikiQid = () => {
   const wikiSearchResults = wikiNode.query?.search || (Array.isArray(wikiNode) ? wikiNode : []);
   if (Array.isArray(wikiSearchResults) && wikiSearchResults.length > 0) {
-    const targetKeywords = [movieTitle, finalOriginTitle, '중증외상센터', 'trauma code'].filter(Boolean).map(s => s.toLowerCase());
-    const matched = wikiSearchResults.find(item => {
+    const targetKeywords = [movieTitle, finalOriginTitle].filter(Boolean).map(s => s.toLowerCase().trim());
+    
+    let bestQid = null;
+    let maxScore = -1;
+    for (const item of wikiSearchResults) {
+      let score = 0;
       const snip = (item.snippet || '').toLowerCase();
-      // 韓国作品を探しているのにインドネシア映画（Get M4rried等）を100%除外
-      if (snip.includes('get m4rried') || item.title === 'Q19725950') return false;
-      return targetKeywords.some(kw => snip.includes(kw));
-    });
-    if (matched && matched.title) return matched.title;
+      for (const kw of targetKeywords) {
+        if (kw.length >= 2 && snip.includes(kw)) score += 10;
+      }
+      if (score > maxScore) {
+        maxScore = score;
+        bestQid = item.title;
+      }
+    }
+    if (bestQid && maxScore > 0) return bestQid;
+    if (wikiSearchResults[0]?.title) return wikiSearchResults[0].title;
   }
-  
-  const rawQid = credits.external_ids?.wikidata_id || credits.wikidata_id || result?.external_ids?.wikidata_id || t1?.external_ids?.wikidata_id || t2?.external_ids?.wikidata_id || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || null;
-  if (rawQid === 'Q19725950' && (movieTitle.includes('トラウマコード') || finalOriginTitle.includes('중증외상센터'))) {
-    return 'Q124128670'; // トラウマコードの正しいQID
-  }
-  return rawQid;
+
+  return credits.external_ids?.wikidata_id || credits.wikidata_id || result?.external_ids?.wikidata_id || t1?.external_ids?.wikidata_id || t2?.external_ids?.wikidata_id || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || null;
 };
 
 const freshQid = extractBestWikiQid();
-
-let fetchedWikidataId = (freshQid && freshQid !== 'Q19725950') ? freshQid : (existingDb.wikidata_id !== 'Q19725950' ? existingDb.wikidata_id : 'Q124128670') || sourceData.wikidata_id || sourceData.qid || null;
+let fetchedWikidataId = freshQid || existingDb.wikidata_id || sourceData.wikidata_id || sourceData.qid || null;
 
 // 🎬【YouTube 予告編の安全継承（日本国内再生可能な動画のみ採用）】
 let finalTrailerUrl = '';
