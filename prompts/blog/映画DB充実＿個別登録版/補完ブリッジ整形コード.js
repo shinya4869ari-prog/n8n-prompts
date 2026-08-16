@@ -36,6 +36,7 @@ const parsedCast = (() => {
     const candidates = [
       $input.first()?.json,
       $input.item?.json,
+      getNode('キャスト翻訳'),
       getNode('キャスト・監督翻訳AI'),
       getNode('キャスト監督翻訳AI'),
       getNode('gemini_movie_db'),
