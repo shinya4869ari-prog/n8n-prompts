@@ -7,9 +7,23 @@
  * を受け取り、WordPress の <!-- SECTION:doukou:START --> ... <!-- SECTION:doukou:END --> を美しく構築します。
  */
 
-const input = $input.first()?.json || {};
+const rawInput = $input.first()?.json || {};
 
-// 1. トリガーまたは入力データから情報を取得
+// 1. テスト実行用（INPUTが「No data」のときに自動採用されるデータ）
+const defaultData = {
+  section_type: 'doukou',
+  post_id: '2022',
+  country: '韓国',
+  '政治経済社会': '2026年3月18日のEU・韓国共同委員会では、安全保障防衛パートナーシップの下での協力継続とデジタル貿易協定の実施、Horizon Europe参加に関する成果が確認された。4月17日には韓国とEUが「戦略的経済パートナーシップ」を形成し、貿易・経済安全保障・供給網・技術協力を深める方向で一致。6月10日にはEUと韓国がデジタル貿易協定に正式署名した。',
+  '驚きの統計・習慣': 'EU・韓国の自由貿易協定は2011年以降、2025年まで年平均5.3%で物品貿易が増加した。また、韓国はEUにとって第3位の貿易相手であり、EUは韓国にとって第8位の主要貿易相手と位置づけられている。',
+  '日本との関連': '韓国の対EU経済・安全保障連携の深化は、先端産業のサプライチェーン、デジタル規制、経済安全保障の面で日本企業や日本の対外戦略にも大きな影響を与える。',
+  '出典': 'EU-Republic of Korea Summit Joint Statement / 韓国産業通商資源部（MOTIR）/ EEAS',
+  'neko': '米中対立の狭間で揺れる中、韓国がEUとデジタル貿易協定を結んで先端産業のサプライチェーンをガッチリ固めにかかっているニャ！同じハイテク立国の日本もうかうかしてられないニャ…'
+};
+
+const input = (Object.keys(rawInput).length > 0) ? rawInput : defaultData;
+
+// 2. トリガーまたは入力データから情報を取得
 let trig = {};
 try {
   trig = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
