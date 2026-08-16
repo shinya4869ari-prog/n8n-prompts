@@ -366,13 +366,13 @@ const releaseDateStr = result?.release_date || result?.first_air_date || credits
 
 // 🎯【配信プラットフォーム（Netflix / Disney+ 等）の自動判別】
 const detectPlatform = () => {
-  if (existingDb.platform) return existingDb.platform;
   const companies = credits.production_companies || result?.production_companies || [];
-  const networks = credits.networks || result?.networks || [];
+  const networks = credits.networks || result?.networks || credits.created_by || [];
   const searchCorpus = [
-    movieTitle, finalOriginTitle, finalOverview, finalOverviewEn,
-    ...companies.map(c => c.name || ''),
-    ...networks.map(n => n.name || '')
+    movieTitle, finalOriginTitle, finalOverview, finalOverviewEn, sourceData.overview || '', sourceData.query || '',
+    JSON.stringify(companies),
+    JSON.stringify(networks),
+    JSON.stringify(credits)
   ].join(' ').toLowerCase();
 
   if (searchCorpus.includes('netflix') || searchCorpus.includes('ネットフリックス')) return 'Netflix';
@@ -381,7 +381,10 @@ const detectPlatform = () => {
   if (searchCorpus.includes('apple tv') || searchCorpus.includes('アップルtv')) return 'Apple TV+';
   if (searchCorpus.includes('tving') || searchCorpus.includes('ティービング')) return 'TVING';
   if (searchCorpus.includes('watcha') || searchCorpus.includes('ワッチャ')) return 'Watcha';
-  return '劇場公開';
+  if (searchCorpus.includes('u-next') || searchCorpus.includes('ユーネクスト')) return 'U-NEXT';
+
+  if (existingDb.platform && existingDb.platform !== '劇場公開') return existingDb.platform;
+  return existingDb.platform || '劇場公開';
 };
 const finalPlatform = detectPlatform();
 
