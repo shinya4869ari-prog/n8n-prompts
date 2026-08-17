@@ -25,7 +25,7 @@ const bindings = results.map(movie => {
     movieLabelKo: { value: movie.original_title },
     movieLabelEn: { value: movie.original_title },
     year: { value: movie.release_date ? movie.release_date.substring(0, 4) : formNode.year },
-    countryCode: { value: formNode.countryCode || "" }
+    countryCode: { value: formNode.country || formNode.countryCode || "" }
   };
 });
 

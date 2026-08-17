@@ -1,21 +1,18 @@
 // 実行されていないノードでも安全にデータを取得するヘルパー関数
-function getNodeData(nodeName) {
-  try {
-    return $(nodeName).first()?.json || {};
-  } catch (e) {
-    return {};
-  }
+function getNodeData(name) {
+  try { return $(name).first()?.json || $(name).item?.json || $(name).last()?.json || {}; } catch(e) { return {}; }
 }
 
-const credits = getNodeData('TMDb credits取得');
-const tmdb = getNodeData('TMDb検索');
+const creditsNode = getNodeData('TMDb credits取得');
+const tmdbNode = getNodeData('TMDb検索');
 let sourceData = {};
 try {
-  sourceData = $('映画ごとにループ実行').item?.json || {};
+  sourceData = $('映画ごとにループ実行').item?.json || $('映画ごとにループ実行').first()?.json || {};
 } catch (e) {
-  sourceData = $input.item?.json || {};
+  sourceData = $input.item?.json || $input.first()?.json || {};
 }
 
+const tmdb = tmdbNode;
 const resultsList = tmdb?.results || tmdb?.movie_results || (tmdb?.id ? [tmdb] : []);
 
 let result = null;
@@ -29,7 +26,7 @@ if (resultsList.length > 0) {
   }
 }
 
-if (!sourceData?.title && !result?.title) return [];
+if (!sourceData?.title && !result?.title && !tmdbNode?.title) return [];
 
 const langToCountry = {
   'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
@@ -38,84 +35,75 @@ const langToCountry = {
   'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
   'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
 };
-const lang = result?.original_language;
+const lang = result?.original_language || tmdbNode?.original_language;
 const country = sourceData.target_country || sourceData.country || langToCountry[lang] || lang?.toUpperCase() || null;
 
 // 1. ポスターURLの確定
-let rawPosterPath = sourceData.poster_url || (result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : null);
-if (rawPosterPath && (rawPosterPath.includes('v6v6v6') || rawPosterPath.includes('dummy') || rawPosterPath.includes('sample'))) {
-  rawPosterPath = sourceData.poster_url && !sourceData.poster_url.includes('v6v6v6') ? sourceData.poster_url : null;
+let rawPosterPath = sourceData.poster_url || (result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (tmdbNode?.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbNode.poster_path}` : null));
+if (!rawPosterPath && (result?.backdrop_path || tmdbNode?.backdrop_path)) {
+  rawPosterPath = `https://image.tmdb.org/t/p/w500${result?.backdrop_path || tmdbNode?.backdrop_path}`;
 }
-const posterPath = rawPosterPath;
+const posterPath = rawPosterPath ? (!rawPosterPath.startsWith('http') ? `https://image.tmdb.org/t/p/w500${rawPosterPath}` : rawPosterPath) : null;
 
-// 2. 🎯 本物の Wikidata ID（QID）& IMDb ID の抽出
-let wikidata_id = null;
-const tmdbWikiId = credits?.external_ids?.wikidata_id || credits?.wikidata_id || result?.external_ids?.wikidata_id || tmdb?.external_ids?.wikidata_id;
-if (tmdbWikiId && /^Q\d+$/.test(tmdbWikiId)) {
-  wikidata_id = tmdbWikiId;
-} else if (sourceData.wikidata_id && /^Q\d+$/.test(sourceData.wikidata_id) && !sourceData.wikidata_id.startsWith('Q_TMDB_')) {
-  wikidata_id = sourceData.wikidata_id;
-}
+// 2. TMDb ID の確定
+const tmdb_id = result?.id || tmdbNode?.id || sourceData.tmdb_id || sourceData.id || null;
 
-const tmdbImdbId = credits?.imdb_id || credits?.external_ids?.imdb_id || result?.external_ids?.imdb_id || tmdb?.external_ids?.imdb_id;
-let imdb_id = (tmdbImdbId && /^tt\d+$/.test(tmdbImdbId)) ? tmdbImdbId : (sourceData.imdb_id || null);
+// 3. Wikidata ID の確定（TMDb external_ids 優先）
+const tmdbExternalWikidataId = result?.external_ids?.wikidata_id || tmdbNode?.external_ids?.wikidata_id || creditsNode?.external_ids?.wikidata_id || null;
+const sourceWikidataId = sourceData.wikidata_id || sourceData.wikidataId || null;
+const wikidata_id = tmdbExternalWikidataId || (/^Q\d+$/.test(sourceWikidataId || '') ? sourceWikidataId : null);
+
+// 4. IMDb ID / URL の抽出
+const imdb_id = result?.external_ids?.imdb_id || tmdbNode?.external_ids?.imdb_id || creditsNode?.external_ids?.imdb_id || result?.imdb_id || sourceData.imdb_id || null;
 const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}/` : (sourceData.imdb_url || null);
 
-const tmdb_id = sourceData.tmdb_id || credits?.id || result?.id || null;
+// 5. キャスト・監督の抽出
+const castArray = Array.isArray(creditsNode?.cast) ? creditsNode.cast : (Array.isArray(creditsNode?.credits?.cast) ? creditsNode.credits.cast : (Array.isArray(tmdbNode?.credits?.cast) ? tmdbNode.credits.cast : []));
+const crewArray = Array.isArray(creditsNode?.crew) ? creditsNode.crew : (Array.isArray(creditsNode?.credits?.crew) ? creditsNode.credits.crew : (Array.isArray(tmdbNode?.credits?.crew) ? tmdbNode.credits.crew : []));
 
-// 3. キャスト・監督の抽出（取得できたキャスト全員を保存）
-const fetchedCast = Array.isArray(credits?.cast) ? credits.cast.map(c => c.name || c.original_name).join(', ') : null;
-const fetchedDirector = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.name || credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
-const fetchedCastEn = Array.isArray(credits?.cast) ? credits.cast.map(c => c.original_name).join(', ') : null;
-const fetchedDirectorEn = Array.isArray(credits?.crew) ? (credits.crew.find(c => c.job === 'Director')?.original_name || null) : null;
+const directorObj = crewArray.find(c => c.job === 'Director');
+const fetchedDirector = directorObj?.name || directorObj?.original_name || null;
+const fetchedDirectorEn = directorObj?.original_name || directorObj?.name || null;
 
-// 4. 🤖 AI（Claude / Gemini / Ollama / $input）による日本語あらすじの安全抽出
+const fetchedCast = castArray.length > 0 ? castArray.slice(0, 10).map(c => c.name || c.original_name).filter(Boolean).join(', ') : null;
+const fetchedCastEn = castArray.length > 0 ? castArray.slice(0, 10).map(c => c.original_name || c.name).filter(Boolean).join(', ') : null;
+
+// 6. 🤖 AI（Gemini / Claude / $input）による日本語あらすじの安全抽出
 let aiOverview = null;
-let aiNode = getNodeData('claude_movie_db') || getNodeData('claude_movie_d') || getNodeData('gemini_movie_db') || getNodeData('Google Gemini') || getNodeData('Gemini') || getNodeData('Claude') || getNodeData('Ollama');
-
-// $input 自体に AI の出力（content.parts や text など）が含まれている場合は直接採用
-const currentInput = $input.first()?.json || {};
-if (currentInput.content?.parts || currentInput.candidates || (currentInput.text && !currentInput.original_title) || currentInput.message) {
-  aiNode = currentInput;
-}
-
 let aiCastJa = null;
 let aiDirectorJa = null;
 
-if (aiNode) {
-  let rawAiText = "";
-  if (typeof aiNode === 'string') {
-    rawAiText = aiNode;
-  } else if (Array.isArray(aiNode.content?.parts)) {
-    rawAiText = aiNode.content.parts.map(p => p.text || '').join('\n');
-  } else if (aiNode.candidates?.[0]?.content?.parts) {
-    rawAiText = aiNode.candidates[0].content.parts.map(p => p.text || '').join('\n');
-  } else if (aiNode.text) {
-    rawAiText = aiNode.text;
-  } else if (aiNode.message?.content) {
-    rawAiText = typeof aiNode.message.content === 'string' ? aiNode.message.content : JSON.stringify(aiNode.message.content);
-  } else if (aiNode.content?.[0]?.text) {
-    rawAiText = aiNode.content[0].text;
-  }
-  
-  if (rawAiText) {
-    const castMatch = rawAiText.match(/\[CAST_JA:\s*(.+?)\]/i);
-    if (castMatch) aiCastJa = castMatch[1].trim();
+const aiData = getNodeData('gemini_movie_db_prompt') || getNodeData('claude_movie_db_prompt') || getNodeData('gemini_movie_db') || getNodeData('claude_movie_db') || {};
+const currentInput = $input.first()?.json || {};
 
-    const dirMatch = rawAiText.match(/\[DIRECTOR_JA:\s*(.+?)\]/i);
-    if (dirMatch) aiDirectorJa = dirMatch[1].trim();
-
-    aiOverview = rawAiText
-      .replace(/\[CAST_JA:\s*(.+?)\]/gi, '')
-      .replace(/\[DIRECTOR_JA:\s*(.+?)\]/gi, '')
-      .replace(/```json/gi, '')
-      .replace(/```/g, '')
-      .replace(/\[TITLE:\s*(.+?)\]/i, '')
-      .trim();
-  }
+let rawAiText = aiData?.text || aiData?.response?.text || aiData?.message?.content?.[0]?.text;
+if (!rawAiText && Array.isArray(aiData?.content?.parts)) {
+  rawAiText = aiData.content.parts.map(p => p.text || '').join('\n');
+}
+if (!rawAiText && (currentInput.content?.parts || currentInput.candidates || currentInput.text)) {
+  rawAiText = currentInput.text || (Array.isArray(currentInput.content?.parts) ? currentInput.content.parts.map(p => p.text || '').join('\n') : null);
+}
+if (typeof aiData === 'string') {
+  rawAiText = aiData;
 }
 
-// 5. 予告編（YouTube）の探索
+if (rawAiText) {
+  const dirMatch = rawAiText.match(/\[DIRECTOR_JA:\s*(.+?)\]/i);
+  if (dirMatch) aiDirectorJa = dirMatch[1].trim();
+
+  const castMatch = rawAiText.match(/\[CAST_JA:\s*(.+?)\]/i);
+  if (castMatch) aiCastJa = castMatch[1].trim();
+
+  aiOverview = rawAiText
+    .replace(/\[CAST_JA:\s*(.+?)\]/gi, '')
+    .replace(/\[DIRECTOR_JA:\s*(.+?)\]/gi, '')
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .replace(/\[TITLE:\s*(.+?)\]/i, '')
+    .trim();
+}
+
+// 予告編（YouTube）の探索
 const braveMovie = getNodeData('Brave Search_movie');
 const braveTrailer = getNodeData('Brave Search_trailer');
 const videoResults = [
@@ -155,26 +143,38 @@ const youtubeVideo = videoResults.find(v => {
 
 const trailer_url = sourceData.trailer_url || youtubeVideo?.url || youtubeVideo?.profile?.url || null;
 
-// 6. あらすじの確定（TMDb日本語 ➡️ AI生成日本語 ➡️ 原文英語/韓国語）
+// 7. あらすじの確定（TMDb日本語 ➡️ AI生成日本語 ➡️ 原文英語/韓国語）
 const isJapaneseText = (str) => /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(str || '');
 
-const rawJaOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview;
-const tmdbJaOverview = isJapaneseText(rawJaOverview) ? rawJaOverview : (isJapaneseText(result?.overview) ? result?.overview : null);
+const translationsList = tmdbNode?.translations?.translations || result?.translations?.translations || creditsNode?.translations?.translations || [];
 
-const rawEnOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || (!isJapaneseText(result?.overview) ? result?.overview : null);
-const rawKoOverview = result?.translations?.translations?.find(t => t.iso_639_1 === 'ko')?.data?.overview;
-const rawForeignOverview = rawEnOverview || rawKoOverview || sourceData.overview_en || null;
+// 日本語公式あらすじ
+const jaTrans = translationsList.find(t => t.iso_639_1 === 'ja' && t.data?.overview?.trim());
+const tmdbJaOverview = jaTrans?.data?.overview?.trim() || (isJapaneseText(result?.overview) && result?.overview?.trim() ? result.overview.trim() : (isJapaneseText(tmdbNode?.overview) && tmdbNode?.overview?.trim() ? tmdbNode.overview.trim() : null));
+
+// 英語公式あらすじ
+const enTrans = translationsList.find(t => t.iso_639_1 === 'en' && t.data?.overview?.trim());
+const rawEnOverview = enTrans?.data?.overview?.trim() || (!isJapaneseText(result?.overview) && result?.overview?.trim() ? result.overview.trim() : (!isJapaneseText(tmdbNode?.overview) && tmdbNode?.overview?.trim() ? tmdbNode.overview.trim() : null));
+
+// 韓国語・原語公式あらすじ
+const koTrans = translationsList.find(t => t.iso_639_1 === 'ko' && t.data?.overview?.trim());
+const rawKoOverview = koTrans?.data?.overview?.trim() || null;
+
+// その他の言語あらすじ
+const otherTrans = translationsList.find(t => t.data?.overview?.trim() && !isJapaneseText(t.data.overview));
+
+const rawForeignOverview = rawEnOverview || rawKoOverview || otherTrans?.data?.overview?.trim() || sourceData.overview_en || null;
 
 const finalOverview = tmdbJaOverview || aiOverview || sourceData.overview || rawForeignOverview || null;
-const originalForeignOverview = (rawForeignOverview && rawForeignOverview !== finalOverview) ? rawForeignOverview : (sourceData.overview_en || null);
+const originalForeignOverview = (rawForeignOverview && rawForeignOverview !== finalOverview) ? rawForeignOverview : (sourceData.overview_en || rawForeignOverview || null);
 
 // 7. タイトルの確定
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
 const isInputTitleJapanese = isJapaneseText(inputTitle);
-const isTmdbTitleJapanese = isJapaneseText(result?.title);
-const tmdbJaTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
-const tmdbEnTitle = result?.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.title || null;
-const finalTitle = sourceData.title || (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || (isTmdbTitleJapanese ? result?.title : null) || tmdbEnTitle || result?.title || result?.original_title || null;
+const isTmdbTitleJapanese = isJapaneseText(result?.title || tmdbNode?.title);
+const tmdbJaTitle = translationsList.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
+const tmdbEnTitle = translationsList.find(t => t.iso_639_1 === 'en')?.data?.title || null;
+const finalTitle = sourceData.title || (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || (isTmdbTitleJapanese ? (result?.title || tmdbNode?.title) : null) || tmdbEnTitle || result?.title || tmdbNode?.title || result?.original_title || tmdbNode?.original_title || null;
 
 // 8. ジャンルの日本語化
 const genreMap = {

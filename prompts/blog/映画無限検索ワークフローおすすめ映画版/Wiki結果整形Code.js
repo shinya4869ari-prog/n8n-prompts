@@ -84,13 +84,6 @@ try {
   // ノードが存在しない、またはまだ実行されていない場合はスキップ
 }
 
-// 国コードから言語コードへのマッピング（映画データベース充実ワークフロー準拠）
-const countryToLang = {
-  'KR': 'ko', 'JP': 'ja', 'US': 'en', 'GB': 'en', 'FR': 'fr', 'DE': 'de',
-  'CN': 'zh', 'HK': 'zh', 'TW': 'zh', 'IN': 'hi', 'TH': 'th', 'IT': 'it',
-  'ES': 'es', 'RU': 'ru', 'VN': 'vi', 'ID': 'id',
-};
-
 const filteredOut = [];
 
 for (const b of bindings) {
@@ -113,8 +106,7 @@ for (const b of bindings) {
   }
 
   let movie = movieMap.get(movieUrl);
-  const currentCountryCode = b.countryCode?.value || null;
-  const searchedCountryCode = formNode.countryCode || null;
+  const currentCountryCode = b.countryCode?.value || formNode.country || formNode.countryCode || null;
 
   if (!movie) {
     movie = {
@@ -122,52 +114,47 @@ for (const b of bindings) {
       origin_title: b.movieLabelKo?.value || b.movieLabelEn?.value || null,
       year: b.year?.value ? parseInt(b.year.value) : null,
       target_country: currentCountryCode,
-      target_lang: currentCountryCode ? (countryToLang[currentCountryCode] || null) : null,
       tmdb_id,
       wikidata_id,
       director_name: directorName,
     };
     movieMap.set(movieUrl, movie);
-  } else {
-    // すでに仮登録された映画でも、今回の行の国コードが検索条件の国コード（例：KR）と一致していれば上書きする
-    if (searchedCountryCode && currentCountryCode === searchedCountryCode) {
-      movie.target_country = searchedCountryCode;
-      movie.target_lang = countryToLang[searchedCountryCode] || null;
-    }
   }
 }
 
 const movieList = Array.from(movieMap.values());
-
-// 公開年が新しい順（降順）にソート
-movieList.sort((a, b) => (b.year || 0) - (a.year || 0));
-
-// 直近2026年から10件、26年がない場合は25年、25年がない場合は24年のフォールバック＆補完
-const movies2026 = movieList.filter(m => m.year === 2026);
-const movies2025 = movieList.filter(m => m.year === 2025);
-const movies2024 = movieList.filter(m => m.year === 2024);
-
-let selectedMovies = [];
 const targetLimit = limit || 10;
+let selectedMovies = [];
 
-// モード設定 (fill: 優先度付き補完 / strict: 完全年度フォールバック)
-const fallbackMode = "fill"; 
-
-if (fallbackMode === "strict") {
-  if (movies2026.length > 0) {
-    selectedMovies = movies2026.slice(0, targetLimit);
-  } else if (movies2025.length > 0) {
-    selectedMovies = movies2025.slice(0, targetLimit);
-  } else if (movies2024.length > 0) {
-    selectedMovies = movies2024.slice(0, targetLimit);
-  } else {
-    selectedMovies = movieList.slice(0, targetLimit);
-  }
+// TMDb Discoverなどソート条件が指定されている場合は、APIが返したランキング順序をそのまま維持
+if (formNode.sort_by) {
+  selectedMovies = movieList.slice(0, targetLimit);
 } else {
-  // "fill": 2026年を優先し、足りない分を2025年、2024年で埋める
-  selectedMovies = [...movies2026, ...movies2025, ...movies2024].slice(0, targetLimit);
-  if (selectedMovies.length === 0) {
-    selectedMovies = movieList.slice(0, targetLimit);
+  // 指定がない場合（Wikidata等）：公開年が新しい順（降順）にソートして直近年度優先
+  movieList.sort((a, b) => (b.year || 0) - (a.year || 0));
+
+  const movies2026 = movieList.filter(m => m.year === 2026);
+  const movies2025 = movieList.filter(m => m.year === 2025);
+  const movies2024 = movieList.filter(m => m.year === 2024);
+
+  const fallbackMode = "fill"; 
+
+  if (fallbackMode === "strict") {
+    if (movies2026.length > 0) {
+      selectedMovies = movies2026.slice(0, targetLimit);
+    } else if (movies2025.length > 0) {
+      selectedMovies = movies2025.slice(0, targetLimit);
+    } else if (movies2024.length > 0) {
+      selectedMovies = movies2024.slice(0, targetLimit);
+    } else {
+      selectedMovies = movieList.slice(0, targetLimit);
+    }
+  } else {
+    // "fill": 2026年を優先し、足りない分を2025年、2024年で埋める
+    selectedMovies = [...movies2026, ...movies2025, ...movies2024].slice(0, targetLimit);
+    if (selectedMovies.length === 0) {
+      selectedMovies = movieList.slice(0, targetLimit);
+    }
   }
 }
 
