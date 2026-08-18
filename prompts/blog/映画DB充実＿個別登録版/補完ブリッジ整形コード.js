@@ -17,6 +17,9 @@ function extractAiText(node) {
   return '';
 }
 
+// 日本語判定関数
+const isJapanese = (str) => /[\u3040-\u30ff\u4e00-\u9fff]/.test(str || '');
+
 // 1. 映画データ整形コードの取得
 const shaped = getNode('映画データ整形コード');
 
@@ -26,14 +29,14 @@ const parsedCast = (() => {
     const candidates = [$input.first()?.json, $input.item?.json, getNode('キャスト翻訳')];
     for (const c of candidates) {
       if (!c) continue;
-      if (c.cast && typeof c.cast === 'string' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(c.cast) && !c.idx) return c;
+      if (c.cast && typeof c.cast === 'string' && isJapanese(c.cast) && !c.idx) return c;
       const raw = extractAiText(c);
-      if (raw && (raw.includes('"cast"') || raw.includes('cast'))) {
+      if (raw && (raw.includes('"cast"') || raw.includes('cast') || raw.includes('overview'))) {
         const clean = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();
         const jsonMatch = clean.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed && (parsed.cast || parsed.title)) return parsed;
+          if (parsed && (parsed.cast || parsed.title || parsed.overview)) return parsed;
         }
       }
     }
@@ -41,8 +44,11 @@ const parsedCast = (() => {
   } catch(e) { return {}; }
 })();
 
-// 3. あらすじの取得（gemini_movie_db ➔ shaped）
+// 3. あらすじの取得（キャスト翻訳AIの日本語あらすじ ➔ gemini_movie_db ➔ shaped）
 const aiOverview = (() => {
+  if (parsedCast.overview && isJapanese(parsedCast.overview) && parsedCast.overview.trim().length > 15) {
+    return parsedCast.overview.trim();
+  }
   try {
     const raw = extractAiText(getNode('gemini_movie_db'));
     if (raw && !raw.includes('申し訳') && !raw.includes('情報が') && raw.trim().length > 20) {
@@ -52,7 +58,7 @@ const aiOverview = (() => {
   return shaped.overview || '';
 })();
 
-// 4. Brave Search_trailer からの予告編 URL 抽出
+// 4. 予告編 URL 抽出（Brave Search ➔ TMDb ➔ YouTube検索リンクへの完全自動フォールバック）
 const trailerUrl = (() => {
   try {
     const b = getNode('Brave Search_trailer');
@@ -75,7 +81,17 @@ const trailerUrl = (() => {
       if (trailerVid) return trailerVid.url || trailerVid.profile?.url;
     }
   } catch(e) {}
-  return (shaped.trailer_url && shaped.trailer_url.includes('youtube.com')) ? shaped.trailer_url : null;
+
+  if (shaped.trailer_url && shaped.trailer_url.includes('watch?v=')) {
+    return shaped.trailer_url;
+  }
+
+  // 予告編動画が見つからない場合は、YouTube検索リンクを自動セット
+  const searchTitle = parsedCast.title || shaped.title || shaped.origin_title || '';
+  if (searchTitle) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(searchTitle + ' 予告編')}`;
+  }
+  return '';
 })();
 
 // 5. Brave 検索結果の取得
@@ -90,9 +106,7 @@ const braveResult = (() => {
   return '';
 })();
 
-// 日本語判定 & キャスト・監督のマージ
-const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
-
+// キャスト・監督のマージ
 const finalCast = (parsedCast.cast && isJapanese(parsedCast.cast)) 
   ? parsedCast.cast 
   : (isJapanese(shaped.cast) ? shaped.cast : (parsedCast.cast || shaped.cast || ''));
