@@ -39,8 +39,12 @@ sourceData = getSourceNodeData();
 const candidateSources = [credits, t1, t2, $input.first()?.json].filter(Boolean);
 let tmdbObj = candidateSources.find(c => (c.credits?.cast || c.cast || c.id)) || candidateSources[0] || {};
 
-// 🎯【キャスト抽出（そのまま取得し、後続のAI翻訳ノードへ渡す）】
-const castList = tmdbObj.credits?.cast || tmdbObj.cast || [];
+// 🎯【キャスト抽出（主要キャスト上位25名にスマート制限・429レートリミット防止）】
+const rawCastList = tmdbObj.credits?.cast || tmdbObj.cast || [];
+const castList = (Array.isArray(rawCastList) ? [...rawCastList] : [])
+  .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  .slice(0, 25);
+
 const tmdbCast = castList.map(c => c.name || c.original_name).filter(Boolean).join(', ');
 const tmdbCastEn = castList.map(c => c.original_name || c.name).filter(Boolean).join(', ');
 
