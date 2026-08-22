@@ -46,8 +46,8 @@ jaDirectors.forEach((name, idx) => {
   persons.push({ name: name, name_en: enName, search_key: searchKey, occupation: '監督' });
 });
 
-// 2. キャストの追加（主要キャスト上位25名に制限・429レートリミット防止）
-jaCast.slice(0, 25).forEach((name, idx) => {
+// 2. キャストの追加（全キャストを漏れなく抽出してPersonsテーブルへ登録）
+jaCast.forEach((name, idx) => {
   if (!name || seenNames.has(name)) return;
   seenNames.add(name);
 
