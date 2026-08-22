@@ -19,7 +19,7 @@ const crewList = Array.isArray(creditsNode?.crew) ? creditsNode.crew : (Array.is
 
 const splitNames = (str) => {
   if (!str) return [];
-  return String(str).split(/[,\/、\n]+/).map(s => s.trim()).filter(Boolean);
+  return String(str).replace(/_/g, '・').split(/[,\/、\n]+/).map(s => s.trim()).filter(Boolean);
 };
 
 const persons = [];

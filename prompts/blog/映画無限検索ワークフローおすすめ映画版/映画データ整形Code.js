@@ -331,8 +331,8 @@ const cleanStr = (str) => {
   return str.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 };
 
-const finalDirector = toKatakanaIfHangul(aiDirectorJa || sourceData.director || fetchedDirector || null);
-const finalCast = toKatakanaIfHangul(aiCastJa || sourceData.cast || fetchedCast || null);
+const finalDirector = toKatakanaIfHangul(aiDirectorJa || sourceData.director || fetchedDirector || null)?.replace(/_/g, '・');
+const finalCast = toKatakanaIfHangul(aiCastJa || sourceData.cast || fetchedCast || null)?.replace(/_/g, '・');
 
 return [{
   json: {

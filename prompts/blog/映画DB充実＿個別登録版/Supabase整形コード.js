@@ -26,7 +26,7 @@ const seenNames = new Set();
 
 const splitNames = (str) => {
   if (!str) return [];
-  return String(str).split(/[,/、\n]+/).map(s => s.trim()).filter(Boolean);
+  return String(str).replace(/_/g, '・').split(/[,/、\n]+/).map(s => s.trim()).filter(Boolean);
 };
 
 const inferPersonCountry = (name, nameEn, defaultCountry) => {
