@@ -173,6 +173,18 @@ inputItems.forEach((item, idx) => {
         ytId = null;
       }
     }
+
+    // 3. 🎯 職業（occupation）の厳格検証 (Wikidataがスポーツ選手、政治家、学者等の異業種の場合はQID・SNS・画像を完全破棄)
+    const wikiOcc = (bindingObj?.occupationLabel?.value || bindingObj?.occupation?.value || '').toLowerCase();
+    const isDisallowedOcc = /선수|選手|athlete|sport|curling|カーリング|축구|야구|정치인|politician|배구|농구|골프|수영|학자|교수/i.test(wikiOcc);
+    if (isDisallowedOcc) {
+      qid = null;
+      wikiImage = null;
+      xId = null;
+      instaId = null;
+      ytId = null;
+      officialSite = null;
+    }
   }
 
   const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
