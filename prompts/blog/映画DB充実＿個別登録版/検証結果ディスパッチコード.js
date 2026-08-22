@@ -57,19 +57,22 @@ const movie = {
   ...origMovie,
   ...(auditResult.movie || {})
 };
+if (movie.cast) movie.cast = String(movie.cast).replace(/_/g, '・');
+if (movie.director) movie.director = String(movie.director).replace(/_/g, '・');
 
 // 4. 人物データの抽出（Supabase Personsテーブルのカラム名 wikidata_id に100%統一）
 const aiPersons = auditResult.persons || [];
 const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(origP => {
+  const rawName = String(origP.name || '').replace(/_/g, '・');
   const matchedAi = aiPersons.find(ap => 
     ((ap.wikidata_id || ap.qid) && (origP.wikidata_id || origP.qid) && (ap.wikidata_id || ap.qid) === (origP.wikidata_id || origP.qid)) ||
-    (ap.name && origP.name && (ap.name === origP.name || ap.name.includes(origP.name) || origP.name.includes(ap.name)))
+    (ap.name && rawName && (ap.name === rawName || ap.name.includes(rawName) || rawName.includes(ap.name)))
   );
 
   const wId = origP.wikidata_id || origP.qid || matchedAi?.wikidata_id || matchedAi?.qid || null;
   const pObj = {
     ...origP,
-    name: matchedAi?.name || origP.name,
+    name: String(matchedAi?.name || rawName).replace(/_/g, '・'),
     name_en: matchedAi?.name_en || origP.name_en || null,
     occupation: matchedAi?.occupation || origP.occupation || '俳優',
     country: matchedAi?.country || origP.country || 'KR',
