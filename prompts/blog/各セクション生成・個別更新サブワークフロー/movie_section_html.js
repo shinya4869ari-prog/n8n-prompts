@@ -76,7 +76,12 @@ items.forEach(d => {
   const year = d.year || d.公開年 || d.release_year || '';
 
   const director = (d.director && d.director !== 'EMPTY') ? d.director : (d.director_en && d.director_en !== 'EMPTY' ? d.director_en : '');
-  const cast = (d.cast && d.cast !== 'EMPTY') ? d.cast : (d.cast_en && d.cast_en !== 'EMPTY' ? d.cast_en : '');
+  let rawCast = (d.cast && d.cast !== 'EMPTY') ? d.cast : (d.cast_en && d.cast_en !== 'EMPTY' ? d.cast_en : '');
+  let cast = '';
+  if (rawCast) {
+    const castList = String(rawCast).split(/[,、/，]\s*/).map(c => c.trim()).filter(Boolean);
+    cast = castList.slice(0, 8).join(', ');
+  }
   const summary = (d.overview && d.overview !== 'EMPTY') ? d.overview : (d.overview_en && d.overview_en !== 'EMPTY' ? d.overview_en : '');
 
   const isSerious = d.is_serious === true || d.is_serious === 'true' || d.深刻 === 'true';
