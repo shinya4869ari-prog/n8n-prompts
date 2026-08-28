@@ -271,8 +271,12 @@ try {
     try {
       const found = $(nodeName).all();
       if (found && found.length > 0) {
-        // 人物保存ノード等の空レスポンスを除外し、映画データのみを厳選
-        const validMovies = found.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
+        // 人物ノード（name, occupation）と映画ノード（title, origin_title, tmdb_id, タイトル_日本語）を明確に区別して映画のみを抽出
+        const validMovies = found.filter(i => {
+          const j = i.json || i || {};
+          // 映画固有のプロパティを保持し、人物専用オブジェクト（occupation等のみ）を除外
+          return (j.title || j.origin_title || j.tmdb_id || j.タイトル_日本語) && !j.occupation;
+        });
         if (validMovies.length > 0) {
           subItems = validMovies;
           break;

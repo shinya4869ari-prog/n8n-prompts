@@ -214,8 +214,14 @@ try {
     try {
       const found = $(nodeName).all();
       if (found && found.length > 0) {
-        subItems = found;
-        break;
+        const validMovies = found.filter(i => {
+          const j = i.json || i || {};
+          return (j.title || j.origin_title || j.tmdb_id || j.タイトル_日本語) && !j.occupation;
+        });
+        if (validMovies.length > 0) {
+          subItems = validMovies;
+          break;
+        }
       }
     } catch (err) {}
   }
