@@ -932,7 +932,12 @@ return [articleItem].map(item => {
         (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題']))))
       ) || {};
       const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      let cast = '';
+      if (rawCast) {
+        const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+        cast = castArr.slice(0, 8).join(', ');
+      }
       const directorActorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
       const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
       const posterPath = apiData['poster_path'];
@@ -1045,7 +1050,12 @@ return [articleItem].map(item => {
         : '';
 
       const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : '';
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : '';
+      let cast = '';
+      if (rawCast) {
+        const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+        cast = castArr.slice(0, 8).join(', ');
+      }
       const directorHtml = director ? `<br><span style="color:#555;font-size:12px;">🎬 監督：<span class="no-link">${director}</span></span>` : '';
       const castHtml = cast ? `<br><span style="color:#555;font-size:12px;">👥 キャスト：<span class="no-link">${cast}</span></span>` : '';
 

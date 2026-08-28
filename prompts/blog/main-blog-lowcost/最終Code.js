@@ -1050,8 +1050,12 @@ return [articleItem].map(item => {
       const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
       const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
 
-      const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      let cast = '';
+      if (rawCast) {
+        const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+        cast = castArr.slice(0, 8).join(', ');
+      }
       const type = d['種別'] || apiData['genres'] || '';
       const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
 
@@ -1231,7 +1235,12 @@ return [articleItem].map(item => {
         : '';
 
       const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || '');
-      const cast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+      let cast = '';
+      if (rawCast) {
+        const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+        cast = castArr.slice(0, 8).join(', ');
+      }
       const type = d['種別'] || apiData['genres'] || '';
       const year = d['公開年'] || apiData['公開年'] || apiData['year'] || '';
 
