@@ -265,10 +265,14 @@ if (recommendedMovies.length === 0) {
     recommendedMovies = r25.おすすめ映画;
   } else if (Array.isArray(r25?.おすすめ映画ランキング) && r25.おすすめ映画ランキング.length > 0) {
     recommendedMovies = r25.おすすめ映画ランキング;
+  } else if (Array.isArray(r25?.映像作品) && r25.映像作品.length > 0) {
+    recommendedMovies = r25.映像作品;
   } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
     recommendedMovies = r2.おすすめ映画;
   } else if (Array.isArray(r2?.おすすめ映画ランキング) && r2.おすすめ映画ランキング.length > 0) {
     recommendedMovies = r2.おすすめ映画ランキング;
+  } else if (Array.isArray(r2?.映像作品) && r2.映像作品.length > 0) {
+    recommendedMovies = r2.映像作品;
   }
 }
 
