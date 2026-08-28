@@ -197,17 +197,8 @@ let recommendedMovies = [];
 try {
   let subItems = [];
   const candidateNodes = [
-    "Call 別画面映画検索ワークフロー おすすめ映画版",
-    "Call 別画面映画検索ワークフロー　おすすめ映画版",
-    "Call '別画面映画検索ワークフロー おすすめ映画版'",
-    "Call '別画面映画検索ワークフロー　おすすめ映画版'",
-    "別画面映画検索ワークフロー おすすめ映画版",
-    "別画面映画検索ワークフロー　おすすめ映画版",
     "Call '映画無限検索ワークフロー おすすめ映画版'",
-    "Call '映画無限検索ワークフロー　おすすめ映画版'",
-    "Call 映画無限検索ワークフロー おすすめ映画版",
     "映画無限検索ワークフロー おすすめ映画版",
-    "映画無限検索ワークフロー　おすすめ映画版",
     "Call '映画無限検索ワークフロー'",
     "映画無限検索ワークフロー",
     "Call 'おすすめ映画'",
@@ -265,14 +256,10 @@ if (recommendedMovies.length === 0) {
     recommendedMovies = r25.おすすめ映画;
   } else if (Array.isArray(r25?.おすすめ映画ランキング) && r25.おすすめ映画ランキング.length > 0) {
     recommendedMovies = r25.おすすめ映画ランキング;
-  } else if (Array.isArray(r25?.映像作品) && r25.映像作品.length > 0) {
-    recommendedMovies = r25.映像作品;
   } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
     recommendedMovies = r2.おすすめ映画;
   } else if (Array.isArray(r2?.おすすめ映画ランキング) && r2.おすすめ映画ランキング.length > 0) {
     recommendedMovies = r2.おすすめ映画ランキング;
-  } else if (Array.isArray(r2?.映像作品) && r2.映像作品.length > 0) {
-    recommendedMovies = r2.映像作品;
   }
 }
 
@@ -536,6 +523,10 @@ return [{
     world_bank_code: r1.world_bank_code,
     countryEn: r1.countryEn || $('国名変換Code').first().json.countryEn || "",
     capital: $('国名変換Code').first().json.capital || "",
+    writerPrompt: writerPrompt, // 置換済みのプロンプト
+    data: finalData
+  }
+}];
     writerPrompt: writerPrompt, // 置換済みのプロンプト
     data: finalData
   }
