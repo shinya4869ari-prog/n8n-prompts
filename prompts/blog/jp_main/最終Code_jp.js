@@ -85,8 +85,9 @@ return $input.all().map(item => {
         continue;
       }
 
-      // それ以外の行は直前のフィールド（概要など）の続きとして複数行結合
-      if (currentObj && currentKey) {
+      // それ以外の行は長文フィールド（概要など）のみ複数行結合を許可
+      const multilineAllowedKeys = ['概要', 'description', 'overview'];
+      if (currentObj && currentKey && multilineAllowedKeys.includes(currentKey)) {
         if (currentObj[currentKey]) {
           currentObj[currentKey] += '\n' + trimmed;
         } else {
@@ -296,14 +297,30 @@ return $input.all().map(item => {
 
   // 国内の重大犯罪事件テーブル
   const majorCrimeData = parseLines(raw, '重大犯罪');
+  const r2Crimes = sheetData.data?.対象国データ_記事?.重大犯罪事件 || [];
   if (majorCrimeData.length > 0) {
     article += `<h3 style="${h3Style}">国内の重大犯罪事件</h3>\n`;
-    const majorCrimeRows = majorCrimeData.map(d => [
-      d['発生年'] || '不明',
-      `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:12px;color:#666;">犯人：' + d['犯人名'] + '</span>' : ''}`,
-      d['被害者属性'] || '不明',
-      (d['概要'] || '') + (d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : '')
-    ]);
+    const majorCrimeRows = majorCrimeData.map(d => {
+      // 映像化作品の特定（Writer出力、またはリサーチャー生データからフォールバック）
+      let movieText = (d['映像化'] && !/なし|不明/.test(d['映像化'])) ? d['映像化'] : '';
+      if (!movieText && r2Crimes.length > 0) {
+        const found = r2Crimes.find(c => c.事件名 && d['事件名'] && (c.事件名.includes(d['事件名']) || d['事件名'].includes(c.事件名)));
+        if (found && Array.isArray(found.映像化作品) && found.映像化作品.length > 0) {
+          const m = found.映像化作品[0];
+          const mTitle = m.タイトル_日本語 || m.title || m.原題 || '';
+          const mYear = m.公開年 || m.year || '';
+          if (mTitle) movieText = `『${mTitle}』${mYear ? `（${mYear}）` : ''}`;
+        }
+      }
+      const movieHtml = movieText ? `<div style="margin-top:6px;font-size:12px;color:#d32f2f;font-weight:600;">🎬 関連映画：${movieText}</div>` : '';
+
+      return [
+        d['発生年'] || '不明',
+        `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:12px;color:#666;">犯人：' + d['犯人名'] + '</span>' : ''}`,
+        d['被害者属性'] || '不明',
+        (d['概要'] || '') + movieHtml + (d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : '')
+      ];
+    });
     article += makeTable(['発生年', '事件名', '被害者属性', '概要'], majorCrimeRows, ['12%', '26%', '18%', '44%']);
   }
 
