@@ -293,6 +293,20 @@ return $input.all().map(item => {
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
   }
+
+  // 国内の重大犯罪事件テーブル
+  const majorCrimeData = parseLines(raw, '重大犯罪');
+  if (majorCrimeData.length > 0) {
+    article += `<h3 style="${h3Style}">国内の重大犯罪事件</h3>\n`;
+    const majorCrimeRows = majorCrimeData.map(d => [
+      d['発生年'] || '不明',
+      `<strong>${d['事件名'] || '不明'}</strong>${d['犯人名'] ? '<br><span style="font-size:12px;color:#666;">犯人：' + d['犯人名'] + '</span>' : ''}`,
+      d['被害者属性'] || '不明',
+      (d['概要'] || '') + (d['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${d['出典']}</span>` : '')
+    ]);
+    article += makeTable(['発生年', '事件名', '被害者属性', '概要'], majorCrimeRows, ['12%', '26%', '18%', '44%']);
+  }
+
   const rekishiNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(rekishiNeko);
   article += backToTopBtn;

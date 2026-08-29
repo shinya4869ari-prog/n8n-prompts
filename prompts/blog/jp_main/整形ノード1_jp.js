@@ -189,6 +189,7 @@ if (Array.isArray(supabaseMovie?.おすすめ映画) && supabaseMovie.おすす�
 const finalData = {
   対象国データ_記事: {
     歴史的背景: r2.歴史的背景,
+    重大犯罪事件: r2.重大犯罪事件 || r2['重大犯罪'] || [],
     直近の動向: r2.直近の動向,
     映像作品: r25.映像作品,
     おすすめ映画: recMovies,

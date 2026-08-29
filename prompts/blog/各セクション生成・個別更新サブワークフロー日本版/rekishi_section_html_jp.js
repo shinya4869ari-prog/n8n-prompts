@@ -69,6 +69,27 @@ if (historyList.length > 0) {
   html += `</tbody></table>\n`;
 }
 
+// 重大犯罪事件テーブル（存在する場合）
+const crimeList = items[0]?.重大犯罪事件 || items[0]?.crimes || [];
+if (Array.isArray(crimeList) && crimeList.length > 0) {
+  html += `<h3 style="font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;">国内の重大犯罪事件</h3>\n`;
+  html += `<table style="${tableStyle}"><thead><tr>`;
+  html += `<th style="${thStyle}width:12%;">発生年</th><th style="${thStyle}width:26%;">事件名</th><th style="${thStyle}width:18%;">被害者属性</th><th style="${thStyle}width:44%;">概要</th>`;
+  html += `</tr></thead><tbody>`;
+  crimeList.forEach((c, ci) => {
+    const bg = ci % 2 === 1 ? 'background:#fafafa;' : '';
+    const cite = c['出典'] ? `<br><span style="font-size:11px;color:#aaa;">出典：${c['出典']}</span>` : '';
+    const criminal = c['犯人名'] ? `<br><span style="font-size:12px;color:#666;">犯人：${c['犯人名']}</span>` : '';
+    html += `<tr style="${bg}">`;
+    html += `<td style="border:1px solid #eee;padding:12px 14px;font-weight:bold;">${c['発生年'] || '不明'}</td>`;
+    html += `<td style="border:1px solid #eee;padding:12px 14px;"><strong>${c['事件名'] || '不明'}</strong>${criminal}</td>`;
+    html += `<td style="border:1px solid #eee;padding:12px 14px;">${c['被害者属性'] || '不明'}</td>`;
+    html += `<td style="border:1px solid #eee;padding:12px 14px;">${c['概要'] || ''}${cite}</td>`;
+    html += `</tr>`;
+  });
+  html += `</tbody></table>\n`;
+}
+
 // エラーネコの一言
 const customNeko = trig.neko_comment || trig.error_neko || items[0]?.neko_comment || '';
 const nekoText = customNeko || '焦土からの奇跡的な高度経済成長、バブル経済の熱狂と崩壊、そして幾度もの巨大震災。日本の近代100年は、未曾有の災禍とそこからの驚異的な回復力（レジリエンス）の連続でした。';
