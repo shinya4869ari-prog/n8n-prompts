@@ -159,12 +159,25 @@ const japanBoeki = {
 // --- データの集約 ---
 const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
 
+let recMovies = [];
+if (Array.isArray(supabaseMovie?.おすすめ映画) && supabaseMovie.おすすめ映画.length > 0) {
+  recMovies = supabaseMovie.おすすめ映画;
+} else if (Array.isArray(supabaseMovie?.おすすめ映画ランキング) && supabaseMovie.おすすめ映画ランキング.length > 0) {
+  recMovies = supabaseMovie.おすすめ映画ランキング;
+} else if (Array.isArray(supabaseMovie) && supabaseMovie.length > 0) {
+  recMovies = supabaseMovie;
+} else if (Array.isArray(r25?.おすすめ映画) && r25.おすすめ映画.length > 0) {
+  recMovies = r25.おすすめ映画;
+} else if (Array.isArray(r25?.映画興行収入ランキング) && r25.映画興行収入ランキング.length > 0) {
+  recMovies = r25.映画興行収入ランキング;
+}
+
 const finalData = {
   対象国データ_記事: {
     歴史的背景: r2.歴史的背景,
     直近の動向: r2.直近の動向,
     映像作品: r25.映像作品,
-    おすすめ映画: supabaseMovie.おすすめ映画 || []
+    おすすめ映画: recMovies
   },
   固定データ: {
     貿易: japanBoeki,

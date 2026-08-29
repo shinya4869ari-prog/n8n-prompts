@@ -28,9 +28,10 @@ return $input.all().map(item => {
       });
   }
 
-  const h2Style = `margin-top:60px;padding-top:20px;border-top:1px solid #ffcdd2;font-size:16px;font-weight:900;color:#111;`;
+  const h2Style = `margin-top:60px;padding:14px 20px;background:#fffafa;border-left:4px solid ${themeColor};border-radius:8px;font-size:16px;font-weight:800;color:#111;`;
   const h3Style = `font-size:14px;font-weight:800;color:#333;margin-top:30px;margin-bottom:10px;`;
   const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
+  const backToTopBtn = `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(211,47,47,0.12);color:#d32f2f;text-decoration:none;border-radius:20px;font-weight:600;font-size:11px;transition:0.2s;">▲ 先頭に戻る</a></div>`;
 
   function makeTable(headers, rows, widths) {
     const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#fffafa,#ffebee);text-align:left;font-size:14px;${w ? 'width:' + w + ';' : ''}`;
@@ -62,7 +63,7 @@ return $input.all().map(item => {
         const trimmed = line.trim();
         if (trimmed === '') return true;
         if (/^#+\s*$/.test(trimmed)) return false;
-        if (/^[-\u2014\u2015=*_\s]+$/.test(trimmed)) return false;
+        if (/^[-—―=*_\s]+$/.test(trimmed)) return false;
         if (/^#*\s*(🐱\s*)?エラーネコ/.test(trimmed)) return false;
         if (/^#*\s*出典\s*$/.test(trimmed)) return false;
         return true;
@@ -96,15 +97,22 @@ return $input.all().map(item => {
     return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
   }
 
-  // ポスター画像URL生成
   function getPosterUrl(posterPath) {
-    if (!posterPath || posterPath === 'null') return null;
-    return `https://image.tmdb.org/t/p/w185${posterPath}`;
+    if (!posterPath || posterPath === 'null' || posterPath === 'EMPTY' || posterPath === '-') return null;
+    if (String(posterPath).startsWith('http')) return posterPath;
+    const prefix = String(posterPath).startsWith('/') ? '' : '/';
+    return `https://image.tmdb.org/t/p/w200${prefix}${posterPath}`;
+  }
+
+  function enc(t) {
+    try { return btoa(unescape(encodeURIComponent(t || ''))); }
+    catch (e) { return ''; }
   }
 
   let article = '';
 
   article += `
+<div id="top"></div>
 <style>
   .entry-title, .post-title, .page-title { display: none !important; }
 </style>
@@ -153,7 +161,11 @@ return $input.all().map(item => {
     article += introHtml + '\n';
   }
 
-  article += `<h2 style="${h2Style}">① 貿易の衡量</h2>\n`;
+  // ========================================================
+  // --- ① 貿易の衡量 ---
+  // ========================================================
+  article += `<!-- SECTION:boeki:START -->\n`;
+  article += `<h2 id="section-1" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">①</span> 貿易の衡量</h2>\n`;
   const yushutsuData = parseLines(raw, '輸出');
   const yunyuData = parseLines(raw, '輸入');
   if (yushutsuData.length > 0 || yunyuData.length > 0) {
@@ -175,8 +187,14 @@ return $input.all().map(item => {
   if (boekiExplanation) article += `\n${boekiExplanation}\n`;
   const boekiNeko = getNekoBubbleForSection('①');
   article += makeNekoBubble(boekiNeko);
+  article += backToTopBtn;
+  article += `<!-- SECTION:boeki:END -->\n\n`;
 
-  article += `<h2 style="${h2Style}">② 歴史的背景（近代100年）</h2>\n`;
+  // ========================================================
+  // --- ② 歴史的背景（近代100年） ---
+  // ========================================================
+  article += `<!-- SECTION:rekishi:START -->\n`;
+  article += `<h2 id="section-2" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">②</span> 歴史的背景（近代100年）</h2>\n`;
   const rekishiData = parseLines(raw, '歴史');
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
@@ -206,8 +224,14 @@ return $input.all().map(item => {
   }
   const rekishiNeko = getNekoBubbleForSection('②');
   article += makeNekoBubble(rekishiNeko);
+  article += backToTopBtn;
+  article += `<!-- SECTION:rekishi:END -->\n\n`;
 
-  article += `<h2 style="${h2Style}">③ 直近の動向</h2>\n`;
+  // ========================================================
+  // --- ③ 直近の動向 ---
+  // ========================================================
+  article += `<!-- SECTION:doukou:START -->\n`;
+  article += `<h2 id="section-3" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">③</span> 直近の動向</h2>\n`;
   const dohContent = cleanMarkdown(extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：'));
   if (dohContent) {
     article += `<p>【政治経済社会】</p>\n${dohContent}\n`;
@@ -219,74 +243,183 @@ return $input.all().map(item => {
   }
   const dohNeko = getNekoBubbleForSection('③');
   article += makeNekoBubble(dohNeko);
+  article += backToTopBtn;
+  article += `<!-- SECTION:doukou:END -->\n\n`;
 
-  // --- ④ 映像で知る日本（ポスター画像追加） ---
-  article += `<h2 style="${h2Style}">④ 映像で知る日本</h2>\n`;
+  // ========================================================
+  // --- ④ 映像で知る日本 ---
+  // ========================================================
+  article += `<!-- SECTION:eizou:START -->\n`;
+  article += `<h2 id="section-4" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">④</span> 映像で知る日本</h2>\n`;
   const eizouList = sheetData.data?.対象国データ_記事?.映像作品 || [];
   const eizouData = parseLines(raw, '映像');
   eizouData.forEach((d, i) => {
-    const posterPath = eizouList[i]?.poster_path || null;
+    const isSerious = d['深刻'] === 'true';
+    const bg = isSerious ? '#fff3f3' : '#ffffff';
+    const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
+    const apiData = eizouList.find(api => 
+      (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
+      (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
+      (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
+    ) || eizouList[i] || {};
+
+    const titleJa = d['タイトル'] || apiData['タイトル_日本語'] || apiData['title'] || '';
+    const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
+    const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
+
+    const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || d['監督_主演'] || '');
+    const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+    let cast = '';
+    if (rawCast) {
+      const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+      cast = castArr.slice(0, 8).join(', ');
+    }
+
+    const type = d['種別'] || apiData['genres'] || apiData['種別'] || '';
+    const year = d['公開年'] || apiData['year'] || apiData['公開年'] || '';
+
+    const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
+    const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
+
+    const posterPath = d['poster_path'] || apiData['poster_path'] || apiData['poster_url'];
     const posterUrl = getPosterUrl(posterPath);
-    const movieInfo = (eizouList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
-    const imdbId = eizouList[i]?.imdb_id || null;
-    const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
-    const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+
+    const movieInfo = (
+      d['概要'] || 
+      apiData?.概要 || 
+      apiData?.overview || 
+      moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
+      ''
+    ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const imdbId = apiData?.imdb_id || (d['imdb_url'] ? d['imdb_url'].replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
+    let imdbUrl = '';
+    if (imdbId && /^tt\d+/.test(String(imdbId).trim())) {
+      imdbUrl = `https://www.imdb.com/title/${String(imdbId).trim()}/`;
+    } else {
+      imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(titleJa || titleOrig)}`;
+    }
+    const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+
+    const mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(titleOrig || titleJa)}`;
+    const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+    const encTitle = enc(titleOrig ? `${titleJa} (${titleOrig})` : titleJa);
+    const encLink = enc(linkHTML);
+    const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${encTitle}");document.getElementById("tenbin-popup-info").innerHTML=d("${encLink}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+
+    const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+      ${imdbBtn}
+    </div>`;
+
+    const posterHtml = posterUrl
+      ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+      : '';
 
     article += `
-<div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.08);display:flex;gap:16px;align-items:flex-start;">
-  <div style="flex:1;">
-    <div style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;display:inline-block;margin-bottom:6px;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${movieInfo}'>${d['タイトル'] || ''}</div>
-    <div style="font-size:12px;color:${themeColor};font-weight:bold;margin-bottom:6px;">${d['種別'] || ''} &nbsp;•&nbsp; ${d['公開年'] || ''}</div>
-    ${d['監督_主演'] && d['監督_主演'] !== '欠測' && d['監督_主演'] !== 'データなし' ? `<div style="font-size:12px;color:#555;margin-bottom:10px;">🎬 ${d['監督_主演']}</div>` : ''}
-    <div style="font-size:14px;color:#444;line-height:1.6;margin-bottom:12px;">${d['概要'] || ''}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
-      ${imdbBtn}
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.06);position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#20B2AA;"></div>
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
+    <div style="flex:1;">
+      <div style="font-weight:800;font-size:17px;color:#111;margin-bottom:8px;">${isSerious ? '⚠️ ' : ''}<span onclick='${onclick}' style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;">${titleJa}</span> ${origTitleSpan}</div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
+      ${castHtml}
+      ${movieInfo ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${movieInfo}</div>` : ''}
+      ${linkHtml}
     </div>
+    ${posterHtml}
   </div>
-  ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0;">` : ''}
 </div>`;
   });
   const eizouCites = [...new Set(eizouList.map(d => d.出典).filter(Boolean))];
   if (eizouCites.length > 0) article += `<p style="${citationStyle}">出典：${eizouCites.join(' / ')}</p>\n`;
   const eizouNeko = getNekoBubbleForSection('④');
   article += makeNekoBubble(eizouNeko);
+  article += backToTopBtn;
+  article += `<!-- SECTION:eizou:END -->\n\n`;
 
-  // --- ⑤ 日本映画 おすすめ映画（ポスター画像追加） ---
-  article += `<h2 style="${h2Style}">⑤ 日本映画 おすすめ映画</h2>\n`;
-  const rankingList = sheetData.data?.対象国データ_記事?.おすすめ映画 || [];
+  // ========================================================
+  // --- ⑤ 日本の最新おすすめ映画 ---
+  // ========================================================
+  article += `<!-- SECTION:osusume:START -->\n`;
+  article += `<h2 id="section-5" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑤</span> 日本の最新おすすめ映画</h2>\n`;
+  const rankingList = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
   const kougyouData = parseLines(raw, 'おすすめ');
   kougyouData.forEach((d, i) => {
     const isSerious = d['深刻'] === 'true';
     const bg = isSerious ? '#fff3f3' : '#ffffff';
-    const posterPath = rankingList[i]?.poster_path || null;
+    const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
+    const apiData = rankingList.find(api => 
+      (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
+      (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
+      (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
+    ) || rankingList[i] || {};
+
+    const titleJa = d['タイトル'] || apiData['タイトル_日本語'] || apiData['title'] || '';
+    const titleOrig = (d['原題'] || apiData['原題'] || apiData['origin_title'] || '');
+    const origTitleSpan = (titleOrig && titleOrig !== titleJa) ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>` : '';
+
+    const director = d['director'] && d['director'] !== '空白' && d['director'] !== '-' ? d['director'] : (apiData['director'] || d['監督_主演'] || '');
+    const rawCast = d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' ? d['cast'] : (apiData['cast'] || '');
+    let cast = '';
+    if (rawCast) {
+      const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
+      cast = castArr.slice(0, 8).join(', ');
+    }
+
+    const type = d['種別'] || apiData['genres'] || apiData['種別'] || '映画';
+    const year = d['公開年'] || apiData['year'] || apiData['公開年'] || '';
+
+    const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
+    const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
+
+    const posterPath = d['poster_path'] || apiData['poster_path'] || apiData['poster_url'];
     const posterUrl = getPosterUrl(posterPath);
-    const rankingInfo = (rankingList[i]?.概要 || moviesData.find(m => m.name === d['タイトル'])?.info || '').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
-    const imdbId = rankingList[i]?.imdb_id || null;
-    const isValidImdb = imdbId && /^tt\d+/.test(imdbId.trim());
-    const imdbBtn = isValidImdb ? `<a href="https://www.imdb.com/title/${imdbId.trim()}/" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+
+    const rankingInfo = (
+      d['概要'] || 
+      apiData?.概要 || 
+      apiData?.overview || 
+      moviesData.find(m => m.name && (m.name === cleanTitle || m.name.includes(cleanTitle) || cleanTitle.includes(m.name)))?.info || 
+      ''
+    ).replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const imdbId = apiData?.imdb_id || (d['imdb_url'] ? d['imdb_url'].replace(/.*\/title\//, '').replace(/\/.*/, '') : null);
+    let imdbUrl = '';
+    if (imdbId && /^tt\d+/.test(String(imdbId).trim())) {
+      imdbUrl = `https://www.imdb.com/title/${String(imdbId).trim()}/`;
+    } else {
+      imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(titleJa || titleOrig)}`;
+    }
+    const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
+
+    const mapUrl = `https://map.seronworks.dev/?mode=movie&q=${encodeURIComponent(titleOrig || titleJa)}`;
+    const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+    const encTitle = enc(titleOrig ? `${titleJa} (${titleOrig})` : titleJa);
+    const encLink = enc(linkHTML);
+    const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${encTitle}");document.getElementById("tenbin-popup-info").innerHTML=d("${encLink}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+
+    const linkHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(titleJa + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
+      ${imdbBtn}
+    </div>`;
+
+    const posterHtml = posterUrl
+      ? `<div style="flex-shrink:0;margin-left:12px;"><img src="${posterUrl}" alt="${titleJa}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
+      : '';
 
     article += `
-<div style="background:${bg};border:1px solid #eee;border-radius:12px;padding:16px;margin:15px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${themeColor};"></div>
-  <div style="display:flex;gap:16px;align-items:flex-start;">
-    <div style="flex:1;padding-left:8px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="background:${themeColor};color:#fff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">🎬</span>
-        <span style="font-weight:800;font-size:16px;color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;" data-movie-title='${(d['タイトル'] || '').replace(/'/g, '&#39;')}' data-movie-info='${rankingInfo}'>${d['タイトル'] || ''}</span>
-      </div>
-      <div style="font-size:13px;color:#666;margin-bottom:10px;">
-        📅 ${d['公開年'] || ''}
-        ${d['director'] && d['director'] !== '欠測' && d['director'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">🎬 監督：${d['director']}</span>` : ''}
-        ${d['cast'] && d['cast'] !== '欠測' && d['cast'] !== 'データなし' ? `<br><span style="color:#555;font-size:12px;">👥 キャスト：${d['cast']}</span>` : ''}
-      </div>
-      ${d['概要'] && d['概要'] !== '欠測' && d['概要'] !== 'データなし' ? `<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;background:#fafafa;padding:8px 12px;border-radius:6px;">${d['概要']}</div>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((d['タイトル'] || '') + ' 予告編')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>
-        ${imdbBtn}
-      </div>
+<div style="background:${bg};border:1px solid #eef2f5;border-radius:12px;padding:18px 20px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.06);position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#20B2AA;"></div>
+  <div style="display:flex;gap:16px;align-items:flex-start;padding-left:6px;">
+    <div style="flex:1;">
+      <div style="font-weight:800;font-size:17px;color:#111;margin-bottom:8px;">${isSerious ? '⚠️ ' : ''}<span onclick='${onclick}' style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;">${titleJa}</span> ${origTitleSpan}</div>
+      <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
+      ${castHtml}
+      ${rankingInfo ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${rankingInfo}</div>` : ''}
+      ${linkHtml}
     </div>
-    ${posterUrl ? `<img src="${posterUrl}" alt="${d['タイトル'] || ''}" style="width:80px;min-width:80px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);flex-shrink:0;">` : ''}
+    ${posterHtml}
   </div>
 </div>`;
   });
@@ -294,7 +427,12 @@ return $input.all().map(item => {
   if (rankingCites.length > 0) article += `<p style="${citationStyle}">出典：${rankingCites.join(' / ')}</p>\n`;
   const kougyouNeko = getNekoBubbleForSection('⑤');
   article += makeNekoBubble(kougyouNeko);
+  article += backToTopBtn;
+  article += `<!-- SECTION:osusume:END -->\n\n`;
 
+  // ========================================================
+  // --- ✦ Deep Dive ---
+  // ========================================================
   let deepDiveArticle = '';
   try {
     deepDiveArticle = $('リンク挿入_jp').first().json?.deepDiveArticle || '';
@@ -309,13 +447,13 @@ return $input.all().map(item => {
   }
 
   if (deepDiveArticle) {
+    article += `<!-- SECTION:deep_dive:START -->\n`;
     const ddColor = "#d32f2f";
     article += `
-<div style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
+<div id="deep-dive" style="border-top:4px solid ${ddColor}; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:${ddColor}; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
     
-    // 本文中に残っている丸括弧で囲まれたマークダウンリンク（[出典](URL)）を括弧ごと除去
     let cleanedDD = deepDiveArticle.replace(/[（\(]\s*\[[^\]]+\]\(https?:\/\/[^)]+\)(?:\s*[\/／,、\s]*\[[^\]]+\]\(https?:\/\/[^)]+\))*\s*[）\)]/g, '');
 
     let styledDD = cleanedDD;
@@ -325,23 +463,9 @@ return $input.all().map(item => {
       return `<div style="font-size:11px; color:#aaa; line-height:1.6; margin-top:30px; border-top:1px dashed #eee; padding-top:15px; margin-bottom:20px;">\n\n` + cleanedMatch + `\n\n</div>`;
     });
     article += styledDD;
+    article += backToTopBtn;
+    article += `<!-- SECTION:deep_dive:END -->\n\n`;
   }
-
-  const moviePopupScript = `
-<script>
-document.addEventListener('click', function(e) {
-  const el = e.target.closest('[data-movie-title]');
-  if (!el) return;
-  const title = el.getAttribute('data-movie-title');
-  const info = el.getAttribute('data-movie-info');
-  const mapUrl = 'https://kokkanotenbin-map.shinya4869ari.workers.dev/?mode=movie&q=' + encodeURIComponent(title);
-  const linkHTML = '<br><br><a href="' + mapUrl + '" target="_blank" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>';
-  document.getElementById('tenbin-popup-title').textContent = title;
-  document.getElementById('tenbin-popup-info').innerHTML = info + linkHTML;
-  document.getElementById('tenbin-popup').style.display = 'block';
-  document.getElementById('tenbin-overlay').style.display = 'block';
-});
-</script>`;
 
   const popupHTML = `
 <div id="tenbin-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;" onclick="document.getElementById('tenbin-popup').style.display='none';this.style.display='none'"></div>
@@ -353,7 +477,7 @@ document.addEventListener('click', function(e) {
 
   return {
     json: {
-      article: article + '\n\n' + moviePopupScript + '\n\n' + popupHTML,
+      article: article + '\n\n' + popupHTML,
       title: "日本",
       country: countryName,
       countryEn: "Japan",
