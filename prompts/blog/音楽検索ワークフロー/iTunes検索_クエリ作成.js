@@ -18,7 +18,7 @@ const marketCode = (countryCode && countryCode.length === 2) ? countryCode.toUpp
 const genreMap = {
   'Korea': 'Korea hits classic',
   'South Korea': 'Korea hits classic',
-  'Japan': 'Japan iconic hits',
+  'Japan': 'J-POP 名曲 ヒット',
   'Jamaica': 'Jamaica reggae classics',
   'Brazil': 'Brazil bossa nova samba classics',
   'Nigeria': 'Nigeria afrobeats classics',
