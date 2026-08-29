@@ -75,7 +75,7 @@ const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(orig
     name: String(matchedAi?.name || rawName).replace(/_/g, '・'),
     name_en: matchedAi?.name_en || origP.name_en || null,
     occupation: matchedAi?.occupation || origP.occupation || '俳優',
-    country: matchedAi?.country || origP.country || 'KR',
+    country: matchedAi?.country || origP.country || movie.country || '',
     profile_url: matchedAi?.profile_url || origP.profile_url || origP.image_url || null,
     gender: origP.gender || null,
     wikidata_id: wId,

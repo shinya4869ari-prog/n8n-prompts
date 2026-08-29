@@ -39,7 +39,7 @@ return [{
   json: {
     movie_title: movie.title || movie.origin_title || '',
     origin_title: movie.origin_title || '',
-    country: movie.country || 'KR',
+    country: movie.country || '',
     year: movie.year || '',
     director: movie.director || '',
     director_en: movie.director_en || '',
@@ -60,7 +60,7 @@ return [{
       name: p.name || '',
       name_en: p.name_en || '',
       occupation: p.occupation || '俳優',
-      country: p.country || movie.country || 'KR',
+      country: p.country || movie.country || '',
       wikidata_id: p.wikidata_id || p.qid || null,
       profile_url: p.profile_url || p.image_url || null,
       gender: p.gender || null,

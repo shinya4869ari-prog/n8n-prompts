@@ -119,7 +119,7 @@ return [{
   json: {
     idx: shaped.idx || null,
     created_at: shaped.created_at || null,
-    country: shaped.country || 'KR',
+    country: shaped.country || '',
     year: shaped.year || '',
     genres: shaped.genres || '',
     platform: shaped.platform || '劇場公開',

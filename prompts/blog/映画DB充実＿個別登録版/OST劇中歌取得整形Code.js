@@ -64,7 +64,7 @@ const movieTitleJa = String(inputNode.title || rawShaped.title || '').trim();
 const movieTitleRaw = String(rawShaped.title || inputNode.title || '').trim();
 const originTitle = String(rawShaped.origin_title || inputNode.origin_title || '').trim();
 const movieYear = String(rawShaped.year || inputNode.year || '').trim();
-const movieCountry = String(rawShaped.country || inputNode.country || 'KR').trim().toUpperCase();
+const movieCountry = String(rawShaped.country || inputNode.country || '').trim().toUpperCase();
 const tmdbId = rawShaped.tmdb_id || inputNode.tmdb_id || null;
 const wikidataId = rawShaped.wikidata_id || inputNode.wikidata_id || null;
 

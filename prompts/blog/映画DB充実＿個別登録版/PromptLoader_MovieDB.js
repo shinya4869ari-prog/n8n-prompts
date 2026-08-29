@@ -50,7 +50,7 @@ try {
     return '';
   })();
 
-  const country = shaped.country || 'KR';
+  const country = shaped.country || '';
   const title = shaped.title || shaped.origin_title || '';
   const directorEn = shaped.director_en || shaped.director || 'なし';
   const castEn = shaped.cast_en || shaped.cast || 'なし';

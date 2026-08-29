@@ -38,7 +38,7 @@ if (!queryText) {
 }
 
 // 2. 国・年・言語パラメータの取得
-const targetCountry = rawInput.country || rawInput.target_country || 'KR';
+const targetCountry = rawInput.country || rawInput.target_country || null;
 const targetYear = rawInput.year || null;
 const targetLang = rawInput.target_lang || 'ja';
 

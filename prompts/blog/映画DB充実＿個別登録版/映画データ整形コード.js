@@ -86,7 +86,7 @@ const langToCountry = {
 };
 const lang = tmdbObj.original_language;
 const tmdbOriginCountry = (Array.isArray(tmdbObj.origin_country) && tmdbObj.origin_country[0]) || (typeof tmdbObj.origin_country === 'string' ? tmdbObj.origin_country : null);
-const country = existingDb.country || sourceData.target_country || sourceData.country || tmdbOriginCountry || (lang ? langToCountry[lang] : null) || '';
+const country = existingDb.country || tmdbOriginCountry || (lang ? langToCountry[lang] : null) || sourceData.target_country || sourceData.country || '';
 
 // 🎯【あらすじ判定】
 const rawJaOverview = translations.find(t => t.iso_639_1 === 'ja')?.data?.overview;
