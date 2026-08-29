@@ -1,5 +1,5 @@
 /**
- * 【n8n用】映画データ整形コード（TMDbダイレクト抽出・完全版）
+ * 【n8n用】映画データ整形コード（TVドラマ・映画完全両対応・超堅牢マージ版）
  */
 
 function getNodeData(nodeName) {
@@ -16,51 +16,65 @@ const t2 = getNodeData('TMDb検索_タイトル');
 const wikiNode = getNodeData('Wikidata検索') || getNodeData('Wikidata') || {};
 let existingDb = getNodeData('Supabaseから既存データを取得');
 
+// 入力データの安全取得
 let sourceData = {};
 function getSourceNodeData() {
   const isValid = (d) => d && (d.title || d.country || d.target_country || d.overview || d.query || d.id || d.tmdb_id || d.wikidata_id || d.qid);
-  let d = $input.first()?.json || $input.item?.json;
+  let d = null;
+  try { d = $input.first()?.json || $input.item?.json; } catch(e) {}
   if (isValid(d)) return d;
 
-  try {
-    d = $('入力統一・分割コード').first()?.json || $('入力統一・分割コード').item?.json;
-    if (isValid(d)) return d;
-  } catch (e) {}
-  try {
-    d = $('On form submission1').first()?.json || $('On form submission1').item?.json;
-    if (isValid(d)) return d;
-  } catch (e) {}
-  
-  return $input.first()?.json || $input.item?.json || {};
+  const fallbackNodes = ['入力統一・分割コード', 'On form submission1', '映画ごとにループ実行', 'Loop Over Items'];
+  for (const name of fallbackNodes) {
+    try {
+      d = $(name).first()?.json || $(name).item?.json;
+      if (isValid(d)) return d;
+    } catch (e) {}
+  }
+  return d || {};
 }
 sourceData = getSourceNodeData();
 
-// 🎯【全候補からTMDbオブジェクトを特定】
-const candidateSources = [credits, t1, t2, $input.first()?.json].filter(Boolean);
-let tmdbObj = candidateSources.find(c => (c.credits?.cast || c.cast || c.id)) || candidateSources[0] || {};
+// 🎯【全候補からTMDb情報を安全マージ】
+// TVシリーズ/映画の検索結果(t1, t2)と詳細(credits)を合成し、タイトル・画像・キャストを漏れなく集約
+const tmdbObj = Object.assign({}, 
+  (t1.tv_results && t1.tv_results[0]) || {},
+  (t1.movie_results && t1.movie_results[0]) || {},
+  t1 || {},
+  t2 || {},
+  credits || {}
+);
 
-// 🎯【キャスト抽出（主要キャスト上位25名にスマート制限・429レートリミット防止）】
-const rawCastList = tmdbObj.credits?.cast || tmdbObj.cast || [];
-const castList = (Array.isArray(rawCastList) ? [...rawCastList] : [])
+// 🎯【キャスト抽出（映画 cast / ドラマ aggregate_credits 両対応・最大25名制限）】
+const rawCastList = (Array.isArray(tmdbObj.credits?.cast) && tmdbObj.credits.cast) || 
+                    (Array.isArray(tmdbObj.cast) && tmdbObj.cast) || 
+                    (Array.isArray(tmdbObj.aggregate_credits?.cast) && tmdbObj.aggregate_credits.cast) || [];
+const castList = [...rawCastList]
   .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
   .slice(0, 25);
 
 const tmdbCast = castList.map(c => c.name || c.original_name).filter(Boolean).join(', ');
 const tmdbCastEn = castList.map(c => c.original_name || c.name).filter(Boolean).join(', ');
 
-// 🎯【監督・スタッフ抽出】
-const crewList = tmdbObj.credits?.crew || tmdbObj.crew || [];
-const createdByList = tmdbObj.created_by || tmdbObj.credits?.created_by || [];
+// 🎯【監督・スタッフ抽出（映画 crew / ドラマ created_by 両対応）】
+const crewList = (Array.isArray(tmdbObj.credits?.crew) && tmdbObj.credits.crew) || 
+                 (Array.isArray(tmdbObj.crew) && tmdbObj.crew) || [];
+const createdByList = (Array.isArray(tmdbObj.created_by) && tmdbObj.created_by) || 
+                      (Array.isArray(tmdbObj.credits?.created_by) && tmdbObj.credits.created_by) || [];
 
-const dirList = crewList.filter(c => c.job === 'Director' || c.job === 'Writer' || c.job === 'Executive Producer');
+const dirList = crewList.filter(c => c && (c.job === 'Director' || c.job === 'Writer' || c.job === 'Executive Producer'));
 const effectiveDirList = dirList.length > 0 ? dirList : createdByList;
 
 const tmdbDirector = effectiveDirList.map(c => c.name || c.original_name).filter(Boolean).join(', ');
 const tmdbDirectorEn = effectiveDirList.map(c => c.original_name || c.name).filter(Boolean).join(', ');
 
-// 🎯【タイトル・原題】
-const movieTitle = sourceData.title || tmdbObj.title || tmdbObj.name || existingDb.title || '';
-const originTitle = tmdbObj.original_title || tmdbObj.original_name || existingDb.origin_title || movieTitle;
+// 🎯【タイトル・原題（公式邦題ja最優先 ➔ ドラマ name / 映画 title 両対応）】
+const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
+const translations = Array.isArray(tmdbObj.translations?.translations) ? tmdbObj.translations.translations : [];
+const rawJaTitle = translations.find(t => t.iso_639_1 === 'ja')?.data?.title || 
+                   translations.find(t => t.iso_639_1 === 'ja')?.data?.name;
+const movieTitle = (rawJaTitle && isJapanese(rawJaTitle)) ? rawJaTitle : (sourceData.title || tmdbObj.name || tmdbObj.title || existingDb.title || '');
+const originTitle = tmdbObj.original_name || tmdbObj.original_title || existingDb.origin_title || movieTitle;
 
 // 🎯【国コード】
 const langToCountry = {
@@ -74,13 +88,12 @@ const lang = tmdbObj.original_language;
 const tmdbOriginCountry = (Array.isArray(tmdbObj.origin_country) && tmdbObj.origin_country[0]) || (typeof tmdbObj.origin_country === 'string' ? tmdbObj.origin_country : null);
 const country = existingDb.country || sourceData.target_country || sourceData.country || tmdbOriginCountry || (lang ? langToCountry[lang] : null) || '';
 
-// 🎯【あらすじ】
-const isJapanese = (str) => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(str || '');
-const rawJaOverview = tmdbObj.translations?.translations?.find(t => t.iso_639_1 === 'ja')?.data?.overview;
+// 🎯【あらすじ判定】
+const rawJaOverview = translations.find(t => t.iso_639_1 === 'ja')?.data?.overview;
 const tmdbJaOverview = isJapanese(rawJaOverview) ? rawJaOverview : (isJapanese(tmdbObj.overview) ? tmdbObj.overview : null);
 
-const rawEnOverview = tmdbObj.translations?.translations?.find(t => t.iso_639_1 === 'en')?.data?.overview || (!isJapanese(tmdbObj.overview) ? tmdbObj.overview : null);
-const rawKoOverview = tmdbObj.translations?.translations?.find(t => t.iso_639_1 === 'ko')?.data?.overview;
+const rawEnOverview = translations.find(t => t.iso_639_1 === 'en')?.data?.overview || (!isJapanese(tmdbObj.overview) ? tmdbObj.overview : null);
+const rawKoOverview = translations.find(t => t.iso_639_1 === 'ko')?.data?.overview;
 const overviewEn = existingDb.overview_en || rawEnOverview || rawKoOverview || sourceData.overview_en || null;
 const overview = existingDb.overview || tmdbJaOverview || sourceData.overview || null;
 
@@ -91,17 +104,19 @@ const posterUrl = rawPoster ? (rawPoster.startsWith('http') ? rawPoster : `https
 // 🎯【Wikidata ID】
 const wikidataId = sourceData.wikidata_id || sourceData.qid || existingDb.wikidata_id || tmdbObj.external_ids?.wikidata_id || wikiNode.qid || wikiNode.wikidata_id || wikiNode.id || null;
 
-// 🎯【公開年】
-const releaseDateStr = tmdbObj.release_date || tmdbObj.first_air_date || sourceData.year || existingDb.year || '';
+// 🎯【公開年・放送年】
+const releaseDateStr = tmdbObj.first_air_date || tmdbObj.release_date || sourceData.year || existingDb.year || '';
 const year = releaseDateStr ? String(releaseDateStr).substring(0, 4) : (existingDb.year || null);
 
 // 🎯【ジャンル】
-const genreObjs = tmdbObj.genres || [];
-const genres = existingDb.genres || (Array.isArray(genreObjs) && genreObjs.length > 0 ? genreObjs.map(g => g.name).join(', ') : (sourceData.genres || ''));
+const genreObjs = Array.isArray(tmdbObj.genres) ? tmdbObj.genres : [];
+const genres = existingDb.genres || (genreObjs.length > 0 ? genreObjs.map(g => g.name).join(', ') : (sourceData.genres || ''));
 
-// 🎯【プラットフォーム】
+// 🎯【配信プラットフォーム】
 function getPlatform() {
-  const allNames = [...(tmdbObj.production_companies || []), ...(tmdbObj.networks || [])].map(c => c.name || '').join(' ').toLowerCase();
+  const prodCompanies = Array.isArray(tmdbObj.production_companies) ? tmdbObj.production_companies : [];
+  const networks = Array.isArray(tmdbObj.networks) ? tmdbObj.networks : [];
+  const allNames = [...prodCompanies, ...networks].map(c => c?.name || '').join(' ').toLowerCase();
   if (allNames.includes('netflix')) return 'Netflix';
   if (allNames.includes('disney')) return 'Disney+';
   if (allNames.includes('amazon') || allNames.includes('prime')) return 'Amazon Prime Video';
@@ -118,8 +133,8 @@ const imdbId = tmdbObj.external_ids?.imdb_id || existingDb.imdb_id || null;
 const imdbUrl = imdbId ? `https://www.imdb.com/title/${imdbId}/` : (existingDb.imdb_url || null);
 
 // 🎯【予告編URL】
-const trailerUrl = existingDb.trailer_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${movieTitle} 予告編`)}`;
-const trailerTitle = existingDb.trailer_title || `${movieTitle} 予告編 (YouTubeで検索)`;
+const trailerUrl = existingDb.trailer_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${movieTitle || ''} 予告編`)}`;
+const trailerTitle = existingDb.trailer_title || `${movieTitle || ''} 予告編 (YouTubeで検索)`;
 
 const output = {
   idx: existingDb.idx || null,
@@ -150,4 +165,8 @@ const output = {
   }
 };
 
+// n8nのCodeノード実行モード（Run Once for All Items / Run Once for Each Item）両対応
+if (typeof $input.item !== 'undefined') {
+  return { json: output };
+}
 return [{ json: output }];

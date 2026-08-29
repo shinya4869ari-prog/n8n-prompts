@@ -2,16 +2,17 @@
  * 【n8n用】映画・ドラマ音楽（主題歌・劇中歌・OST Single）特定＆整形コード (OST劇中歌取得整形Code.js)
  * 
  * 役割:
- * 1. 対象の厳格化（主題歌・ボーカル劇中歌のみ）:
- *    - 第1優先: ボーカル入りの「主題歌（Theme Song）」「オープニング/エンディング曲」
- *    - 第2優先: 公式ボーカル挿入歌・OST Single（Part.1, Part.2, 各種Single）
- *    - ❌ 劇伴・BGMスコア全集（インスト曲の全曲展開）は完全除外
- *    - ❌ インスト版（Instrumental / Inst.）は除外し、歌唱ボーカル本編のみ採用
- * 2. 言語と表記の厳守:
- *    - 原題（original_title）、英題（TMDb translation）、邦題を優先度順に網羅。
+ * 1. 2段階スマート抽出（アルバム先行取得 ＋ ボーカルトラック展開）:
+ *    - 第1段階: 作品名（原題・英題・邦題）で公式OST盤/サントラアルバム（entity=album）を特定
+ *    - 第2段階: 特定したアルバムの収録曲から、インストや劇伴BGMを除いた「公式ボーカル歌唱曲」を抽出
+ *    - ❌ インスト版（Instrumental / Inst.）は完全除外
+ *    - ❌ 劇伴・BGMスコア曲（各種テーマ・Opening・BGMインスト）は自動除外
+ * 2. 多言語・各国ストア対応:
+ *    - 韓国作品（KR）は韓国iTunesストア優先でハングル原題検索
+ *    - 日本作品（JP）は日本ストア、その他はUSストアと相互フォールバック
  * 3. 参照データソース:
  *    - Wikidata: P8330 (オープニング), P8331 (エンディング), P3063 (メイン主題歌), P1657 (劇中歌・挿入歌)
- *    - Apple Music / iTunes API: Single / OST Part / Theme Song による公式音源の抽出
+ *    - Apple Music / iTunes API: 公式サントラ盤（OST Album / Single）からの直接抽出
  */
 
 // ── HTTP リクエスト用共通関数 (n8n this.helpers.httpRequest 完全バインド & タイムアウト保護) ──
@@ -102,7 +103,7 @@ function determineGenre(artistName, trackName, primaryGenre) {
   const p = (primaryGenre || '').toLowerCase();
 
   if (/blackpink|bts|seventeen|red velvet|shinee|girls' generation|stray kids|kara|exo|taeyang|nayeon|izna|exid|artms|sandara park|hyolyn|rosé|alpha drive one/i.test(a)) return 'K-Pop';
-  if (/gummy|davichi|lyn|k\.will|chen|punch|xia|kim bo kyung|heo young saeng|eric nam|kim na young|v \(bts\)|jang wooram/i.test(a)) return 'Ballad';
+  if (/gummy|davichi|lyn|k\.will|chen|punch|xia|kim bo kyung|heo young saeng|eric nam|kim na young|v \(bts\)|jang wooram|suran|ben|an da eun|yoo hwe seung|j\.don/i.test(a)) return 'Ballad';
   if (/mad clown|blasé|dynamic duo|yoon mirae|rap|hip-hop/i.test(a) || /hip-hop|rap/i.test(p)) return 'Hip-Hop/Rap';
   if (/ballad|love|memory|tears|heart|눈물|기억|사랑/i.test(t)) return 'Ballad';
   if (/dance|party|club/i.test(t) || /dance/i.test(p)) return 'Dance';
@@ -110,7 +111,9 @@ function determineGenre(artistName, trackName, primaryGenre) {
   return 'K-Pop';
 }
 
-// ── 1. Wikidata SPARQL プロパティ特定（P8330, P8331, P3063, P1657 - 主題歌・劇中歌のみ） ──
+const norm = (s) => (s || '').toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
+
+// ── 1. Wikidata SPARQL プロパティ特定（主題歌・劇中歌の直接定義がある場合） ──
 if (wikidataId && /^Q\d+$/.test(wikidataId)) {
   try {
     const sparql = `SELECT ?workType ?music ?musicLabel ?performer ?performerLabel ?mbid ?itunesId WHERE {
@@ -136,9 +139,9 @@ if (wikidataId && /^Q\d+$/.test(wikidataId)) {
       const songTitle = b.musicLabel?.value;
       if (!songTitle) continue;
       
-      const normKey = songTitle.toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
-      if (seenNormalizedTrackKeys.has(normKey)) continue;
-      seenNormalizedTrackKeys.add(normKey);
+      const cleanKey = songTitle.replace(/\s*[\(\[].*?(soundtrack|ost|inst|ver\.|television).*?[\)\]]/gi, '').trim().toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
+      if (seenNormalizedTrackKeys.has(cleanKey)) continue;
+      seenNormalizedTrackKeys.add(cleanKey);
 
       const idKey = b.itunesId?.value ? String(b.itunesId.value) : `wd_${b.music?.value?.split('/').pop() || Math.random().toString(36).substring(2, 9)}`;
       seenTrackIds.add(idKey);
@@ -171,114 +174,166 @@ if (wikidataId && /^Q\d+$/.test(wikidataId)) {
   } catch (e) {}
 }
 
-// ── 2. Apple Music / iTunes API 検索（主題歌・劇中歌・Singleに特化） ──
-const searchQueries = new Set();
-for (const title of titleCandidates.slice(0, 2)) {
-  searchQueries.add(`${title} OST Part`);
-  searchQueries.add(`${title} Single`);
-  searchQueries.add(`${title} Theme Song`);
-  searchQueries.add(`${title} OST`);
+// ── 2. Apple Music / iTunes API 【アルバム先行取得方式】（公式サントラ盤からボーカル曲を展開） ──
+const storeCountries = movieCountry === 'KR' ? ['KR', 'US'] : (movieCountry === 'JP' ? ['JP', 'US'] : ['US']);
+const albumQueries = new Set();
+
+for (const t of titleCandidates.slice(0, 3)) {
+  if (!t || t.length < 2) continue;
+  albumQueries.add(`${t} OST`);
+  albumQueries.add(`${t} Original Television Soundtrack`);
+  albumQueries.add(`${t} Soundtrack`);
+  if (movieCountry === 'KR') {
+    albumQueries.add(`${t} OST Part`);
+  }
 }
 
-// 🎯 単曲が「主題歌・ボーカル劇中歌」であるかの厳格判定
-function isVocalOrThemeTrack(item, titles, mYear) {
-  if (!item || !item.trackName || !item.collectionName) return false;
-  const track = (item.trackName || '').toLowerCase();
-  const album = (item.collectionName || '').toLowerCase();
-  const artist = (item.artistName || '').toLowerCase();
-  const itemYear = item.releaseDate ? parseInt(item.releaseDate.substring(0, 4)) : null;
+const albumPromises = [];
+for (const store of storeCountries) {
+  for (const q of albumQueries) {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=${store}&media=music&entity=album&limit=10`;
+    albumPromises.push(httpFetch(url, 3000));
+  }
+}
 
-  // 1. 公開年チェック (movieYearがある場合は ±2年以内)
-  if (mYear && itemYear && Math.abs(itemYear - parseInt(mYear)) > 2) {
-    return false;
+const albumResults = await Promise.all(albumPromises);
+const matchedAlbums = [];
+const seenAlbumIds = new Set();
+
+for (const res of albumResults) {
+  for (const alb of (res?.results || [])) {
+    if (!alb.collectionId || seenAlbumIds.has(alb.collectionId)) continue;
+
+    const albName = (alb.collectionName || '').toLowerCase();
+    const albYear = alb.releaseDate ? parseInt(alb.releaseDate.substring(0, 4)) : null;
+
+    // 年代チェック (±2年)
+    if (movieYear && albYear && Math.abs(albYear - parseInt(movieYear)) > 2) continue;
+
+    // サントラ判定（ost, soundtrack, pt., part などが含まれていること）
+    if (!/ost|soundtrack|sound\s*track|part|pt\.|original\s*television/i.test(albName)) continue;
+
+    // 作品タイトルとの一致判定（原題・英題・邦題のいずれか）
+    const matches = titleCandidates.some(t => {
+      const tn = norm(t);
+      // サブタイトルやコロン等で分割したコアキーワードでも判定
+      const subKeys = t.split(/[:：・\-]/).map(s => norm(s.trim())).filter(s => s.length >= 2);
+      return (tn.length >= 2 && norm(albName).includes(tn)) || subKeys.some(sk => norm(albName).includes(sk));
+    });
+
+    if (matches) {
+      seenAlbumIds.add(alb.collectionId);
+      matchedAlbums.push(alb);
+    }
+  }
+}
+
+// フルサントラ盤（Various Artists / trackCount大）または OST Part盤を優先
+matchedAlbums.sort((a, b) => (b.trackCount || 0) - (a.trackCount || 0));
+
+// 🎯 アルバム内トラックの展開（lookup?entity=song）
+for (const alb of matchedAlbums.slice(0, 5)) {
+  // 全世界共通の曲情報を取得するため country 指定なしで lookup
+  const lookupUrl = `https://itunes.apple.com/lookup?id=${alb.collectionId}&entity=song&limit=50`;
+  const lookupRes = await httpFetch(lookupUrl, 3000);
+  const tracks = (lookupRes?.results || []).filter(r => r.wrapperType === 'track');
+
+  for (const item of tracks) {
+    if (!item.trackId || seenTrackIds.has(String(item.trackId))) continue;
+
+    const trackName = item.trackName || '';
+    const artist = item.artistName || '';
+    const cleanKey = trackName.replace(/\s*[\(\[].*?(soundtrack|ost|inst|ver\.|television).*?[\)\]]/gi, '').trim().toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
+
+    // 1. インスト版（Instrumental / Inst.）は除外
+    if (/instrumental|inst\.|\[inst\]|\(inst\)/i.test(trackName)) continue;
+
+    // 2. 劇伴BGM（スコア曲・BGMインスト）の除外判定
+    const isPureBgm = /테마|theme|opening|ending|score|suite|bgm|scene|cue|dialogue|전망대|낙화|주마등|옥상|코마|상처|안녕|위로|기억|재회|에필로그|넋은\s*별이/i.test(trackName);
+    if (isPureBgm && alb.trackCount > 5) continue;
+
+    // 3. Various Artists のままで個人名がないトラックは除外
+    if (/various artists|soundtrack/i.test(artist) && alb.trackCount > 5) continue;
+
+    if (!seenNormalizedTrackKeys.has(cleanKey)) {
+      seenNormalizedTrackKeys.add(cleanKey);
+      seenTrackIds.add(String(item.trackId));
+
+      const realGenre = determineGenre(artist, trackName, item.primaryGenreName);
+
+      tracksToInsert.push({
+        json: {
+          track_id: String(item.trackId),
+          track_name: trackName,
+          track_name_en: item.trackCensoredName || trackName,
+          artist_name: artist,
+          artist_name_en: artist,
+          country: movieCountry,
+          release_year: item.releaseDate ? String(item.releaseDate).substring(0, 4) : (movieYear || new Date().getFullYear().toString()),
+          preview_url: item.previewUrl || "",
+          itunes_url: item.trackViewUrl || item.collectionViewUrl || "",
+          album_cover: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '600x600bb') : (rawShaped.poster_url || inputNode.poster_url || ""),
+          description: `ドラマ・映画『${movieTitleJa || movieTitleRaw}』(${originTitle || alb.collectionName}) 公式挿入歌。`,
+          ost_for: movieTitleJa || movieTitleRaw,
+          tmdb_id: tmdbId,
+          wikidata_id: wikidataId,
+          genre: realGenre
+        }
+      });
+    }
+
+    if (tracksToInsert.length >= 6) break;
   }
 
-  // 2. インスト版（Instrumental / Inst.）の完全除外
-  if (/instrumental|inst\.|\[inst\]|\(inst\)/i.test(track)) {
-    return false;
+  if (tracksToInsert.length >= 6) break;
+}
+
+// ── 3. フォールバック（アルバムが見つからなかった場合のみ、単曲検索を実行） ──
+if (tracksToInsert.length === 0) {
+  const songQueries = new Set();
+  for (const title of titleCandidates.slice(0, 2)) {
+    songQueries.add(`${title} OST Part`);
+    songQueries.add(`${title} Theme Song`);
+    songQueries.add(`${title} OST`);
   }
 
-  // 3. 背景BGMスコア曲の除外（インスト専用曲・無名BGMを排除）
-  const isPureScoreInstrumental = /score|orchestra|cue|suite|action\s*theme|bgm|instrumental\s*only/i.test(track) && !/part|single|vocal/i.test(track + ' ' + album);
-  const isGenericVariousScore = (artist.includes('various artists') || artist.includes('soundtrack')) && !/part|single|theme|vocal|feat/i.test(album + ' ' + track);
-  if (isPureScoreInstrumental || isGenericVariousScore) {
-    return false;
-  }
-
-  // 4. 主題歌・Single・劇中歌のポジティブ判定
-  const isVocalSingle = /single|pt\.\s*\d+|part\s*\d+|part\.\d+|theme|主題歌|劇中歌|挿入歌|opening|ending|main\s*title/i.test(album + ' ' + track);
-  const isDedicatedArtist = artist && !/various|soundtrack|v\.a\./i.test(artist) && artist.length >= 2;
-
-  // 5. 作品タイトルとの一致
-  const norm = (s) => (s || '').toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
-  const albumNorm = norm(album);
-  const trackNorm = norm(track);
-
-  const matchesTitle = titles.some(t => {
-    const tn = norm(t);
-    return tn.length >= 2 && (albumNorm.includes(tn) || trackNorm.includes(tn));
+  const songPromises = Array.from(songQueries).map(q => {
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=10`;
+    return httpFetch(itunesUrl, 3000);
   });
 
-  if (!matchesTitle) return false;
+  const songResults = await Promise.all(songPromises);
 
-  // 作品タイトルに合致し、かつ「Single/Part/主題歌」または「明確なボーカルアーティスト曲」であること
-  return isVocalSingle || isDedicatedArtist;
-}
+  for (const sRes of songResults) {
+    for (const item of (sRes?.results || [])) {
+      if (!item.trackId || seenTrackIds.has(String(item.trackId))) continue;
+      const trackName = item.trackName || '';
+      const albName = item.collectionName || '';
+      const cleanKey = trackName.replace(/\s*[\(\[].*?(soundtrack|ost|inst|ver\.|television).*?[\)\]]/gi, '').trim().toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
 
-// 🎯 楽曲種別の自動判定
-function determineSongRole(trackName, albumName) {
-  const text = `${trackName} ${albumName}`.toLowerCase();
-  if (/main\s*title|theme|メイン主題歌|主題歌|title\s*track/i.test(text)) return 'メイン主題歌';
-  if (/ending|outro|エンディング/i.test(text)) return 'エンディングテーマ';
-  if (/opening|intro|オープニング/i.test(text)) return 'オープニングテーマ';
-  if (/pt\.\s*1|part\s*1|pt\.1|part\.1/i.test(text)) return 'メイン挿入歌 (OST Part.1)';
-  if (/pt\.\s*2|part\s*2|pt\.2|part\.2/i.test(text)) return '挿入歌 (OST Part.2)';
-  if (/pt\.\s*\d+|part\s*\d+/i.test(text)) return '挿入歌 (OST Part)';
-  if (/single/i.test(text)) return '挿入歌 (OST Single)';
-  return '公式劇中歌・OST';
-}
+      if (/instrumental|inst\.|\[inst\]|\(inst\)/i.test(trackName)) continue;
+      if (!/part|pt\.|single|theme|ost|soundtrack/i.test(albName + ' ' + trackName)) continue;
 
-
-
-const itunesPromises = Array.from(searchQueries).map(q => {
-  const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=10`;
-  return httpFetch(itunesUrl, 3000);
-});
-
-const itunesResults = await Promise.all(itunesPromises);
-
-for (const itunesRes of itunesResults) {
-  for (const item of (itunesRes?.results || [])) {
-    if (!item.trackId) continue;
-    const tIdStr = String(item.trackId);
-    const rawTrackName = item.trackName || '';
-    
-    // タイトルの基幹部分で重複判定（「Song (OST Part.1)」と「Song」を同一集約）
-    const cleanKey = rawTrackName.replace(/\s*[\(\[].*?(soundtrack|ost|inst|ver\.|television).*?[\)\]]/gi, '').trim().toLowerCase().replace(/[\s\-_!\?\/\(\)\[\]:：・〜~]/g, '');
-
-    // 🎯 厳格照合（主題歌・劇中歌のみ）
-    if (isVocalOrThemeTrack(item, titleCandidates, movieYear)) {
-      if (!seenTrackIds.has(tIdStr) && !seenNormalizedTrackKeys.has(cleanKey)) {
-        seenTrackIds.add(tIdStr);
+      if (!seenNormalizedTrackKeys.has(cleanKey)) {
         seenNormalizedTrackKeys.add(cleanKey);
+        seenTrackIds.add(String(item.trackId));
 
-        const role = determineSongRole(item.trackName || '', item.collectionName || '');
         const artist = item.artistName || movieTitleJa || movieTitleRaw;
-        const realGenre = determineGenre(artist, item.trackName || '', item.primaryGenreName);
+        const realGenre = determineGenre(artist, trackName, item.primaryGenreName);
 
         tracksToInsert.push({
           json: {
-            track_id: tIdStr,
-            track_name: item.trackName || 'OST Track',
-            track_name_en: item.trackCensoredName || item.trackName || 'OST Track',
+            track_id: String(item.trackId),
+            track_name: trackName,
+            track_name_en: item.trackCensoredName || trackName,
             artist_name: artist,
-            artist_name_en: item.artistName || movieTitleRaw || movieTitleJa,
+            artist_name_en: artist,
             country: movieCountry,
             release_year: item.releaseDate ? String(item.releaseDate).substring(0, 4) : (movieYear || new Date().getFullYear().toString()),
             preview_url: item.previewUrl || "",
             itunes_url: item.trackViewUrl || item.collectionViewUrl || "",
             album_cover: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '600x600bb') : (rawShaped.poster_url || inputNode.poster_url || ""),
-            description: `映画・ドラマ『${movieTitleJa || movieTitleRaw}』(${originTitle || item.collectionName}) ${role}。`,
+            description: `映画・ドラマ『${movieTitleJa || movieTitleRaw}』(${originTitle || albName}) 挿入歌。`,
             ost_for: movieTitleJa || movieTitleRaw,
             tmdb_id: tmdbId,
             wikidata_id: wikidataId,
@@ -286,7 +341,9 @@ for (const itunesRes of itunesResults) {
           }
         });
       }
+      if (tracksToInsert.length >= 6) break;
     }
+    if (tracksToInsert.length >= 6) break;
   }
 }
 
