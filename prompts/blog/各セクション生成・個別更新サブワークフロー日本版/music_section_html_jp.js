@@ -45,34 +45,17 @@ let html = `<!-- SECTION:${sectionId}:START -->\n`;
 html += `<h2 id="section-6" style="${h2Style}"><span style="background:${themeColor};color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑥</span> 日本のおすすめ音楽・ナショナルサウンドトラック</h2>\n`;
 
 musicList.forEach((d, idx) => {
-  let trackName = d['track_name'] || d['曲名'] || d.title || '';
+  const trackName = d['track_name'] || d['曲名'] || d.title || '';
   if (!trackName) return;
 
   const trackNameEn = d['track_name_en'] || d['曲名_英語'] || '';
-  let artistName = d['artist_name'] || d['アーティスト'] || d.artist || '';
+  const artistName = d['artist_name'] || d['アーティスト'] || d.artist || '';
   const artistNameEn = d['artist_name_en'] || d['アーティスト_英語'] || '';
   const releaseYear = d['release_year'] || d['リリース年'] || d['年'] || d.year || '';
   const previewUrl = d.preview_url || '';
   const itunesUrl = d.itunes_url || d.spotify_url || '';
   const coverUrl = d.album_cover || d.ジャケット || d.cover_url || '';
   const description = d.description || d.概要 || d.overview || '';
-
-  // 日本のアーティスト名のカタカナ表記を正規の日本語（漢字・公式表記）に自動補正
-  const jpArtistClean = {
-    'サカモト・キュウ': '坂本九',
-    'ミソラ・ヒバリ': '美空ひばり',
-    'マツトウヤ・ユミ': '松任谷由実',
-    'イシカワ・サユリ': '石川さゆり',
-    'サカモト・リュウイチ': '坂本龍一',
-    'ヨシダ・キョウダイ': '吉田兄弟',
-    'コドウ': '鼓童',
-    'ウタダ・ヒカル': '宇多田ヒカル',
-    'ヨアソビ': 'YOASOBI',
-    'シム': 'SiM'
-  };
-  if (jpArtistClean[artistName]) {
-    artistName = jpArtistClean[artistName];
-  }
 
   const isSameTrack = !trackNameEn || trackNameEn.trim().toLowerCase() === trackName.trim().toLowerCase();
   const isSameArtist = !artistNameEn || artistNameEn.trim().toLowerCase() === artistName.trim().toLowerCase();
