@@ -191,7 +191,8 @@ const finalData = {
     歴史的背景: r2.歴史的背景,
     直近の動向: r2.直近の動向,
     映像作品: r25.映像作品,
-    おすすめ映画: recMovies
+    おすすめ映画: recMovies,
+    おすすめ音楽: []
   },
   固定データ: {
     貿易: japanBoeki,
