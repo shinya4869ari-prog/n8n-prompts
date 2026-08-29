@@ -186,6 +186,35 @@ if (!matchFound) {
   }
 }
 
+// 3. 【自動新規挿入】 マーカーも見出しも無い場合（音楽など新規セクションを後から差し込む場合）
+if (!matchFound) {
+  if (canonicalSection === 'music') {
+    // ⑤おすすめ映画の終了タグの直後、または deep-dive の直前に自動挿入
+    if (/<!--\s*SECTION:osusume:END\s*-->/i.test(updatedContent)) {
+      updatedContent = updatedContent.replace(
+        /<!--\s*SECTION:osusume:END\s*-->/i,
+        `<!-- SECTION:osusume:END -->\n\n${wrap('music', newSectionHtml)}`
+      );
+      matchFound = true;
+    } else if (/<div id="deep-dive"/i.test(updatedContent)) {
+      updatedContent = updatedContent.replace(
+        /<div id="deep-dive"/i,
+        `${wrap('music', newSectionHtml)}\n\n<div id="deep-dive"`
+      );
+      matchFound = true;
+    } else if (/<div id="tenbin-popup"/i.test(updatedContent)) {
+      updatedContent = updatedContent.replace(
+        /<div id="tenbin-popup"/i,
+        `${wrap('music', newSectionHtml)}\n\n<div id="tenbin-popup"`
+      );
+      matchFound = true;
+    } else {
+      updatedContent += `\n\n${wrap('music', newSectionHtml)}`;
+      matchFound = true;
+    }
+  }
+}
+
 if (!matchFound) {
   throw new Error(`[置換失敗] セクション「${canonicalSection}」の置換対象が本文中に見つかりませんでした。見出しやタグを確認してください。`);
 }
