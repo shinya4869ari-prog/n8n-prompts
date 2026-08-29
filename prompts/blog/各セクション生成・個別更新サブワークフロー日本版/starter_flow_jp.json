@@ -1,0 +1,266 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "国家の天秤 日本版 セクション個別更新",
+        "formDescription": "日本の固定ページ（ID: 1815）の各セクションをピンポイントで生成・更新します。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "post_id",
+              "fieldType": "number",
+              "defaultValue": 1815,
+              "requiredField": true,
+              "fieldDescription": "日本の固定ページID（通常は 1815 のまま）"
+            },
+            {
+              "fieldLabel": "section_type",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "eizou : ④ 映像で知る日本"
+                  },
+                  {
+                    "option": "osusume : ⑤ 日本の最新おすすめ映画"
+                  },
+                  {
+                    "option": "music : ⑥ 日本のおすすめ音楽"
+                  },
+                  {
+                    "option": "doukou : ③ 直近の動向"
+                  },
+                  {
+                    "option": "rekishi : ② 歴史的背景（近代100年）"
+                  },
+                  {
+                    "option": "boeki : ① 貿易の衡量"
+                  },
+                  {
+                    "option": "deep_dive : ✦ Deep Dive"
+                  }
+                ]
+              },
+              "defaultValue": "eizou : ④ 映像で知る日本",
+              "fieldDescription": "更新したいセクションを選択してください"
+            },
+            {
+              "fieldLabel": "content_data",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "fieldDescription": "【任意】手動入力したいテキスト（動向の政治経済社会や、貿易解説など）"
+            },
+            {
+              "fieldLabel": "neko_comment",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】エラーネコの一言を指定したい場合に入力"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        240
+      ],
+      "id": "jp-form-trigger-node",
+      "name": "On form submission",
+      "webhookId": "japan-section-update-form"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "boeki",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "boeki"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "rekishi",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rekishi"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "doukou",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "doukou"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "eizou",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "eizou"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "osusume",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "osusume"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "music",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "music"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "deep_dive",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "deep_dive"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -200,
+        240
+      ],
+      "id": "jp-switch-node",
+      "name": "Switch"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

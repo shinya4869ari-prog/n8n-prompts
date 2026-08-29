@@ -1,6 +1,6 @@
 // GitHubのRaw URLベースパス
 const baseUrlJp = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/jp_main/';
-const baseUrlMain = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/main-blog/';
+const baseUrlMain = 'https://raw.githubusercontent.com/shinya4869ari-prog/n8n-prompts/main/prompts/blog/main-blog-lowcost/';
 
 // JP版固有プロンプト → jp_フォルダから、メイン版と共通のものはメインフォルダから
 const files = {
