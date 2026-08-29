@@ -17,16 +17,24 @@
 
 const input = $input.first()?.json || {};
 
+let triggerJson = {};
+try {
+  triggerJson = $('On form submission').first()?.json || $('トリガー').first()?.json || {};
+} catch (e) {}
+
 // 日本版のデフォルト固定ページIDは 1815
-let postId = input.post_id || input.id || 1815;
-let rawSectionType = input.section_type || input.section || 'eizou';
+let postId = input.post_id || input.id || triggerJson.post_id || 1815;
+let rawSectionType = input.section_type || input.section || triggerJson.section_type || triggerJson.section || '';
 
 // セクション種別の正規化
 let sectionType = rawSectionType;
 if (Array.isArray(sectionType)) sectionType = sectionType[0];
-if (typeof sectionType === 'string' && sectionType.includes(':')) {
-  const parts = sectionType.split(':').map(s => s.trim().toLowerCase());
-  sectionType = parts.find(p => ['boeki', 'rekishi', 'doukou', 'eizou', 'osusume', 'deep_dive'].includes(p)) || parts[0];
+if (typeof sectionType === 'string') {
+  if (sectionType.includes(':')) {
+    sectionType = sectionType.split(':')[0].trim().toLowerCase();
+  } else if (sectionType.includes(' ')) {
+    sectionType = sectionType.split(' ')[0].trim().toLowerCase();
+  }
 }
 
 let newSectionHtml = input.section_html || input.html || input.movie_section_html || '';
@@ -44,31 +52,42 @@ for (const item of $input.all()) {
   }
 }
 
-// フォームトリガー等からの post_id 補完
-if (!postId) {
-  try {
-    postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a page').first()?.json?.id || 1815;
-  } catch (e) {
-    postId = 1815;
-  }
-}
-
-// 前段HTMLノードからの補完
+// 前段HTMLノードからの補完（最重要：n8nキャンバス上の実ノード名をすべて網羅）
 if (!newSectionHtml) {
-  const possibleSectionNodes = [
-    'movie_section_html_jp', 'eizou_section_html_jp', 'osusume_section_html_jp',
-    'doukou_section_html_jp', 'rekishi_section_html_jp', 'boeki_section_html_jp', 'deep_dive_section_html_jp',
-    '映像セクションHTML', 'おすすめ映画HTML', '動向セクションHTML', '歴史セクションHTML', '貿易セクションHTML', 'ディープダイブHTML'
+  // セクション種別ごとの優先探索リスト
+  const sectionPriorityNodes = {
+    boeki: ['boeki', 'boeki_section_html', 'boeki_section_html_jp', '貿易セクションHTML', '貿易'],
+    rekishi: ['rekishi', 'rekishi_section_html', 'rekishi_section_html_jp', '歴史セクションHTML', '歴史'],
+    doukou: ['doukou_section_html', 'doukou', 'doukou_section_html_jp', '動向セクションHTML', '動向'],
+    eizou: ['movie_section_html', 'movie_section_html_jp', 'eizou_section_html_jp', '映像セクションHTML', '映像'],
+    osusume: ['movie_section_html', 'movie_section_html_jp', 'osusume_section_html_jp', 'おすすめ映画HTML', 'おすすめ映画'],
+    music: ['music_section_html', 'music_section_html_jp', '音楽セクションHTML', '音楽'],
+    deep_dive: ['Deep Dive', 'deep_dive', 'deep_dive_section_html', 'deep_dive_section_html_jp', 'ディープダイブHTML']
+  };
+
+  const priorityList = sectionPriorityNodes[String(sectionType).toLowerCase()] || [];
+  const allPossibleNodes = [
+    ...priorityList,
+    'movie_section_html', 'music_section_html', 'doukou_section_html', 'rekishi', 'boeki', 'Deep Dive',
+    'movie_section_html_jp', 'music_section_html_jp', 'doukou_section_html_jp', 'rekishi_section_html_jp', 'boeki_section_html_jp', 'deep_dive_section_html_jp',
+    '映像セクションHTML', 'おすすめ映画HTML', '音楽セクションHTML', '動向セクションHTML', '歴史セクションHTML', '貿易セクションHTML', 'ディープダイブHTML'
   ];
-  for (const name of possibleSectionNodes) {
+
+  for (const name of allPossibleNodes) {
     try {
-      const n = $(name).first()?.json;
-      if (n?.section_html || n?.movie_section_html || n?.html) {
-        newSectionHtml = n.section_html || n.movie_section_html || n.html;
-        if (!input.section_type && !input.section && (n.section_type || n.section)) {
-          sectionType = n.section_type || n.section;
+      const node = $(name);
+      if (node && typeof node.first === 'function') {
+        const n = node.first()?.json;
+        if (n) {
+          const candidateHtml = n.section_html || n.movie_section_html || n.html || '';
+          if (candidateHtml && typeof candidateHtml === 'string' && candidateHtml.trim().length > 10) {
+            newSectionHtml = candidateHtml;
+            if (!sectionType && (n.section_type || n.section)) {
+              sectionType = n.section_type || n.section;
+            }
+            break;
+          }
         }
-        break;
       }
     } catch (e) {}
   }
@@ -95,7 +114,7 @@ if (!currentWpHtml || currentWpHtml.trim().length < 10) {
   throw new Error(`[置換エラー] 既存のWordPress固定ページ本文(wp_content)が取得できていません。固定ページID: ${postId} の取得を確認してください。`);
 }
 if (!newSectionHtml || newSectionHtml.trim().length < 10) {
-  throw new Error(`[置換エラー] 生成されたセクションHTML(section_html)が空です。`);
+  throw new Error(`[置換エラー] 生成されたセクションHTML(section_html)が空です。(検出されたセクション種別: ${sectionType || '未指定'})`);
 }
 
 // 日本版の番号・エイリアスマッピング
