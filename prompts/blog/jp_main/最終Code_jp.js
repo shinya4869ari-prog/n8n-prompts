@@ -207,6 +207,22 @@ return $input.all().map(item => {
 </div>
 `;
 
+  // 目次（TOC）カード
+  article += `
+<div style="background:#f9fafa;border:1px solid #e0eeee;border-radius:12px;padding:20px 24px;margin:30px 0;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+  <div style="font-size:13px;font-weight:700;color:#d32f2f;margin-bottom:12px;">📋 目次</div>
+  <ol style="margin:0;padding-left:20px;line-height:2.2;font-size:14px;">
+    <li><a href="#section-1" style="color:#333;text-decoration:none;">貿易の衡量</a></li>
+    <li><a href="#section-2" style="color:#333;text-decoration:none;">歴史的背景（近代100年・重大犯罪事件）</a></li>
+    <li><a href="#section-3" style="color:#333;text-decoration:none;">直近の動向</a></li>
+    <li><a href="#section-4" style="color:#333;text-decoration:none;">映像で知る日本</a></li>
+    <li><a href="#section-5" style="color:#333;text-decoration:none;">日本の最新おすすめ映画</a></li>
+    <li><a href="#section-6" style="color:#333;text-decoration:none;">おすすめ音楽・ナショナルサウンドトラック</a></li>
+    <li><a href="#deep-dive" style="color:#333;text-decoration:none;">✦ Deep Dive</a></li>
+  </ol>
+</div>
+`;
+
   let introText = "";
   const firstSectionIdx = rawLines.findIndex(l => /(?:①|1\.?)\s*貿易/.test(l) || /^輸出[｜|]/.test(l));
   if (firstSectionIdx !== -1) {
