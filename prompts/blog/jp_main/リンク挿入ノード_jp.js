@@ -107,13 +107,13 @@ try {
 
 // ② 記事と基本情報の取得
 let mainArticle = '';
-try { mainArticle = $('整形2_jp').first().json.article ?? $('記事集合_jp').first().json.article ?? ''; } catch (e) { }
+try { mainArticle = $('整形2_jp').first()?.json?.article ?? $('整形2').first()?.json?.article ?? $('記事集合_jp').first()?.json?.article ?? $('記事集合').first()?.json?.article ?? ''; } catch (e) { }
 
 let deepDiveRaw = '';
-try { deepDiveRaw = $('整形3_jp').first().json?.article ?? ''; } catch (e) { }
+try { deepDiveRaw = $('整形3_jp').first()?.json?.article ?? $('整形3').first()?.json?.article ?? ''; } catch (e) { }
 
-let country = '不明';
-try { country = $('整形ノード1_jp').first().json.country ?? '不明'; } catch (e) { }
+let country = '日本';
+try { country = $('整形ノード1_jp').first()?.json?.対象国 ?? $('整形ノード1').first()?.json?.対象国 ?? $('整形ノード１').first()?.json?.対象国 ?? '日本'; } catch (e) { }
 
 // ③ ポップアップHTML（歴史館リンク表示用）
 const popupHTML = `

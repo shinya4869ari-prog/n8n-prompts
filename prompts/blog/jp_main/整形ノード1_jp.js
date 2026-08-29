@@ -1,7 +1,21 @@
-const r2Raw = $('researcher2_jp').first().json;
-const r25Raw = $('researcher25_jp').first().json;
-const boeki = $('Japan_④貿易').first().json;
-const supabaseMovieRaw = $('Supabase映画データ').first().json;
+// 安全なノードデータ取得ヘルパー（ノード名の揺れ・不在によるエラーを完全防止）
+const getNodeData = (...names) => {
+  for (const name of names) {
+    try {
+      const node = $(name);
+      if (node && typeof node.first === 'function') {
+        const item = node.first();
+        if (item && item.json) return item.json;
+      }
+    } catch (e) {}
+  }
+  return {};
+};
+
+const r2Raw = getNodeData('researcher2_jp', 'researcher2', 'AI Agent: researcher2', 'researcher2_JP');
+const r25Raw = getNodeData('researcher25_jp', 'researcher25', 'AI Agent: researcher25', 'researcher25_JP');
+const boeki = getNodeData('Japan_④貿易', '④貿易', 'Japan_④ 貿易', '貿易', 'Japan_貿易');
+const supabaseMovieRaw = getNodeData('Supabase映画データ', '映画10本の一括取得', 'Supabase', 'Supabase1', 'Movies');
 
 const parseOutput = (node, nodeName) => {
   try {
@@ -186,7 +200,7 @@ const finalData = {
 };
 
 // --- PromptLoaderからwriter_jpプロンプトを取得してデータを埋め込む ---
-const writerPromptTemplate = $('PromptLoader_jp').first().json.writerPrompt || "";
+const writerPromptTemplate = getNodeData('PromptLoader_jp', 'PromptLoader', 'PromptLoader_JP').writerPrompt || "";
 
 const now = new Date();
 const dateStr = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;

@@ -1,5 +1,19 @@
-const sheetData = $('整形ノード1_jp').first().json;
-const moviesData = $('リンク挿入_jp').first().json?.movies || [];
+// 安全なノードデータ取得ヘルパー
+const getNodeData = (...names) => {
+  for (const name of names) {
+    try {
+      const node = $(name);
+      if (node && typeof node.first === 'function') {
+        const item = node.first();
+        if (item && item.json) return item.json;
+      }
+    } catch (e) {}
+  }
+  return {};
+};
+
+const sheetData = getNodeData('整形ノード1_jp', '整形ノード1', '整形ノード１');
+const moviesData = getNodeData('リンク挿入_jp', 'リンク挿入', 'リンク挿入ノード_jp', 'リンク挿入ノード').movies || [];
 
 return $input.all().map(item => {
   const inputData = item.json;

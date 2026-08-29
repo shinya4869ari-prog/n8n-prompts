@@ -31,9 +31,14 @@ article = article.replace(
   /border:1px solid #ddd;padding:10px;font-weight:bold;/g,
   'border:1px solid #eee;padding:12px 14px;font-weight:bold;'
 );
+let targetCountry = '日本';
+try {
+  targetCountry = $('整形ノード1_jp').first()?.json?.対象国 || $('整形ノード1').first()?.json?.対象国 || $('整形ノード１').first()?.json?.対象国 || '日本';
+} catch (e) {}
+
 return [{
   json: {
     article: article,
-    対象国: $('整形ノード1_jp').first().json.対象国
+    対象国: targetCountry
   }
 }];
