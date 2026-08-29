@@ -28,18 +28,75 @@ return $input.all().map(item => {
   const themeColor = "#d32f2f";
 
   function parseLines(text, prefix) {
-    return text.split('\n')
-      .filter(l => l.includes(prefix + '｜'))
-      .map(l => {
-        const cleanedLine = l.replace(/<\/?[^>]+(>|$)/g, "").trim();
-        const parts = cleanedLine.split('｜');
-        const obj = {};
+    const lines = text.split('\n');
+    const records = [];
+    let currentObj = null;
+    let currentKey = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const rawLine = lines[i];
+      const trimmed = rawLine.replace(/<\/?[^>]+(>|$)/g, "").trim();
+      if (!trimmed) continue;
+
+      // 新しいレコードの開始を検知（例: 歴史｜... または 映像｜...）
+      if (trimmed.startsWith(prefix + '｜') || trimmed.includes(prefix + '｜')) {
+        if (currentObj) records.push(currentObj);
+        currentObj = {};
+        currentKey = null;
+
+        const startIdx = trimmed.indexOf(prefix + '｜') + (prefix + '｜').length;
+        const content = trimmed.substring(startIdx);
+        const parts = content.split('｜');
+
         parts.forEach(p => {
-          const idx = p.indexOf('：');
-          if (idx !== -1) obj[p.substring(0, idx).trim()] = p.substring(idx + 1).trim();
+          const cIdx = p.indexOf('：');
+          if (cIdx !== -1) {
+            const k = p.substring(0, cIdx).trim();
+            const v = p.substring(cIdx + 1).trim();
+            currentObj[k] = v;
+            currentKey = k;
+          }
         });
-        return obj;
-      });
+        continue;
+      }
+
+      // 改行後に "｜出典：..." などパイプで始まる追加フィールドがある場合
+      if (currentObj && trimmed.startsWith('｜')) {
+        const parts = trimmed.substring(1).split('｜');
+        parts.forEach(p => {
+          const cIdx = p.indexOf('：');
+          if (cIdx !== -1) {
+            const k = p.substring(0, cIdx).trim();
+            const v = p.substring(cIdx + 1).trim();
+            currentObj[k] = v;
+            currentKey = k;
+          }
+        });
+        continue;
+      }
+
+      // 別のセクション見出しやエラーネコに遭遇した場合はレコード終了
+      if (/^(?:[①-⑨]|🐱|#)/.test(trimmed)) {
+        if (currentObj) {
+          records.push(currentObj);
+          currentObj = null;
+          currentKey = null;
+        }
+        continue;
+      }
+
+      // それ以外の行は直前のフィールド（概要など）の続きとして複数行結合
+      if (currentObj && currentKey) {
+        if (currentObj[currentKey]) {
+          currentObj[currentKey] += '\n' + trimmed;
+        } else {
+          currentObj[currentKey] = trimmed;
+        }
+      }
+    }
+
+    if (currentObj) records.push(currentObj);
+    return records;
   }
 
   const h2Style = `margin-top:60px;padding:14px 20px;background:#fffafa;border-left:4px solid ${themeColor};border-radius:8px;font-size:16px;font-weight:800;color:#111;`;
