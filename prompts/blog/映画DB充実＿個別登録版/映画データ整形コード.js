@@ -24,7 +24,7 @@ function getSourceNodeData() {
   try { d = $input.first()?.json || $input.item?.json; } catch(e) {}
   if (isValid(d)) return d;
 
-  const fallbackNodes = ['入力統一・分割コード', 'On form submission1', '映画ごとにループ実行', 'Loop Over Items'];
+  const fallbackNodes = ['country-master-lookup', '国マスター', '入力統一・分割コード', 'On form submission1', '映画ごとにループ実行', 'Loop Over Items'];
   for (const name of fallbackNodes) {
     try {
       d = $(name).first()?.json || $(name).item?.json;
@@ -76,17 +76,28 @@ const rawJaTitle = translations.find(t => t.iso_639_1 === 'ja')?.data?.title ||
 const movieTitle = (rawJaTitle && isJapanese(rawJaTitle)) ? rawJaTitle : (sourceData.title || tmdbObj.name || tmdbObj.title || existingDb.title || '');
 const originTitle = tmdbObj.original_name || tmdbObj.original_title || existingDb.origin_title || movieTitle;
 
-// 🎯【国コード】
-const langToCountry = {
-  'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
-  'zh': 'CN', 'ar': 'SA', 'fa': 'IR', 'hi': 'IN', 'th': 'TH',
-  'vi': 'VN', 'id': 'ID', 'tr': 'TR', 'ru': 'RU', 'es': 'ES',
-  'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
-  'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
-};
-const lang = tmdbObj.original_language;
+// 🎯【国コード（country-master-lookup連携 ＆ TMDb公式製作国から全自動判定）】
+// 1. country-master-lookup ノードからの国情報取得
+const countryLookup = getNodeData('country-master-lookup') || getNodeData('国マスター') || {};
+const lookupCountryCode = countryLookup.countryCode || countryLookup.code || null;
+
+// 2. TMDbからの公式製作国（production_countries: 全世界のISO 3166-1コード / origin_country）
+const tmdbProdCountry = (Array.isArray(tmdbObj.production_countries) && tmdbObj.production_countries[0]?.iso_3166_1) || null;
 const tmdbOriginCountry = (Array.isArray(tmdbObj.origin_country) && tmdbObj.origin_country[0]) || (typeof tmdbObj.origin_country === 'string' ? tmdbObj.origin_country : null);
-const country = existingDb.country || tmdbOriginCountry || (lang ? langToCountry[lang] : null) || sourceData.target_country || sourceData.country || '';
+
+// 3. 入力データからの国コード（2文字コード）
+const inputCountryCode = (sourceData.countryCode && sourceData.countryCode.length === 2) ? sourceData.countryCode.toUpperCase() :
+                         (sourceData.country && sourceData.country.length === 2) ? sourceData.country.toUpperCase() : null;
+
+// 4. 国コードの決定（既存DB ➔ country-master-lookup ➔ TMDb製作国 ➔ 入力指定）
+const country = existingDb.country || 
+                lookupCountryCode || 
+                tmdbProdCountry || 
+                tmdbOriginCountry || 
+                inputCountryCode || 
+                sourceData.target_country || 
+                sourceData.country || 
+                '';
 
 // 🎯【あらすじ判定】
 const rawJaOverview = translations.find(t => t.iso_639_1 === 'ja')?.data?.overview;

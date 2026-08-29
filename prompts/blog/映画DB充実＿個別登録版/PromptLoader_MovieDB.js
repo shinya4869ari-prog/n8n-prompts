@@ -64,8 +64,8 @@ try {
 
   // 3. キャスト・監督翻訳用プロンプトの変数置換
   let castTransPromptText = rawData.castTransPrompt || '';
-  castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\.json\.country\s*\|\|\s*'KR'\s*\}\}/g, country);
-  castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\.json\.title\s*\|\|\s*'なし'\s*\}\}/g, title || 'なし');
+  castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\??\.json\??\.country.*?\}\}/g, country);
+  castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\??\.json\??\.title.*?\}\}/g, title || 'なし');
   castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\.json\.director_en\s*\|\|\s*'なし'\s*\}\}/g, directorEn);
   castTransPromptText = castTransPromptText.replace(/\{\{\s*\$\('映画データ整形コード'\)\.item\.json\.cast_en\s*\|\|\s*'なし'\s*\}\}/g, castEn);
 
