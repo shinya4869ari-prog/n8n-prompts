@@ -147,13 +147,14 @@ function wrap(section, html) {
 }
 
 // 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
-const startRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->`, 'gi');
-const endRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'gi');
+// ※ コロン前後のスペースや HTMLエンティティ(&lt;!-- ... --&gt;) にも完全対応
+const startRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)`, 'gi');
+const endRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)`, 'gi');
 const startCount = (updatedContent.match(startRe) || []).length;
 const endCount = (updatedContent.match(endRe) || []).length;
 
-if (startCount === 1 && endCount === 1) {
-  const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->[\\s\\S]*?<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
+if (startCount >= 1 && endCount >= 1) {
+  const commentRe = new RegExp(`(?:<p>\\s*)?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)[\\s\\S]*?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)(?:\\s*<\\/p>)?`, 'i');
   updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
   matchFound = true;
 } else if (startCount > 1 || endCount > 1) {
@@ -216,7 +217,8 @@ if (!matchFound) {
 }
 
 if (!matchFound) {
-  throw new Error(`[置換失敗] セクション「${canonicalSection}」の置換対象が本文中に見つかりませんでした。見出しやタグを確認してください。`);
+  const foundMarkers = updatedContent.match(/(?:<!--|&lt;!--)\s*SECTION[^\->]+?(?:-->|--&gt;)/gi) || [];
+  throw new Error(`[置換失敗] セクション「${canonicalSection}」の置換対象が本文中に見つかりませんでした。本文長: ${updatedContent.length}文字, 検出された既存マーカー: [${foundMarkers.join(', ')}]`);
 }
 
 // 3. 【破壊防止セーフティガード】 他のセクションが誤って消去されていないか検証
