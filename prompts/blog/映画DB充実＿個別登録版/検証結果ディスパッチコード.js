@@ -69,6 +69,11 @@ if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
   movie.director_en = origMovie.director_en;
 }
 
+// ★ プラットフォーム保護: テレビドラマ（tvN, JTBC等やTV放送）の場合にAIが「劇場公開」と誤爆した場合は元データを優先
+if (origMovie.platform && origMovie.platform !== '劇場公開' && movie.platform === '劇場公開') {
+  movie.platform = origMovie.platform;
+}
+
 // 4. 人物データの抽出（Supabase Personsテーブルのカラム名 wikidata_id に100%統一）
 const aiPersons = auditResult.persons || [];
 const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(origP => {

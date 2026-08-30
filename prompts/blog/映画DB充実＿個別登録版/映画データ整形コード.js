@@ -123,10 +123,42 @@ const year = releaseDateStr ? String(releaseDateStr).substring(0, 4) : (existing
 const genreObjs = Array.isArray(tmdbObj.genres) ? tmdbObj.genres : [];
 const genres = existingDb.genres || (genreObjs.length > 0 ? genreObjs.map(g => g.name).join(', ') : (sourceData.genres || ''));
 
-// 🎯【配信プラットフォーム】
+// 🎯【配信プラットフォーム・放送局】
+const isTvSeries = Boolean(
+  tmdbObj.first_air_date || 
+  tmdbObj.number_of_seasons || 
+  tmdbObj.number_of_episodes || 
+  (Array.isArray(tmdbObj.networks) && tmdbObj.networks.length > 0) ||
+  t1.tv_results ||
+  tmdbObj.tv_results
+);
+
 function getPlatform() {
-  const prodCompanies = Array.isArray(tmdbObj.production_companies) ? tmdbObj.production_companies : [];
+  if (existingDb.platform) return existingDb.platform;
+
   const networks = Array.isArray(tmdbObj.networks) ? tmdbObj.networks : [];
+  const prodCompanies = Array.isArray(tmdbObj.production_companies) ? tmdbObj.production_companies : [];
+  
+  // 1. 放送局・TVネットワーク（tvN, JTBC, SBS, KBS, MBC, ENA, NHK, TBS等）の検出
+  for (const n of networks) {
+    const name = (n?.name || '').trim();
+    if (/tvn/i.test(name)) return 'tvN';
+    if (/jtbc/i.test(name)) return 'JTBC';
+    if (/sbs/i.test(name)) return 'SBS';
+    if (/kbs/i.test(name)) return 'KBS';
+    if (/mbc/i.test(name)) return 'MBC';
+    if (/ena/i.test(name)) return 'ENA';
+    if (/nhk/i.test(name)) return 'NHK';
+    if (/tbs/i.test(name)) return 'TBS';
+    if (/fuji/i.test(name)) return 'フジテレビ';
+    if (/asahi/i.test(name)) return 'テレビ朝日';
+    if (/ntv|nippon/i.test(name)) return '日本テレビ';
+    if (/tokyo/i.test(name)) return 'テレビ東京';
+    if (/wowow/i.test(name)) return 'WOWOW';
+    if (name) return name;
+  }
+
+  // 2. 配信プラットフォームの検出
   const allNames = [...prodCompanies, ...networks].map(c => c?.name || '').join(' ').toLowerCase();
   if (allNames.includes('netflix')) return 'Netflix';
   if (allNames.includes('disney')) return 'Disney+';
@@ -136,7 +168,9 @@ function getPlatform() {
   if (allNames.includes('tving')) return 'TVING';
   if (allNames.includes('wavve')) return 'Wavve';
   if (allNames.includes('u-next')) return 'U-NEXT';
-  return existingDb.platform || null;
+
+  // 3. TVドラマ/映画の自動判定
+  return isTvSeries ? 'TV放送' : '劇場公開';
 }
 
 // 🎯【IMDb URL】

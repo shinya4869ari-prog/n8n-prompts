@@ -118,9 +118,10 @@ return items.map((item, index) => {
     return str.replace(/[\[\]"']/g, '').trim();
   };
 
-  // プラットフォームの自動判別（AI判定 ➔ 既存/検出値 ➔ 検索テキストからの自動抽出）
+  // プラットフォームの自動判別（既存/検出値 ➔ 放送局 ➔ 配信プラットフォーム ➔ TVドラマ/映画判定）
   const resolvePlatform = () => {
-    if (targetAi.platform && targetAi.platform !== 'その他') return targetAi.platform;
+    if (source.platform && source.platform !== 'その他') return source.platform;
+    if (targetAi.platform && targetAi.platform !== 'その他' && targetAi.platform !== '劇場公開') return targetAi.platform;
     const corpus = [
       title, origin_title, overview, overview_en, source.platform || '',
       JSON.stringify(targetAi), JSON.stringify(source)
@@ -128,13 +129,19 @@ return items.map((item, index) => {
 
     if (corpus.includes('netflix') || corpus.includes('ネットフリックス')) return 'Netflix';
     if (corpus.includes('disney') || corpus.includes('ディズニー')) return 'Disney+';
-    if (corpus.includes('prime video') || corpus.includes('amazon') || corpus.includes('アマプラ')) return 'Amazon Prime';
+    if (corpus.includes('prime video') || corpus.includes('amazon') || corpus.includes('アマプラ')) return 'Amazon Prime Video';
     if (corpus.includes('apple tv') || corpus.includes('アップルtv')) return 'Apple TV+';
     if (corpus.includes('tving') || corpus.includes('ティービング')) return 'TVING';
     if (corpus.includes('watcha') || corpus.includes('ワッチャ')) return 'Watcha';
     if (corpus.includes('u-next') || corpus.includes('ユーネクスト')) return 'U-NEXT';
+    if (corpus.includes('tvn')) return 'tvN';
+    if (corpus.includes('jtbc')) return 'JTBC';
+    if (corpus.includes('sbs')) return 'SBS';
+    if (corpus.includes('kbs')) return 'KBS';
+    if (corpus.includes('mbc')) return 'MBC';
+    if (corpus.includes('ena')) return 'ENA';
 
-    return source.platform || '劇場公開';
+    return source.platform || '';
   };
 
   const rawGenre = targetAi.genres || source.genres || null;
