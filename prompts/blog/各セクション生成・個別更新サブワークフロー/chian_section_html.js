@@ -69,28 +69,58 @@ function formatMetric(val, defaultVal = 'データなし') {
 
 // 3. 指標テーブルの行データ構築
 const metricsList = [
-  { name: '殺人率（10万人あたり）', key: '殺人率', keyAlt: '殺人率_値', yearKey: '殺人率_年', srcKey: '殺人率_出典' },
-  { name: '交通事故死亡率（10万人あたり）', key: '交通事故死亡率', keyAlt: '交通事故死亡率_値', yearKey: '交通事故死亡率_年', srcKey: '交通事故死亡率_出典' },
-  { name: '自殺率（10万人あたり）', key: '自殺率', keyAlt: '自殺率_値', yearKey: '自殺率_年', srcKey: '自殺率_出典' },
-  { name: '失業率', key: '失業率', keyAlt: '失業率_値', yearKey: '失業率_年', srcKey: '失業率_出典' },
-  { name: '貧困率', key: '貧困率', keyAlt: '貧困率_値', yearKey: '貧困率_年', srcKey: '貧困率_出典' },
-  { name: 'ジニ係数', key: 'ジニ係数', keyAlt: 'ジニ係数_値', yearKey: 'ジニ係数_年', srcKey: 'ジニ係数_出典' },
-  { name: '刑務所稼働率', key: '刑務所稼働率', keyAlt: '稼働率', yearKey: '稼働率_年', srcKey: '稼働率_出典' },
-  { name: '刑務所総収容者数', key: '刑務所総収容者数', keyAlt: '総収容者数', yearKey: '収容者_年', srcKey: '収容者_出典' },
-  { name: 'GPI（世界平和度指数）', key: 'GPI', keyAlt: 'GPIスコア', yearKey: 'GPI年', srcKey: 'GPI出典' }
+  { name: '殺人率（10万人あたり）', keys: ['殺人率', '殺人率_値'], yearKeys: ['殺人率_年'], srcKeys: ['殺人率_出典'] },
+  { name: '交通事故死亡率（10万人あたり）', keys: ['交通事故死亡率', '交通事故死亡率_値'], yearKeys: ['交通事故死亡率_年'], srcKeys: ['交通事故死亡率_出典'] },
+  { name: '自殺率（10万人あたり）', keys: ['自殺率', '自殺率_値'], yearKeys: ['自殺率_年'], srcKeys: ['自殺率_出典'] },
+  { name: '失業率', keys: ['失業率', '失業率_値'], yearKeys: ['失業率_年'], srcKeys: ['失業率_出典'], isPercent: true },
+  { name: '貧困率', keys: ['貧困率', '貧困率_値'], yearKeys: ['貧困率_年'], srcKeys: ['貧困率_出典'], isPercent: true },
+  { name: 'ジニ係数', keys: ['ジニ係数', 'ジニ係数_値'], yearKeys: ['ジニ係数_年'], srcKeys: ['ジニ係数_出典'] },
+  { name: '刑務所稼働率', keys: ['刑務所稼働率', '稼働率'], yearKeys: ['刑務所稼働率_年', '稼働率_年', '刑務所_年'], srcKeys: ['刑務所稼働率_出典', '稼働率_出典', '刑務所_出典'], isPrisonRate: true },
+  { name: '刑務所総収容者数', keys: ['刑務所総収容者数', '総収容者数', '収容者数'], yearKeys: ['刑務所総収容者数_年', '総収容者数_年', '収容者_年'], srcKeys: ['刑務所総収容者数_出典', '総収容者数_出典', '収容者_出典'], isPrisonTotal: true },
+  { name: 'GPI（世界平和度指数）', keys: ['GPI', 'GPIスコア'], yearKeys: ['GPI年', 'GPI_年', 'GPIスコア_年'], srcKeys: ['GPI出典', 'GPI_出典', 'GPIスコア_出典'] }
 ];
 
+function findVal(obj, keys) {
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k];
+  }
+  return '';
+}
+
 const tableRows = metricsList.map(m => {
-  let countryVal = rawChian[m.key] || rawChian[m.keyAlt] || '';
-  const cYear = rawChian[m.yearKey] || '';
-  const cSrc = rawChian[m.srcKey] || '';
-  
+  let countryRaw = findVal(rawChian, m.keys);
+  const cYear = findVal(rawChian, m.yearKeys);
+  const cSrc = findVal(rawChian, m.srcKeys);
+
+  let formattedVal = countryRaw;
+  if (formattedVal !== '' && formattedVal !== '-' && formattedVal !== 'データなし') {
+    const num = parseFloat(String(formattedVal).replace(/,/g, ''));
+    if (!isNaN(num)) {
+      if (m.isPrisonRate) {
+        // 1.252 のような小数の場合は 125.2% に変換
+        if (num <= 5 && num > 0) {
+          formattedVal = `${Math.round(num * 1000) / 10}%`;
+        } else if (!String(formattedVal).includes('%')) {
+          formattedVal = `${num}%`;
+        }
+      } else if (m.isPrisonTotal) {
+        // 101457 のような数値は 101,457人 に変換
+        if (!String(formattedVal).includes('人')) {
+          formattedVal = `${num.toLocaleString()}人`;
+        }
+      } else if (m.isPercent && !String(formattedVal).includes('%')) {
+        formattedVal = `${num}%`;
+      }
+    }
+  }
+
+  let countryVal = formattedVal;
   if (countryVal && (cYear || cSrc)) {
     const meta = [cSrc, cYear ? `${cYear}年` : ''].filter(Boolean).join('・');
     countryVal = `${countryVal}（${meta}）`;
   }
 
-  const japanVal = rawJapanChian[m.key] || defaultJapan[m.key] || 'データなし';
+  const japanVal = rawJapanChian[m.keys[0]] || defaultJapan[m.keys[0]] || 'データなし';
   return {
     name: m.name,
     country: formatMetric(countryVal),
