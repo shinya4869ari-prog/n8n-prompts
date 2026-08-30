@@ -69,11 +69,8 @@ if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
   movie.director_en = origMovie.director_en;
 }
 
-// ★ プラットフォーム安全サニタイズ（Supabase ENUM型: '劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他' のみ許可）
-const ALLOWED_PLATFORMS = ['劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他'];
+// ★ プラットフォーム判定（tvNなどの放送局、テレビドラマ、劇場公開、配信サービス）
 let safePlatform = movie.platform || origMovie.platform || '';
-if (safePlatform === 'Amazon Prime Video') safePlatform = 'Amazon Prime';
-
 const isTv = Boolean(
   movie.genres?.includes('ドラマ') || 
   origMovie.genres?.includes('ドラマ') || 
@@ -81,11 +78,11 @@ const isTv = Boolean(
   origMovie.first_air_date
 );
 
-// TVドラマなのに「劇場公開」になっている場合は「その他」に強制是正
-if (isTv && safePlatform === '劇場公開') {
-  safePlatform = 'その他';
-} else if (!ALLOWED_PLATFORMS.includes(safePlatform)) {
-  safePlatform = isTv ? 'その他' : '劇場公開';
+// TVドラマなのに「劇場公開」になっている場合は、放送局名または「テレビドラマ」に是正
+if (isTv && (safePlatform === '劇場公開' || !safePlatform)) {
+  safePlatform = 'テレビドラマ';
+} else if (!safePlatform) {
+  safePlatform = '劇場公開';
 }
 movie.platform = safePlatform;
 

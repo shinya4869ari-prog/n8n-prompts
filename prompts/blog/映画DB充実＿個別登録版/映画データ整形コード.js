@@ -123,7 +123,7 @@ const year = releaseDateStr ? String(releaseDateStr).substring(0, 4) : (existing
 const genreObjs = Array.isArray(tmdbObj.genres) ? tmdbObj.genres : [];
 const genres = existingDb.genres || (genreObjs.length > 0 ? genreObjs.map(g => g.name).join(', ') : (sourceData.genres || ''));
 
-// 🎯【配信プラットフォーム (Supabase ENUM型: '劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他' 厳守)】
+// 🎯【配信プラットフォーム・放送局】
 const isTvSeries = Boolean(
   tmdbObj.first_air_date || 
   tmdbObj.number_of_seasons || 
@@ -134,28 +134,45 @@ const isTvSeries = Boolean(
 );
 
 function getPlatform() {
-  // ★ TVドラマなのに既存DBが誤って「劇場公開」になっている場合は再利用せず是正
+  // TVドラマなのに既存DBが誤って「劇場公開」になっている場合は再利用せず是正
   if (existingDb.platform && (!isTvSeries || existingDb.platform !== '劇場公開')) {
     return existingDb.platform;
   }
 
   const networks = Array.isArray(tmdbObj.networks) ? tmdbObj.networks : [];
   const prodCompanies = Array.isArray(tmdbObj.production_companies) ? tmdbObj.production_companies : [];
-  const allNames = [...prodCompanies, ...networks].map(c => c?.name || '').join(' ').toLowerCase();
+  
+  // 1. 放送局・TVネットワーク（tvN, JTBC, SBS, KBS, MBC, ENA, NHK, TBS等）の検出
+  for (const n of networks) {
+    const name = (n?.name || '').trim();
+    if (/tvn/i.test(name)) return 'tvN';
+    if (/jtbc/i.test(name)) return 'JTBC';
+    if (/sbs/i.test(name)) return 'SBS';
+    if (/kbs/i.test(name)) return 'KBS';
+    if (/mbc/i.test(name)) return 'MBC';
+    if (/ena/i.test(name)) return 'ENA';
+    if (/nhk/i.test(name)) return 'NHK';
+    if (/tbs/i.test(name)) return 'TBS';
+    if (/fuji/i.test(name)) return 'フジテレビ';
+    if (/asahi/i.test(name)) return 'テレビ朝日';
+    if (/ntv|nippon/i.test(name)) return '日本テレビ';
+    if (/tokyo/i.test(name)) return 'テレビ東京';
+    if (/wowow/i.test(name)) return 'WOWOW';
+    if (name) return name;
+  }
 
-  // 1. 配信プラットフォームの検出（Supabase ENUM許容値に完全準拠）
+  // 2. 配信プラットフォームの検出
+  const allNames = [...prodCompanies, ...networks].map(c => c?.name || '').join(' ').toLowerCase();
   if (allNames.includes('netflix') || allNames.includes('ネットフリックス')) return 'Netflix';
   if (allNames.includes('disney') || allNames.includes('ディズニー')) return 'Disney+';
-  if (allNames.includes('amazon') || allNames.includes('prime') || allNames.includes('アマプラ')) return 'Amazon Prime';
+  if (allNames.includes('amazon') || allNames.includes('prime') || allNames.includes('アマプラ')) return 'Amazon Prime Video';
   if (allNames.includes('apple') || allNames.includes('アップル')) return 'Apple TV+';
   if (allNames.includes('watcha') || allNames.includes('ワッチャ')) return 'Watcha';
   if (allNames.includes('tving') || allNames.includes('ティービング')) return 'TVING';
+  if (allNames.includes('u-next') || allNames.includes('ユーネクスト')) return 'U-NEXT';
 
-  // 2. TVドラマ（tvN, JTBCなどのテレビ局放送）は「その他」にマッピング（劇場公開にはしない）
-  if (isTvSeries) return 'その他';
-
-  // 3. 映画は「劇場公開」
-  return '劇場公開';
+  // 3. TVドラマ/映画の自動判定
+  return isTvSeries ? 'テレビドラマ' : '劇場公開';
 }
 
 // 🎯【IMDb URL】

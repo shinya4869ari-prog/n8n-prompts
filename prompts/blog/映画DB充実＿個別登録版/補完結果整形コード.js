@@ -118,8 +118,7 @@ return items.map((item, index) => {
     return str.replace(/[\[\]"']/g, '').trim();
   };
 
-  // プラットフォームの自動判別（Supabase ENUM型: '劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他' 厳守）
-  const ALLOWED_PLATFORMS = ['劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他'];
+  // プラットフォームの自動判別（放送局 ➔ 配信プラットフォーム ➔ TVドラマ/映画判定）
   const resolvePlatform = () => {
     const corpus = [
       title, origin_title, overview, overview_en, source.platform || '',
@@ -136,22 +135,39 @@ return items.map((item, index) => {
       corpus.includes('kbs')
     );
 
-    // 既存データ・AIデータが「劇場公開」でも、TVドラマなら「劇場公開」を採用せず是正
-    if (source.platform && (!isTv || source.platform !== '劇場公開') && ALLOWED_PLATFORMS.includes(source.platform)) {
+    // 既存データが「劇場公開」でも、TVドラマなら「劇場公開」を採用せず是正
+    if (source.platform && (!isTv || source.platform !== '劇場公開')) {
       return source.platform;
     }
-    if (targetAi.platform && (!isTv || targetAi.platform !== '劇場公開') && ALLOWED_PLATFORMS.includes(targetAi.platform)) {
+    if (targetAi.platform && (!isTv || targetAi.platform !== '劇場公開')) {
       return targetAi.platform;
     }
 
+    // 放送局・TVネットワークの判定
+    if (corpus.includes('tvn')) return 'tvN';
+    if (corpus.includes('jtbc')) return 'JTBC';
+    if (corpus.includes('sbs')) return 'SBS';
+    if (corpus.includes('kbs')) return 'KBS';
+    if (corpus.includes('mbc')) return 'MBC';
+    if (corpus.includes('ena')) return 'ENA';
+    if (corpus.includes('nhk')) return 'NHK';
+    if (corpus.includes('tbs')) return 'TBS';
+    if (corpus.includes('fuji') || corpus.includes('フジテレビ')) return 'フジテレビ';
+    if (corpus.includes('asahi') || corpus.includes('テレビ朝日')) return 'テレビ朝日';
+    if (corpus.includes('ntv') || corpus.includes('日本テレビ')) return '日本テレビ';
+    if (corpus.includes('tokyo') || corpus.includes('テレビ東京')) return 'テレビ東京';
+    if (corpus.includes('wowow')) return 'WOWOW';
+
+    // 配信プラットフォームの判定
     if (corpus.includes('netflix') || corpus.includes('ネットフリックス')) return 'Netflix';
     if (corpus.includes('disney') || corpus.includes('ディズニー')) return 'Disney+';
-    if (corpus.includes('prime') || corpus.includes('amazon') || corpus.includes('アマプラ')) return 'Amazon Prime';
+    if (corpus.includes('prime') || corpus.includes('amazon') || corpus.includes('アマプラ')) return 'Amazon Prime Video';
     if (corpus.includes('apple') || corpus.includes('アップル')) return 'Apple TV+';
     if (corpus.includes('watcha') || corpus.includes('ワッチャ')) return 'Watcha';
     if (corpus.includes('tving') || corpus.includes('ティービング')) return 'TVING';
+    if (corpus.includes('u-next') || corpus.includes('ユーネクスト')) return 'U-NEXT';
 
-    return isTv ? 'その他' : '劇場公開';
+    return isTv ? 'テレビドラマ' : '劇場公開';
   };
 
   const rawGenre = targetAi.genres || source.genres || null;
