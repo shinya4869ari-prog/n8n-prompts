@@ -86,10 +86,15 @@ if (isTv && (safePlatform === '劇場公開' || !safePlatform)) {
 }
 movie.platform = safePlatform;
 
-// 4. 人物データの抽出（Supabase Personsテーブルのカラム名 wikidata_id に100%統一）
+// 4. 人物データの抽出（キャスト・監督抽出の全員を100%確実に保持＆AIの補正を統合）
 const aiPersons = auditResult.persons || [];
-const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(origP => {
-  const rawName = String(origP.name || '').replace(/_/g, '・');
+const mergedPersonsMap = new Map();
+
+// まず元データ（キャスト・監督抽出 ➔ Supabase整形コード）の全員を最優先で登録
+(origPersons.length > 0 ? origPersons : aiPersons).forEach(origP => {
+  const rawName = String(origP.name || '').replace(/_/g, '・').trim();
+  if (!rawName) return;
+
   const matchedAi = aiPersons.find(ap => 
     ((ap.wikidata_id || ap.qid) && (origP.wikidata_id || origP.qid) && (ap.wikidata_id || ap.qid) === (origP.wikidata_id || origP.qid)) ||
     (ap.name && rawName && (ap.name === rawName || ap.name.includes(rawName) || rawName.includes(ap.name)))
@@ -104,10 +109,10 @@ const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(orig
     ...origP,
     name: String(matchedAi?.name || rawName).replace(/_/g, '・'),
     name_en: pNameEn,
-    occupation: matchedAi?.occupation || origP.occupation || '俳優',
+    occupation: origP.occupation || matchedAi?.occupation || '俳優',
     country: matchedAi?.country || origP.country || movie.country || '',
-    profile_url: matchedAi?.profile_url || origP.profile_url || origP.image_url || null,
-    gender: origP.gender || null,
+    profile_url: origP.profile_url || matchedAi?.profile_url || origP.image_url || null,
+    gender: origP.gender || matchedAi?.gender || null,
     wikidata_id: wId,
     tmdb_id: origP.tmdb_id || matchedAi?.tmdb_id || null,
     x_id: origP.x_id || null,
@@ -115,9 +120,32 @@ const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(orig
     youtube_id: origP.youtube_id || null,
     official_site: origP.official_site || null
   };
-  delete pObj.qid; // Supabaseには存在しないqidを完全除去
-  return pObj;
-}).filter(p => p && p.name && p.name.trim().length >= 2);
+  delete pObj.qid;
+  mergedPersonsMap.set(rawName, pObj);
+});
+
+// AIが追加した有効なキャストがいればそれも補完
+aiPersons.forEach(ap => {
+  const rawName = String(ap.name || '').replace(/_/g, '・').trim();
+  if (rawName && !mergedPersonsMap.has(rawName)) {
+    mergedPersonsMap.set(rawName, {
+      name: rawName,
+      name_en: ap.name_en || null,
+      occupation: ap.occupation || '俳優',
+      country: ap.country || movie.country || '',
+      profile_url: ap.profile_url || null,
+      gender: ap.gender || null,
+      wikidata_id: ap.wikidata_id || ap.qid || null,
+      tmdb_id: ap.tmdb_id || null,
+      x_id: null,
+      instagram_id: null,
+      youtube_id: null,
+      official_site: null
+    });
+  }
+});
+
+const validPersons = Array.from(mergedPersonsMap.values()).filter(p => p && p.name && p.name.trim().length >= 2);
 
 // 4. サントラデータの抽出（APPROVEDされたもの、またはREJECTEDでないもののみを通過）
 const rawTracks = auditResult.tracks || inputJson.tracks_payload || [];

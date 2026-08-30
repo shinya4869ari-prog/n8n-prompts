@@ -97,17 +97,18 @@ inputItems.forEach((item, idx) => {
   let personObj = null;
 
   if (isDirector) {
-    const targetEnName = enNameMap[searchName] || '';
+    const targetEnName = enNameMap[searchName] || item.json?.name_en || '';
     if (crewList.length > 0) {
       personObj = crewList.find(c => 
-        (c.job === 'Director' || c.job === 'Executive Producer') &&
-        (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase()))
-      ) || crewList.find(c => c.job === 'Director');
+        (targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())) ||
+        (c.name && (c.name === searchName || c.name.includes(searchName))) ||
+        (c.original_name && (c.original_name === searchName || c.original_name.includes(searchName)))
+      );
     }
     if (!personObj && createdByList.length > 0) {
       personObj = createdByList.find(c => 
         targetEnName && (c.name?.toLowerCase() === targetEnName.toLowerCase() || c.original_name?.toLowerCase() === targetEnName.toLowerCase())
-      ) || createdByList[0];
+      );
     }
   } else {
     const castIndex = jaCast.indexOf(searchName);
@@ -187,10 +188,9 @@ inputItems.forEach((item, idx) => {
     }
   }
 
-  const nameEn = enNameMap[searchName] || personObj?.original_name || personObj?.name || null;
+  const nameEn = enNameMap[searchName] || item.json?.name_en || personObj?.original_name || personObj?.name || null;
   const tmdbImg = personObj?.profile_path ? `https://image.tmdb.org/t/p/w500${personObj.profile_path}` : null;
-  const finalProfileUrl = tmdbImg || wikiImage;
-  if (!finalProfileUrl) return; // 🎯 写真がどこにも存在しない人物はDBに保存せず安全にスキップ
+  const finalProfileUrl = tmdbImg || wikiImage || null;
 
   // 🎯 性別 (gender) の強固な解決 (TMDB gender 1=female, 2=male ＋ Wikidata 性別判定の相互フォールバック)
   let genderVal = null;
@@ -203,14 +203,18 @@ inputItems.forEach((item, idx) => {
     else if (/male|男性|Q6581097/i.test(wikiGender)) genderVal = 'male';
   }
 
+  // 職種（occupation）の確定: 前段の抽出ノードの判定（脚本・監督・製作等）を最優先
+  const finalOcc = item.json?.occupation || (isDirector ? '監督' : '俳優');
+
   persons.push({
     name: searchName,
     name_en: nameEn,
-    occupation: isDirector ? '監督' : '俳優',
+    occupation: finalOcc,
     profile_url: finalProfileUrl,
     gender: genderVal,
     country: inferPersonCountry(searchName, nameEn, movieCountry),
     wikidata_id: qid,
+    tmdb_id: personObj?.id || null,
     x_id: xId,
     instagram_id: instaId,
     youtube_id: ytId,

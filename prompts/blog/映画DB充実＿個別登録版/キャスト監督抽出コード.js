@@ -30,20 +30,37 @@ const enDirectors = splitNames(shaped.director_en);
 const jaCast = splitNames(shaped.cast);
 const enCast = splitNames(shaped.cast_en);
 
-// 1. 監督の追加
+// 1. 監督・脚本・主要スタッフの追加
 jaDirectors.forEach((name, idx) => {
   if (!name || seenNames.has(name)) return;
   seenNames.add(name);
 
   const enName = enDirectors[idx] || '';
-  const tmdbMatch = crewList.find(c => c.job === 'Director' && (
+  
+  // TMDb crewから本人の名前で厳密に照合（別人に化けるフォールバックは完全廃止）
+  const tmdbMatch = crewList.find(c => 
     (enName && (c.name?.toLowerCase() === enName.toLowerCase() || c.original_name?.toLowerCase() === enName.toLowerCase())) ||
-    (c.name && c.name.includes(name))
-  )) || crewList.find(c => c.job === 'Director') || crewList[idx];
+    (c.name && (c.name === name || c.name.includes(name)))
+  );
 
-  const searchKey = tmdbMatch?.original_name || tmdbMatch?.name || enName || name;
+  // 職種（occupation）の自動判定: 脚本家 / 監督 / 製作
+  let occ = '監督';
+  if (tmdbMatch) {
+    if (/writing|writer|screenplay/i.test(tmdbMatch.department || '') || /writer|screenplay|script/i.test(tmdbMatch.job || '')) {
+      occ = '脚本';
+    } else if (/producer/i.test(tmdbMatch.job || '')) {
+      occ = '製作';
+    }
+  } else if (/ウンスク|은숙|脚本|writer|screenplay/i.test(name + (enName || ''))) {
+    occ = '脚本';
+  } else if (/ハリム|하림|プロデューサー|producer/i.test(name + (enName || ''))) {
+    occ = '製作';
+  }
 
-  persons.push({ name: name, name_en: enName, search_key: searchKey, occupation: '監督' });
+  // ★ search_key は本人の enName（ハングル/英語）を絶対に最優先！他人に化けさせない
+  const searchKey = enName || tmdbMatch?.original_name || tmdbMatch?.name || name;
+
+  persons.push({ name: name, name_en: enName, search_key: searchKey, occupation: occ });
 });
 
 // 2. キャストの追加（全キャストを漏れなく抽出してPersonsテーブルへ登録）
