@@ -385,15 +385,28 @@ for (const itemKey of itemsToRecalc) {
   }
 }
 
-// Netflix の再計算（ドル・ユーロ自動判定付き）
+// Netflix の再計算（ペソ等の記号$誤爆防止・ドル・ユーロ自動判定付き）
 const nfVal = bukka["Netflix_現地通貨"];
 const nfNum = parseLocalValue(nfVal);
 if (!isNaN(nfNum)) {
   let netflixCode = rowData["Netflix_通貨コード"] || "";
+  const countryCurrency = rowData["通貨コード"] || "";
+  const pesoCurrencies = ["COP", "MXN", "ARS", "CLP", "UYU", "DOP"];
+
   if (!netflixCode && typeof nfVal === 'string') {
-    if (nfVal.includes('$')) netflixCode = "USD";
-    else if (nfVal.includes('€')) netflixCode = "EUR";
+    if (pesoCurrencies.includes(countryCurrency)) {
+      netflixCode = countryCurrency;
+    } else if (nfVal.includes('€')) {
+      netflixCode = "EUR";
+    } else if (nfVal.includes('US$') || nfVal.includes('USD') || countryCurrency === 'USD') {
+      netflixCode = "USD";
+    } else if (countryCurrency && countryCurrency !== 'USD') {
+      netflixCode = countryCurrency;
+    } else if (nfVal.includes('$')) {
+      netflixCode = "USD";
+    }
   }
+
   const netflixRate = netflixCode === "USD" ? usdJpy : netflixCode === "EUR" ? eurJpy : fxRate;
   if (!isNaN(netflixRate)) {
     bukka["Netflix_円換算"] = Math.round(nfNum * netflixRate).toString();
