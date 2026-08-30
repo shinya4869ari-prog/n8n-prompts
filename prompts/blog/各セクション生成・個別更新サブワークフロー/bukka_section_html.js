@@ -16,9 +16,25 @@
 
 const input = $input.first()?.json || {};
 
+// 安全な前段ノード探索ヘルパー（ノードが存在しなくてもエラーにならない）
+function getSafeNodeJson(names) {
+  for (const name of names) {
+    try {
+      const data = $(name).first()?.json;
+      if (data && Object.keys(data).length > 0) return data;
+    } catch (e) {}
+  }
+  return {};
+}
+
+const triggerData = getSafeNodeJson([
+  'Switch1', 'Switch', 'Switch (セクション分岐)',
+  'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
+]);
+
 // 1. 基本パラメータの取得
-const countryName = input.country || input.countryName || input.国名 || $('On form submission')?.first()?.json?.country || '対象国';
-const currencyCode = input.currencyCode || input.通貨コード || input.currency || '';
+const countryName = input['国名（日本語）'] || input.country || input.countryName || input.国名 || triggerData.country || '対象国';
+const currencyCode = input.currencyCode || input.通貨コード || input.currency || triggerData.currencyCode || '';
 const currencyName = input.currencyName || input.通貨名 || currencyCode;
 
 // 為替レート
@@ -162,7 +178,7 @@ html += `    </tbody>
 `;
 
 // 5. エラーネコの一言
-const customNeko = input.neko_comment || input.neko || $('On form submission')?.first()?.json?.neko_comment || '';
+const customNeko = input.neko_comment || input.neko || triggerData.neko_comment || '';
 const defaultNeko = `${countryName}の物価と為替データを最新版にリフレッシュしたニャ！食料品や家賃、平均月収を日本円換算で比べると、現地でのリアルな生活水準や購買力平価の差がはっきり見えてくるニャ！`;
 const nekoContent = customNeko || defaultNeko;
 
@@ -183,7 +199,7 @@ html += `
 return [{
   json: {
     section_type: 'bukka',
-    post_id: input.post_id || $('On form submission')?.first()?.json?.post_id || null,
+    post_id: input.post_id || triggerData.post_id || null,
     country: countryName,
     section_html: html
   }

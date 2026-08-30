@@ -16,9 +16,25 @@
 
 const input = $input.first()?.json || {};
 
+// 安全な前段ノード探索ヘルパー（ノードが存在しなくてもエラーにならない）
+function getSafeNodeJson(names) {
+  for (const name of names) {
+    try {
+      const data = $(name).first()?.json;
+      if (data && Object.keys(data).length > 0) return data;
+    } catch (e) {}
+  }
+  return {};
+}
+
+const triggerData = getSafeNodeJson([
+  'Switch1', 'Switch', 'Switch (セクション分岐)',
+  'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
+]);
+
 // 1. 基本パラメータの取得
-const countryName = input.country || input.countryName || input.国名 || $('On form submission')?.first()?.json?.country || '対象国';
-const capital = input.capital || input.首都 || '';
+const countryName = input['国名（日本語）'] || input.country || input.countryName || input.国名 || triggerData.country || '対象国';
+const capital = input.capital || input.首都 || triggerData.capital || '';
 const countryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
 const japanLabel = '日本<br>（東京）';
 
@@ -135,7 +151,7 @@ if (kikenLevel >= 1) {
 }
 
 // 6. エラーネコの一言
-const customNeko = input.neko_comment || input.neko || $('On form submission')?.first()?.json?.neko_comment || '';
+const customNeko = input.neko_comment || input.neko || triggerData.neko_comment || '';
 const defaultNeko = `${countryName}の治安指標を最新データに更新したニャ！殺人率や失業率などの急激な変化は、国内情勢や法制度の変化を鋭く反映しているニャ。日本との治安格差にも要注目ニャ！`;
 const nekoContent = customNeko || defaultNeko;
 
@@ -156,7 +172,7 @@ html += `
 return [{
   json: {
     section_type: 'chian',
-    post_id: input.post_id || $('On form submission')?.first()?.json?.post_id || null,
+    post_id: input.post_id || triggerData.post_id || null,
     country: countryName,
     section_html: html
   }
