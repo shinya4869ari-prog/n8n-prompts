@@ -52,7 +52,8 @@ const defaultJapan = {
   ジニ係数: '33.4（厚生労働省・2021年）',
   刑務所稼働率: '54.2%（法務省・2023年）',
   刑務所総収容者数: '41,000人（法務省・2023年）',
-  GPI: 'スコア 1.336・17位（Vision of Humanity・2024年）'
+  GPI: 'スコア 1.336・17位（Vision of Humanity・2024年）',
+  GPIスコア: 'スコア 1.336・17位（Vision of Humanity・2024年）'
 };
 
 // ヘルパー: 値のフォーマット（太字化＋出典の小文字化）
@@ -133,7 +134,7 @@ const tableRows = metricsList.map(m => {
     countryVal = `${countryVal}（${meta}）`;
   }
 
-  const japanVal = rawJapanChian[m.keys[0]] || defaultJapan[m.keys[0]] || 'データなし';
+  const japanVal = findVal(rawJapanChian, m.keys) || findVal(defaultJapan, m.keys) || 'データなし';
   return {
     name: m.name,
     country: formatMetric(countryVal),
