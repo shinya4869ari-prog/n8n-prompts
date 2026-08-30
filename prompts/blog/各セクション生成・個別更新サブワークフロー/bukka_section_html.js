@@ -63,6 +63,7 @@ if (!japanRow) {
 
 // 1. 基本パラメータの取得
 const countryName = targetRow['国名（日本語）'] || targetRow.country || targetRow.countryName || targetRow.国名 || triggerData.country || '対象国';
+const capital = targetRow.capital || targetRow['首都'] || targetRow['首都（日本語）'] || triggerData.capital || '';
 const currencyCode = targetRow.currencyCode || targetRow.通貨コード || targetRow.currency || triggerData.currencyCode || '';
 const currencyName = targetRow.currencyName || targetRow.通貨名 || currencyCode;
 
