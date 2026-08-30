@@ -74,6 +74,37 @@ if (!newSectionHtml || newSectionHtml.trim().length < 10) {
   throw new Error(`[置換エラー] 生成されたセクションHTML(section_html)が空です。`);
 }
 
+// 取得されたWordPress記事の情報
+let wpTitle = input.title?.rendered || input.title || '';
+if (!wpTitle) {
+  for (const name of ['Get many posts', 'WP Search Post', 'WP Search a Post', 'Search Post', 'WP Get a Post']) {
+    try {
+      const n = $(name).first()?.json;
+      if (n?.title?.rendered) { wpTitle = n.title.rendered; break; }
+      else if (typeof n?.title === 'string') { wpTitle = n.title; break; }
+    } catch(e) {}
+  }
+}
+
+// 対象国名の取得（トリガーや前段ノードから）
+let targetCountry = input.country || '';
+if (!targetCountry) {
+  try {
+    targetCountry = $('On form submission')?.first()?.json?.country || $('トリガー')?.first()?.json?.country || $('Execute Workflow Trigger')?.first()?.json?.country || '';
+  } catch(e) {}
+}
+
+// ★★★【絶対防衛ライン：国名照合バリデーション】★★★
+// 目的の国と取得した記事のタイトルが一致しない場合、別国の誤爆上書きを100%防ぐために即座に強制停止！
+if (targetCountry && wpTitle) {
+  const cleanTarget = String(targetCountry).trim();
+  const cleanTitle = String(wpTitle).trim();
+  const isMatch = cleanTitle.includes(cleanTarget) || cleanTarget.includes(cleanTitle);
+  if (!isMatch) {
+    throw new Error(`[致命的安全エラー] 目的の対象国は「${cleanTarget}」ですが、検索でヒットした記事は「${cleanTitle}」(ID: ${postId}) でした。別の国の記事を誤って上書き破壊するのを防ぐため、処理を即座に緊急停止しました！対象国の記事名や検索設定をご確認ください。`);
+  }
+}
+
 const sectionAliasMap = {
   '1': 'seido', '2': 'chiri_keizai', '3': 'chian', '4': 'boeki',
   '5': 'bukka', '6': 'rekishi', '7': 'doukou', '8': 'eizou',
