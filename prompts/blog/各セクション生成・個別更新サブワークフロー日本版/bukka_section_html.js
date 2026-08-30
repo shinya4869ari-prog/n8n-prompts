@@ -16,17 +16,62 @@
 
 const input = $input.first()?.json || {};
 
+// 安全な前段ノード探索ヘルパー（ノードが存在しなくてもエラーにならない）
+function getSafeNodeJson(names) {
+  for (const name of names) {
+    try {
+      const data = $(name).first()?.json;
+      if (data && Object.keys(data).length > 0) return data;
+    } catch (e) {}
+  }
+  return {};
+}
+
+const triggerData = getSafeNodeJson([
+  'Switch1', 'Switch', 'Switch (セクション分岐)',
+  'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
+]);
+
+// 全入力アイテムから対象国と日本の行を自動判別
+const allItems = $input.all().map(item => item.json || {});
+let targetRow = null;
+let japanRow = null;
+
+for (const row of allItems) {
+  const c = row['国名（日本語）'] || row.country || row.countryName || row.国名 || '';
+  if (c === '日本' || c === 'Japan') {
+    japanRow = row;
+  } else if (!targetRow) {
+    targetRow = row;
+  }
+}
+if (!targetRow) targetRow = allItems[0] || {};
+
+if (!japanRow) {
+  const possibleJapanNodes = ['Google Sheets (日本)', 'Google Sheets 日本', '日本物価データ', '日本の物価', 'Google Sheets1', 'Google Sheets2'];
+  for (const name of possibleJapanNodes) {
+    try {
+      const d = $(name).first()?.json;
+      if (d && (d['国名（日本語）'] === '日本' || d['ビール（レストラン500ml）'] || d['ビッグマック（1個）'])) {
+        japanRow = d;
+        break;
+      }
+    } catch (e) {}
+  }
+}
+
 // 1. 基本パラメータの取得
-const countryName = input.country || input.countryName || input.国名 || $('On form submission')?.first()?.json?.country || '対象国';
-const currencyCode = input.currencyCode || input.通貨コード || input.currency || '';
-const currencyName = input.currencyName || input.通貨名 || currencyCode;
+const countryName = targetRow['国名（日本語）'] || targetRow.country || targetRow.countryName || targetRow.国名 || triggerData.country || '対象国';
+const currencyCode = targetRow.currencyCode || targetRow.通貨コード || targetRow.currency || triggerData.currencyCode || '';
+const currencyName = targetRow.currencyName || targetRow.通貨名 || currencyCode;
 
 // 為替レート
-let rate = parseFloat(input.為替レート || input.rate || input.data?.固定データ?.物価?.為替レート || 0);
-const rateDate = input.為替取得日 || input.rate_date || input.data?.固定データ?.物価?.為替取得日 || '';
+let rate = parseFloat(targetRow.為替レート || targetRow.rate || targetRow.data?.固定データ?.物価?.為替レート || 0);
+const rateDate = targetRow.為替取得日 || targetRow.rate_date || targetRow.data?.固定データ?.物価?.為替取得日 || '';
 
 // 2. 物価データの抽出（様々な入力形式に対応）
-const rawBukka = input.bukka || input.物価 || input.物価データ || input.data?.固定データ?.物価 || input;
+const rawBukka = targetRow.bukka || targetRow.物価 || targetRow.物価データ || targetRow.data?.固定データ?.物価 || targetRow;
+const rawJapanBukka = japanRow ? (japanRow.bukka || japanRow.物価 || japanRow.物価データ || japanRow) : {};
 
 // 日本の基準物価（固定デフォルト）
 const defaultJapanBukka = {
@@ -102,8 +147,19 @@ const tableRows = itemsList.map(item => {
       break;
     }
   }
+  let japanRaw = '';
+  for (const k of item.keys) {
+    if (rawJapanBukka[k] !== undefined && rawJapanBukka[k] !== null && String(rawJapanBukka[k]).trim() !== '') {
+      japanRaw = String(rawJapanBukka[k]).trim();
+      if (!japanRaw.endsWith('円') && !isNaN(parseFloat(japanRaw.replace(/,/g, '')))) {
+        japanRaw = `${Number(japanRaw.replace(/,/g, '')).toLocaleString()}円`;
+      }
+      break;
+    }
+  }
+
   const emoji = bukkaEmoji[item.label] || '🛒';
-  const japanVal = defaultJapanBukka[item.label] || 'データなし';
+  const japanVal = japanRaw || defaultJapanBukka[item.label] || 'データなし';
 
   return {
     label: `${emoji} ${item.label}`,
@@ -162,7 +218,7 @@ html += `    </tbody>
 `;
 
 // 5. エラーネコの一言
-const customNeko = input.neko_comment || input.neko || $('On form submission')?.first()?.json?.neko_comment || '';
+const customNeko = input.neko_comment || input.neko || triggerData.neko_comment || '';
 const defaultNeko = `${countryName}の物価と為替データを最新版にリフレッシュしたニャ！食料品や家賃、平均月収を日本円換算で比べると、現地でのリアルな生活水準や購買力平価の差がはっきり見えてくるニャ！`;
 const nekoContent = customNeko || defaultNeko;
 
@@ -183,7 +239,7 @@ html += `
 return [{
   json: {
     section_type: 'bukka',
-    post_id: input.post_id || $('On form submission')?.first()?.json?.post_id || null,
+    post_id: input.post_id || triggerData.post_id || null,
     country: countryName,
     section_html: html
   }

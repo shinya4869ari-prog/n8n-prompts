@@ -32,17 +32,46 @@ const triggerData = getSafeNodeJson([
   'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
 ]);
 
+// 全入力アイテムから対象国と日本の行を自動判別
+const allItems = $input.all().map(item => item.json || {});
+let targetRow = null;
+let japanRow = null;
+
+for (const row of allItems) {
+  const c = row['国名（日本語）'] || row.country || row.countryName || row.国名 || '';
+  if (c === '日本' || c === 'Japan') {
+    japanRow = row;
+  } else if (!targetRow) {
+    targetRow = row;
+  }
+}
+if (!targetRow) targetRow = allItems[0] || {};
+
+// もし $input.all() に日本が無くても、別ノードに日本の取得ノードがあれば自動探索
+if (!japanRow) {
+  const possibleJapanNodes = ['Google Sheets (日本)', 'Google Sheets 日本', '日本治安データ', '日本の治安', 'Google Sheets1', 'Google Sheets2'];
+  for (const name of possibleJapanNodes) {
+    try {
+      const d = $(name).first()?.json;
+      if (d && (d['国名（日本語）'] === '日本' || d['殺人率'] || d['GPIスコア'])) {
+        japanRow = d;
+        break;
+      }
+    } catch (e) {}
+  }
+}
+
 // 1. 基本パラメータの取得
-const countryName = input['国名（日本語）'] || input.country || input.countryName || input.国名 || triggerData.country || '対象国';
-const capital = input.capital || input.首都 || triggerData.capital || '';
+const countryName = targetRow['国名（日本語）'] || targetRow.country || targetRow.countryName || targetRow.国名 || triggerData.country || '対象国';
+const capital = targetRow.capital || targetRow.首都 || triggerData.capital || '';
 const countryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
 const japanLabel = '日本<br>（東京）';
 
-// 2. 治安データの抽出（様々な入力形式に対応）
-const rawChian = input.chian || input.治安 || input.治安指標 || input.data?.固定データ?.治安指標 || input;
-const rawJapanChian = input.japan_chian || input.日本_治安 || input.data?.日本固定データ?.治安指標 || {};
+// 2. 治安データの抽出
+const rawChian = targetRow.chian || targetRow.治安 || targetRow.治安指標 || targetRow;
+const rawJapanChian = japanRow ? (japanRow.chian || japanRow.治安 || japanRow.治安指標 || japanRow) : (targetRow.japan_chian || targetRow.日本_治安 || {});
 
-// 日本の基準値（固定デフォルト）
+// 日本の基準値（固定デフォルト・スプレッドシートにデータがない場合の安全フォールバック）
 const defaultJapan = {
   殺人率: '0.2（警察庁・2023年）',
   交通事故死亡率: '2.1（警察庁・2023年）',
@@ -82,59 +111,65 @@ const metricsList = [
 ];
 
 function findVal(obj, keys) {
-  if (!keys || !Array.isArray(keys)) return '';
+  if (!obj || !keys || !Array.isArray(keys)) return '';
   for (const k of keys) {
     if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k];
   }
   return '';
 }
 
-const tableRows = metricsList.map(m => {
-  let countryRaw = findVal(rawChian, m.keys);
-  const cYear = findVal(rawChian, m.yearKeys);
-  const cSrc = findVal(rawChian, m.srcKeys);
+// 行オブジェクトから指定指標の値を動的にフォーマット（対象国・日本共通）
+function formatMetricRow(dataObj, m) {
+  if (!dataObj || Object.keys(dataObj).length === 0) return '';
+  const raw = findVal(dataObj, m.keys);
+  const year = findVal(dataObj, m.yearKeys);
+  const src = findVal(dataObj, m.srcKeys);
 
-  let formattedVal = countryRaw;
-  if (formattedVal !== '' && formattedVal !== '-' && formattedVal !== 'データなし') {
-    if (m.isGPI) {
-      // GPI専用フォーマット: スコア 【値】・【順位】位
-      const score = String(countryRaw).replace(/^スコア\s*/, '').trim();
-      const rank = findVal(rawChian, m.rankKeys);
-      if (rank) {
-        const rankStr = String(rank).endsWith('位') ? rank : `${rank}位`;
-        formattedVal = `スコア ${score}・${rankStr}`;
-      } else {
-        formattedVal = `スコア ${score}`;
-      }
+  if (!raw || raw === '-' || raw === 'データなし' || raw === '欠測') return '';
+
+  let formatted = raw;
+  if (m.isGPI) {
+    const score = String(raw).replace(/^スコア\s*/, '').trim();
+    const rank = findVal(dataObj, m.rankKeys);
+    if (rank) {
+      const rankStr = String(rank).endsWith('位') ? rank : `${rank}位`;
+      formatted = `スコア ${score}・${rankStr}`;
     } else {
-      const num = parseFloat(String(formattedVal).replace(/,/g, ''));
-      if (!isNaN(num)) {
-        if (m.isPrisonRate) {
-          // 1.252 のような小数の場合は 125.2% に変換
-          if (num <= 5 && num > 0) {
-            formattedVal = `${Math.round(num * 1000) / 10}%`;
-          } else if (!String(formattedVal).includes('%')) {
-            formattedVal = `${num}%`;
-          }
-        } else if (m.isPrisonTotal) {
-          // 101457 のような数値は 101,457人 に変換
-          if (!String(formattedVal).includes('人')) {
-            formattedVal = `${num.toLocaleString()}人`;
-          }
-        } else if (m.isPercent && !String(formattedVal).includes('%')) {
-          formattedVal = `${num}%`;
+      formatted = `スコア ${score}`;
+    }
+  } else {
+    const num = parseFloat(String(formatted).replace(/,/g, ''));
+    if (!isNaN(num)) {
+      if (m.isPrisonRate) {
+        if (num <= 5 && num > 0) {
+          formatted = `${Math.round(num * 1000) / 10}%`;
+        } else if (!String(formatted).includes('%')) {
+          formatted = `${num}%`;
         }
+      } else if (m.isPrisonTotal) {
+        if (!String(formatted).includes('人')) {
+          formatted = `${num.toLocaleString()}人`;
+        }
+      } else if (m.isPercent && !String(formatted).includes('%')) {
+        formatted = `${num}%`;
       }
     }
   }
 
-  let countryVal = formattedVal;
-  if (countryVal && (cYear || cSrc)) {
-    const meta = [cSrc, cYear ? `${cYear}年` : ''].filter(Boolean).join('・');
-    countryVal = `${countryVal}（${meta}）`;
+  if (formatted && (year || src)) {
+    const meta = [src, year ? `${year}年` : ''].filter(Boolean).join('・');
+    formatted = `${formatted}（${meta}）`;
+  }
+  return formatted;
+}
+
+const tableRows = metricsList.map(m => {
+  const countryVal = formatMetricRow(rawChian, m) || 'データなし';
+  let japanVal = formatMetricRow(rawJapanChian, m);
+  if (!japanVal) {
+    japanVal = findVal(defaultJapan, m.keys) || defaultJapan[m.keys[0]] || 'データなし';
   }
 
-  const japanVal = findVal(rawJapanChian, m.keys) || findVal(defaultJapan, m.keys) || 'データなし';
   return {
     name: m.name,
     country: formatMetric(countryVal),

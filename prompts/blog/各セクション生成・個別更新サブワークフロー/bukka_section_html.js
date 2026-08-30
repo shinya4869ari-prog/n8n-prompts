@@ -32,17 +32,46 @@ const triggerData = getSafeNodeJson([
   'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
 ]);
 
+// 全入力アイテムから対象国と日本の行を自動判別
+const allItems = $input.all().map(item => item.json || {});
+let targetRow = null;
+let japanRow = null;
+
+for (const row of allItems) {
+  const c = row['国名（日本語）'] || row.country || row.countryName || row.国名 || '';
+  if (c === '日本' || c === 'Japan') {
+    japanRow = row;
+  } else if (!targetRow) {
+    targetRow = row;
+  }
+}
+if (!targetRow) targetRow = allItems[0] || {};
+
+if (!japanRow) {
+  const possibleJapanNodes = ['Google Sheets (日本)', 'Google Sheets 日本', '日本物価データ', '日本の物価', 'Google Sheets1', 'Google Sheets2'];
+  for (const name of possibleJapanNodes) {
+    try {
+      const d = $(name).first()?.json;
+      if (d && (d['国名（日本語）'] === '日本' || d['ビール（レストラン500ml）'] || d['ビッグマック（1個）'])) {
+        japanRow = d;
+        break;
+      }
+    } catch (e) {}
+  }
+}
+
 // 1. 基本パラメータの取得
-const countryName = input['国名（日本語）'] || input.country || input.countryName || input.国名 || triggerData.country || '対象国';
-const currencyCode = input.currencyCode || input.通貨コード || input.currency || triggerData.currencyCode || '';
-const currencyName = input.currencyName || input.通貨名 || currencyCode;
+const countryName = targetRow['国名（日本語）'] || targetRow.country || targetRow.countryName || targetRow.国名 || triggerData.country || '対象国';
+const currencyCode = targetRow.currencyCode || targetRow.通貨コード || targetRow.currency || triggerData.currencyCode || '';
+const currencyName = targetRow.currencyName || targetRow.通貨名 || currencyCode;
 
 // 為替レート
-let rate = parseFloat(input.為替レート || input.rate || input.data?.固定データ?.物価?.為替レート || 0);
-const rateDate = input.為替取得日 || input.rate_date || input.data?.固定データ?.物価?.為替取得日 || '';
+let rate = parseFloat(targetRow.為替レート || targetRow.rate || targetRow.data?.固定データ?.物価?.為替レート || 0);
+const rateDate = targetRow.為替取得日 || targetRow.rate_date || targetRow.data?.固定データ?.物価?.為替取得日 || '';
 
 // 2. 物価データの抽出（様々な入力形式に対応）
-const rawBukka = input.bukka || input.物価 || input.物価データ || input.data?.固定データ?.物価 || input;
+const rawBukka = targetRow.bukka || targetRow.物価 || targetRow.物価データ || targetRow.data?.固定データ?.物価 || targetRow;
+const rawJapanBukka = japanRow ? (japanRow.bukka || japanRow.物価 || japanRow.物価データ || japanRow) : {};
 
 // 日本の基準物価（固定デフォルト）
 const defaultJapanBukka = {
@@ -118,8 +147,19 @@ const tableRows = itemsList.map(item => {
       break;
     }
   }
+  let japanRaw = '';
+  for (const k of item.keys) {
+    if (rawJapanBukka[k] !== undefined && rawJapanBukka[k] !== null && String(rawJapanBukka[k]).trim() !== '') {
+      japanRaw = String(rawJapanBukka[k]).trim();
+      if (!japanRaw.endsWith('円') && !isNaN(parseFloat(japanRaw.replace(/,/g, '')))) {
+        japanRaw = `${Number(japanRaw.replace(/,/g, '')).toLocaleString()}円`;
+      }
+      break;
+    }
+  }
+
   const emoji = bukkaEmoji[item.label] || '🛒';
-  const japanVal = defaultJapanBukka[item.label] || 'データなし';
+  const japanVal = japanRaw || defaultJapanBukka[item.label] || 'データなし';
 
   return {
     label: `${emoji} ${item.label}`,
