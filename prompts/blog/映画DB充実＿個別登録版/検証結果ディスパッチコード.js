@@ -145,7 +145,21 @@ aiPersons.forEach(ap => {
   }
 });
 
-const validPersons = Array.from(mergedPersonsMap.values()).filter(p => p && p.name && p.name.trim().length >= 2);
+const validPersons = Array.from(mergedPersonsMap.values()).filter(p => {
+  if (!p || !p.name || p.name.trim().length < 2) return false;
+
+  const isStaff = (p.occupation === '監督' || p.occupation === '脚本' || p.occupation === '製作');
+  // 1. 監督・脚本・製作などのスタッフは写真やIDがなくても100%残す！
+  if (isStaff) return true;
+
+  // 2. キャスト（俳優）は、写真が一切ない人、またはWikidata ID / TMDb IDが一切ない人は「誰かわからない」ため削除
+  const hasPhoto = Boolean(p.profile_url);
+  const hasId = Boolean(p.wikidata_id || p.tmdb_id);
+  if (!hasPhoto || !hasId) {
+    return false;
+  }
+  return true;
+});
 
 // 4. サントラデータの抽出（APPROVEDされたもの、またはREJECTEDでないもののみを通過）
 const rawTracks = auditResult.tracks || inputJson.tracks_payload || [];

@@ -205,6 +205,18 @@ inputItems.forEach((item, idx) => {
 
   // 職種（occupation）の確定: 前段の抽出ノードの判定（脚本・監督・製作等）を最優先
   const finalOcc = item.json?.occupation || (isDirector ? '監督' : '俳優');
+  const isStaff = (finalOcc === '監督' || finalOcc === '脚本' || finalOcc === '製作');
+
+  // ★ ユーザー要件フィルタ:
+  // 1. 監督・脚本・スタッフ: 写真やIDがなくても絶対に削除せず100%残す！
+  // 2. キャスト（俳優）: 写真が一切ない人、またはWikidata ID / TMDb IDが一切ない人は誰か分からないため削除
+  if (!isStaff) {
+    const hasPhoto = Boolean(finalProfileUrl);
+    const hasId = Boolean(qid || personObj?.id);
+    if (!hasPhoto || !hasId) {
+      return; // 写真または身元IDのないキャストは安全に除外
+    }
+  }
 
   persons.push({
     name: searchName,
