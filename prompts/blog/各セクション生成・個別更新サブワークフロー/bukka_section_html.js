@@ -104,16 +104,16 @@ const bukkaEmoji = {
 
 // 3. 各品目のデータ整形
 const itemsList = [
-  { label: 'ビール（レストラン500ml）', keys: ['ビール', 'ビール_現地通貨', 'ビール（レストラン500ml）'] },
-  { label: 'タバコ（マルボロ1箱）', keys: ['タバコ', 'タバコ_現地通貨', 'タバコ（マルボロ1箱）'] },
-  { label: 'ミネラルウォーター（500ml）', keys: ['水', 'ミネラルウォーター', '水_現地通貨', 'ミネラルウォーター（500ml）'] },
-  { label: 'ビッグマック（1個）', keys: ['ビッグマック', 'ビッグマック_現地通貨', 'ビッグマック（1個）'] },
-  { label: 'ガソリン（1L）', keys: ['ガソリン', 'ガソリン_現地通貨', 'ガソリン（1L）'] },
-  { label: '外食（安めの店・1食）', keys: ['外食', '外食_現地通貨', '外食（安めの店・1食）'] },
-  { label: '電気・水道・ガス（月額）', keys: ['光熱費', '電気・水道・ガス', '光熱費_現地通貨', '電気・水道・ガス（月額）'] },
-  { label: '家賃1LDK(市中心)', keys: ['家賃', '家賃_現地通貨', '家賃1LDK(市中心)'] },
-  { label: '平均月収（手取り）', keys: ['月収', '平均月収', '月収_現地通貨', '平均月収（手取り）'] },
-  { label: 'Netflix（スタンダード）', keys: ['Netflix', 'Netflix_現地通貨', 'Netflix（スタンダード）'] }
+  { label: 'ビール（レストラン500ml）', keys: ['ビール_現地通貨', 'ビール', 'ビール（レストラン500ml）'] },
+  { label: 'タバコ（マルボロ1箱）', keys: ['タバコ_現地通貨', 'タバコ', 'タバコ（マルボロ1箱）'] },
+  { label: 'ミネラルウォーター（500ml）', keys: ['水_現地通貨', '水', 'ミネラルウォーター', 'ミネラルウォーター（500ml）'] },
+  { label: 'ビッグマック（1個）', keys: ['ビッグマック_現地通貨', 'ビッグマック', 'ビッグマック（1個）'] },
+  { label: 'ガソリン（1L）', keys: ['ガソリン_現地通貨', 'ガソリン', 'ガソリン（1L）'] },
+  { label: '外食（安めの店・1食）', keys: ['外食_現地通貨', '外食', '外食（安めの店・1食）'] },
+  { label: '電気・水道・ガス（月額）', keys: ['光熱費_現地通貨', '光熱費', '電気・水道・ガス', '電気・水道・ガス（月額）'] },
+  { label: '家賃1LDK(市中心)', keys: ['家賃1LDK(市中心)_現地通貨', '家賃1LDK(市中心)', '家賃_現地通貨', '家賃1LDK', '家賃'] },
+  { label: '平均月収（手取り）', keys: ['月収_現地通貨', '月収', '平均月収', '平均月収（手取り）'] },
+  { label: 'Netflix（スタンダード）', keys: ['Netflix_現地通貨', 'Netflix', 'Netflix（スタンダード）'] }
 ];
 
 // ヘルパー: 円換算の計算（オリジナルデザイン準拠：太字の現地通貨 + 横並びのグレー円換算）
@@ -153,15 +153,22 @@ function formatJapanVal(val) {
 const tableRows = itemsList.map(item => {
   let val = '';
   for (const k of item.keys) {
-    if (rawBukka[k] !== undefined && rawBukka[k] !== '') {
+    if (rawBukka[k] !== undefined && rawBukka[k] !== null && String(rawBukka[k]).trim() !== '') {
       val = rawBukka[k];
       break;
     }
   }
   
-  // 円換算列があれば優先して取得
-  const yenCol = item.keys[0] ? `${item.keys[0]}_円換算` : '';
-  const yenVal = rawBukka[yenCol];
+  // 円換算列の探索（例: 家賃1LDK(市中心)_円換算）
+  let yenVal = '';
+  for (const k of item.keys) {
+    const cleanK = k.replace(/_現地通貨$/, '');
+    const yCol = `${cleanK}_円換算`;
+    if (rawBukka[yCol] !== undefined && rawBukka[yCol] !== null && String(rawBukka[yCol]).trim() !== '') {
+      yenVal = rawBukka[yCol];
+      break;
+    }
+  }
 
   let japanRaw = '';
   for (const k of item.keys) {
