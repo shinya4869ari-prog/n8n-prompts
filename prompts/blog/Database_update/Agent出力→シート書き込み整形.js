@@ -349,6 +349,17 @@ const getCurrencySymbol = () => {
 };
 const symbol = getCurrencySymbol();
 
+const parseLocalValue = (val) => {
+  if (!val || val === "欠測") return NaN;
+  // 先頭の通貨記号部分（アルファベット、記号、スペース、およびそれに続くピリオド）を除去
+  let cleanVal = String(val).replace(/^[A-Za-z$€£¥₩₹Nu.\s]+/, "");
+  // カンマを除去
+  cleanVal = cleanVal.replace(/,/g, "");
+  // 末尾のアルファベット通貨名を除去 (例: "KRW")
+  cleanVal = cleanVal.replace(/[A-Za-z\s]+$/, "").trim();
+  return parseFloat(cleanVal);
+};
+
 const formatLocalCurrency = (val) => {
   if (!val || val === "欠測") return "欠測";
   const num = parseLocalValue(val);
@@ -420,15 +431,6 @@ const fxRate = fxMatch ? parseFloat(fxMatch[fxMatch.length - 1]) : NaN;
 // USD/JPY, EUR/JPY レート（Netflixやビッグマックのドル・ユーロ換算用）
 const usdJpy = parseFloat(rowData["USD/JPY"]) || 155; 
 const eurJpy = parseFloat(rowData["EUR/JPY"]) || 165;
-
-const parseLocalValue = (val) => {
-  if (!val || val === "欠測") return NaN;
-  // 先頭の通貨記号部分（アルファベット、記号、スペース、およびそれに続くピリオド）を除去
-  let cleanVal = String(val).replace(/^[A-Za-z$€£¥₹Nu.\s]+/, "");
-  // カンマを除去
-  cleanVal = cleanVal.replace(/,/g, "");
-  return parseFloat(cleanVal);
-};
 
 // 通常項目の再計算（現地通貨に fxRate を掛ける）
 const itemsToRecalc = [
