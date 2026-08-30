@@ -52,6 +52,12 @@
               "fieldDescription": "ピンポイント更新したいセクションを選択してください"
             },
             {
+              "fieldLabel": "content_data",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "fieldDescription": "【映画・音楽・動向用】Supabaseから「Copy as JSON」したデータ、または直近の動向テキストを貼り付けてください"
+            },
+            {
               "fieldLabel": "post_id",
               "fieldType": "number",
               "requiredField": false,
