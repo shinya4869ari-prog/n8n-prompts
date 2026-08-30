@@ -77,10 +77,11 @@ const metricsList = [
   { name: 'ジニ係数', keys: ['ジニ係数', 'ジニ係数_値'], yearKeys: ['ジニ係数_年'], srcKeys: ['ジニ係数_出典'] },
   { name: '刑務所稼働率', keys: ['刑務所稼働率', '稼働率'], yearKeys: ['刑務所稼働率_年', '稼働率_年', '刑務所_年'], srcKeys: ['刑務所稼働率_出典', '稼働率_出典', '刑務所_出典'], isPrisonRate: true },
   { name: '刑務所総収容者数', keys: ['刑務所総収容者数', '総収容者数', '収容者数'], yearKeys: ['刑務所総収容者数_年', '総収容者数_年', '収容者_年'], srcKeys: ['刑務所総収容者数_出典', '総収容者数_出典', '収容者_出典'], isPrisonTotal: true },
-  { name: 'GPI（世界平和度指数）', keys: ['GPI', 'GPIスコア'], yearKeys: ['GPI年', 'GPI_年', 'GPIスコア_年'], srcKeys: ['GPI出典', 'GPI_出典', 'GPIスコア_出典'] }
+  { name: 'GPI（世界平和度指数）', keys: ['GPIスコア', 'GPI', 'GPI_スコア'], rankKeys: ['GPI順位', '順位', 'GPI_順位'], yearKeys: ['GPI年', 'GPI_年', 'GPIスコア_年'], srcKeys: ['GPI出典', 'GPI_出典', 'GPIスコア_出典'], isGPI: true }
 ];
 
 function findVal(obj, keys) {
+  if (!keys || !Array.isArray(keys)) return '';
   for (const k of keys) {
     if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k];
   }
@@ -94,22 +95,34 @@ const tableRows = metricsList.map(m => {
 
   let formattedVal = countryRaw;
   if (formattedVal !== '' && formattedVal !== '-' && formattedVal !== 'データなし') {
-    const num = parseFloat(String(formattedVal).replace(/,/g, ''));
-    if (!isNaN(num)) {
-      if (m.isPrisonRate) {
-        // 1.252 のような小数の場合は 125.2% に変換
-        if (num <= 5 && num > 0) {
-          formattedVal = `${Math.round(num * 1000) / 10}%`;
-        } else if (!String(formattedVal).includes('%')) {
+    if (m.isGPI) {
+      // GPI専用フォーマット: スコア 【値】・【順位】位
+      const score = String(countryRaw).replace(/^スコア\s*/, '').trim();
+      const rank = findVal(rawChian, m.rankKeys);
+      if (rank) {
+        const rankStr = String(rank).endsWith('位') ? rank : `${rank}位`;
+        formattedVal = `スコア ${score}・${rankStr}`;
+      } else {
+        formattedVal = `スコア ${score}`;
+      }
+    } else {
+      const num = parseFloat(String(formattedVal).replace(/,/g, ''));
+      if (!isNaN(num)) {
+        if (m.isPrisonRate) {
+          // 1.252 のような小数の場合は 125.2% に変換
+          if (num <= 5 && num > 0) {
+            formattedVal = `${Math.round(num * 1000) / 10}%`;
+          } else if (!String(formattedVal).includes('%')) {
+            formattedVal = `${num}%`;
+          }
+        } else if (m.isPrisonTotal) {
+          // 101457 のような数値は 101,457人 に変換
+          if (!String(formattedVal).includes('人')) {
+            formattedVal = `${num.toLocaleString()}人`;
+          }
+        } else if (m.isPercent && !String(formattedVal).includes('%')) {
           formattedVal = `${num}%`;
         }
-      } else if (m.isPrisonTotal) {
-        // 101457 のような数値は 101,457人 に変換
-        if (!String(formattedVal).includes('人')) {
-          formattedVal = `${num.toLocaleString()}人`;
-        }
-      } else if (m.isPercent && !String(formattedVal).includes('%')) {
-        formattedVal = `${num}%`;
       }
     }
   }
