@@ -33,6 +33,14 @@ try {
   }
 } catch(e) {}
 
+// HTTPで取得したNumbeo最新日常物価データをマージ（変更サマリー用）
+try {
+  const numbeoNode = $("Numbeo最新データ抽出")?.first()?.json || $("Numbeoデータ抽出Code")?.first()?.json;
+  if (numbeoNode?.日常物価) {
+    agentOutput.日常物価 = numbeoNode.日常物価;
+  }
+} catch (e) {}
+
 // 変更箇所を記録
 const changes = [];
 

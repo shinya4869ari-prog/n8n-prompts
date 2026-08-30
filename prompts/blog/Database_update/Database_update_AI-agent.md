@@ -46,8 +46,8 @@
 - 児童労働率：World Bank → ILO
 - ビッグマック：The Economist
 - Netflix：Netflix公式サイト
-- 日常物価（ビール・タバコ・水・ガソリン・外食・光熱費・家賃・月収）：Numbeo（site:numbeo.com）
 - 為替レート：実勢為替レート（Google Finance / 外為市場データ）
+- ※ビール・水・家賃等の日常物価はHTTPノードで自動取得するため、AIの調査対象外。
 
 ## 項目別検索クエリと出力形式
 
@@ -127,19 +127,3 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ※staleItemsに「物価」が含まれる場合に調査・出力すること。
 検索：「Netflix standard plan price {{ $json.countryEn }} official latest」
 出力：{"Netflix": {"現地通貨": "", "出典": "Netflix公式"}}
-
-### 物価（Numbeo日常物価）
-※staleItemsに「物価」が含まれる場合に調査・出力すること。
-検索：「site:numbeo.com Cost of living {{ $json.capital || $json.countryEn }}」または「Cost of living in {{ $json.capital || $json.countryEn }} Numbeo」
-- Numbeoの該当国・首都ページから、現地通貨（{{ $json.currency || $json.rowData["通貨コード"] }}）建ての価格を抽出すること。
-- 対象項目：
-  * ビール：Domestic Beer (0.5 liter draught)
-  * タバコ：Cigarettes 20 Pack (Marlboro)
-  * 水：Water (1.5 liter bottle)
-  * ガソリン：Gasoline (1 liter)
-  * 外食：Meal, Inexpensive Restaurant (1人分)
-  * 光熱費：Basic utilities for 85m2 Apartment
-  * 家賃1LDK：Apartment (1 bedroom) in City Centre
-  * 月収：Average Monthly Net Salary (After Tax)
-- ※数値のみ（通貨記号やカンマは含めず半角数字・小数のみ）で出力すること。見つからない場合は「欠測」。
-出力：{"日常物価": {"ビール": "", "タバコ": "", "水": "", "ガソリン": "", "外食": "", "光熱費": "", "家賃1LDK": "", "月収": "", "出典": "Numbeo"}}

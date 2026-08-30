@@ -1,0 +1,74 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Numbeo の国別・都市別URLを生成するコード\n\nlet rowData = {};\nlet countryJa = \"\";\nlet countryEn = \"\";\nlet currencyCode = \"\";\nlet capital = \"\";\n\ntry {\n  const item = $input.first()?.json || {};\n  rowData = item.rowData || item;\n  countryJa = item.countryJa || rowData[\"国名（日本語）\"] || \"\";\n  countryEn = item.countryEn || rowData[\"国名（英語）\"] || \"\";\n  currencyCode = item.currency || rowData[\"通貨コード\"] || rowData[\"Numbeo表示通貨\"] || \"\";\n  capital = item.capital || rowData[\"首都（日本語）\"] || \"\";\n} catch (e) {}\n\nif (!countryEn && !countryJa) {\n  try {\n    const merge = $('項目検出・国別マージ').first().json;\n    rowData = merge.rowData || {};\n    countryJa = merge.countryJa || rowData[\"国名（日本語）\"] || \"\";\n    countryEn = merge.countryEn || rowData[\"国名（英語）\"] || \"\";\n    currencyCode = merge.currency || rowData[\"通貨コード\"] || \"\";\n    capital = merge.capital || rowData[\"首都（日本語）\"] || \"\";\n  } catch (err) {}\n}\n\nif (!countryEn && !countryJa) {\n  throw new Error(\"Numbeo用URL生成: 国名が取得できませんでした。\");\n}\n\n// 主要都市・国名のNumbeoスラッグマッピング\nconst numbeoCityMap = {\n  \"韓国\": \"Seoul\",\n  \"Republic of Korea\": \"Seoul\",\n  \"South Korea\": \"Seoul\",\n  \"コロンビア\": \"Bogota\",\n  \"Colombia\": \"Bogota\",\n  \"日本\": \"Tokyo\",\n  \"Japan\": \"Tokyo\",\n  \"アメリカ\": \"Washington-DC\",\n  \"United States\": \"Washington-DC\",\n  \"イギリス\": \"London\",\n  \"United Kingdom\": \"London\",\n  \"フランス\": \"Paris\",\n  \"France\": \"Paris\",\n  \"ドイツ\": \"Berlin\",\n  \"Germany\": \"Berlin\",\n  \"イタリア\": \"Rome\",\n  \"Italy\": \"Rome\",\n  \"カナダ\": \"Ottawa\",\n  \"Canada\": \"Ottawa\",\n  \"オーストラリア\": \"Canberra\",\n  \"Australia\": \"Canberra\",\n  \"ブラジル\": \"Brasilia\",\n  \"Brazil\": \"Brasilia\",\n  \"メキシコ\": \"Mexico-City\",\n  \"Mexico\": \"Mexico-City\",\n  \"タイ\": \"Bangkok\",\n  \"Thailand\": \"Bangkok\",\n  \"ベトナム\": \"Hanoi\",\n  \"Vietnam\": \"Hanoi\",\n  \"インドネシア\": \"Jakarta\",\n  \"Indonesia\": \"Jakarta\",\n  \"フィリピン\": \"Manila\",\n  \"Philippines\": \"Manila\",\n  \"マレーシア\": \"Kuala-Lumpur\",\n  \"Malaysia\": \"Kuala-Lumpur\",\n  \"シンガポール\": \"Singapore\",\n  \"Singapore\": \"Singapore\",\n  \"インド\": \"New-Delhi\",\n  \"India\": \"New-Delhi\",\n  \"中国\": \"Beijing\",\n  \"China\": \"Beijing\",\n  \"台湾\": \"Taipei\",\n  \"Taiwan\": \"Taipei\",\n  \"香港\": \"Hong-Kong\",\n  \"Hong Kong\": \"Hong-Kong\"\n};\n\nlet slug = numbeoCityMap[countryJa] || numbeoCityMap[countryEn];\n\nif (!slug) {\n  slug = countryEn\n    .trim()\n    .replace(/[^a-zA-Z0-9\\s-]/g, '')\n    .replace(/\\s+/g, '-');\n}\n\nlet url = `https://www.numbeo.com/cost-of-living/in/${slug}`;\nif (currencyCode) {\n  url += `?displayCurrency=${encodeURIComponent(currencyCode)}`;\n}\n\nreturn [{\n  json: {\n    url,\n    countryJa,\n    countryEn,\n    currencyCode,\n    slug\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        240
+      ],
+      "id": "numbeo-url-gen",
+      "name": "Numbeo用URL生成"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        240
+      ],
+      "id": "numbeo-http-request",
+      "name": "Numbeoデータ抽出"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Numbeo HTMLデータから最新の日常物価データを抽出するコード\n\nlet html = \"\";\nlet prevInfo = {};\n\ntry {\n  const inputJson = $input.first()?.json || {};\n  html = inputJson.data || inputJson.html || inputJson.body || \"\";\n  prevInfo = inputJson;\n} catch (e) {}\n\nif (!html) {\n  try {\n    const httpData = $('Numbeoデータ抽出')?.first()?.json || {};\n    html = httpData.data || httpData.html || httpData.body || \"\";\n  } catch (err) {}\n}\n\nif (!html) {\n  throw new Error(\"Numbeo最新データ抽出: 取得したHTMLデータが空です。\");\n}\n\nfunction normalizePriceString(numStr) {\n  if (!numStr) return \"欠測\";\n  const hasDot = numStr.includes('.');\n  const hasComma = numStr.includes(',');\n  let normalized;\n\n  if (hasDot && hasComma) {\n    if (numStr.lastIndexOf(',') > numStr.lastIndexOf('.')) {\n      normalized = numStr.replace(/\\./g, '').replace(',', '.');\n    } else {\n      normalized = numStr.replace(/,/g, '');\n    }\n  } else if (hasComma && !hasDot) {\n    const parts = numStr.split(',');\n    if (parts.length === 2 && parts[1].length <= 2) {\n      normalized = numStr.replace(',', '.');\n    } else {\n      normalized = numStr.replace(/,/g, '');\n    }\n  } else {\n    normalized = numStr.replace(/,/g, '');\n  }\n  return normalized || \"欠測\";\n}\n\nfunction extractPrice(htmlContent, keyword) {\n  const escaped = keyword.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  const trRegex = /<tr[^>]*>([\\s\\S]*?)<\\/tr>/gi;\n  let match;\n  \n  while ((match = trRegex.exec(htmlContent)) !== null) {\n    const trContent = match[1];\n    const keyRegex = new RegExp(`<td[^>]*>[^<]*?${escaped}[^<]*?<\\\\/td>`, 'i');\n    \n    if (keyRegex.test(trContent)) {\n      const valMatch = trContent.match(/<span class=\"first_currency\">([^<]+?)<\\/span>/i);\n      if (valMatch && valMatch[1]) {\n        let decoded = valMatch[1]\n          .replace(/&#(\\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))\n          .replace(/&amp;/g, '&')\n          .replace(/&lt;/g, '<')\n          .replace(/&gt;/g, '>');\n\n        let numStr = decoded.replace(/[^\\d.,]/g, '').trim();\n        numStr = numStr.replace(/^[.,]+|[.,]+$/g, '');\n        if (!numStr) continue;\n        return normalizePriceString(numStr);\n      }\n    }\n  }\n  return \"欠測\";\n}\n\nconst actualCurrencyCode = (() => {\n  const currencyMatch = html.match(/Currency:\\s*([A-Z]{3})/i) || html.match(/Prices in\\s*([A-Z]{3})/i);\n  if (currencyMatch && currencyMatch[1]) {\n    return currencyMatch[1].toUpperCase();\n  }\n  return prevInfo.currencyCode || \"\";\n})();\n\nconst today = new Date().toISOString().split('T')[0];\n\nconst extractedPrices = {\n  \"ビール\": extractPrice(html, 'Domestic Draft Beer') !== \"欠測\" ? extractPrice(html, 'Domestic Draft Beer') : extractPrice(html, 'Domestic Beer'),\n  \"タバコ\": extractPrice(html, 'Cigarettes'),\n  \"水\": extractPrice(html, 'Water'),\n  \"ガソリン\": extractPrice(html, 'Gasoline'),\n  \"外食\": extractPrice(html, 'Meal at an Inexpensive') !== \"欠測\" ? extractPrice(html, 'Meal at an Inexpensive') : extractPrice(html, 'Meal, Inexpensive'),\n  \"光熱費\": extractPrice(html, 'Basic Utilities') !== \"欠測\" ? extractPrice(html, 'Basic Utilities') : extractPrice(html, 'Basic (Electricity'),\n  \"家賃1LDK\": extractPrice(html, '1 Bedroom') !== \"欠測\" ? extractPrice(html, '1 Bedroom') : extractPrice(html, 'Apartment (1 bedroom) in City Centre'),\n  \"月収\": extractPrice(html, 'Average Monthly Net Salary'),\n  \"出典\": \"Numbeo\",\n  \"取得日\": today,\n  \"通貨コード\": actualCurrencyCode\n};\n\nreturn [{\n  json: {\n    ...prevInfo,\n    日常物価: extractedPrices,\n    currencyCode: actualCurrencyCode\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        240
+      ],
+      "id": "numbeo-extract-data",
+      "name": "Numbeo最新データ抽出"
+    }
+  ],
+  "connections": {
+    "Numbeo用URL生成": {
+      "main": [
+        [
+          {
+            "node": "Numbeoデータ抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Numbeoデータ抽出": {
+      "main": [
+        [
+          {
+            "node": "Numbeo最新データ抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -65,6 +65,16 @@ try {
   console.log("WPB最新データ抽出ノードの参照に失敗、またはデータが存在しません:", e.message);
 }
 
+// NumbeoからHTTP Requestで直接取得した最新日常物価データをマージ
+try {
+  const numbeoNode = $("Numbeo最新データ抽出")?.first()?.json || $("Numbeoデータ抽出Code")?.first()?.json;
+  if (numbeoNode?.日常物価) {
+    agentOutput.日常物価 = numbeoNode.日常物価;
+  }
+} catch (e) {
+  console.log("Numbeo最新データ抽出ノードの参照に失敗、またはデータが存在しません:", e.message);
+}
+
 console.log("agentOutput keys:", Object.keys(agentOutput));
 console.log("agentOutput_raw length:", agentOutput_raw.length);
 
