@@ -90,6 +90,29 @@ function wrap(section, html) {
   return `<!-- SECTION:${section}:START -->\n${cleanHtml}\n<!-- SECTION:${section}:END -->`;
 }
 
+// ★ 元々の記事に書かれていた「エラーネコの一言」の救出と完全維持
+function preserveOriginalNeko(oldSectionText, newHtml) {
+  if (!oldSectionText || !newHtml) return newHtml;
+
+  // 手動でフォームから新しいコメントが明示指定されている場合のみ、それを優先
+  const manualNeko = input.neko_comment || input.neko;
+  if (manualNeko && String(manualNeko).trim().length > 0) return newHtml;
+
+  // 既存の古いセクションから「エラーネコの一言」の本文を抽出
+  const nekoMatch = oldSectionText.match(/<strong>エラーネコの一言：<\/strong><br>([\s\S]*?)<\/div>/i) ||
+                    oldSectionText.match(/🐱\s*エラーネコ[：:]([\s\S]*?)(?:<\/div>|\n|$)/i);
+
+  if (nekoMatch && nekoMatch[1]) {
+    const originalNekoContent = nekoMatch[1].trim();
+    // 新しいHTMLの中のエラーネコ吹き出し部分を、元々のオリジナルコメントで置換・復元！
+    return newHtml.replace(
+      /(<strong[^>]*>エラーネコの一言：<\/strong><br>)([\s\S]*?)(<\/div>)/i,
+      `$1${originalNekoContent}$3`
+    );
+  }
+  return newHtml;
+}
+
 // 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
 const startRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->`, 'gi');
 const endRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'gi');
@@ -97,8 +120,11 @@ const startCount = (updatedContent.match(startRe) || []).length;
 const endCount = (updatedContent.match(endRe) || []).length;
 
 if (startCount === 1 && endCount === 1) {
-  const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->[\\s\\S]*?<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
-  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
+  const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->([\\s\\S]*?)<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
+  const oldMatch = updatedContent.match(commentRe);
+  const oldSectionText = oldMatch ? oldMatch[1] : '';
+  const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
   matchFound = true;
 } else {
   // 2. 【高精度】 見出しキーワード（「おすすめ音楽」「おすすめ映画」等）による限定置換
@@ -126,10 +152,13 @@ if (startCount === 1 && endCount === 1) {
       const nextBoundaryMatch = tail.substring(h2Match[0].length).match(/<h2|<div id="deep-dive"|<!-- SECTION:/i);
       const boundaryOffset = nextBoundaryMatch ? h2Match[0].length + nextBoundaryMatch.index : tail.length;
 
+      const oldSectionText = tail.substring(0, boundaryOffset);
+      const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+
       const before = updatedContent.substring(0, startIndex).trimEnd();
       const after = updatedContent.substring(startIndex + boundaryOffset).trimStart();
 
-      updatedContent = before + '\n\n' + wrap(canonicalSection, newSectionHtml) + '\n\n' + after;
+      updatedContent = before + '\n\n' + wrap(canonicalSection, finalHtml) + '\n\n' + after;
       matchFound = true;
       break;
     }

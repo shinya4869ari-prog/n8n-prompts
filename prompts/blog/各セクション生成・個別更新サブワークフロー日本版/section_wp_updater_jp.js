@@ -146,6 +146,26 @@ function wrap(section, html) {
   return `<!-- SECTION:${section}:START -->\n${cleanHtml}\n<!-- SECTION:${section}:END -->`;
 }
 
+// ★ 元々の記事に書かれていた「エラーネコの一言」の救出と完全維持
+function preserveOriginalNeko(oldSectionText, newHtml) {
+  if (!oldSectionText || !newHtml) return newHtml;
+
+  const manualNeko = input.neko_comment || input.neko || triggerJson.neko_comment;
+  if (manualNeko && String(manualNeko).trim().length > 0) return newHtml;
+
+  const nekoMatch = oldSectionText.match(/<strong>エラーネコの一言：<\/strong><br>([\s\S]*?)<\/div>/i) ||
+                    oldSectionText.match(/🐱\s*エラーネコ[：:]([\s\S]*?)(?:<\/div>|\n|$)/i);
+
+  if (nekoMatch && nekoMatch[1]) {
+    const originalNekoContent = nekoMatch[1].trim();
+    return newHtml.replace(
+      /(<strong[^>]*>エラーネコの一言：<\/strong><br>)([\s\S]*?)(<\/div>)/i,
+      `$1${originalNekoContent}$3`
+    );
+  }
+  return newHtml;
+}
+
 // 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
 // ※ コロン前後のスペースや HTMLエンティティ(&lt;!-- ... --&gt;) にも完全対応
 const startRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)`, 'gi');
@@ -154,8 +174,11 @@ const startCount = (updatedContent.match(startRe) || []).length;
 const endCount = (updatedContent.match(endRe) || []).length;
 
 if (startCount >= 1 && endCount >= 1) {
-  const commentRe = new RegExp(`(?:<p>\\s*)?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)[\\s\\S]*?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)(?:\\s*<\\/p>)?`, 'i');
-  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, newSectionHtml));
+  const commentRe = new RegExp(`(?:<p>\\s*)?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)([\\s\\S]*?)(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)(?:\\s*<\\/p>)?`, 'i');
+  const oldMatch = updatedContent.match(commentRe);
+  const oldSectionText = oldMatch ? oldMatch[1] : '';
+  const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
   matchFound = true;
 } else if (startCount > 1 || endCount > 1) {
   throw new Error(`[安全保護エラー] 本文内に SECTION:${canonicalSection} のマーカーが複数検出されました。誤置換を防ぐため中断しました。`);
