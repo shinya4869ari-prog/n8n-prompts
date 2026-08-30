@@ -112,7 +112,7 @@ function preserveOriginalNeko(oldSectionText, newHtml) {
     // 新しいHTMLの中のエラーネコ吹き出し部分を、元々のオリジナルコメントで置換・復元！
     return newHtml.replace(
       /(<strong[^>]*>エラーネコの一言：<\/strong><br>)([\s\S]*?)(<\/div>)/i,
-      `$1${originalNekoContent}$3`
+      (m, p1, p2, p3) => `${p1}${originalNekoContent}${p3}`
     );
   }
   return newHtml;
@@ -121,6 +121,7 @@ function preserveOriginalNeko(oldSectionText, newHtml) {
 // ★★★【治安・物価の超安全・セクション限定テーブル置換】★★★
 // セクション外（② 地理経済や④ 貿易）には一切触れず、
 // 対象セクション内部の「テーブル部分」だけを安全にピンポイント差し替える！
+// ※replaceの第2引数には必ずアロー関数 (() => ...) を渡し、通貨記号「$」による特殊置換誤作動を完全に防止！
 if (canonicalSection === 'chian') {
   const chianSectionRegex = /(<!--\s*SECTION:chian:START\s*-->[\s\S]*?<!--\s*SECTION:chian:END\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?③(?:(?!<\/h2>)[\s\S])*?治安[\s\S]*?)(?=(?:<h2|<div id="deep-dive"|<!-- SECTION:|$))/i;
   const secMatch = updatedContent.match(chianSectionRegex);
@@ -132,26 +133,39 @@ if (canonicalSection === 'chian') {
     const newTable = newSectionHtml.match(chianTableRegex);
 
     if (oldTable && newTable) {
-      const newSecText = secText.replace(chianTableRegex, newTable[0]);
-      updatedContent = updatedContent.replace(secText, newSecText);
+      const newSecText = secText.replace(chianTableRegex, () => newTable[0]);
+      updatedContent = updatedContent.replace(secText, () => newSecText);
       matchFound = true;
     }
   }
 } else if (canonicalSection === 'bukka') {
-  const bukkaSectionRegex = /(<!--\s*SECTION:bukka:START\s*-->[\s\S]*?<!--\s*SECTION:bukka:END\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑤(?:(?!<\/h2>)[\s\S])*?物価[\s\S]*?)(?=(?:<h2|<div id="deep-dive"|<!-- SECTION:|$))/i;
-  const secMatch = updatedContent.match(bukkaSectionRegex);
+  // 物価セクションの安全・完全置換（乱れて入れ子になったテーブルも自動修復）
+  // 既存のトピック（物価・生活コストトピック）がある場合は安全に救出・保持
+  const topicMatch = updatedContent.match(/(<h3[^>]*>(?:(?!<\/h3>)[\s\S])*?(?:物価・生活コストトピック|生活コストトピック)[\s\S]*?)(?=<div[^>]*text-align:\s*right|<h2|<!-- SECTION:|$)/i);
+  const preservedTopic = topicMatch ? topicMatch[1].trim() : '';
 
-  if (secMatch) {
-    const secText = secMatch[0];
-    const bukkaBlockRegex = /(?:<div[^>]*>(?:(?!<div|<\/div>)[\s\S])*?為替レート基準[\s\S]*?<\/div>[\s\r\n]*)?(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>(?:(?!<table|<\/table>)[\s\S])*?品目(?:(?!<\/table>)[\s\S])*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
-    const oldTable = secText.match(bukkaBlockRegex);
-    const newTable = newSectionHtml.match(bukkaBlockRegex);
+  let cleanNew = newSectionHtml
+    .replace(/<!--\s*SECTION:bukka:START\s*-->/gi, '')
+    .replace(/<!--\s*SECTION:bukka:END\s*-->/gi, '')
+    .trim();
 
-    if (oldTable && newTable) {
-      const newSecText = secText.replace(bukkaBlockRegex, newTable[0]);
-      updatedContent = updatedContent.replace(secText, newSecText);
-      matchFound = true;
+  if (preservedTopic) {
+    const topLinkMatch = cleanNew.match(/<div[^>]*text-align:\s*right[\s\S]*?先頭に戻る[\s\S]*?<\/div>/i);
+    if (topLinkMatch) {
+      cleanNew = cleanNew.replace(topLinkMatch[0], () => `\n\n${preservedTopic}\n\n${topLinkMatch[0]}`);
+    } else {
+      cleanNew += `\n\n${preservedTopic}`;
     }
+  }
+
+  const finalBukkaHtml = `<!-- SECTION:bukka:START -->\n${cleanNew}\n<!-- SECTION:bukka:END -->`;
+
+  // ⑤セクション全体（開始から⑥歴史または次のセクションの手前まで）を確実に特定して一括置換
+  const bukkaFullSecRegex = /(?:<!--\s*SECTION:bukka:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑤(?:(?!<\/h2>)[\s\S])*?物価[\s\S]*?)[\s\S]*?(?=(?:<!--\s*SECTION:(?:rekishi|doukou|eizou|osusume|music|deep_dive)|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑥|<div id="deep-dive"|$))/i;
+  
+  if (bukkaFullSecRegex.test(updatedContent)) {
+    updatedContent = updatedContent.replace(bukkaFullSecRegex, () => finalBukkaHtml + '\n\n');
+    matchFound = true;
   }
 }
 
@@ -167,7 +181,7 @@ if (!matchFound) {
     const oldMatch = updatedContent.match(commentRe);
     const oldSectionText = oldMatch ? oldMatch[1] : '';
     const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
-    updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
+    updatedContent = updatedContent.replace(commentRe, () => wrap(canonicalSection, finalHtml));
     matchFound = true;
   } else {
     // 2. 【高精度】 見出しキーワードによる置換
@@ -184,33 +198,33 @@ if (!matchFound) {
       doukou: ['直近の動向', '⑦']
     };
 
-  const keywords = keywordsMap[canonicalSection] || [];
-  for (const kw of keywords) {
-    const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const h2Regex = new RegExp(`<h2[^>]*>(?:(?!<\\/h2>)[\\s\\S])*?${escapedKw}(?:(?!<\\/h2>)[\\s\\S])*?<\\/h2>`, 'i');
-    const h2Match = updatedContent.match(h2Regex);
-    if (h2Match) {
-      const startIndex = h2Match.index;
-      const tail = updatedContent.substring(startIndex);
-      const nextBoundaryMatch = tail.substring(h2Match[0].length).match(/<h2|<div id="deep-dive"|<!-- SECTION:/i);
-      const boundaryOffset = nextBoundaryMatch ? h2Match[0].length + nextBoundaryMatch.index : tail.length;
+    const keywords = keywordsMap[canonicalSection] || [];
+    for (const kw of keywords) {
+      const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const h2Regex = new RegExp(`<h2[^>]*>(?:(?!<\\/h2>)[\\s\\S])*?${escapedKw}(?:(?!<\\/h2>)[\\s\\S])*?<\\/h2>`, 'i');
+      const h2Match = updatedContent.match(h2Regex);
+      if (h2Match) {
+        const startIndex = h2Match.index;
+        const tail = updatedContent.substring(startIndex);
+        const nextBoundaryMatch = tail.substring(h2Match[0].length).match(/<h2|<div id="deep-dive"|<!-- SECTION:/i);
+        const boundaryOffset = nextBoundaryMatch ? h2Match[0].length + nextBoundaryMatch.index : tail.length;
 
-      const oldSectionText = tail.substring(0, boundaryOffset);
-      const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+        const oldSectionText = tail.substring(0, boundaryOffset);
+        const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
 
-      const before = updatedContent.substring(0, startIndex).trimEnd();
-      const after = updatedContent.substring(startIndex + boundaryOffset).trimStart();
+        const before = updatedContent.substring(0, startIndex).trimEnd();
+        const after = updatedContent.substring(startIndex + boundaryOffset).trimStart();
 
-      updatedContent = before + '\n\n' + wrap(canonicalSection, finalHtml) + '\n\n' + after;
-      matchFound = true;
-      break;
+        updatedContent = before + '\n\n' + wrap(canonicalSection, finalHtml) + '\n\n' + after;
+        matchFound = true;
+        break;
+      }
+    }
+
+    if (!matchFound) {
+      throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
     }
   }
-
-  if (!matchFound) {
-    throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
-  }
-}
 }
 
 // 【目次TOC自動修復】過去記事で音楽セクションが #section-11 になっていた場合の自動修復
