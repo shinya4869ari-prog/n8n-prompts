@@ -118,13 +118,13 @@ return [{
     currencySymbol: currencySymbol,
     actualCurrencyCode: actualCurrencyCode,
     "取得日": today,
-    ビール: extractPrice(html, 'Domestic Draft Beer'),
+    ビール: extractPrice(html, 'Domestic Draft Beer') !== "欠測" ? extractPrice(html, 'Domestic Draft Beer') : extractPrice(html, 'Domestic Beer'),
     タバコ: extractPrice(html, 'Cigarettes'),
     水: extractPrice(html, 'Water'),
     ガソリン: extractPrice(html, 'Gasoline'),
-    外食: extractPrice(html, 'Meal at an Inexpensive'),
-    光熱費: extractPrice(html, 'Basic Utilities'),
-    家賃: extractPrice(html, '1 Bedroom Apartment in City Centre'),
+    外食: extractPrice(html, 'Meal at an Inexpensive') !== "欠測" ? extractPrice(html, 'Meal at an Inexpensive') : extractPrice(html, 'Meal, Inexpensive'),
+    光熱費: extractPrice(html, 'Basic Utilities') !== "欠測" ? extractPrice(html, 'Basic Utilities') : extractPrice(html, 'Basic (Electricity'),
+    家賃: extractPrice(html, '1 Bedroom Apartment in City Centre') !== "欠測" ? extractPrice(html, '1 Bedroom Apartment in City Centre') : extractPrice(html, '1 Bedroom'),
     月収: extractPrice(html, 'Average Monthly Net Salary'),
   }
 }];

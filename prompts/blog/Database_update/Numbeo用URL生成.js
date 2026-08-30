@@ -79,21 +79,26 @@ const numbeoCityMap = {
   "Hong Kong": "Hong-Kong"
 };
 
-// スラッグの決定（首都指定優先、なければ国名）
-let slug = numbeoCityMap[countryJa] || numbeoCityMap[countryEn];
+// スラッグとURLの決定（都市マップにあれば都市URL、なければ国別URL）
+let citySlug = numbeoCityMap[countryJa] || numbeoCityMap[countryEn];
+let url = "";
 
-if (!slug) {
-  // マップにない場合は英語国名から安全に生成
-  slug = countryEn
+if (citySlug) {
+  // 主要都市がある場合は都市ページ（例: in/Seoul, in/Bogota）
+  url = `https://www.numbeo.com/cost-of-living/in/${citySlug}`;
+} else {
+  // マップにない国（ブータン等）は国別公式ページ（country_result.jsp?country=Bhutan）
+  const countrySlug = countryEn
     .trim()
     .replace(/[^a-zA-Z0-9\s-]/g, '')
     .replace(/\s+/g, '-');
+  url = `https://www.numbeo.com/cost-of-living/country_result.jsp?country=${countrySlug}`;
 }
 
-// URL構築（displayCurrency を付与して現地通貨で確実に取得）
-let url = `https://www.numbeo.com/cost-of-living/in/${slug}`;
+// 通貨コードの指定（displayCurrency）
 if (currencyCode) {
-  url += `?displayCurrency=${encodeURIComponent(currencyCode)}`;
+  const sep = url.includes('?') ? '&' : '?';
+  url += `${sep}displayCurrency=${encodeURIComponent(currencyCode)}`;
 }
 
 return [{
@@ -102,6 +107,7 @@ return [{
     countryJa,
     countryEn,
     currencyCode,
-    slug
+    slug: citySlug || countryEn
   }
 }];
+
