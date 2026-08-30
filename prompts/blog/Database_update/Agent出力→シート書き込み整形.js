@@ -324,13 +324,11 @@ for (const f of bukkaFields) {
 
 // AIエージェントの出力（agentOutput）から物価データを反映
 // 1. 為替レートの更新
-if (agentOutput.物価) {
-  const rawFx = agentOutput.物価.為替レート;
-  if (rawFx) {
-    const fxMatch = String(rawFx).match(/[\d.]+/g);
-    bukka["為替レート"] = fxMatch ? fxMatch[fxMatch.length - 1] : rawFx;
-  }
-  bukka["為替取得日"] = agentOutput.物価.為替取得日 ?? bukka["為替取得日"];
+const rawFx = agentOutput.物価?.為替レート || agentOutput.為替レート;
+if (rawFx) {
+  const fxMatch = String(rawFx).match(/[\d.]+/g);
+  bukka["為替レート"] = fxMatch ? fxMatch[fxMatch.length - 1] : rawFx;
+  bukka["為替取得日"] = agentOutput.物価?.為替取得日 || today.split(' ')[0];
 }
 
 // 2. ビッグマックの更新
@@ -348,6 +346,33 @@ if (agentOutput.Netflix) {
   if (nfVal && nfVal !== "欠測") {
     bukka["Netflix_現地通貨"] = nfVal;
     bukka["Netflix_出典"] = agentOutput.Netflix.出典 ?? bukka["Netflix_出典"];
+  }
+}
+
+// 4. 日常物価（Numbeo）の更新
+if (agentOutput.日常物価) {
+  const p = agentOutput.日常物価;
+  const pMap = {
+    "ビール": "ビール_現地通貨",
+    "タバコ": "タバコ_現地通貨",
+    "水": "水_現地通貨",
+    "ガソリン": "ガソリン_現地通貨",
+    "外食": "外食_現地通貨",
+    "光熱費": "光熱費_現地通貨",
+    "家賃1LDK": "家賃1LDK(市中心)_現地通貨",
+    "家賃1LDK(市中心)": "家賃1LDK(市中心)_現地通貨",
+    "家賃": "家賃1LDK(市中心)_現地通貨",
+    "月収": "月収_現地通貨",
+  };
+
+  for (const [key, col] of Object.entries(pMap)) {
+    const val = p[key];
+    if (val !== undefined && val !== null && val !== "" && val !== "欠測") {
+      bukka[col] = String(val).trim();
+    }
+  }
+  if (p.出典) {
+    bukka["物価_出典"] = p.出典;
   }
 }
 

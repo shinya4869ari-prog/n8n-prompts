@@ -17,6 +17,7 @@
 - 女性労働参加率：{{ $json.rowData["女性労働参加率_年"] || "未登録" }}
 - 女性議員比率：{{ $json.rowData["女性議員比率_年"] || "未登録" }}
 - 児童労働率：{{ $json.rowData["児童労働率_年"] || "未登録" }}
+※為替レートおよび物価項目（日常物価、ビッグマック、Netflix）は年度比較による省略を行わず、更新が必要な項目に含まれている場合は必ず現在の最新値を出力すること。
 
 ## 絶対ルール
 - **最新データ最優先（政府公式統計の活用）**: 
@@ -45,6 +46,8 @@
 - 児童労働率：World Bank → ILO
 - ビッグマック：The Economist
 - Netflix：Netflix公式サイト
+- 日常物価（ビール・タバコ・水・ガソリン・外食・光熱費・家賃・月収）：Numbeo（site:numbeo.com）
+- 為替レート：実勢為替レート（Google Finance / 外為市場データ）
 
 ## 項目別検索クエリと出力形式
 
@@ -108,16 +111,35 @@ staleItemsに含まれる項目のみ調査し、該当フィールドのみ出�
 ※データが存在しない先進国等は「対象外」と返すこと。
 出力：{"児童労働率": {"値": "", "年": "", "出典": ""}}
 
+### 為替レート
+※staleItemsに「為替レート」または「物価」が含まれる場合に調査・出力すること。
+検索：「{{ $json.countryEn }} currency JPY exchange rate today」または「1 {{ $json.currency || $json.rowData["通貨コード"] }} to JPY exchange rate」
+※必ず「1外貨 ＝ 〇〇円」の形式で出力（例: "1 KRW = 0.11 JPY"、日本の場合は "1"）。
+出力：{"物価": {"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}}
+
 ### ビッグマック
+※staleItemsに「物価」が含まれる場合に調査・出力すること。
 検索：「Big Mac price {{ $json.countryEn }} The Economist {{ $now.toFormat('yyyy') }} OR {{ $now.minus({ years: 1 }).toFormat('yyyy') }}」
 - ※必ず最新年度（{{ $now.toFormat('yyyy') }}年または{{ $now.minus({ years: 1 }).toFormat('yyyy') }}年）のデータを優先して取得してください。
 出力：{"ビッグマック": {"現地通貨": "", "出典": "The Economist"}}
 
 ### Netflix
+※staleItemsに「物価」が含まれる場合に調査・出力すること。
 検索：「Netflix standard plan price {{ $json.countryEn }} official latest」
 出力：{"Netflix": {"現地通貨": "", "出典": "Netflix公式"}}
 
-### 為替レート
-検索：「{{ $json.countryEn }} currency JPY exchange rate today」
-※必ず「1外貨 ＝ 〇〇円」の形式で出力。日本の場合は「1」を出力。
-出力：{"物価": {"為替レート": "", "為替取得日": "{{ $now.toFormat('yyyy/MM/dd') }}"}}
+### 物価（Numbeo日常物価）
+※staleItemsに「物価」が含まれる場合に調査・出力すること。
+検索：「site:numbeo.com Cost of living {{ $json.capital || $json.countryEn }}」または「Cost of living in {{ $json.capital || $json.countryEn }} Numbeo」
+- Numbeoの該当国・首都ページから、現地通貨（{{ $json.currency || $json.rowData["通貨コード"] }}）建ての価格を抽出すること。
+- 対象項目：
+  * ビール：Domestic Beer (0.5 liter draught)
+  * タバコ：Cigarettes 20 Pack (Marlboro)
+  * 水：Water (1.5 liter bottle)
+  * ガソリン：Gasoline (1 liter)
+  * 外食：Meal, Inexpensive Restaurant (1人分)
+  * 光熱費：Basic utilities for 85m2 Apartment
+  * 家賃1LDK：Apartment (1 bedroom) in City Centre
+  * 月収：Average Monthly Net Salary (After Tax)
+- ※数値のみ（通貨記号やカンマは含めず半角数字・小数のみ）で出力すること。見つからない場合は「欠測」。
+出力：{"日常物価": {"ビール": "", "タバコ": "", "水": "", "ガソリン": "", "外食": "", "光熱費": "", "家賃1LDK": "", "月収": "", "出典": "Numbeo"}}

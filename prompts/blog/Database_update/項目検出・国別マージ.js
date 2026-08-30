@@ -14,6 +14,8 @@ const thresholds = {
     "女性労働参加率": 1,
     "女性議員比率": 1,
     "児童労働率": 1,
+    "為替レート": 1,
+    "物価": 1,
 };
 
 const yearColMap = {
@@ -29,6 +31,8 @@ const yearColMap = {
     "女性労働参加率": "女性労働参加率_年",
     "女性議員比率": "女性議員比率_年",
     "児童労働率": "児童労働率_年",
+    "為替レート": "為替取得日",
+    "物価": "為替取得日",
 };
 
 // フォームトリガーから指定された国名を取得
@@ -125,6 +129,24 @@ for (const [name, row] of Object.entries(countryMap)) {
         }
 
 
+
+        // 為替取得日（YYYY/MM/DD または YYYY-MM-DD）の判定
+        if (yearCol === "為替取得日") {
+            const rawDate = new Date(raw);
+            if (isNaN(rawDate.getTime())) {
+                staleItems.push(label);
+            } else {
+                const diffDays = (today.getTime() - rawDate.getTime()) / (1000 * 60 * 60 * 24);
+                // 手動国指定時（特定国の更新）は昨日以前のデータなら即更新対象。通常時は約1年（300日以上）または年差で判定
+                if ((specifiedCountry && diffDays >= 1) || diffDays >= 300 || currentYear - rawDate.getFullYear() >= threshold) {
+                    staleItems.push(label);
+                } else if (label === "物価" && (!row["ビール_現地通貨"] || row["ビール_現地通貨"] === "欠測" || !row["家賃1LDK(市中心)_現地通貨"])) {
+                    // 主要な日常物価が欠けている場合も調査対象に
+                    staleItems.push(label);
+                }
+            }
+            continue;
+        }
 
         // 年度で判定
         const year = parseInt(raw);

@@ -94,6 +94,78 @@ if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agen
 if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"], agentOutput.女性議員比率.年, rowData["女性議員比率_年"], agentOutput.女性議員比率.出典, rowData["女性議員比率_出典"]);
 if (agentOutput.児童労働率) checkChange("児童労働率", agentOutput.児童労働率.値, rowData["児童労働率"], agentOutput.児童労働率.年, rowData["児童労働率_年"], agentOutput.児童労働率.出典, rowData["児童労働率_出典"]);
 
+// 為替レートの変更判定
+if (agentOutput.物価?.為替レート) {
+  const newFx = agentOutput.物価.為替レート;
+  const oldFx = rowData["為替レート"];
+  if (newFx && String(newFx) !== String(oldFx)) {
+    changes.push({
+      項目: "為替レート",
+      変更前: oldFx ? `${oldFx}（${rowData["為替取得日"] || ""}）` : "未登録",
+      変更後: `${newFx}（${agentOutput.物価.為替取得日 || ""}）`,
+      結果: "✅更新",
+      出典: "実勢為替レート"
+    });
+  }
+}
+
+// 日常物価（Numbeo）の変更判定
+if (agentOutput.日常物価) {
+  const p = agentOutput.日常物価;
+  const pSrc = p.出典 || "Numbeo";
+  const pItems = [
+    { key: "ビール", col: "ビール_現地通貨" },
+    { key: "タバコ", col: "タバコ_現地通貨" },
+    { key: "水", col: "水_現地通貨" },
+    { key: "ガソリン", col: "ガソリン_現地通貨" },
+    { key: "外食", col: "外食_現地通貨" },
+    { key: "光熱費", col: "光熱費_現地通貨" },
+    { key: "家賃1LDK", col: "家賃1LDK(市中心)_現地通貨" },
+    { key: "月収", col: "月収_現地通貨" },
+  ];
+  for (const item of pItems) {
+    const nVal = p[item.key] ?? p[item.col];
+    const oVal = rowData[item.col];
+    if (nVal && nVal !== "欠測" && String(nVal) !== String(oVal)) {
+      changes.push({
+        項目: item.key,
+        変更前: oVal ? `${oVal}` : "未登録",
+        変更後: `${nVal}`,
+        結果: "✅更新",
+        出典: pSrc
+      });
+    }
+  }
+}
+
+// ビッグマックの変更判定
+if (agentOutput.ビッグマック?.現地通貨) {
+  const bm = agentOutput.ビッグマック;
+  if (bm.現地通貨 && bm.現地通貨 !== "欠測" && String(bm.現地通貨) !== String(rowData["ビッグマック_現地通貨"])) {
+    changes.push({
+      項目: "ビッグマック",
+      変更前: rowData["ビッグマック_現地通貨"] ? `${rowData["ビッグマック_現地通貨"]}` : "未登録",
+      変更後: `${bm.現地通貨}`,
+      結果: "✅更新",
+      出典: bm.出典 || "The Economist"
+    });
+  }
+}
+
+// Netflixの変更判定
+if (agentOutput.Netflix?.現地通貨) {
+  const nf = agentOutput.Netflix;
+  if (nf.現地通貨 && nf.現地通貨 !== "欠測" && String(nf.現地通貨) !== String(rowData["Netflix_現地通貨"])) {
+    changes.push({
+      項目: "Netflix",
+      変更前: rowData["Netflix_現地通貨"] ? `${rowData["Netflix_現地通貨"]}` : "未登録",
+      変更後: `${nf.現地通貨}`,
+      結果: "✅更新",
+      出典: nf.出典 || "Netflix公式"
+    });
+  }
+}
+
 
 
 return [{ 
