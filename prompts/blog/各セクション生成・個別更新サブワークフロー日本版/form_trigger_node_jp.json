@@ -20,6 +20,12 @@
               "fieldOptions": {
                 "values": [
                   {
+                    "option": "chian : 治安と平和の衡量"
+                  },
+                  {
+                    "option": "bukka : 生活・価値の衡量（物価比較）"
+                  },
+                  {
                     "option": "eizou : ④ 映像で知る日本"
                   },
                   {
@@ -42,7 +48,7 @@
                   }
                 ]
               },
-              "defaultValue": "eizou : ④ 映像で知る日本",
+              "defaultValue": "chian : 治安と平和の衡量",
               "fieldDescription": "更新したいセクションを選択してください"
             },
             {
