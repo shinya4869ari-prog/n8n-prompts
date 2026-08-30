@@ -118,33 +118,57 @@ function preserveOriginalNeko(oldSectionText, newHtml) {
   return newHtml;
 }
 
-// 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
-const startRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->`, 'gi');
-const endRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'gi');
-const startCount = (updatedContent.match(startRe) || []).length;
-const endCount = (updatedContent.match(endRe) || []).length;
+// ★★★【治安・物価の超ピンポイント・テーブル置換】★★★
+// 解説文・刑務所グラフ・死因トップ10・エラーネコの一言を一切消さずに、
+// スプレッドシートの「最新数値テーブル」だけを安全にピンポイント差し替える！
+if (canonicalSection === 'chian') {
+  const chianTableRegex = /(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?治安・社会指標[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+  const newTableMatch = newSectionHtml.match(chianTableRegex);
+  const oldTableMatch = updatedContent.match(chianTableRegex);
 
-if (startCount === 1 && endCount === 1) {
-  const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->([\\s\\S]*?)<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
-  const oldMatch = updatedContent.match(commentRe);
-  const oldSectionText = oldMatch ? oldMatch[1] : '';
-  const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
-  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
-  matchFound = true;
-} else {
-  // 2. 【高精度】 見出しキーワード（「おすすめ音楽」「おすすめ映画」等）による限定置換
-  const keywordsMap = {
-    music: ['おすすめ音楽', 'ナショナルサウンドトラック', '⑩'],
-    osusume: ['おすすめ映画', '⑨'],
-    eizou: ['映像で知る', '⑧'],
-    seido: ['制度の9つの皿', '①'],
-    chiri_keizai: ['地理と経済', '②'],
-    chian: ['治安と平和', '③'],
-    boeki: ['貿易の衡量', '④'],
-    bukka: ['物価比較', '⑤'],
-    rekishi: ['歴史的背景', '⑥'],
-    doukou: ['直近の動向', '⑦']
-  };
+  if (oldTableMatch && newTableMatch) {
+    updatedContent = updatedContent.replace(chianTableRegex, newTableMatch[0]);
+    matchFound = true;
+  }
+} else if (canonicalSection === 'bukka') {
+  const bukkaBlockRegex = /(?:<div[^>]*>[\s\S]*?為替レート基準[\s\S]*?<\/div>[\s\r\n]*)?(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?品目[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+  const newBlockMatch = newSectionHtml.match(bukkaBlockRegex);
+  const oldBlockMatch = updatedContent.match(bukkaBlockRegex);
+
+  if (oldBlockMatch && newBlockMatch) {
+    updatedContent = updatedContent.replace(bukkaBlockRegex, newBlockMatch[0]);
+    matchFound = true;
+  }
+}
+
+// 1. 【テーブル置換が未実行の場合のフォールバック】 コメントタグによる置換
+if (!matchFound) {
+  const startRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->`, 'gi');
+  const endRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'gi');
+  const startCount = (updatedContent.match(startRe) || []).length;
+  const endCount = (updatedContent.match(endRe) || []).length;
+
+  if (startCount === 1 && endCount === 1) {
+    const commentRe = new RegExp(`<!--\\s*SECTION:${canonicalSection}:START\\s*-->([\\s\\S]*?)<!--\\s*SECTION:${canonicalSection}:END\\s*-->`, 'i');
+    const oldMatch = updatedContent.match(commentRe);
+    const oldSectionText = oldMatch ? oldMatch[1] : '';
+    const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+    updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
+    matchFound = true;
+  } else {
+    // 2. 【高精度】 見出しキーワードによる置換
+    const keywordsMap = {
+      music: ['おすすめ音楽', 'ナショナルサウンドトラック', '⑩'],
+      osusume: ['おすすめ映画', '⑨'],
+      eizou: ['映像で知る', '⑧'],
+      seido: ['制度の9つの皿', '①'],
+      chiri_keizai: ['地理と経済', '②'],
+      chian: ['治安と平和', '③'],
+      boeki: ['貿易の衡量', '④'],
+      bukka: ['物価比較', '⑤'],
+      rekishi: ['歴史的背景', '⑥'],
+      doukou: ['直近の動向', '⑦']
+    };
 
   const keywords = keywordsMap[canonicalSection] || [];
   for (const kw of keywords) {
@@ -172,6 +196,7 @@ if (startCount === 1 && endCount === 1) {
   if (!matchFound) {
     throw new Error(`[置換エラー] セクション「${canonicalSection}」の挿入位置を特定できませんでした。二重挿入・消失を避けるため処理を中止しました。`);
   }
+}
 }
 
 // 【目次TOC自動修復】過去記事で音楽セクションが #section-11 になっていた場合の自動修復

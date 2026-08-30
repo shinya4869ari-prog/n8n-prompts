@@ -170,22 +170,45 @@ function preserveOriginalNeko(oldSectionText, newHtml) {
   return newHtml;
 }
 
+// ★★★【治安・物価の超ピンポイント・テーブル置換】★★★
+if (canonicalSection === 'chian') {
+  const chianTableRegex = /(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?治安・社会指標[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+  const newTableMatch = newSectionHtml.match(chianTableRegex);
+  const oldTableMatch = updatedContent.match(chianTableRegex);
+
+  if (oldTableMatch && newTableMatch) {
+    updatedContent = updatedContent.replace(chianTableRegex, newTableMatch[0]);
+    matchFound = true;
+  }
+} else if (canonicalSection === 'bukka') {
+  const bukkaBlockRegex = /(?:<div[^>]*>[\s\S]*?為替レート基準[\s\S]*?<\/div>[\s\r\n]*)?(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?品目[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+  const newBlockMatch = newSectionHtml.match(bukkaBlockRegex);
+  const oldBlockMatch = updatedContent.match(bukkaBlockRegex);
+
+  if (oldBlockMatch && newBlockMatch) {
+    updatedContent = updatedContent.replace(bukkaBlockRegex, newBlockMatch[0]);
+    matchFound = true;
+  }
+}
+
 // 1. 【最優先・最高精度】 コメントタグ `<!-- SECTION:<id>:START --> ... <!-- SECTION:<id>:END -->` による限定置換
 // ※ コロン前後のスペースや HTMLエンティティ(&lt;!-- ... --&gt;) にも完全対応
-const startRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)`, 'gi');
-const endRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)`, 'gi');
-const startCount = (updatedContent.match(startRe) || []).length;
-const endCount = (updatedContent.match(endRe) || []).length;
+if (!matchFound) {
+  const startRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)`, 'gi');
+  const endRe = new RegExp(`(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)`, 'gi');
+  const startCount = (updatedContent.match(startRe) || []).length;
+  const endCount = (updatedContent.match(endRe) || []).length;
 
-if (startCount >= 1 && endCount >= 1) {
-  const commentRe = new RegExp(`(?:<p>\\s*)?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)([\\s\\S]*?)(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)(?:\\s*<\\/p>)?`, 'i');
-  const oldMatch = updatedContent.match(commentRe);
-  const oldSectionText = oldMatch ? oldMatch[1] : '';
-  const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
-  updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
-  matchFound = true;
-} else if (startCount > 1 || endCount > 1) {
-  throw new Error(`[安全保護エラー] 本文内に SECTION:${canonicalSection} のマーカーが複数検出されました。誤置換を防ぐため中断しました。`);
+  if (startCount >= 1 && endCount >= 1) {
+    const commentRe = new RegExp(`(?:<p>\\s*)?(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*START\\s*(?:-->|--&gt;)([\\s\\S]*?)(?:<!--|&lt;!--)\\s*SECTION\\s*:\\s*${canonicalSection}\\s*:\\s*END\\s*(?:-->|--&gt;)(?:\\s*<\\/p>)?`, 'i');
+    const oldMatch = updatedContent.match(commentRe);
+    const oldSectionText = oldMatch ? oldMatch[1] : '';
+    const finalHtml = preserveOriginalNeko(oldSectionText, newSectionHtml);
+    updatedContent = updatedContent.replace(commentRe, wrap(canonicalSection, finalHtml));
+    matchFound = true;
+  } else if (startCount > 1 || endCount > 1) {
+    throw new Error(`[安全保護エラー] 本文内に SECTION:${canonicalSection} のマーカーが複数検出されました。誤置換を防ぐため中断しました。`);
+  }
 }
 
 // 2. 【フォールバック】 マーカーがまだ無い旧記事向け：見出しによる範囲特定置換
