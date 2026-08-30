@@ -57,8 +57,22 @@ const movie = {
   ...origMovie,
   ...(auditResult.movie || {})
 };
-if (movie.cast) movie.cast = String(movie.cast).replace(/_/g, '・');
-if (movie.director) movie.director = String(movie.director).replace(/_/g, '・');
+// ★ 人名ノイズ自動クレンジング関数（"イ-・ウンボク" ➔ "イ・ウンボク" への是正）
+const cleanNameNoise = (str) => {
+  if (!str) return str;
+  return String(str)
+    .replace(/[-‐‑–—]・/g, '・')
+    .replace(/・[-‐‑–—]/g, '・')
+    .replace(/([ァ-ヴぁ-んa-zA-Z])[-‐‑–—]・/g, '$1・')
+    .replace(/([ァ-ヴぁ-ん])[-‐‑–—]([ァ-ヴぁ-ん])/g, '$1・$2')
+    .replace(/_/g, '・')
+    .replace(/・{2,}/g, '・')
+    .replace(/^[・\-\s]+|[・\-\s]+$/g, '')
+    .trim();
+};
+
+if (movie.cast) movie.cast = cleanNameNoise(movie.cast);
+if (movie.director) movie.director = cleanNameNoise(movie.director);
 
 // ★ ハングル保護: 元データにハングルがある場合、AIがローマ字に変換していてもハングル表記を100%最優先保護
 const hasHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
@@ -92,12 +106,12 @@ const mergedPersonsMap = new Map();
 
 // まず元データ（キャスト・監督抽出 ➔ Supabase整形コード）の全員を最優先で登録
 (origPersons.length > 0 ? origPersons : aiPersons).forEach(origP => {
-  const rawName = String(origP.name || '').replace(/_/g, '・').trim();
+  const rawName = cleanNameNoise(origP.name);
   if (!rawName) return;
 
   const matchedAi = aiPersons.find(ap => 
     ((ap.wikidata_id || ap.qid) && (origP.wikidata_id || origP.qid) && (ap.wikidata_id || ap.qid) === (origP.wikidata_id || origP.qid)) ||
-    (ap.name && rawName && (ap.name === rawName || ap.name.includes(rawName) || rawName.includes(ap.name)))
+    (ap.name && rawName && (cleanNameNoise(ap.name) === rawName || cleanNameNoise(ap.name).includes(rawName) || rawName.includes(cleanNameNoise(ap.name))))
   );
 
   const wId = origP.wikidata_id || origP.qid || matchedAi?.wikidata_id || matchedAi?.qid || null;
@@ -107,7 +121,7 @@ const mergedPersonsMap = new Map();
 
   const pObj = {
     ...origP,
-    name: String(matchedAi?.name || rawName).replace(/_/g, '・'),
+    name: cleanNameNoise(matchedAi?.name || rawName),
     name_en: pNameEn,
     occupation: origP.occupation || matchedAi?.occupation || '俳優',
     country: matchedAi?.country || origP.country || movie.country || '',
@@ -126,7 +140,7 @@ const mergedPersonsMap = new Map();
 
 // AIが追加した有効なキャストがいればそれも補完
 aiPersons.forEach(ap => {
-  const rawName = String(ap.name || '').replace(/_/g, '・').trim();
+  const rawName = cleanNameNoise(ap.name);
   if (rawName && !mergedPersonsMap.has(rawName)) {
     mergedPersonsMap.set(rawName, {
       name: rawName,

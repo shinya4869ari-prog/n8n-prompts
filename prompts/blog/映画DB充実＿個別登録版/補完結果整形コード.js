@@ -84,10 +84,18 @@ return items.map((item, index) => {
   const overview = (targetAi.overview && targetAi.overview.length > 20) ? targetAi.overview : (source.overview || targetAi.overview || null);
   const overview_en = (targetAi.overview_en) ? targetAi.overview_en : (source.overview_en || null);
 
-  // ノイズ除去用関数 (例: "イ-・イダム" ➔ "イ・イダム" へ自動クレンジング)
+  // ノイズ除去用関数 (例: "イ-・ウンボク", "イ-ウンボク" ➔ "イ・ウンボク" へ自動クレンジング)
   const cleanKatakanaHyphens = (str) => {
     if (!str) return str;
-    return String(str).replace(/([アカ-ンa-zA-Z])-・/g, '$1・').replace(/-・/g, '・');
+    return String(str)
+      .replace(/[-‐‑–—]・/g, '・')
+      .replace(/・[-‐‑–—]/g, '・')
+      .replace(/([ァ-ヴぁ-んa-zA-Z])[-‐‑–—]・/g, '$1・')
+      .replace(/([ァ-ヴぁ-ん])[-‐‑–—]([ァ-ヴぁ-ん])/g, '$1・$2')
+      .replace(/_/g, '・')
+      .replace(/・{2,}/g, '・')
+      .replace(/^[・\-\s]+|[・\-\s]+$/g, '')
+      .trim();
   };
 
   // ジャンル自動翻訳＆クレンジング関数
