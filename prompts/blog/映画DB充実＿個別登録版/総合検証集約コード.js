@@ -63,6 +63,10 @@ return [{
     tmdb_id: movie.tmdb_id || null,
     wikidata_id: movie.wikidata_id || null,
 
+    // サントラ曲概要（AIがトップレベルで一目で認識できるように明示）
+    ost_tracks_summary: validTracks.map(t => `${t.track_name} by ${t.artist_name}`).join(', '),
+    tracks: validTracks,
+
     // フル映画データ
     movie_payload: movie,
 
