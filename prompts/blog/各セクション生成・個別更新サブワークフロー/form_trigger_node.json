@@ -1,0 +1,82 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "国家の天秤 セクション個別更新フォーム",
+        "formDescription": "対象国のWordPress記事の特定セクション（治安、物価、映画、音楽等）をピンポイントで生成・上書き更新します。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "country",
+              "fieldType": "text",
+              "requiredField": true,
+              "defaultValue": "韓国",
+              "fieldDescription": "対象国名を入力してください（例: 韓国、ブータン、アメリカ）"
+            },
+            {
+              "fieldLabel": "section_type",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "chian : ③ 治安と平和の衡量"
+                  },
+                  {
+                    "option": "bukka : ⑤ 生活・価値の衡量（物価比較）"
+                  },
+                  {
+                    "option": "eizou : ⑧ 映像作品"
+                  },
+                  {
+                    "option": "osusume : ⑨ おすすめ映画"
+                  },
+                  {
+                    "option": "music : ⑩ おすすめ音楽"
+                  },
+                  {
+                    "option": "doukou : ⑦ 直近の動向"
+                  },
+                  {
+                    "option": "boeki : ④ 貿易の衡量"
+                  },
+                  {
+                    "option": "rekishi : ⑥ 歴史的背景"
+                  },
+                  {
+                    "option": "deep_dive : ✦ Deep Dive"
+                  }
+                ]
+              },
+              "defaultValue": "chian : ③ 治安と平和の衡量",
+              "fieldDescription": "ピンポイント更新したいセクションを選択してください"
+            },
+            {
+              "fieldLabel": "post_id",
+              "fieldType": "number",
+              "requiredField": false,
+              "fieldDescription": "【任意】対象記事のWordPress投稿ID（空欄の場合は国名から自動検索）"
+            },
+            {
+              "fieldLabel": "neko_comment",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】エラーネコの一言を指定したい場合に入力（空欄の場合は自動生成）"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        240
+      ],
+      "id": "global-section-update-form",
+      "name": "On form submission",
+      "webhookId": "country-section-update-form"
+    }
+  ],
+  "connections": {}
+}

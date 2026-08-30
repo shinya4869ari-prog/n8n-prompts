@@ -1,0 +1,265 @@
+{
+  "name": "各セクション個別更新サブワークフロー（治安・物価対応版）",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "国家の天秤 セクション個別更新フォーム",
+        "formDescription": "対象国のWordPress記事の特定セクション（治安、物価、映画、音楽等）をピンポイントで生成・上書き更新します。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "country",
+              "fieldType": "text",
+              "requiredField": true,
+              "defaultValue": "韓国",
+              "fieldDescription": "対象国名（例: 韓国、ブータン、アメリカ）"
+            },
+            {
+              "fieldLabel": "section_type",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  { "option": "chian : ③ 治安と平和の衡量" },
+                  { "option": "bukka : ⑤ 生活・価値の衡量（物価比較）" },
+                  { "option": "eizou : ⑧ 映像作品" },
+                  { "option": "osusume : ⑨ おすすめ映画" },
+                  { "option": "music : ⑩ おすすめ音楽" },
+                  { "option": "doukou : ⑦ 直近の動向" },
+                  { "option": "boeki : ④ 貿易の衡量" },
+                  { "option": "rekishi : ⑥ 歴史的背景" },
+                  { "option": "deep_dive : ✦ Deep Dive" }
+                ]
+              },
+              "defaultValue": "chian : ③ 治安と平和の衡量",
+              "fieldDescription": "更新したいセクションを選択"
+            },
+            {
+              "fieldLabel": "post_id",
+              "fieldType": "number",
+              "requiredField": false,
+              "fieldDescription": "WordPress投稿ID（空欄の場合は国名で自動検索）"
+            },
+            {
+              "fieldLabel": "neko_comment",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】エラーネコの一言"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [-500, 200],
+      "id": "global-form-trigger",
+      "name": "On form submission",
+      "webhookId": "country-section-update-form"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "loose", "version": 1 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "chian",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chian"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "loose", "version": 1 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "bukka",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "bukka"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "loose", "version": 1 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "music",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "music"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "loose", "version": 1 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.section_type }}",
+                    "rightValue": "eizou",
+                    "operator": { "type": "string", "operation": "contains" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "eizou"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-260, 200],
+      "id": "section-switch-node",
+      "name": "Switch (セクション分岐)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// chian_section_html.js の内容をここに貼り付けます\nconst input = $input.first()?.json || {};\nconst countryName = input.country || $('On form submission')?.first()?.json?.country || '対象国';\nreturn [{ json: { section_type: 'chian', country: countryName, section_html: '<!-- SECTION:chian:START --><h2>治安と平和</h2><!-- SECTION:chian:END -->' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 80],
+      "id": "chian-html-node",
+      "name": "chian_section_html"
+    },
+    {
+      "parameters": {
+        "jsCode": "// bukka_section_html.js の内容をここに貼り付けます\nconst input = $input.first()?.json || {};\nconst countryName = input.country || $('On form submission')?.first()?.json?.country || '対象国';\nreturn [{ json: { section_type: 'bukka', country: countryName, section_html: '<!-- SECTION:bukka:START --><h2>物価比較</h2><!-- SECTION:bukka:END -->' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 200],
+      "id": "bukka-html-node",
+      "name": "bukka_section_html"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "postId": "={{ $json.post_id || $('On form submission').first().json.post_id }}"
+      },
+      "type": "n8n-nodes-base.wordpress",
+      "typeVersion": 1,
+      "position": [280, 140],
+      "id": "wp-get-post-node",
+      "name": "WP Get a Post"
+    },
+    {
+      "parameters": {
+        "jsCode": "// section_wp_updater.js の内容をここに貼り付けます"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 140],
+      "id": "wp-updater-code-node",
+      "name": "section_wp_updater"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "postId": "={{ $json.post_id }}",
+        "updateFields": {
+          "content": "={{ $json.updated_content }}"
+        }
+      },
+      "type": "n8n-nodes-base.wordpress",
+      "typeVersion": 1,
+      "position": [720, 140],
+      "id": "wp-update-post-node",
+      "name": "WP Update Post"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Switch (セクション分岐)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (セクション分岐)": {
+      "main": [
+        [
+          {
+            "node": "chian_section_html",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "bukka_section_html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chian_section_html": {
+      "main": [
+        [
+          {
+            "node": "WP Get a Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bukka_section_html": {
+      "main": [
+        [
+          {
+            "node": "WP Get a Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WP Get a Post": {
+      "main": [
+        [
+          {
+            "node": "section_wp_updater",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "section_wp_updater": {
+      "main": [
+        [
+          {
+            "node": "WP Update Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
