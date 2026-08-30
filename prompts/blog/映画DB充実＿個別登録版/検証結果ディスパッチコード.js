@@ -190,13 +190,39 @@ const validPersons = Array.from(mergedPersonsMap.values()).filter(p => {
   return true;
 });
 
-// 4. サントラデータの抽出（APPROVEDされたもの、またはREJECTEDでないもののみを通過）
-const rawTracks = auditResult.tracks || inputJson.tracks_payload || [];
-const approvedTracks = rawTracks.filter(t => {
-  if (!t || !t.track_id) return false;
-  if (t.status && t.status.toUpperCase() === 'REJECTED') return false;
-  return true;
-});
+// 4. サントラデータの抽出（元データの曲を最優先保護・復元）
+// A. 上流ノードから確実に元データの曲一覧を取得
+let origTracks = [];
+try {
+  const aggTracks = $('総合検証集約コード').first()?.json?.tracks_payload;
+  if (Array.isArray(aggTracks) && aggTracks.length > 0) {
+    origTracks = aggTracks;
+  }
+} catch (e) {}
+
+if (origTracks.length === 0) {
+  try {
+    const ostAll = $('OST劇中歌取得整形Code').all();
+    if (Array.isArray(ostAll) && ostAll.length > 0) {
+      origTracks = ostAll.map(i => i.json).filter(t => t && t.track_id && t.has_tracks !== false);
+    }
+  } catch (e) {}
+}
+
+// B. AIが返したtracksを精査
+let approvedTracks = [];
+if (Array.isArray(auditResult.tracks) && auditResult.tracks.length > 0) {
+  approvedTracks = auditResult.tracks.filter(t => {
+    if (!t || !t.track_id) return false;
+    if (t.status && String(t.status).toUpperCase() === 'REJECTED') return false;
+    return true;
+  });
+}
+
+// C. もしAIの出力が空配列[]だったり、全件除外されて0件になった場合は、元データの曲(origTracks)を100%保護採用！
+if (approvedTracks.length === 0 && origTracks.length > 0) {
+  approvedTracks = origTracks;
+}
 
 return [{
   json: {

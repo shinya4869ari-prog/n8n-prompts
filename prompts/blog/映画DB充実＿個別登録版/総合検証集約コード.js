@@ -30,7 +30,19 @@ const movie = movieDataList[0] || $input.first()?.json || {};
 const persons = getNodeData('Supabase整形コード') || [];
 
 // 3. サントラ（OST劇中歌データ）の取得（OST劇中歌取得整形Code）
-const rawTracks = getNodeData('OST劇中歌取得整形Code') || [];
+let rawTracks = getNodeData('OST劇中歌取得整形Code') || [];
+if (!Array.isArray(rawTracks) || rawTracks.length === 0) {
+  try {
+    const ostNode = $('OST劇中歌取得整形Code');
+    if (ostNode) {
+      const all = ostNode.all();
+      if (Array.isArray(all) && all.length > 0) {
+        rawTracks = all.map(item => item.json).filter(Boolean);
+      }
+    }
+  } catch(e) {}
+}
+
 // has_tracks: false のダミーメッセージは除外
 const validTracks = rawTracks.filter(t => t && t.has_tracks !== false && t.track_id);
 
