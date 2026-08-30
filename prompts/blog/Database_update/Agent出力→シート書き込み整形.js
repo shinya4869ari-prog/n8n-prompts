@@ -294,14 +294,14 @@ if (agentOutput.児童労働率) {
     }
 }
 
-// 治安ステータス
+// 治安ステータス（「欠測」「対象外」は調査済みの確定値として扱い、空欄や未登録のみを未取得と判定）
 const anzenMissingFields = [
     "殺人率", "交通事故死亡率", "自殺率", "失業率", "貧困率", "ジニ係数",
     "刑務所稼働率", "刑務所総収容者数", "GPIスコア", "外務省危険レベル",
     "GGIスコア", "女性労働参加率", "女性議員比率", "児童労働率"
 ].filter(f => {
     const val = anzen[f] ?? rowData[f];
-    return val === undefined || val === null || val === "" || val === "欠測";
+    return val === undefined || val === null || String(val).trim() === "" || val === "未登録" || val === "未取得";
 });
 
 anzen["最終アップデート日"] = today;
