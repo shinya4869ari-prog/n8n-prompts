@@ -56,6 +56,8 @@ for (const item of $input.all()) {
 if (!newSectionHtml) {
   // セクション種別ごとの優先探索リスト
   const sectionPriorityNodes = {
+    chian: ['chian', 'chian_section_html', 'chian_section_html_jp', '治安セクションHTML', '治安'],
+    bukka: ['bukka', 'bukka_section_html', 'bukka_section_html_jp', '物価セクションHTML', '物価'],
     boeki: ['boeki', 'boeki_section_html', 'boeki_section_html_jp', '貿易セクションHTML', '貿易'],
     rekishi: ['rekishi', 'rekishi_section_html', 'rekishi_section_html_jp', '歴史セクションHTML', '歴史'],
     doukou: ['doukou_section_html', 'doukou', 'doukou_section_html_jp', '動向セクションHTML', '動向'],
@@ -68,9 +70,11 @@ if (!newSectionHtml) {
   const priorityList = sectionPriorityNodes[String(sectionType).toLowerCase()] || [];
   const allPossibleNodes = [
     ...priorityList,
+    'chian_section_html', 'bukka_section_html', '治安セクションHTML', '物価セクションHTML',
     'movie_section_html', 'music_section_html', 'doukou_section_html', 'rekishi', 'boeki', 'Deep Dive',
     'movie_section_html_jp', 'music_section_html_jp', 'doukou_section_html_jp', 'rekishi_section_html_jp', 'boeki_section_html_jp', 'deep_dive_section_html_jp',
-    '映像セクションHTML', 'おすすめ映画HTML', '音楽セクションHTML', '動向セクションHTML', '歴史セクションHTML', '貿易セクションHTML', 'ディープダイブHTML'
+    '映像セクションHTML', 'おすすめ映画HTML', '音楽セクションHTML', '動向セクションHTML', '歴史セクションHTML', '貿易セクションHTML', 'ディープダイブHTML',
+    'Code', 'Code1', 'Code2', 'Code3'
   ];
 
   for (const name of allPossibleNodes) {
