@@ -60,6 +60,15 @@ const movie = {
 if (movie.cast) movie.cast = String(movie.cast).replace(/_/g, '・');
 if (movie.director) movie.director = String(movie.director).replace(/_/g, '・');
 
+// ★ ハングル保護: 元データにハングルがある場合、AIがローマ字に変換していてもハングル表記を100%最優先保護
+const hasHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
+if (hasHangul(origMovie.cast_en) && !hasHangul(movie.cast_en)) {
+  movie.cast_en = origMovie.cast_en;
+}
+if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
+  movie.director_en = origMovie.director_en;
+}
+
 // 4. 人物データの抽出（Supabase Personsテーブルのカラム名 wikidata_id に100%統一）
 const aiPersons = auditResult.persons || [];
 const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(origP => {
@@ -70,10 +79,14 @@ const validPersons = (origPersons.length > 0 ? origPersons : aiPersons).map(orig
   );
 
   const wId = origP.wikidata_id || origP.qid || matchedAi?.wikidata_id || matchedAi?.qid || null;
+  const pNameEn = (hasHangul(origP.name_en) && !hasHangul(matchedAi?.name_en))
+    ? origP.name_en
+    : (matchedAi?.name_en || origP.name_en || null);
+
   const pObj = {
     ...origP,
     name: String(matchedAi?.name || rawName).replace(/_/g, '・'),
-    name_en: matchedAi?.name_en || origP.name_en || null,
+    name_en: pNameEn,
     occupation: matchedAi?.occupation || origP.occupation || '俳優',
     country: matchedAi?.country || origP.country || movie.country || '',
     profile_url: matchedAi?.profile_url || origP.profile_url || origP.image_url || null,
