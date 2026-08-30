@@ -70,9 +70,24 @@ const wikidataId = rawShaped.wikidata_id || inputNode.wikidata_id || null;
 
 // 🎯 主要なタイトル候補（原題、英題、邦題）を優先度順に厳選
 const titleCandidates = [];
-if (originTitle && originTitle.length >= 2 && originTitle !== '原題不明') titleCandidates.push(originTitle);
-if (movieTitleRaw && movieTitleRaw.length >= 2 && movieTitleRaw !== '原題不明' && !titleCandidates.includes(movieTitleRaw)) titleCandidates.push(movieTitleRaw);
-if (movieTitleJa && movieTitleJa.length >= 2 && !titleCandidates.includes(movieTitleJa)) titleCandidates.push(movieTitleJa);
+
+// サブタイトルやキーワードの抽出（例: "쓸쓸하고 찬란하神-도깨비" ➔ "도깨비", "トッケビ〜君がくれた愛しい日々〜" ➔ "トッケビ"）
+const extractKeyTitles = (str) => {
+  if (!str) return [];
+  return str.split(/[-‐‑–—〜~:：·・/]/).map(s => s.trim()).filter(s => s.length >= 2);
+};
+
+if (originTitle && originTitle.length >= 2 && originTitle !== '原題不明') {
+  titleCandidates.push(originTitle);
+  extractKeyTitles(originTitle).forEach(s => { if (!titleCandidates.includes(s)) titleCandidates.push(s); });
+}
+if (movieTitleJa && movieTitleJa.length >= 2) {
+  extractKeyTitles(movieTitleJa).forEach(s => { if (!titleCandidates.includes(s)) titleCandidates.push(s); });
+  if (!titleCandidates.includes(movieTitleJa)) titleCandidates.push(movieTitleJa);
+}
+if (movieTitleRaw && movieTitleRaw.length >= 2 && movieTitleRaw !== '原題不明' && !titleCandidates.includes(movieTitleRaw)) {
+  titleCandidates.push(movieTitleRaw);
+}
 
 // TMDb 英語翻訳タイトル
 const tmdbObjs = [creditsNode, tmdbSearchNode, tmdbTitleNode].filter(Boolean);
@@ -345,6 +360,21 @@ if (tracksToInsert.length === 0) {
     }
     if (tracksToInsert.length >= 6) break;
   }
+}
+
+// 🎯 iTunes でヒットしなかった場合、Supabase にすでに登録されている曲があれば自動取得して保護
+if (tracksToInsert.length === 0 && (tmdbId || movieTitleJa)) {
+  try {
+    const SUPABASE_URL = "https://uvjpiuinsgklddzhzpio.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX";
+    const filter = tmdbId ? `tmdb_id=eq.${tmdbId}` : `ost_for=ilike.*${encodeURIComponent(movieTitleJa)}*`;
+    const res = await httpFetch(`${SUPABASE_URL}/rest/v1/tracks?${filter}&limit=6`, 3000);
+    if (Array.isArray(res) && res.length > 0) {
+      res.forEach(t => {
+        tracksToInsert.push({ json: t });
+      });
+    }
+  } catch (e) {}
 }
 
 if (tracksToInsert.length === 0) {
