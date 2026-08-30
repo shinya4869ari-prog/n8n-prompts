@@ -332,6 +332,31 @@ for (const f of bukkaFields) {
   bukka[f] = rowData[f] ?? "";
 }
 
+// 通貨記号（symbol）の取得（既存の現地通貨列または通貨コードから安全に取得）
+const getCurrencySymbol = () => {
+  if (rowData["設定通貨記号"]) return rowData["設定通貨記号"];
+  if (rowData["通貨記号"]) return rowData["通貨記号"];
+  const sample = rowData["ビール_現地通貨"] || rowData["水_現地通貨"] || rowData["家賃1LDK(市中心)_現地通貨"] || "";
+  const match = String(sample).match(/^[A-Za-z$€£¥₩₹]+/);
+  if (match) return match[0];
+  
+  const code = rowData["通貨コード"] || "";
+  const codeMap = {
+    "KRW": "₩", "JPY": "¥", "USD": "$", "EUR": "€", "GBP": "£",
+    "COP": "Col$", "BRL": "R$", "MXN": "Mex$", "THB": "฿", "VND": "₫"
+  };
+  return codeMap[code] || "";
+};
+const symbol = getCurrencySymbol();
+
+const formatLocalCurrency = (val) => {
+  if (!val || val === "欠測") return "欠測";
+  const num = parseLocalValue(val);
+  if (isNaN(num)) return String(val).trim();
+  const formatted = String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return symbol + formatted;
+};
+
 // AIエージェントの出力（agentOutput）から物価データを反映
 // 1. 為替レートの更新
 const rawFx = agentOutput.物価?.為替レート || agentOutput.為替レート;
@@ -345,7 +370,7 @@ if (rawFx) {
 if (agentOutput.ビッグマック) {
   const bmVal = agentOutput.ビッグマック.現地通貨;
   if (bmVal && bmVal !== "欠測") {
-    bukka["ビッグマック_現地通貨"] = bmVal;
+    bukka["ビッグマック_現地通貨"] = formatLocalCurrency(bmVal);
     bukka["ビッグマック_出典"] = agentOutput.ビッグマック.出典 ?? bukka["ビッグマック_出典"];
   }
 }
@@ -354,7 +379,7 @@ if (agentOutput.ビッグマック) {
 if (agentOutput.Netflix) {
   const nfVal = agentOutput.Netflix.現地通貨;
   if (nfVal && nfVal !== "欠測") {
-    bukka["Netflix_現地通貨"] = nfVal;
+    bukka["Netflix_現地通貨"] = formatLocalCurrency(nfVal);
     bukka["Netflix_出典"] = agentOutput.Netflix.出典 ?? bukka["Netflix_出典"];
   }
 }
@@ -378,7 +403,7 @@ if (agentOutput.日常物価) {
   for (const [key, col] of Object.entries(pMap)) {
     const val = p[key];
     if (val !== undefined && val !== null && val !== "" && val !== "欠測") {
-      bukka[col] = String(val).trim();
+      bukka[col] = formatLocalCurrency(val);
     }
   }
   if (p.出典) {

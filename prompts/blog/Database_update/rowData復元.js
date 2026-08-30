@@ -102,15 +102,44 @@ if (agentOutput.女性労働参加率) checkChange("女性労働参加率", agen
 if (agentOutput.女性議員比率) checkChange("女性議員比率", agentOutput.女性議員比率.値, rowData["女性議員比率"], agentOutput.女性議員比率.年, rowData["女性議員比率_年"], agentOutput.女性議員比率.出典, rowData["女性議員比率_出典"]);
 if (agentOutput.児童労働率) checkChange("児童労働率", agentOutput.児童労働率.値, rowData["児童労働率"], agentOutput.児童労働率.年, rowData["児童労働率_年"], agentOutput.児童労働率.出典, rowData["児童労働率_出典"]);
 
+// 通貨記号（symbol）の取得
+const getCurrencySymbol = () => {
+  if (rowData["設定通貨記号"]) return rowData["設定通貨記号"];
+  if (rowData["通貨記号"]) return rowData["通貨記号"];
+  const sample = rowData["ビール_現地通貨"] || rowData["水_現地通貨"] || rowData["家賃1LDK(市中心)_現地通貨"] || "";
+  const match = String(sample).match(/^[A-Za-z$€£¥₩₹]+/);
+  if (match) return match[0];
+  const code = rowData["通貨コード"] || "";
+  const codeMap = { "KRW": "₩", "JPY": "¥", "USD": "$", "EUR": "€", "GBP": "£" };
+  return codeMap[code] || "";
+};
+const symbol = getCurrencySymbol();
+
+const parseLocalNum = (val) => {
+  if (!val || val === "欠測") return NaN;
+  let clean = String(val).replace(/^[A-Za-z$€£¥₩₹Nu.\s]+/, "").replace(/,/g, "").trim();
+  clean = clean.replace(/[A-Za-z]+$/, "").trim();
+  return parseFloat(clean);
+};
+
+const formatLocalVal = (val) => {
+  const num = parseLocalNum(val);
+  if (isNaN(num)) return String(val).trim();
+  return symbol + String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 // 為替レートの変更判定
-if (agentOutput.物価?.為替レート) {
-  const newFx = agentOutput.物価.為替レート;
-  const oldFx = rowData["為替レート"];
-  if (newFx && String(newFx) !== String(oldFx)) {
+const rawNewFx = agentOutput.物価?.為替レート || agentOutput.為替レート;
+if (rawNewFx) {
+  const newFxMatch = String(rawNewFx).match(/[\d.]+/g);
+  const newFxRate = newFxMatch ? newFxMatch[newFxMatch.length - 1] : rawNewFx;
+  const oldFxRate = String(rowData["為替レート"] || "").trim();
+  
+  if (newFxRate && parseFloat(newFxRate) !== parseFloat(oldFxRate)) {
     changes.push({
       項目: "為替レート",
-      変更前: oldFx ? `${oldFx}（${rowData["為替取得日"] || ""}）` : "未登録",
-      変更後: `${newFx}（${agentOutput.物価.為替取得日 || ""}）`,
+      変更前: oldFxRate ? `${oldFxRate}（${rowData["為替取得日"] || ""}）` : "未登録",
+      変更後: `${newFxRate}（${agentOutput.物価?.為替取得日 || ""}）`,
       結果: "✅更新",
       出典: "実勢為替レート"
     });
@@ -134,14 +163,19 @@ if (agentOutput.日常物価) {
   for (const item of pItems) {
     const nVal = p[item.key] ?? p[item.col];
     const oVal = rowData[item.col];
-    if (nVal && nVal !== "欠測" && String(nVal) !== String(oVal)) {
-      changes.push({
-        項目: item.key,
-        変更前: oVal ? `${oVal}` : "未登録",
-        変更後: `${nVal}`,
-        結果: "✅更新",
-        出典: pSrc
-      });
+    if (nVal && nVal !== "欠測") {
+      const nNum = parseLocalNum(nVal);
+      const oNum = parseLocalNum(oVal);
+      // 数値そのものが変化した場合のみログに記録
+      if (!isNaN(nNum) && (isNaN(oNum) || Math.round(nNum) !== Math.round(oNum))) {
+        changes.push({
+          項目: item.key,
+          変更前: oVal ? `${oVal}` : "未登録",
+          変更後: formatLocalVal(nVal),
+          結果: "✅更新",
+          出典: pSrc
+        });
+      }
     }
   }
 }
@@ -149,11 +183,13 @@ if (agentOutput.日常物価) {
 // ビッグマックの変更判定
 if (agentOutput.ビッグマック?.現地通貨) {
   const bm = agentOutput.ビッグマック;
-  if (bm.現地通貨 && bm.現地通貨 !== "欠測" && String(bm.現地通貨) !== String(rowData["ビッグマック_現地通貨"])) {
+  const nNum = parseLocalNum(bm.現地通貨);
+  const oNum = parseLocalNum(rowData["ビッグマック_現地通貨"]);
+  if (!isNaN(nNum) && (isNaN(oNum) || Math.round(nNum) !== Math.round(oNum))) {
     changes.push({
       項目: "ビッグマック",
       変更前: rowData["ビッグマック_現地通貨"] ? `${rowData["ビッグマック_現地通貨"]}` : "未登録",
-      変更後: `${bm.現地通貨}`,
+      変更後: formatLocalVal(bm.現地通貨),
       結果: "✅更新",
       出典: bm.出典 || "The Economist"
     });
@@ -163,11 +199,13 @@ if (agentOutput.ビッグマック?.現地通貨) {
 // Netflixの変更判定
 if (agentOutput.Netflix?.現地通貨) {
   const nf = agentOutput.Netflix;
-  if (nf.現地通貨 && nf.現地通貨 !== "欠測" && String(nf.現地通貨) !== String(rowData["Netflix_現地通貨"])) {
+  const nNum = parseLocalNum(nf.現地通貨);
+  const oNum = parseLocalNum(rowData["Netflix_現地通貨"]);
+  if (!isNaN(nNum) && (isNaN(oNum) || Math.round(nNum) !== Math.round(oNum))) {
     changes.push({
       項目: "Netflix",
       変更前: rowData["Netflix_現地通貨"] ? `${rowData["Netflix_現地通貨"]}` : "未登録",
-      変更後: `${nf.現地通貨}`,
+      変更後: formatLocalVal(nf.現地通貨),
       結果: "✅更新",
       出典: nf.出典 || "Netflix公式"
     });
