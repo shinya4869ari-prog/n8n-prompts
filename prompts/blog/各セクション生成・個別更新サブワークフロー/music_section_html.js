@@ -123,10 +123,18 @@ musicList.forEach((d, idx) => {
 html += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(255,64,129,0.15);color:#ff4081;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
 html += `<!-- SECTION:${sectionId}:END -->\n`;
 
+let postId = null;
+try {
+  const trig = $('On form submission').first()?.json || $('トリガー').first()?.json || $('Execute Workflow Trigger').first()?.json || {};
+  postId = trig.post_id || null;
+} catch(e) {}
+
 return [{
   json: {
     html: html,
     section_html: html,
-    section_type: sectionId
+    section_type: sectionId,
+    country: countryName,
+    post_id: postId
   }
 }];
