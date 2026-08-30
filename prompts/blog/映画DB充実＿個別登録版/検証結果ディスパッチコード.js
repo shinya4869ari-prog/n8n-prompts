@@ -69,10 +69,15 @@ if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
   movie.director_en = origMovie.director_en;
 }
 
-// ★ プラットフォーム保護: テレビドラマ（tvN, JTBC等やTV放送）の場合にAIが「劇場公開」と誤爆した場合は元データを優先
-if (origMovie.platform && origMovie.platform !== '劇場公開' && movie.platform === '劇場公開') {
-  movie.platform = origMovie.platform;
+// ★ プラットフォーム安全サニタイズ（Supabase ENUM型: '劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他' のみ許可）
+const ALLOWED_PLATFORMS = ['劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他'];
+let safePlatform = movie.platform || origMovie.platform || '';
+if (safePlatform === 'Amazon Prime Video') safePlatform = 'Amazon Prime';
+if (!ALLOWED_PLATFORMS.includes(safePlatform)) {
+  const isTv = Boolean(movie.genres?.includes('ドラマ') || origMovie.genres?.includes('ドラマ') || movie.first_air_date || origMovie.first_air_date);
+  safePlatform = isTv ? 'その他' : '劇場公開';
 }
+movie.platform = safePlatform;
 
 // 4. 人物データの抽出（Supabase Personsテーブルのカラム名 wikidata_id に100%統一）
 const aiPersons = auditResult.persons || [];
