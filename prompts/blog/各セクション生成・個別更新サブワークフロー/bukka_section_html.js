@@ -115,29 +115,38 @@ const itemsList = [
   { label: 'Netflix（スタンダード）', keys: ['Netflix', 'Netflix_現地通貨', 'Netflix（スタンダード）'] }
 ];
 
-// ヘルパー: 円換算の計算
-function parseAndConvert(valStr, itemRate) {
+// ヘルパー: 円換算の計算（オリジナルデザイン準拠：太字の現地通貨 + 横並びのグレー円換算）
+function parseAndConvert(valStr, yenVal, itemRate) {
   if (!valStr || valStr === '-' || valStr === 'データなし' || valStr === '欠測') return 'データなし';
   const str = String(valStr).trim();
   
-  // すでに「(〇〇円)」と入っている場合
-  const yenMatch = str.match(/[（(]([\d,\.]+)\s*円[)）]/);
-  if (yenMatch) {
-    const rawLocal = str.replace(/[（(].*?[)）]/, '').trim();
-    return `<span style="font-weight:900; font-size:15px;">${rawLocal}</span><br><span style="font-size:11.5px; color:#e67e22; font-weight:bold;">（約${yenMatch[1]}円）</span>`;
-  }
-
-  // 数値部分を抽出して換算
-  const numMatch = str.replace(/,/g, '').match(/[\d\.]+/);
-  if (numMatch && itemRate > 0) {
-    const localNum = parseFloat(numMatch[0]);
-    if (!isNaN(localNum)) {
-      const jpy = Math.round(localNum * itemRate);
-      return `<span style="font-weight:900; font-size:15px;">${str}</span><br><span style="font-size:11.5px; color:#e67e22; font-weight:bold;">（約${jpy.toLocaleString()}円）</span>`;
+  let yen = null;
+  if (yenVal !== undefined && yenVal !== null && yenVal !== '' && yenVal !== 'データなし' && yenVal !== '欠測') {
+    const yNum = parseFloat(String(yenVal).replace(/,/g, ''));
+    if (!isNaN(yNum)) yen = Math.round(yNum);
+  } else if (itemRate > 0) {
+    const numMatch = str.replace(/,/g, '').match(/[\d\.]+/);
+    if (numMatch) {
+      const localNum = parseFloat(numMatch[0]);
+      if (!isNaN(localNum)) yen = Math.round(localNum * itemRate);
     }
   }
 
+  // 1枚目と完全に同じインライン表記：$7,250 （377円）
+  if (yen !== null) {
+    return `<span style="font-weight:900; font-size:15px;">${str}</span> <span style="font-size:12px; color:#666;">（${yen.toLocaleString()}円）</span>`;
+  }
   return `<span style="font-weight:900; font-size:15px;">${str}</span>`;
+}
+
+function formatJapanVal(val) {
+  if (!val || val === 'データなし' || val === '欠測') return 'データなし';
+  const numMatch = String(val).match(/[\d,\.]+/);
+  if (numMatch) {
+    const n = parseFloat(numMatch[0].replace(/,/g, ''));
+    if (!isNaN(n)) return `<span style="font-weight:900; font-size:15px;">${n.toLocaleString()}</span>円`;
+  }
+  return String(val);
 }
 
 const tableRows = itemsList.map(item => {
@@ -148,13 +157,15 @@ const tableRows = itemsList.map(item => {
       break;
     }
   }
+  
+  // 円換算列があれば優先して取得
+  const yenCol = item.keys[0] ? `${item.keys[0]}_円換算` : '';
+  const yenVal = rawBukka[yenCol];
+
   let japanRaw = '';
   for (const k of item.keys) {
     if (rawJapanBukka[k] !== undefined && rawJapanBukka[k] !== null && String(rawJapanBukka[k]).trim() !== '') {
       japanRaw = String(rawJapanBukka[k]).trim();
-      if (!japanRaw.endsWith('円') && !isNaN(parseFloat(japanRaw.replace(/,/g, '')))) {
-        japanRaw = `${Number(japanRaw.replace(/,/g, '')).toLocaleString()}円`;
-      }
       break;
     }
   }
@@ -164,78 +175,60 @@ const tableRows = itemsList.map(item => {
 
   return {
     label: `${emoji} ${item.label}`,
-    country: parseAndConvert(val, rate),
-    japan: `<span style="font-weight:600; font-size:13.5px; color:#333;">${japanVal}</span>`
+    country: parseAndConvert(val, yenVal, rate),
+    japan: formatJapanVal(japanVal)
   };
 });
 
-// 4. HTMLテーブルの生成
-const thStyle = 'background:#f4fbfc; color:#00838f; padding:12px 14px; font-weight:700; font-size:13px; border:1px solid #e0eeee; text-align:center;';
-const tdLabelStyle = 'padding:12px 14px; font-weight:600; font-size:13px; border:1px solid #e0eeee; background:#fafdfd; color:#333;';
-const tdValStyle = 'padding:12px 14px; font-size:13px; border:1px solid #e0eeee; text-align:center; background:#fff;';
+// 4. オリジナルHTMLテーブルの生成（main-blog-lowcost / 最終Code.js と100%同一スタイル）
+const h2Style = `margin-top:60px;padding:14px 20px;background:var(--color-background-secondary,#f5f5f5);border:0.5px solid #e0e0e0;border-left:3px solid #00bcd4;border-radius:8px;font-size:16px;font-weight:500;color:#111;`;
+const citationStyle = `font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;`;
+
+const thStyle = (w) => `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;font-size:14px;${w ? 'width:' + w + ';' : ''}`;
+const tdStyle = `border:1px solid #eee;padding:12px 14px;font-size:14px;`;
+const tdBoldStyle = `border:1px solid #eee;padding:12px 14px;font-weight:bold;font-size:14px;`;
+const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
+
+const bukkaCountryLabel = capital ? `${countryName}<br>（${capital}）` : countryName;
+const bukkaJapanLabel = '日本<br>（東京）';
 
 let html = `<!-- SECTION:bukka:START -->
-<h2 id="section-5" style="font-size:20px; font-weight:700; color:#111; margin:40px 0 20px; padding-bottom:8px; border-bottom:2px solid #00bcd4; display:flex; align-items:center; gap:8px;">
-  <span style="background:#00bcd4; color:#fff; border-radius:6px; padding:2px 10px; font-size:13px; font-weight:500;">⑤</span> 生活・価値の衡量（物価比較）
-</h2>
+<h2 id="section-5" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑤</span> 生活・価値の衡量（物価比較）</h2>
+<table style="${tableStyle}">
+  <thead>
+    <tr>
+      <th style="${thStyle('35%')}">項目</th>
+      <th style="${thStyle('32%')}">${bukkaCountryLabel}</th>
+      <th style="${thStyle('33%')}">${bukkaJapanLabel}</th>
+    </tr>
+  </thead>
+  <tbody>
 `;
 
-// 為替レートバッジ
-if (rate > 0) {
-  const cDesc = currencyName ? `${currencyCode}（${currencyName}）` : currencyCode;
-  const dDesc = rateDate ? `（${rateDate}現在）` : '';
-  html += `
-<div style="background:#fdfaf6; border:1px solid #fae6cf; border-left:4px solid #e67e22; padding:10px 16px; border-radius:8px; margin:15px 0 20px; font-size:13px; color:#666; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-  <div>💱 <strong>為替レート基準：</strong> 1 ${cDesc} ＝ <span style="font-weight:900; color:#e67e22; font-size:15px;">${rate.toLocaleString()}</span> JPY ${dDesc}</div>
-  <div style="font-size:11.5px; color:#999;">出典：Numbeo / The Economist</div>
-</div>
-`;
-}
-
-html += `
-<div style="overflow-x:auto; margin:20px 0; box-shadow:0 2px 8px rgba(0,0,0,0.03); border-radius:8px;">
-  <table style="width:100%; border-collapse:collapse; text-align:left; border-radius:8px; overflow:hidden;">
-    <thead>
-      <tr>
-        <th style="${thStyle} width:36%;">品目</th>
-        <th style="${thStyle} width:32%;">${countryName}（現地価格・円換算）</th>
-        <th style="${thStyle} width:32%;">日本（参考価格）</th>
-      </tr>
-    </thead>
-    <tbody>
-`;
-
-tableRows.forEach(r => {
-  html += `      <tr>
-        <td style="${tdLabelStyle}">${r.label}</td>
-        <td style="${tdValStyle}">${r.country}</td>
-        <td style="${tdValStyle}">${r.japan}</td>
-      </tr>\n`;
+tableRows.forEach((row, ri) => {
+  const bg = ri % 2 === 1 ? 'background:#fafafa;' : '';
+  html += `    <tr style="${bg}">
+      <td style="${tdBoldStyle}">${row.label}</td>
+      <td style="${tdStyle}">${row.country}</td>
+      <td style="${tdStyle}">${row.japan}</td>
+    </tr>\n`;
 });
 
-html += `    </tbody>
-  </table>
-</div>
+html += `  </tbody>
+</table>
 `;
 
-// 5. エラーネコの一言
-const customNeko = input.neko_comment || input.neko || triggerData.neko_comment || '';
-const defaultNeko = `${countryName}の物価と為替データを最新版にリフレッシュしたニャ！食料品や家賃、平均月収を日本円換算で比べると、現地でのリアルな生活水準や購買力平価の差がはっきり見えてくるニャ！`;
-const nekoContent = customNeko || defaultNeko;
-
-html += `
-<div style="margin:25px 0 15px; display:flex; align-items:flex-start; gap:12px;">
-  <div style="font-size:24px; line-height:1;">🐱</div>
-  <div style="position:relative; background:#f0f7f7; border:1px solid #e0eeee; border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.6; color:#444; flex:1;">
-    <div style="position:absolute; top:12px; left:-8px; width:0; height:0; border-top:8px solid transparent; border-bottom:8px solid transparent; border-right:8px solid #f0f7f7;"></div>
-    <strong style="color:#00838f;">エラーネコの一言：</strong><br>${nekoContent}
-  </div>
-</div>
-
-<div style="text-align:right; margin:10px 0 30px;">
-  <a href="#top" style="display:inline-block; padding:6px 16px; background:rgba(0,188,212,0.15); color:#00bcd4; text-decoration:none; border-radius:20px; font-size:11px;">▲ 先頭に戻る</a>
-</div>
-<!-- SECTION:bukka:END -->`;
+// 注釈（1枚目のコロンビアと同一仕様）
+if (rate > 0) {
+  const cDesc = currencyName ? `${currencyCode}（${currencyName}）` : currencyCode;
+  const dDesc = rateDate ? `（${rateDate}）` : '';
+  html += `<p class="citation" style="${citationStyle}">※為替レートは1 ${cDesc} = ${rate} JPY${dDesc}時点のレートを使用</p>\n`;
+}
+html += `<p class="citation" style="${citationStyle}">※Numbeoのデータは流動的であり、リサーチ時のタイミングにより変動する場合があります。</p>\n`;
+html += `<div style="height: 10px;"></div>\n`;
+html += `<p class="citation" style="${citationStyle}">出典：Numbeo / Netflix公式サイト</p>\n`;
+html += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
+html += `<!-- SECTION:bukka:END -->`;
 
 return [{
   json: {
