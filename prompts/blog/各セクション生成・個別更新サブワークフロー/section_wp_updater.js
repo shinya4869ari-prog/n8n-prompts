@@ -118,26 +118,40 @@ function preserveOriginalNeko(oldSectionText, newHtml) {
   return newHtml;
 }
 
-// ★★★【治安・物価の超ピンポイント・テーブル置換】★★★
-// 解説文・刑務所グラフ・死因トップ10・エラーネコの一言を一切消さずに、
-// スプレッドシートの「最新数値テーブル」だけを安全にピンポイント差し替える！
+// ★★★【治安・物価の超安全・セクション限定テーブル置換】★★★
+// セクション外（② 地理経済や④ 貿易）には一切触れず、
+// 対象セクション内部の「テーブル部分」だけを安全にピンポイント差し替える！
 if (canonicalSection === 'chian') {
-  const chianTableRegex = /(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?治安・社会指標[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
-  const newTableMatch = newSectionHtml.match(chianTableRegex);
-  const oldTableMatch = updatedContent.match(chianTableRegex);
+  const chianSectionRegex = /(<!--\s*SECTION:chian:START\s*-->[\s\S]*?<!--\s*SECTION:chian:END\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?③(?:(?!<\/h2>)[\s\S])*?治安[\s\S]*?)(?=(?:<h2|<div id="deep-dive"|<!-- SECTION:|$))/i;
+  const secMatch = updatedContent.match(chianSectionRegex);
 
-  if (oldTableMatch && newTableMatch) {
-    updatedContent = updatedContent.replace(chianTableRegex, newTableMatch[0]);
-    matchFound = true;
+  if (secMatch) {
+    const secText = secMatch[0];
+    const chianTableRegex = /(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>(?:(?!<table|<\/table>)[\s\S])*?治安・社会指標(?:(?!<\/table>)[\s\S])*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+    const oldTable = secText.match(chianTableRegex);
+    const newTable = newSectionHtml.match(chianTableRegex);
+
+    if (oldTable && newTable) {
+      const newSecText = secText.replace(chianTableRegex, newTable[0]);
+      updatedContent = updatedContent.replace(secText, newSecText);
+      matchFound = true;
+    }
   }
 } else if (canonicalSection === 'bukka') {
-  const bukkaBlockRegex = /(?:<div[^>]*>[\s\S]*?為替レート基準[\s\S]*?<\/div>[\s\r\n]*)?(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>[\s\S]*?<th[^>]*>[\s\S]*?品目[\s\S]*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
-  const newBlockMatch = newSectionHtml.match(bukkaBlockRegex);
-  const oldBlockMatch = updatedContent.match(bukkaBlockRegex);
+  const bukkaSectionRegex = /(<!--\s*SECTION:bukka:START\s*-->[\s\S]*?<!--\s*SECTION:bukka:END\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?⑤(?:(?!<\/h2>)[\s\S])*?物価[\s\S]*?)(?=(?:<h2|<div id="deep-dive"|<!-- SECTION:|$))/i;
+  const secMatch = updatedContent.match(bukkaSectionRegex);
 
-  if (oldBlockMatch && newBlockMatch) {
-    updatedContent = updatedContent.replace(bukkaBlockRegex, newBlockMatch[0]);
-    matchFound = true;
+  if (secMatch) {
+    const secText = secMatch[0];
+    const bukkaBlockRegex = /(?:<div[^>]*>(?:(?!<div|<\/div>)[\s\S])*?為替レート基準[\s\S]*?<\/div>[\s\r\n]*)?(?:<div[^>]*>[\s\r\n]*)?<table[^>]*>(?:(?!<table|<\/table>)[\s\S])*?品目(?:(?!<\/table>)[\s\S])*?<\/table>(?:[\s\r\n]*<\/div>)?/i;
+    const oldTable = secText.match(bukkaBlockRegex);
+    const newTable = newSectionHtml.match(bukkaBlockRegex);
+
+    if (oldTable && newTable) {
+      const newSecText = secText.replace(bukkaBlockRegex, newTable[0]);
+      updatedContent = updatedContent.replace(secText, newSecText);
+      matchFound = true;
+    }
   }
 }
 
