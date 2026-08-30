@@ -140,6 +140,9 @@ if (startCount === 1 && endCount === 1) {
   }
 }
 
+// 【目次TOC自動修復】過去記事で音楽セクションが #section-11 になっていた場合の自動修復
+updatedContent = updatedContent.replace(/(<a[^>]+href=["'])#section-11(["'][^>]*>[\s\S]*?おすすめ音楽)/gi, '$1#section-10$2');
+
 // 【全セクション完全保護ブロック機能】 元の本文に存在していた全11セクションが置換後に1つでも誤消去されていないか検証
 const allSectionsCheck = [
   { key: 'seido', name: '① 制度の9つの皿', regex: /<!--\s*SECTION:seido:START\s*-->|<h2[^>]*>(?:(?!<\/h2>)[\s\S])*?①(?:(?!<\/h2>)[\s\S])*?<\/h2>/i },
