@@ -26,7 +26,7 @@ for (const item of $input.all()) {
 
 if (!postId) {
   try {
-    postId = $('Execute Workflow Trigger')?.first()?.json?.post_id || $('Switch1')?.first()?.json?.post_id || $('Switch')?.first()?.json?.post_id || $('On form submission')?.first()?.json?.post_id || $('トリガー')?.first()?.json?.post_id || $('WP Get a Post')?.first()?.json?.id || $('Get a post')?.first()?.json?.id || $('WP Get Post')?.first()?.json?.id || null;
+    postId = $('WP Search Post')?.first()?.json?.id || $('WP Search a Post')?.first()?.json?.id || $('Search Post')?.first()?.json?.id || $('WP Get a Post')?.first()?.json?.id || $('Get a post')?.first()?.json?.id || $('WP Get Post')?.first()?.json?.id || $('Execute Workflow Trigger')?.first()?.json?.post_id || $('Switch1')?.first()?.json?.post_id || $('Switch')?.first()?.json?.post_id || $('On form submission')?.first()?.json?.post_id || $('トリガー')?.first()?.json?.post_id || null;
   } catch (e) {}
 }
 
@@ -52,7 +52,7 @@ if (!newSectionHtml) {
 }
 
 if (!currentWpHtml) {
-  const possibleWpNodes = ['WP Get a Post', 'Get a post', 'WP Get Post', 'WordPress', 'WordPress1', 'Get Post'];
+  const possibleWpNodes = ['WP Search Post', 'WP Search a Post', 'Search Post', 'WP Get a Post', 'Get a post', 'WP Get Post', 'WordPress', 'WordPress1', 'Get Post'];
   for (const name of possibleWpNodes) {
     try {
       const n = $(name).first()?.json;

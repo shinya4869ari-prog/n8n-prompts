@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "search": "={{ $json.country }}"
+        }
+      },
+      "type": "n8n-nodes-base.wordpress",
+      "typeVersion": 1,
+      "position": [
+        280,
+        140
+      ],
+      "id": "wp-search-post-node",
+      "name": "WP Get a Post"
+    }
+  ]
+}

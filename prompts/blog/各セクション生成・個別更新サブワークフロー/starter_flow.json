@@ -153,8 +153,12 @@
     },
     {
       "parameters": {
-        "operation": "get",
-        "postId": "={{ $json.post_id || $('On form submission').first().json.post_id }}"
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "search": "={{ $json.country }}"
+        }
       },
       "type": "n8n-nodes-base.wordpress",
       "typeVersion": 1,
