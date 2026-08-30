@@ -71,15 +71,30 @@ const cleanNameNoise = (str) => {
     .trim();
 };
 
-if (movie.cast) movie.cast = cleanNameNoise(movie.cast);
-if (movie.director) movie.director = cleanNameNoise(movie.director);
+// ★ 元データの完全保護（AIの勝手な改悪・ノイズ混入を100%防止）
+// 入力（origMovie）にすでに正しい名前が存在する場合は、AIの出力を破棄して元の正しい値を最優先保持
+if (origMovie.director && origMovie.director.trim()) {
+  movie.director = cleanNameNoise(origMovie.director);
+} else if (movie.director) {
+  movie.director = cleanNameNoise(movie.director);
+}
+
+if (origMovie.cast && origMovie.cast.trim()) {
+  movie.cast = cleanNameNoise(origMovie.cast);
+} else if (movie.cast) {
+  movie.cast = cleanNameNoise(movie.cast);
+}
+
+if (origMovie.title && origMovie.title.trim() && !/^[A-Za-z0-9\s:,'"-]+$/.test(origMovie.title)) {
+  movie.title = origMovie.title;
+}
 
 // ★ ハングル保護: 元データにハングルがある場合、AIがローマ字に変換していてもハングル表記を100%最優先保護
 const hasHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
-if (hasHangul(origMovie.cast_en) && !hasHangul(movie.cast_en)) {
+if (hasHangul(origMovie.cast_en)) {
   movie.cast_en = origMovie.cast_en;
 }
-if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
+if (hasHangul(origMovie.director_en)) {
   movie.director_en = origMovie.director_en;
 }
 
@@ -121,7 +136,7 @@ const mergedPersonsMap = new Map();
 
   const pObj = {
     ...origP,
-    name: cleanNameNoise(matchedAi?.name || rawName),
+    name: cleanNameNoise(origP.name || matchedAi?.name || rawName),
     name_en: pNameEn,
     occupation: origP.occupation || matchedAi?.occupation || '俳優',
     country: matchedAi?.country || origP.country || movie.country || '',
