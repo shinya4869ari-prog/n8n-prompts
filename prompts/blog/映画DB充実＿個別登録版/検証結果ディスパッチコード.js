@@ -73,8 +73,18 @@ if (hasHangul(origMovie.director_en) && !hasHangul(movie.director_en)) {
 const ALLOWED_PLATFORMS = ['劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他'];
 let safePlatform = movie.platform || origMovie.platform || '';
 if (safePlatform === 'Amazon Prime Video') safePlatform = 'Amazon Prime';
-if (!ALLOWED_PLATFORMS.includes(safePlatform)) {
-  const isTv = Boolean(movie.genres?.includes('ドラマ') || origMovie.genres?.includes('ドラマ') || movie.first_air_date || origMovie.first_air_date);
+
+const isTv = Boolean(
+  movie.genres?.includes('ドラマ') || 
+  origMovie.genres?.includes('ドラマ') || 
+  movie.first_air_date || 
+  origMovie.first_air_date
+);
+
+// TVドラマなのに「劇場公開」になっている場合は「その他」に強制是正
+if (isTv && safePlatform === '劇場公開') {
+  safePlatform = 'その他';
+} else if (!ALLOWED_PLATFORMS.includes(safePlatform)) {
   safePlatform = isTv ? 'その他' : '劇場公開';
 }
 movie.platform = safePlatform;

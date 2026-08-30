@@ -121,13 +121,28 @@ return items.map((item, index) => {
   // プラットフォームの自動判別（Supabase ENUM型: '劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他' 厳守）
   const ALLOWED_PLATFORMS = ['劇場公開', 'Netflix', 'Amazon Prime', 'Disney+', 'Apple TV+', 'Watcha', 'TVING', 'その他'];
   const resolvePlatform = () => {
-    if (ALLOWED_PLATFORMS.includes(source.platform)) return source.platform;
-    if (ALLOWED_PLATFORMS.includes(targetAi.platform)) return targetAi.platform;
-    
     const corpus = [
       title, origin_title, overview, overview_en, source.platform || '',
       JSON.stringify(targetAi), JSON.stringify(source)
     ].join(' ').toLowerCase();
+
+    const isTv = Boolean(
+      source.first_air_date || 
+      source.genres?.includes('ドラマ') || 
+      corpus.includes('ドラマ') || 
+      corpus.includes('tvn') || 
+      corpus.includes('jtbc') || 
+      corpus.includes('sbs') || 
+      corpus.includes('kbs')
+    );
+
+    // 既存データ・AIデータが「劇場公開」でも、TVドラマなら「劇場公開」を採用せず是正
+    if (source.platform && (!isTv || source.platform !== '劇場公開') && ALLOWED_PLATFORMS.includes(source.platform)) {
+      return source.platform;
+    }
+    if (targetAi.platform && (!isTv || targetAi.platform !== '劇場公開') && ALLOWED_PLATFORMS.includes(targetAi.platform)) {
+      return targetAi.platform;
+    }
 
     if (corpus.includes('netflix') || corpus.includes('ネットフリックス')) return 'Netflix';
     if (corpus.includes('disney') || corpus.includes('ディズニー')) return 'Disney+';
@@ -136,7 +151,6 @@ return items.map((item, index) => {
     if (corpus.includes('watcha') || corpus.includes('ワッチャ')) return 'Watcha';
     if (corpus.includes('tving') || corpus.includes('ティービング')) return 'TVING';
 
-    const isTv = Boolean(source.first_air_date || source.genres?.includes('ドラマ') || corpus.includes('ドラマ') || corpus.includes('tvn') || corpus.includes('jtbc') || corpus.includes('sbs') || corpus.includes('kbs'));
     return isTv ? 'その他' : '劇場公開';
   };
 

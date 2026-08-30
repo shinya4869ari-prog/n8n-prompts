@@ -134,7 +134,10 @@ const isTvSeries = Boolean(
 );
 
 function getPlatform() {
-  if (existingDb.platform) return existingDb.platform;
+  // ★ TVドラマなのに既存DBが誤って「劇場公開」になっている場合は再利用せず是正
+  if (existingDb.platform && (!isTvSeries || existingDb.platform !== '劇場公開')) {
+    return existingDb.platform;
+  }
 
   const networks = Array.isArray(tmdbObj.networks) ? tmdbObj.networks : [];
   const prodCompanies = Array.isArray(tmdbObj.production_companies) ? tmdbObj.production_companies : [];
