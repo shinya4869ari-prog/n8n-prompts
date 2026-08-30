@@ -41,7 +41,7 @@ try {
   const aggr = $('総合検証集約コード').first()?.json;
   if (aggr) {
     origPersons = aggr.persons_payload || [];
-    origTracks = aggr.tracks_payload || [];
+    origTracks = aggr.tracks_payload || aggr.tracks || [];
     origMovie = aggr.movie_payload || {};
   }
 } catch (e) {}
@@ -49,6 +49,12 @@ try {
 if (origPersons.length === 0) {
   try {
     origPersons = $('Supabase整形コード').all().map(item => item.json).filter(Boolean);
+  } catch (e) {}
+}
+
+if (origTracks.length === 0) {
+  try {
+    origTracks = $('OST劇中歌取得整形Code').all().map(item => item.json).filter(t => t && t.track_id && t.has_tracks !== false);
   } catch (e) {}
 }
 
@@ -191,24 +197,6 @@ const validPersons = Array.from(mergedPersonsMap.values()).filter(p => {
 });
 
 // 4. サントラデータの抽出（元データの曲を最優先保護・復元）
-// A. 上流ノードから確実に元データの曲一覧を取得
-let origTracks = [];
-try {
-  const aggTracks = $('総合検証集約コード').first()?.json?.tracks_payload;
-  if (Array.isArray(aggTracks) && aggTracks.length > 0) {
-    origTracks = aggTracks;
-  }
-} catch (e) {}
-
-if (origTracks.length === 0) {
-  try {
-    const ostAll = $('OST劇中歌取得整形Code').all();
-    if (Array.isArray(ostAll) && ostAll.length > 0) {
-      origTracks = ostAll.map(i => i.json).filter(t => t && t.track_id && t.has_tracks !== false);
-    }
-  } catch (e) {}
-}
-
 // B. AIが返したtracksを精査
 let approvedTracks = [];
 if (Array.isArray(auditResult.tracks) && auditResult.tracks.length > 0) {
