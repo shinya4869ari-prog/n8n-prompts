@@ -29,6 +29,7 @@ function getSafeNodeJson(names) {
 
 const triggerData = getSafeNodeJson([
   'Switch1', 'Switch', 'Switch (セクション分岐)',
+  'Execute Workflow Trigger', 'Workflow Trigger', 'Subworkflow Trigger',
   'On form submission', 'Form Trigger', 'フォーム', 'トリガー', 'Webhook'
 ]);
 

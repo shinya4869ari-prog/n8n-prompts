@@ -1,0 +1,16 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        420
+      ],
+      "id": "subworkflow-execute-trigger",
+      "name": "Execute Workflow Trigger"
+    }
+  ],
+  "connections": {}
+}

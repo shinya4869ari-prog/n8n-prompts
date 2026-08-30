@@ -26,7 +26,7 @@ for (const item of $input.all()) {
 
 if (!postId) {
   try {
-    postId = $('On form submission').first()?.json?.post_id || $('トリガー').first()?.json?.post_id || $('WP Get a Post').first()?.json?.id || $('Get a post').first()?.json?.id || $('WP Get Post').first()?.json?.id || null;
+    postId = $('Execute Workflow Trigger')?.first()?.json?.post_id || $('Switch1')?.first()?.json?.post_id || $('Switch')?.first()?.json?.post_id || $('On form submission')?.first()?.json?.post_id || $('トリガー')?.first()?.json?.post_id || $('WP Get a Post')?.first()?.json?.id || $('Get a post')?.first()?.json?.id || $('WP Get Post')?.first()?.json?.id || null;
   } catch (e) {}
 }
 

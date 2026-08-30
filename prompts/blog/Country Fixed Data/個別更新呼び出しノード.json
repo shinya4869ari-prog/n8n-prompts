@@ -1,0 +1,82 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        920,
+        180
+      ],
+      "id": "execute-chian-update-subflow",
+      "name": "サブワークフロー呼び出し（治安）"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        920,
+        340
+      ],
+      "id": "execute-bukka-update-subflow",
+      "name": "サブワークフロー呼び出し（物価）"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Country Fixed Data の実行国名を取得し、サブワークフロー呼び出し用パラメータを整形\nconst master = $('country-master-lookup')?.first()?.json || {};\nconst country = master.country || master['国名（日本語）'] || $json['国名（日本語）'] || 'コロンビア';\n\nreturn [\n  {\n    json: {\n      country: country,\n      section_type: 'chian'\n    }\n  },\n  {\n    json: {\n      country: country,\n      section_type: 'bukka'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        260
+      ],
+      "id": "prep-subflow-params",
+      "name": "個別更新パラメータ準備Code"
+    }
+  ],
+  "connections": {
+    "個別更新パラメータ準備Code": {
+      "main": [
+        [
+          {
+            "node": "サブワークフロー呼び出し（治安）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
