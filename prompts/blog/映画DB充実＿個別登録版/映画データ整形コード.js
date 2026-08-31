@@ -125,17 +125,18 @@ const genres = existingDb.genres || (genreObjs.length > 0 ? genreObjs.map(g => g
 
 // 🎯【配信プラットフォーム・放送局】
 const isTvSeries = Boolean(
+  tmdbObj.media_type === 'tv' ||
+  (Array.isArray(t1.tv_results) && t1.tv_results.length > 0) ||
+  (Array.isArray(tmdbObj.tv_results) && tmdbObj.tv_results.length > 0) ||
   tmdbObj.first_air_date || 
   tmdbObj.number_of_seasons || 
   tmdbObj.number_of_episodes || 
-  (Array.isArray(tmdbObj.networks) && tmdbObj.networks.length > 0) ||
-  t1.tv_results ||
-  tmdbObj.tv_results
-);
+  (Array.isArray(tmdbObj.networks) && tmdbObj.networks.length > 0)
+) && !(tmdbObj.media_type === 'movie' || tmdbObj.release_date || (Array.isArray(t1.movie_results) && t1.movie_results.length > 0));
 
 function getPlatform() {
-  // TVドラマなのに既存DBが誤って「劇場公開」になっている場合は再利用せず是正
-  if (existingDb.platform && (!isTvSeries || existingDb.platform !== '劇場公開')) {
+  // 既存DBにプラットフォームが存在する場合はそれを尊重
+  if (existingDb.platform) {
     return existingDb.platform;
   }
 
@@ -171,8 +172,8 @@ function getPlatform() {
   if (allNames.includes('tving') || allNames.includes('ティービング')) return 'TVING';
   if (allNames.includes('u-next') || allNames.includes('ユーネクスト')) return 'U-NEXT';
 
-  // 3. TVドラマ/映画の自動判定
-  return isTvSeries ? 'テレビドラマ' : '劇場公開';
+  // 3. プラットフォーム名が見つからない場合は勝手に補完せずnullとする
+  return null;
 }
 
 // 🎯【IMDb URL】

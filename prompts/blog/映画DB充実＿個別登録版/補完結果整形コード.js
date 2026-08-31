@@ -175,7 +175,7 @@ return items.map((item, index) => {
     if (corpus.includes('tving') || corpus.includes('ティービング')) return 'TVING';
     if (corpus.includes('u-next') || corpus.includes('ユーネクスト')) return 'U-NEXT';
 
-    return isTv ? 'テレビドラマ' : '劇場公開';
+    return null;
   };
 
   const rawGenre = targetAi.genres || source.genres || null;

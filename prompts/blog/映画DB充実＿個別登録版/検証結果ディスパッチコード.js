@@ -104,20 +104,11 @@ if (hasHangul(origMovie.director_en)) {
   movie.director_en = origMovie.director_en;
 }
 
-// ★ プラットフォーム判定（tvNなどの放送局、テレビドラマ、劇場公開、配信サービス）
-let safePlatform = movie.platform || origMovie.platform || '';
-const isTv = Boolean(
-  movie.genres?.includes('ドラマ') || 
-  origMovie.genres?.includes('ドラマ') || 
-  movie.first_air_date || 
-  origMovie.first_air_date
-);
-
-// TVドラマなのに「劇場公開」になっている場合は、放送局名または「テレビドラマ」に是正
-if (isTv && (safePlatform === '劇場公開' || !safePlatform)) {
-  safePlatform = 'テレビドラマ';
-} else if (!safePlatform) {
-  safePlatform = '劇場公開';
+// ★ プラットフォーム判定（tvNなどの放送局、配信サービス）
+// 勝手に「テレビドラマ」や「劇場公開」を補完せず、確証があるもの以外は null
+let safePlatform = movie.platform || origMovie.platform || null;
+if (safePlatform === 'テレビドラマ' || safePlatform === '劇場公開') {
+  safePlatform = null;
 }
 movie.platform = safePlatform;
 
@@ -196,20 +187,57 @@ const validPersons = Array.from(mergedPersonsMap.values()).filter(p => {
   return true;
 });
 
-// 4. サントラデータの抽出（元データの曲を最優先保護・復元）
-// B. AIが返したtracksを精査
+// 4. サントラデータの抽出（元データの曲を最優先保護・復元 & カタカナ/ハングル整合性クレンジング）
 let approvedTracks = [];
-if (Array.isArray(auditResult.tracks) && auditResult.tracks.length > 0) {
-  approvedTracks = auditResult.tracks.filter(t => {
-    if (!t || !t.track_id) return false;
+const rawAiTracks = Array.isArray(auditResult.tracks) ? auditResult.tracks : [];
+
+// A. AIが返した tracks の精査とマッピング
+if (rawAiTracks.length > 0) {
+  approvedTracks = rawAiTracks.filter(t => {
+    if (!t || (!t.track_id && !t.track_name)) return false;
     if (t.status && String(t.status).toUpperCase() === 'REJECTED') return false;
     return true;
+  }).map(t => {
+    const matchedOrig = origTracks.find(ot => String(ot.track_id) === String(t.track_id) || (ot.track_name && t.track_name && ot.track_name.includes(t.track_name)));
+    
+    // 韓国作品の場合、ハングル表記を最優先保護
+    const artistEn = (hasHangul(matchedOrig?.artist_name_en) && !hasHangul(t.artist_name_en))
+      ? matchedOrig.artist_name_en
+      : (t.artist_name_en || matchedOrig?.artist_name_en || t.artist_name || '');
+    
+    const trackEn = (hasHangul(matchedOrig?.track_name_en) && !hasHangul(t.track_name_en))
+      ? matchedOrig.track_name_en
+      : (t.track_name_en || matchedOrig?.track_name_en || t.track_name || '');
+
+    return {
+      track_id: String(t.track_id || matchedOrig?.track_id || ''),
+      track_name: t.track_name || matchedOrig?.track_name || '',
+      track_name_en: trackEn,
+      artist_name: t.artist_name || matchedOrig?.artist_name || '',
+      artist_name_en: artistEn,
+      country: t.country || matchedOrig?.country || movie.country || 'KR',
+      release_year: String(t.release_year || matchedOrig?.release_year || movie.year || ''),
+      preview_url: t.preview_url || matchedOrig?.preview_url || '',
+      itunes_url: t.itunes_url || matchedOrig?.itunes_url || '',
+      album_cover: t.album_cover || matchedOrig?.album_cover || movie.poster_url || '',
+      description: t.description || matchedOrig?.description || `映画・ドラマ『${movie.title}』公式挿入歌。`,
+      ost_for: movie.title || matchedOrig?.ost_for || '',
+      tmdb_id: movie.tmdb_id || matchedOrig?.tmdb_id || null,
+      wikidata_id: movie.wikidata_id || matchedOrig?.wikidata_id || null,
+      genre: t.genre || matchedOrig?.genre || 'OST'
+    };
   });
 }
 
-// C. もしAIの出力が空配列[]だったり、全件除外されて0件になった場合は、元データの曲(origTracks)を100%保護採用！
+// B. もしAIの出力が空配列[]だったり、全件除外されて0件になった場合は、元データの曲(origTracks)を100%保護採用！
 if (approvedTracks.length === 0 && origTracks.length > 0) {
-  approvedTracks = origTracks;
+  approvedTracks = origTracks.map(ot => ({
+    ...ot,
+    ost_for: movie.title || ot.ost_for || '',
+    tmdb_id: movie.tmdb_id || ot.tmdb_id || null,
+    wikidata_id: movie.wikidata_id || ot.wikidata_id || null,
+    country: ot.country || movie.country || 'KR'
+  }));
 }
 
 return [{

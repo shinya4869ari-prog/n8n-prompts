@@ -2,7 +2,7 @@
   "country": {{ JSON.stringify($json.country || '') }},
   "year": {{ JSON.stringify(String($json.year || '')) }},
   "genres": {{ JSON.stringify($json.genres || '') }},
-  "platform": {{ JSON.stringify($json.platform || '劇場公開') }},
+  "platform": {{ JSON.stringify($json.platform || null) }},
   "wikidata_id": {{ JSON.stringify($json.wikidata_id || '') }},
   "tmdb_id": {{ $json.tmdb_id || null }},
   "title": {{ JSON.stringify($json.title || '') }},
