@@ -267,7 +267,11 @@ for (const alb of matchedAlbums.slice(0, 5)) {
     const isPureBgm = /테마|theme|opening|ending|score|suite|bgm|scene|cue|dialogue|전망대|낙화|주마등|옥상|코마|상처|안녕|위로|기억|재회|에필로그|넋은\s*별이/i.test(trackName);
     if (isPureBgm && alb.trackCount > 5) continue;
 
-    // 3. Various Artists のままで個人名がないトラックは除外
+    // 3. 映画音楽監督・劇伴作曲家単独のスコア盤（ボーカル歌手の参加がないBGM曲）を除外
+    const isComposerScore = alb.artistName && (alb.artistName === artist) && !/various artists/i.test(alb.artistName) && !/feat|with|duet|vocal/i.test(trackName + ' ' + artist) && alb.trackCount >= 10;
+    if (isComposerScore) continue;
+
+    // 4. Various Artists のままで個人名がないトラックは除外
     if (/various artists|soundtrack/i.test(artist) && alb.trackCount > 5) continue;
 
     if (!seenNormalizedTrackKeys.has(cleanKey)) {
