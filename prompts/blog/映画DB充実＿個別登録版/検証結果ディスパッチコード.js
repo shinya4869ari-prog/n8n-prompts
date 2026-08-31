@@ -87,14 +87,23 @@ if (origMovie.director && origMovie.director.trim()) {
   movie.director = cleanNameNoise(movie.director);
 }
 
-// キャスト文字列の重複排除クレンジング
+// 監督名リストの事前抽出
+const dirNames = [movie.director, movie.director_en, origMovie.director, origMovie.director_en]
+  .filter(Boolean)
+  .flatMap(d => d.split(/[,、/]+/))
+  .map(cleanNameNoise)
+  .filter(Boolean);
+
+// キャスト文字列の重複排除 ＆ 監督名の除外クレンジング
 const cleanCastString = (castStr) => {
   if (!castStr) return castStr;
+  const excludeKeys = dirNames.map(n => n.replace(/[\s・\.\-]/g, '').toLowerCase()).filter(Boolean);
   const list = castStr.split(/[,、/]+/).map(s => cleanNameNoise(s)).filter(Boolean);
   const seen = new Set();
   const deduped = [];
   list.forEach(name => {
     const key = name.replace(/[\s・\.\-]/g, '').toLowerCase();
+    if (excludeKeys.includes(key)) return; // 🎯 監督名（director）はキャスト一覧から自動除外！
     if (!seen.has(key)) {
       seen.add(key);
       deduped.push(name);
