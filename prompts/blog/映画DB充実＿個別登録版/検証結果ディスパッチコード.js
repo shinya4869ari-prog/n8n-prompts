@@ -63,17 +63,19 @@ const movie = {
   ...origMovie,
   ...(auditResult.movie || {})
 };
-// ★ 人名ノイズ自動クレンジング関数（"イ-・ウンボク" ➔ "イ・ウンボク" への是正）
+// ★ 人名ノイズ自動クレンジング関数（"イ-・ウンボク" ➔ "イ・ウンボク"、"イ.・シヒョン" ➔ "イ・シヒョン" への是正）
 const cleanNameNoise = (str) => {
   if (!str) return str;
   return String(str)
+    .replace(/[\.．]・/g, '・')
+    .replace(/・[\.．]/g, '・')
     .replace(/[-‐‑–—]・/g, '・')
     .replace(/・[-‐‑–—]/g, '・')
     .replace(/([ァ-ヴぁ-んa-zA-Z])[-‐‑–—]・/g, '$1・')
     .replace(/([ァ-ヴぁ-ん])[-‐‑–—]([ァ-ヴぁ-ん])/g, '$1・$2')
     .replace(/_/g, '・')
     .replace(/・{2,}/g, '・')
-    .replace(/^[・\-\s]+|[・\-\s]+$/g, '')
+    .replace(/^[・\-\s\.]+|[・\-\s\.]+$/g, '')
     .trim();
 };
 
@@ -85,10 +87,29 @@ if (origMovie.director && origMovie.director.trim()) {
   movie.director = cleanNameNoise(movie.director);
 }
 
+// キャスト文字列の重複排除クレンジング
+const cleanCastString = (castStr) => {
+  if (!castStr) return castStr;
+  const list = castStr.split(/[,、/]+/).map(s => cleanNameNoise(s)).filter(Boolean);
+  const seen = new Set();
+  const deduped = [];
+  list.forEach(name => {
+    const key = name.replace(/[\s・\.\-]/g, '').toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(name);
+    }
+  });
+  return deduped.join(', ');
+};
+
 if (origMovie.cast && origMovie.cast.trim()) {
-  movie.cast = cleanNameNoise(origMovie.cast);
+  movie.cast = cleanCastString(origMovie.cast);
 } else if (movie.cast) {
-  movie.cast = cleanNameNoise(movie.cast);
+  movie.cast = cleanCastString(movie.cast);
+}
+if (movie.cast_en) {
+  movie.cast_en = cleanCastString(movie.cast_en);
 }
 
 if (origMovie.title && origMovie.title.trim() && !/^[A-Za-z0-9\s:,'"-]+$/.test(origMovie.title)) {
@@ -98,7 +119,7 @@ if (origMovie.title && origMovie.title.trim() && !/^[A-Za-z0-9\s:,'"-]+$/.test(o
 // ★ ハングル保護: 元データにハングルがある場合、AIがローマ字に変換していてもハングル表記を100%最優先保護
 const hasHangul = (str) => /[\uac00-\ud7af]/.test(str || '');
 if (hasHangul(origMovie.cast_en)) {
-  movie.cast_en = origMovie.cast_en;
+  movie.cast_en = cleanCastString(origMovie.cast_en);
 }
 if (hasHangul(origMovie.director_en)) {
   movie.director_en = origMovie.director_en;
@@ -120,6 +141,7 @@ const mergedPersonsMap = new Map();
 (origPersons.length > 0 ? origPersons : aiPersons).forEach(origP => {
   const rawName = cleanNameNoise(origP.name);
   if (!rawName) return;
+  const normKey = rawName.replace(/[\s・\.\-]/g, '').toLowerCase();
 
   const matchedAi = aiPersons.find(ap => 
     ((ap.wikidata_id || ap.qid) && (origP.wikidata_id || origP.qid) && (ap.wikidata_id || ap.qid) === (origP.wikidata_id || origP.qid)) ||
@@ -147,14 +169,16 @@ const mergedPersonsMap = new Map();
     official_site: origP.official_site || null
   };
   delete pObj.qid;
-  mergedPersonsMap.set(rawName, pObj);
+  mergedPersonsMap.set(normKey, pObj);
 });
 
 // AIが追加した有効なキャストがいればそれも補完
 aiPersons.forEach(ap => {
   const rawName = cleanNameNoise(ap.name);
-  if (rawName && !mergedPersonsMap.has(rawName)) {
-    mergedPersonsMap.set(rawName, {
+  if (!rawName) return;
+  const normKey = rawName.replace(/[\s・\.\-]/g, '').toLowerCase();
+  if (!mergedPersonsMap.has(normKey)) {
+    mergedPersonsMap.set(normKey, {
       name: rawName,
       name_en: ap.name_en || null,
       occupation: ap.occupation || '俳優',
@@ -229,9 +253,14 @@ if (rawAiTracks.length > 0) {
   });
 }
 
-// B. もしAIの出力が空配列[]だったり、全件除外されて0件になった場合は、元データの曲(origTracks)を100%保護採用！
-if (approvedTracks.length === 0 && origTracks.length > 0) {
-  approvedTracks = origTracks.map(ot => ({
+// B. AIが明示的に tracks: [] と判断した場合はAIの除外判断を100%尊重（BGMを勝手に復活させない！）
+// ※AIが tracks プロパティ自体を出力しなかった（未定義の）場合のみ、元データからボーカル曲をフォールバック
+if (!Array.isArray(auditResult.tracks) && origTracks.length > 0) {
+  approvedTracks = origTracks.filter(ot => {
+    // 映画音楽監督・劇伴作曲家のスコアBGM曲はフォールバックでも除外
+    if (/dalpalan|달파란|タルパラン|조영욱|チョ・ヨンウク|limeland/i.test(ot.artist_name || '')) return false;
+    return true;
+  }).map(ot => ({
     ...ot,
     ost_for: movie.title || ot.ost_for || '',
     tmdb_id: movie.tmdb_id || ot.tmdb_id || null,
