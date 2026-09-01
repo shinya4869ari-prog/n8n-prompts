@@ -336,27 +336,38 @@ for (const f of bukkaFields) {
 const getCurrencySymbol = () => {
   if (rowData["設定通貨記号"]) return rowData["設定通貨記号"];
   if (rowData["通貨記号"]) return rowData["通貨記号"];
-  const sample = rowData["ビール_現地通貨"] || rowData["水_現地通貨"] || rowData["家賃1LDK(市中心)_現地通貨"] || "";
-  const match = String(sample).match(/^[A-Za-z$€£¥₩₹]+/);
-  if (match) return match[0];
   
-  const code = rowData["通貨コード"] || "";
+  // 1. 既存セル（ビール、水、家賃など）から先頭の通貨記号部分（非数字）を抽出
+  const sample = rowData["ビール_現地通貨"] || rowData["水_現地通貨"] || rowData["家賃1LDK(市中心)_現地通貨"] || rowData["タバコ_現地通貨"] || "";
+  const match = String(sample).match(/^[^\d,.\s]+/);
+  if (match && match[0] && match[0] !== "欠測") return match[0];
+  
+  // 2. 通貨コードからの網羅的マッピング
+  const code = (rowData["通貨コード"] || rowData["通貨単位"] || "").toUpperCase().trim();
   const codeMap = {
-    "KRW": "₩", "JPY": "¥", "USD": "$", "EUR": "€", "GBP": "£",
-    "COP": "Col$", "BRL": "R$", "MXN": "Mex$", "THB": "฿", "VND": "₫"
+    "UAH": "₴", "KRW": "₩", "JPY": "¥", "USD": "$", "EUR": "€", "GBP": "£",
+    "COP": "Col$", "BRL": "R$", "MXN": "Mex$", "THB": "฿", "VND": "₫",
+    "INR": "₹", "CNY": "¥", "TWD": "NT$", "HKD": "HK$", "SGD": "S$",
+    "AUD": "A$", "CAD": "C$", "NZD": "NZ$", "CHF": "CHF ", "SEK": "kr ",
+    "NOK": "kr ", "DKK": "kr ", "PLN": "zł ", "HUF": "Ft ", "CZK": "Kč ",
+    "RON": "lei ", "BGN": "лв ", "TRY": "₺", "RUB": "₽", "ILS": "₪",
+    "PHP": "₱", "IDR": "Rp ", "MYR": "RM ", "ZAR": "R ", "EGP": "E£ ",
+    "AED": "AED ", "SAR": "SR ", "QAR": "QR ", "KWD": "KD ", "BDT": "Tk ",
+    "PKR": "Rs ", "LKR": "Rs ", "NPR": "Rs ", "NGN": "₦", "GHS": "GH₵",
+    "KES": "KSh ", "PEN": "S/.", "CLP": "CLP$", "ARS": "Arg$", "BTN": "Nu"
   };
-  return codeMap[code] || "";
+  return codeMap[code] || (code ? `${code} ` : "");
 };
 const symbol = getCurrencySymbol();
 
 const parseLocalValue = (val) => {
   if (!val || val === "欠測") return NaN;
-  // 先頭の通貨記号部分（アルファベット、記号、スペース、およびそれに続くピリオド）を除去
-  let cleanVal = String(val).replace(/^[A-Za-z$€£¥₩₹Nu.\s]+/, "");
+  // 先頭の通貨記号部分（あらゆる非数字文字、記号、スペース）を除去
+  let cleanVal = String(val).replace(/^[^\d.-]+/, "");
   // カンマを除去
   cleanVal = cleanVal.replace(/,/g, "");
-  // 末尾のアルファベット通貨名を除去 (例: "KRW")
-  cleanVal = cleanVal.replace(/[A-Za-z\s]+$/, "").trim();
+  // 末尾のアルファベット通貨名等を除去 (例: "KRW", "UAH", "грн")
+  cleanVal = cleanVal.replace(/[^\d.-]+$/, "").trim();
   return parseFloat(cleanVal);
 };
 
