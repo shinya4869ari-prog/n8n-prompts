@@ -25,29 +25,31 @@ https://api.themoviedb.org/3/{{
     let selectedQid = null;
 
     if (Array.isArray(searchList) && searchList.length > 0) {
-      let bestItem = null;
-      let maxScore = -1;
+      let bestItem = searchList[0]; // 🎯 デフォルトは最上位の検索結果を採用（末尾誤爆を完全防止！）
+      let maxScore = 0;
 
       for (const item of searchList) {
         let score = 0;
         const snip = (item.snippet || '').toLowerCase();
         
         for (const kw of targetKeywords) {
-          if (kw && kw.length >= 2 && !/^\d+$/.test(kw) && snip.includes(kw)) {
-            score += 10;
+          if (kw && kw.length >= 2 && snip.includes(kw)) {
+            score += 20;
           }
         }
+
+        // 韓国・日本の作品であるキーワードが含まれていれば加点
+        if (/korea|韓国|한국|drama|드라마|television|series/i.test(snip)) {
+          score += 10;
+        }
+
         if (score > maxScore) {
           maxScore = score;
           bestItem = item;
         }
       }
 
-      if (bestItem && maxScore > 0) {
-        selectedQid = bestItem.title;
-      } else {
-        selectedQid = searchList[searchList.length - 1]?.title || searchList[0]?.title;
-      }
+      selectedQid = bestItem?.title || searchList[0]?.title;
     }
 
     const qid = selectedQid || $json.qid || sourceNode.wikidata_id || sourceNode.qid;
