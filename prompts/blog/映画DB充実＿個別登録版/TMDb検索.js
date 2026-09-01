@@ -63,10 +63,21 @@ let matchedMovie = candidates.find(isValidMatch);
 // TMDb ID が手動入力されていた場合、Wikidataやタイトル検索が空でも、直接そのIDでCredits取得へ進む
 if (!matchedMovie && (sourceData.tmdb_id || /^\d+$/.test(sourceData.query || ''))) {
   const directId = sourceData.tmdb_id || parseInt(sourceData.query, 10);
+  
+  // WikidataやジャンルからTVドラマか映画かを自動判定
+  let wikiD = {};
+  try { wikiD = $('Wikidata検索').first()?.json || $('Wikidata').first()?.json || {}; } catch(e) {}
+  const isTvSeries = (sourceData.media_type === 'tv') ||
+                     (sourceData.genres || '').includes('ドラマ') ||
+                     (sourceData.genres || '').includes('TV') ||
+                     (wikiD.description || '').includes('television series') ||
+                     (wikiD.description || '').includes('テレビ') ||
+                     (wikiD.description || '').includes('ドラマ');
+
   matchedMovie = {
     id: directId,
     tmdb_id: directId,
-    media_type: sourceData.media_type || 'movie'
+    media_type: isTvSeries ? 'tv' : (sourceData.media_type || 'movie')
   };
 }
 

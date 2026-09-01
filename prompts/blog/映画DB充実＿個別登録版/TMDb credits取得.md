@@ -52,7 +52,19 @@ https://api.themoviedb.org/3/{{
 
     if (results.length === 0) {
       const fallbackId = sourceNode.tmdb_id || sourceNode.id || $json.tmdb_id || $json.id || 0;
-      const isTv = (sourceNode.genres || '').includes('ドラマ') || (sourceNode.media_type === 'tv');
+      
+      // 🎯 TVドラマ判定の超強化（Wikidata、ジャンル、メディアタイプ、タイトル・概要からの総合判定）
+      let wikiData = {};
+      try { wikiData = $('Wikidata検索').first()?.json || $('Wikidata').first()?.json || {}; } catch(e) {}
+      
+      const isTv = (sourceNode.media_type === 'tv') ||
+                   (sourceNode.genres || '').includes('ドラマ') ||
+                   (sourceNode.genres || '').includes('TV') ||
+                   (wikiData.description || '').includes('television series') ||
+                   (wikiData.description || '').includes('テレビ') ||
+                   (wikiData.description || '').includes('ドラマ') ||
+                   ($json.media_type === 'tv');
+                   
       return `${isTv ? 'tv' : 'movie'}/${fallbackId}`;
     }
 
