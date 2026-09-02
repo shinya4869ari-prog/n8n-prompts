@@ -82,17 +82,17 @@ HTTP POST に `Prefer: resolution=merge-duplicates` ヘッダーを付与する�
 
 ```json
 {
-  "track_id": "{{ String($json.track_id || '') }}",
-  "track_name": "{{ $json.track_name || '' }}",
-  "track_name_en": "{{ $json.track_name_en || '' }}",
-  "artist_name": "{{ $json.artist_name || '' }}",
-  "artist_name_en": "{{ $json.artist_name_en || '' }}",
-  "country": "{{ $('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR' }}",
-  "release_year": "{{ String($json.release_year || '') }}",
-  "preview_url": "{{ $json.preview_url || '' }}",
-  "itunes_url": "{{ $json.itunes_url || '' }}",
-  "album_cover": "{{ $json.album_cover || '' }}",
-  "description": "{{ $json.description || '' }}"
+  "track_id": {{ JSON.stringify(String($json.track_id || '')) }},
+  "track_name": {{ JSON.stringify($json.track_name || '') }},
+  "track_name_en": {{ JSON.stringify(($json.track_name_en && $json.track_name_en.trim().toLowerCase() !== String($json.track_name || '').trim().toLowerCase()) ? $json.track_name_en : '') }},
+  "artist_name": {{ JSON.stringify($json.artist_name || '') }},
+  "artist_name_en": {{ JSON.stringify(($json.artist_name_en && $json.artist_name_en.trim().toLowerCase() !== String($json.artist_name || '').trim().toLowerCase()) ? $json.artist_name_en : '') }},
+  "country": {{ JSON.stringify($('country-master-lookup').first()?.json?.countryCode || $('iTunes検索_クエリ作成').first()?.json?.countryCode || 'KR') }},
+  "release_year": {{ JSON.stringify(String($json.release_year || '')) }},
+  "preview_url": {{ JSON.stringify($json.preview_url || '') }},
+  "itunes_url": {{ JSON.stringify($json.itunes_url || '') }},
+  "album_cover": {{ JSON.stringify($json.album_cover || '') }},
+  "description": {{ JSON.stringify($json.description || '') }}
 }
 ```
 
