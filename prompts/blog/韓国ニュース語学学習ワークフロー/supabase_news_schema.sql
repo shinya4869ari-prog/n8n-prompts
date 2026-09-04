@@ -1,12 +1,12 @@
 -- ==============================================================================
--- 【韓国ニュース語学学習用】Supabase テーブル設計 (paragraphs 段落配列対応版)
+-- 【韓国ニュース語学学習用】Supabase テーブル設計 (paragraphs & user_notes 対応版)
 -- ==============================================================================
 
 -- 1. Persons テーブルにお気に入りフラグを追加（未作成の場合のみ）
 ALTER TABLE "Persons" ADD COLUMN IF NOT EXISTS "is_favorite" BOOLEAN DEFAULT false;
 CREATE INDEX IF NOT EXISTS "idx_persons_is_favorite" ON "Persons" ("is_favorite");
 
--- 2. news テーブルの作成（すでに存在する場合は ALTER TABLE で paragraphs を追加）
+-- 2. news テーブルの作成
 CREATE TABLE IF NOT EXISTS "news" (
     "id" BIGSERIAL PRIMARY KEY,
     "category" TEXT NOT NULL,          -- 'crime', 'life', 'politics', 'economy', 'diplomacy', 'celeb'
@@ -26,22 +26,28 @@ CREATE TABLE IF NOT EXISTS "news" (
     "created_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 既存テーブルに paragraphs カラムがない場合の追加用
 ALTER TABLE "news" ADD COLUMN IF NOT EXISTS "paragraphs" JSONB DEFAULT '[]'::jsonb;
 
--- 3. インデックスの作成（高速読み出し用）
 CREATE INDEX IF NOT EXISTS "idx_news_category" ON "news" ("category");
 CREATE INDEX IF NOT EXISTS "idx_news_published_at" ON "news" ("published_at" DESC);
 CREATE INDEX IF NOT EXISTS "idx_news_rank" ON "news" ("rank");
 
--- 4. RLS (Row Level Security) の設定（公開読み取り許可 & 匿名登録許可）
 ALTER TABLE "news" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read-only access on news" ON "news" FOR SELECT USING (true);
+CREATE POLICY "Allow anon insert/upsert on news" ON "news" FOR ALL USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow public read-only access on news"
-ON "news" FOR SELECT
-USING (true);
+-- 3. 💡 user_notes テーブルの作成（ユーザーのアイデア・学習メモ・AI共有メモ）
+CREATE TABLE IF NOT EXISTS "user_notes" (
+    "id" BIGSERIAL PRIMARY KEY,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "category" TEXT DEFAULT 'idea',    -- 'idea' (思いつき), 'study' (学習メモ), 'question' (AIへの相談)
+    "is_read_by_ai" BOOLEAN DEFAULT false, -- AIが確認したかの既読フラグ
+    "created_at" TIMESTAMPTZ DEFAULT NOW(),
+    "updated_at" TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE POLICY "Allow anon insert/upsert on news"
-ON "news" FOR ALL
-USING (true)
-WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS "idx_user_notes_updated_at" ON "user_notes" ("updated_at" DESC);
+
+ALTER TABLE "user_notes" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read-write on user_notes" ON "user_notes" FOR ALL USING (true) WITH CHECK (true);
