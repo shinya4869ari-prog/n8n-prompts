@@ -1,0 +1,301 @@
+{
+  "name": "人物用データベース充実ワークフロー（全ジャンル対応版）",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "人物データベース登録フォーム",
+        "formDescription": "俳優・映画監督・政治家・歴史上の人物・アイドル・学者等の人物データをWikidata & Geminiから自動収集し、Supabase Personsテーブルへ登録・更新します。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "name",
+              "fieldType": "text",
+              "requiredField": true,
+              "fieldDescription": "人物名（日本語または原語）。例: 尹錫悦, 李在明 / 世宗大王、李舜臣 / イ・ジェフン（※カンマ・改行区切りで複数名一括登録可能）"
+            },
+            {
+              "fieldLabel": "category",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "all : 自動判定 / その他"
+                  },
+                  {
+                    "option": "politician : 政治家・公人・官僚"
+                  },
+                  {
+                    "option": "historical : 歴史上の人物・偉人"
+                  },
+                  {
+                    "option": "actor : 俳優・女優"
+                  },
+                  {
+                    "option": "director : 映画監督・演出家"
+                  },
+                  {
+                    "option": "idol : K-POPアイドル・歌手"
+                  },
+                  {
+                    "option": "entertainer : タレント・芸人"
+                  },
+                  {
+                    "option": "author : 学者・作家・文化人"
+                  }
+                ]
+              },
+              "defaultValue": "all : 自動判定 / その他",
+              "fieldDescription": "登録したい人物の主な分野"
+            },
+            {
+              "fieldLabel": "occupation_hint",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】職業・肩書 / 検索ヒント（同姓同名が多い場合に指定。例: 大統領, 朝鮮王, 映画監督）"
+            },
+            {
+              "fieldLabel": "country",
+              "fieldType": "dropdown",
+              "requiredField": false,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "KR : 韓国"
+                  },
+                  {
+                    "option": "JP : 日本"
+                  },
+                  {
+                    "option": "US : アメリカ"
+                  },
+                  {
+                    "option": "OTHER : その他"
+                  }
+                ]
+              },
+              "defaultValue": "KR : 韓国",
+              "fieldDescription": "活動国・国籍"
+            },
+            {
+              "fieldLabel": "wikidata_id",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】Wikidata ID (QID)。例: Q16090635（※確実に対象者を一意指定したい場合のみ入力）"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        200,
+        240
+      ],
+      "id": "node-form-trigger",
+      "name": "人物データベース登録フォーム",
+      "webhookId": "person-db-registration-form"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【02】入力分割コード (Code Node)\n * \n * 役割: \n *   1. フォームや手動入力、映画/ドラマワークフロー、Supabase既存行など多種多様な入力元に対応。\n *   2. カンマや改行で複数名入力された場合（例:「尹錫悦, 李在明, 文在寅」「世宗大王、李舜臣」）も自動分割。\n *   3. 俳優・映画監督だけでなく、政治家、歴史上の人物、アイドル、タレント、文化人・学者まで柔軟に1人1アイテムへ展開。\n */\n\nconst input = $input.first()?.json || {};\n\n// 1. 映画/ドラマワークフローからの連携（cast / director）判定\nif (input.cast || input.director) {\n  const results = [];\n  const country = input.country || 'KR';\n\n  // 1-1. 監督の追加\n  if (input.director) {\n    const dirNames = input.director.split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n    const dirEnNames = (input.director_en || '').split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n\n    dirNames.forEach((dName, idx) => {\n      results.push({\n        json: {\n          name: dName,\n          name_en: dirEnNames[idx] || '',\n          occupation: '映画監督',\n          category: 'director',\n          country: country,\n          tmdb_id: input.tmdb_id || null\n        }\n      });\n    });\n  }\n\n  // 1-2. キャスト全員の追加\n  if (input.cast) {\n    const castNames = input.cast.split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n    const castEnNames = (input.cast_en || '').split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n\n    castNames.forEach((cName, idx) => {\n      if (!results.some(r => r.json.name === cName)) {\n        results.push({\n          json: {\n            name: cName,\n            name_en: castEnNames[idx] || '',\n            occupation: '俳優',\n            category: 'actor',\n            country: country\n          }\n        });\n      }\n    });\n  }\n\n  if (results.length > 0) {\n    return results;\n  }\n}\n\n// 2. \"json\" キーを含むあらゆる入力形式から生データを抽出（Supabase/フォーム連携）\nlet rawData = input.json || input['json'] || input.json_data || input['json_data'] || input.body?.json || input.body?.json_data || input.data || input;\n\n// 文字列の場合は JSON パースして配列に変換\nif (typeof rawData === 'string') {\n  try {\n    rawData = JSON.parse(rawData);\n  } catch (e) {\n    rawData = [input];\n  }\n}\n\n// 単一オブジェクトの場合は配列化\nif (!Array.isArray(rawData)) {\n  rawData = [rawData];\n}\n\n// カテゴリに応じたデフォルト職業マッピング\nfunction getCategoryDefaultOccupation(cat) {\n  switch (cat) {\n    case 'politician': return '政治家';\n    case 'historical': return '歴史上の人物';\n    case 'entertainer': return 'タレント';\n    case 'idol': return 'アイドル';\n    case 'actor': return '俳優';\n    case 'director': return '映画監督';\n    case 'author': return '学者・文化人';\n    default: return '';\n  }\n}\n\n// 3. n8n の個別アイテム配列として返却（カンマ・改行での複数名一括入力も個別展開）\nconst results = [];\nfor (const person of rawData) {\n  if (!person || typeof person !== 'object') continue;\n\n  const rawNameStr = person.name || person['人物名'] || person['名前'] || '';\n  const qid = person.wikidata_id || person['Wikidata ID (QID)'] || null;\n  const category = person.category || person['人物区分（カテゴリ）'] || person['カテゴリ'] || 'all';\n  const inputOcc = person.occupation || person['職業・肩書 / 検索ヒント'] || person['職業'] || '';\n  const defaultOcc = inputOcc || getCategoryDefaultOccupation(category);\n  const country = person.country || person['国籍・活動国'] || 'KR';\n\n  // 3-1. QIDが直接指定されている場合は単一処理\n  if (qid) {\n    results.push({\n      json: {\n        id: person.id || null,\n        name: rawNameStr,\n        name_en: person.name_en || '',\n        occupation: defaultOcc,\n        category: category,\n        country: country,\n        gender: person.gender || null,\n        profile_url: person.profile_url || null,\n        wikidata_id: qid,\n        tmdb_id: person.tmdb_id || null,\n        x_id: person.x_id || null,\n        instagram_id: person.instagram_id || null,\n        youtube_id: person.youtube_id || null,\n        favorite_youtube: person.favorite_youtube || null,\n        official_site: person.official_site || null,\n        is_favorite: person.is_favorite !== undefined ? person.is_favorite : undefined,\n        created_at: person.created_at || null\n      }\n    });\n    continue;\n  }\n\n  // 3-2. 名前入力の分割（カンマ、読点、改行、スラッシュ）\n  const splitNames = rawNameStr.split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n  const splitEnNames = (person.name_en || '').split(/[,/、\\n]+/).map(s => s.trim()).filter(Boolean);\n\n  if (splitNames.length > 0) {\n    splitNames.forEach((n, idx) => {\n      results.push({\n        json: {\n          id: person.id || null,\n          name: n,\n          name_en: splitEnNames[idx] || '',\n          occupation: defaultOcc,\n          category: category,\n          country: country,\n          gender: person.gender || null,\n          profile_url: person.profile_url || null,\n          wikidata_id: null,\n          tmdb_id: person.tmdb_id || null,\n          x_id: person.x_id || null,\n          instagram_id: person.instagram_id || null,\n          youtube_id: person.youtube_id || null,\n          favorite_youtube: person.favorite_youtube || null,\n          official_site: person.official_site || null,\n          is_favorite: person.is_favorite !== undefined ? person.is_favorite : undefined,\n          created_at: person.created_at || null\n        }\n      });\n    });\n  }\n}\n\nreturn results.length > 0 ? results : [{ json: input }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        240
+      ],
+      "id": "node-input-split",
+      "name": "入力分割コード"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?personLabel ?personEnLabel ?personJaLabel ?personKoLabel ?genderLabel ?birthDate ?deathDate ?countryLabel ?occupationLabel ?positionLabel ?partyLabel ?tmdbId ?image ?instagram ?twitter ?youtube ?website (GROUP_CONCAT(DISTINCT ?memberLabel; separator=\", \") AS ?membersList) WHERE { ${$json.wikidata_id ? `BIND(wd:${$json.wikidata_id} AS ?person) .` : `{ ?person (rdfs:label|skos:altLabel) \"${$json.name}\"@ja . } UNION { ?person (rdfs:label|skos:altLabel) \"${$json.name_en || $json.name}\"@ko . } UNION { ?person (rdfs:label|skos:altLabel) \"${$json.name_en || $json.name}\"@en . } { ?person wdt:P31 wd:Q5 . } UNION { ?person wdt:P31/wdt:P279* wd:Q215380 . }`} OPTIONAL { ?person wdt:P21 ?gender . } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person (wdt:P27|wdt:P495|wdt:P17) ?country . } OPTIONAL { ?person wdt:P106 ?occupation . } OPTIONAL { ?person wdt:P39 ?position . } OPTIONAL { ?person wdt:P102 ?party . } OPTIONAL { ?person wdt:P4985 ?tmdbId . } OPTIONAL { ?person wdt:P18 ?image . } OPTIONAL { ?person wdt:P2003 ?instagram . } OPTIONAL { ?person wdt:P2002 ?twitter . } OPTIONAL { ?person wdt:P2397 ?youtube . } OPTIONAL { ?person wdt:P856 ?website . } OPTIONAL { ?person wdt:P527 ?member . ?member rdfs:label ?memberLabel . FILTER(LANG(?memberLabel) = \"ja\") } OPTIONAL { ?person rdfs:label ?personJaLabel . FILTER(LANG(?personJaLabel) = \"ja\") } OPTIONAL { ?person rdfs:label ?personEnLabel . FILTER(LANG(?personEnLabel) = \"en\") } OPTIONAL { ?person rdfs:label ?personKoLabel . FILTER(LANG(?personKoLabel) = \"ko\") } SERVICE wikibase:label { bd:serviceParam wikibase:language \"ja,ko,en\" . } } GROUP BY ?person ?personLabel ?personEnLabel ?personJaLabel ?personKoLabel ?genderLabel ?birthDate ?deathDate ?countryLabel ?occupationLabel ?positionLabel ?partyLabel ?tmdbId ?image ?instagram ?twitter ?youtube ?website LIMIT 5`) }}&format=json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "KokkanoTenbinBot/1.0 (https://kokkanotenbon.example.com; contact@example.com)"
+            },
+            {
+              "name": "Accept",
+              "value": "application/sparql-results+json, application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        240
+      ],
+      "id": "node-wikidata-fetch",
+      "name": "Wikidata人物情報取得"
+    },
+    {
+      "parameters": {
+        "prompt": "={{ `あなたは人物データベースの専門ライター・エディターです。\n提供された以下の人物データを元に、対象人物「{{ (() => { try { let p = typeof $json.data === 'string' ? JSON.parse($json.data) : $json; return p.results?.bindings?.[0]?.personJaLabel?.value || p.results?.bindings?.[0]?.personLabel?.value || $json['人物名'] || $json.name || ''; } catch(e) { return $json['人物名'] || $json.name || ''; } })() }}」のプロフィール紹介文（日本語で150文字〜250文字程度）を作成してください。\n\n分野別の執筆指針：\n- 政治家・官僚: 主な公職（大統領、首相、議員等）、所属政党、主要な政策や政治史における役割を記述してください。\n- 歴史上の人物: 活躍した時代区分（朝鮮王朝等）、主な業績や歴史的事件、後世への影響を明記してください。\n- 俳優・映画監督・タレント: デビュー経緯、代表作（映画・ドラマ名）、演技の特徴や受賞歴を記載してください。\n- アイドル・歌手: 所属グループ名、ポジション、代表曲やヒット作を記載してください。\n- 学者・作家・文化人: 専門分野、代表的著作、学術的・文化的な功績を記載してください。\n\n共通ルール：\n- 簡潔で読みやすく、事実に基づいた自然な日本語文章にしてください。\n- 挨拶や前置き（「承知いたしました」等）、見出し、注釈は絶対に含めず、本文（1段落）のみを出力してください。\n- 事実に基づかない推測や不確かな噂は含めないでください。\n\n対象人物データ：\n{{ (() => {\n  try {\n    let parsed = typeof $json.data === 'string' ? JSON.parse($json.data) : ($json.data || $json);\n    let b = parsed.results?.bindings?.[0] || {};\n    let info = {\n      name: b.personJaLabel?.value || b.personLabel?.value || '',\n      name_en: b.personEnLabel?.value || '',\n      name_ko: b.personKoLabel?.value || '',\n      qid: b.person?.value ? b.person.value.split('/').pop() : '',\n      gender: b.genderLabel?.value || '',\n      country: b.countryLabel?.value || '',\n      occupation: b.occupationLabel?.value || '',\n      position: b.positionLabel?.value || '',\n      party: b.partyLabel?.value || '',\n      birth_date: b.birthDate?.value ? b.birthDate.value.split('T')[0] : '',\n      death_date: b.deathDate?.value ? b.deathDate.value.split('T')[0] : '',\n      members: b.membersList?.value || '',\n      x_id: b.twitter?.value || '',\n      instagram_id: b.instagram?.value || '',\n      website: b.website?.value || ''\n    };\n    return JSON.stringify(info, null, 2);\n  } catch(e) {\n    return $json.data || JSON.stringify($json);\n  }\n})() }}` }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        920,
+        240
+      ],
+      "id": "node-gemini-bio",
+      "name": "Gemini人物クレンジング"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        920,
+        420
+      ],
+      "id": "node-gemini-chat-model",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【05】Supabase Upsert整形 (Code Node)\n * \n * 役割:\n *   1. 前段の「入力分割コード」「Wikidata人物情報取得」「Gemini人物クレンジング」のデータを完全統合。\n *   2. 俳優・監督だけでなく、政治家・歴史上の人物・アイドル・学者等あらゆるジャンルを適切にスコアリング選定。\n *   3. 画像URL正規化、SNSアカウント整形、TMDb ID、国籍コード、役職・職業をクレンジング。\n *   4. Supabase \"Persons\" テーブル最新スキーマ（tmdb_id, favorite_youtube含む）と完全互換のUpsert用JSONを出力。\n *   5. is_favorite を誤って false でリセットしない安全設計（未指定時はキーを除外して既存値を保護）。\n */\n\nfunction cleanSnsHandle(handleOrUrl) {\n  if (!handleOrUrl || typeof handleOrUrl !== 'string') return null;\n  let str = handleOrUrl.trim();\n  if (!str) return null;\n  if (str.includes('/')) {\n    str = str.split('?')[0].replace(/\\/$/, '').split('/').pop();\n  }\n  str = str.replace(/^@/, '');\n  return str.length > 0 ? str : null;\n}\n\nfunction cleanImageUrl(url) {\n  if (!url || typeof url !== 'string') return null;\n  let clean = url.trim();\n  if (clean.startsWith('http://')) {\n    clean = clean.replace(/^http:\\/\\//i, 'https://');\n  }\n  if (clean.includes('Special:FilePath/')) {\n    const fileName = clean.split('Special:FilePath/').pop();\n    clean = `https://commons.wikimedia.org/wiki/Special:Redirect/file/${fileName}`;\n  }\n  return clean;\n}\n\nfunction inferCountryCode(countryStr) {\n  if (!countryStr) return 'KR';\n  const str = String(countryStr).toLowerCase();\n  if (str.includes('韓') || str.includes('korea') || str === 'kr' || str.includes('朝鮮') || str.includes('joseon') || str.includes('高麗')) return 'KR';\n  if (str.includes('日本') || str.includes('japan') || str === 'jp') return 'JP';\n  if (str.includes('アメリカ') || str.includes('usa') || str === 'us' || str.includes('米国')) return 'US';\n  if (str.includes('イギリス') || str.includes('uk') || str === 'gb' || str.includes('英国')) return 'GB';\n  if (str.includes('中国') || str.includes('china') || str === 'cn') return 'CN';\n  if (str.includes('フランス') || str.includes('france') || str === 'fr') return 'FR';\n  if (str.includes('ドイツ') || str.includes('germany') || str === 'de') return 'DE';\n  return countryStr;\n}\n\nfunction findBestCandidate(bindings, input) {\n  if (!bindings || !Array.isArray(bindings) || bindings.length === 0) return {};\n  if (bindings.length === 1) return bindings[0];\n\n  let bestScore = -999;\n  let bestCandidate = bindings[0];\n\n  const targetCountry = String(input.country || '').toLowerCase();\n  const targetOcc = String(input.occupation || '').toLowerCase();\n  const targetCat = String(input.category || '').toLowerCase();\n  const targetName = String(input.name || '').toLowerCase();\n  const targetNameEn = String(input.name_en || '').toLowerCase();\n\n  for (const b of bindings) {\n    let score = 0;\n    const cLabel = String(b.countryLabel?.value || '').toLowerCase();\n    const occLabel = String(b.occupationLabel?.value || '').toLowerCase();\n    const posLabel = String(b.positionLabel?.value || '').toLowerCase();\n    const partyLabel = String(b.partyLabel?.value || '').toLowerCase();\n    const jaLabel = String(b.personJaLabel?.value || b.personLabel?.value || '').toLowerCase();\n    const koLabel = String(b.personKoLabel?.value || '').toLowerCase();\n    const enLabel = String(b.personEnLabel?.value || '').toLowerCase();\n\n    // 1. 国籍・所属判定\n    if (targetCountry.includes('kr') || targetCountry.includes('韓') || targetOcc.includes('韓')) {\n      if (cLabel.includes('韓') || cLabel.includes('korea') || cLabel.includes('朝鮮') || cLabel.includes('大韓') || cLabel.includes('高麗')) {\n        score += 80;\n      } else if (cLabel) {\n        score -= 50;\n      }\n    } else if (targetCountry.includes('jp') || targetCountry.includes('日')) {\n      if (cLabel.includes('日本') || cLabel.includes('japan')) {\n        score += 80;\n      } else if (cLabel) {\n        score -= 50;\n      }\n    }\n\n    // 2. カテゴリ・職業の一致判定\n    if (targetCat === 'politician' || targetOcc.includes('政治') || targetOcc.includes('大統領') || targetOcc.includes('議員') || targetOcc.includes('官僚')) {\n      if (posLabel.includes('大統領') || posLabel.includes('総理') || posLabel.includes('議員') || posLabel.includes('知事') || posLabel.includes('長官')) score += 100;\n      if (occLabel.includes('政治家') || occLabel.includes('弁護士') || occLabel.includes('検察官') || partyLabel) score += 60;\n    } else if (targetCat === 'historical' || targetOcc.includes('歴史') || targetOcc.includes('王') || targetOcc.includes('将軍')) {\n      if (posLabel.includes('王') || posLabel.includes('君主') || posLabel.includes('皇帝') || posLabel.includes('将軍') || posLabel.includes('提督')) score += 100;\n      if (b.deathDate?.value) score += 40; // 没年がある = 歴史的人物\n    } else if (targetCat === 'idol' || targetCat === 'singer' || targetOcc.includes('アイドル') || targetOcc.includes('歌手')) {\n      if (occLabel.includes('歌手') || occLabel.includes('アイドル') || occLabel.includes('ミュージシャン') || b.membersList?.value) score += 80;\n    } else if (targetCat === 'actor' || targetCat === 'director' || targetOcc.includes('俳優') || targetOcc.includes('女優') || targetOcc.includes('監督')) {\n      if (occLabel.includes('俳優') || occLabel.includes('女優') || occLabel.includes('モデル') || occLabel.includes('映画監督') || occLabel.includes('演出家')) score += 80;\n      if (b.tmdbId?.value) score += 40; // TMDb ID がある = 映像関係者\n    } else if (targetCat === 'author' || targetOcc.includes('学者') || targetOcc.includes('作家') || targetOcc.includes('教授')) {\n      if (occLabel.includes('作家') || occLabel.includes('小説家') || occLabel.includes('学者') || occLabel.includes('教授') || occLabel.includes('ジャーナリスト')) score += 80;\n    } else {\n      // カテゴリ未指定の場合：TMDb ID、公職、または職業があれば加点\n      if (posLabel) score += 30;\n      if (occLabel) score += 20;\n      if (b.tmdbId?.value) score += 30;\n    }\n\n    // 3. 画像あり\n    if (b.image?.value) score += 25;\n\n    // 4. SNS / 公式情報あり\n    if (b.instagram?.value || b.twitter?.value || b.youtube?.value || b.website?.value) score += 20;\n\n    // 5. 名前の一致度\n    if (targetName && (jaLabel.includes(targetName) || koLabel.includes(targetName) || enLabel.includes(targetName))) score += 40;\n    if (targetNameEn && (koLabel.includes(targetNameEn) || enLabel.includes(targetNameEn))) score += 40;\n\n    if (score > bestScore) {\n      bestScore = score;\n      bestCandidate = b;\n    }\n  }\n\n  return bestCandidate;\n}\n\nfunction extractBindings(raw) {\n  if (!raw) return [];\n  if (Array.isArray(raw.results?.bindings)) return raw.results.bindings;\n  if (Array.isArray(raw.bindings)) return raw.bindings;\n  let parsed = raw;\n  if (typeof raw.data === 'string') {\n    try { parsed = JSON.parse(raw.data); } catch(e) {}\n  } else if (raw.data && typeof raw.data === 'object') {\n    parsed = raw.data;\n  } else if (typeof raw.body === 'string') {\n    try { parsed = JSON.parse(raw.body); } catch(e) {}\n  } else if (raw.body && typeof raw.body === 'object') {\n    parsed = raw.body;\n  }\n  if (Array.isArray(parsed?.results?.bindings)) return parsed.results.bindings;\n  if (Array.isArray(parsed?.bindings)) return parsed.bindings;\n  return [];\n}\n\n// 1. 各ノードから全アイテムの配列を安全に取得\nlet allOriginalInputs = [];\nconst inputCandidates = ['入力分割コード', '人物データベース登録フォーム', 'Code', 'Code1', '入力分割', 'Supabase入力分割', 'Edit Fields', 'Webhook', 'Form Trigger'];\nfor (const inName of inputCandidates) {\n  try {\n    const items = $(inName).all();\n    if (items && items.length > 0) {\n      allOriginalInputs = items;\n      break;\n    }\n  } catch(e) {}\n}\nif (!allOriginalInputs.length) {\n  allOriginalInputs = $input.all();\n}\n\nlet allWiki = [];\nconst wikiCandidates = ['Wikidata人物情報取得', 'Wikidata', 'HTTP Request', 'HTTP Request1', 'HTTP Request2', 'Wikidata取得', 'Wikidata_Person'];\nfor (const wn of wikiCandidates) {\n  try {\n    const w = $(wn).all();\n    if (w && w.length > 0 && extractBindings(w[0]?.json).length > 0) {\n      allWiki = w;\n      break;\n    }\n  } catch(e) {}\n}\nif (!allWiki.length) {\n  try { allWiki = $('Wikidata人物情報取得').all(); } catch(e) {}\n}\n\nlet allGemini = [];\ntry { allGemini = $('Gemini人物クレンジング').all(); } catch(e) {}\nif (!allGemini.length) {\n  try { allGemini = $('Gemini').all(); } catch(e) {}\n}\n\nconst results = [];\nconst loopCount = Math.max(allOriginalInputs.length, allGemini.length, allWiki.length, 1);\n\n// 2. 届いた全アイテム（全員分）を確実にループ処理\nfor (let i = 0; i < loopCount; i++) {\n  const input = allOriginalInputs[i]?.json || {};\n  const wikiRaw = allWiki[i]?.json || {};\n  const geminiRaw = allGemini[i]?.json || $input.all()[i]?.json || {};\n\n  // Gemini 生成文 (bio) の抽出\n  let bioText = null;\n  if (geminiRaw.content?.parts?.[0]?.text) {\n    bioText = geminiRaw.content.parts[0].text.trim();\n  } else if (typeof geminiRaw === 'string') {\n    bioText = geminiRaw.trim();\n  } else if (geminiRaw.text || geminiRaw.output) {\n    bioText = String(geminiRaw.text || geminiRaw.output).trim();\n  }\n\n  const bindings = extractBindings(wikiRaw);\n  const wikiFirst = findBestCandidate(bindings, input);\n\n  // QID\n  let qid = input.wikidata_id || input['Wikidata ID (QID)'] || null;\n  if (!qid && wikiFirst.person?.value) {\n    qid = wikiFirst.person.value.split('/').pop();\n  }\n\n  // 名前（入力、Wikidataラベル、Gemini文頭から徹底抽出）\n  let name = input.name || input['人物名'] || input['名前'] || input['name_ja'] || input.person || input.title || wikiFirst.personJaLabel?.value || wikiFirst.personLabel?.value || null;\n  if (!name && bioText) {\n    const match = bioText.match(/^([^\\s、,は（\\(]+)/);\n    if (match) name = match[1];\n  }\n  if (!name) name = \"人物\";\n\n  // 国籍（大韓民国 / 朝鮮国 -> KR）\n  const country = inferCountryCode(wikiFirst.countryLabel?.value || input.country);\n\n  // 原語名（韓国人の場合はハングル表記 personKoLabel を最優先）\n  let nameEn = null;\n  if (country === 'KR') {\n    nameEn = wikiFirst.personKoLabel?.value || (input.name_en && /[\\uac00-\\ud7af]/.test(input.name_en) ? input.name_en : null) || wikiFirst.personEnLabel?.value || input.name_en || null;\n  } else {\n    nameEn = wikiFirst.personEnLabel?.value || input.name_en || null;\n  }\n\n  // メンバー・グループ判定\n  const members = wikiFirst.membersList?.value || input.members || null;\n  const isGroup = !!members || input.type === 'group';\n  const type = isGroup ? 'group' : (input.type || 'individual');\n\n  // 職業・肩書（Wikidataの公職・職業または入力値をスマート適用）\n  let occupation = input.occupation || input['職業・肩書 / 検索ヒント'] || input['職業'];\n  if (!occupation) {\n    if (wikiFirst.positionLabel?.value) {\n      occupation = wikiFirst.positionLabel.value;\n    } else if (wikiFirst.occupationLabel?.value) {\n      occupation = wikiFirst.occupationLabel.value;\n    } else if (isGroup) {\n      occupation = 'グループ';\n    } else {\n      occupation = '文化人';\n    }\n  }\n\n  // 性別\n  let gender = (input.gender || wikiFirst.genderLabel?.value || '').toLowerCase();\n  if (gender.includes('female') || gender.includes('女性')) gender = 'female';\n  else if (gender.includes('male') || gender.includes('男性')) gender = 'male';\n  else gender = isGroup ? null : null;\n\n  // 画像URL\n  const profileUrl = cleanImageUrl(wikiFirst.image?.value || input.profile_url);\n\n  // SNS リンク\n  const xId = cleanSnsHandle(wikiFirst.twitter?.value || input.x_id);\n  const instaId = cleanSnsHandle(wikiFirst.instagram?.value || input.instagram_id);\n  const ytId = cleanSnsHandle(wikiFirst.youtube?.value || input.youtube_id);\n  const officialSite = wikiFirst.website?.value || input.official_site || null;\n\n  // TMDb ID (数値型として安全に抽出)\n  let tmdbId = null;\n  const rawTmdb = input.tmdb_id || wikiFirst.tmdbId?.value;\n  if (rawTmdb !== null && rawTmdb !== undefined && !isNaN(Number(rawTmdb))) {\n    tmdbId = parseInt(rawTmdb, 10);\n  }\n\n  // Supabase \"Persons\" テーブル完全互換レコード\n  const personRecord = {\n    id: input.id || undefined,\n    name: name,\n    name_en: nameEn,\n    occupation: occupation,\n    profile_url: profileUrl,\n    gender: gender,\n    country: country,\n    wikidata_id: qid,\n    type: type,\n    group_type: input.group_type || null,\n    parent_group: input.parent_group || null,\n    members: members,\n    x_id: xId,\n    instagram_id: instaId,\n    youtube_id: ytId,\n    official_site: officialSite,\n    bio: bioText || input.bio || null,\n    tmdb_id: tmdbId,\n    favorite_youtube: input.favorite_youtube || null\n  };\n\n  // 💡 is_favorite は入力で明示された場合のみ含め、未指定時は既存のお気に入りフラグを上書き保護\n  if (input.is_favorite !== undefined && input.is_favorite !== null) {\n    personRecord.is_favorite = Boolean(input.is_favorite);\n  }\n\n  if (personRecord.id === undefined) delete personRecord.id;\n\n  results.push({ json: personRecord });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        240
+      ],
+      "id": "node-supabase-format",
+      "name": "Supabase Upsert整形"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1420,
+        240
+      ],
+      "id": "node-supabase-save",
+      "name": "Supabase人物保存"
+    }
+  ],
+  "connections": {
+    "人物データベース登録フォーム": {
+      "main": [
+        [
+          {
+            "node": "入力分割コード",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "入力分割コード": {
+      "main": [
+        [
+          {
+            "node": "Wikidata人物情報取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikidata人物情報取得": {
+      "main": [
+        [
+          {
+            "node": "Gemini人物クレンジング",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gemini人物クレンジング",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini人物クレンジング": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Upsert整形": {
+      "main": [
+        [
+          {
+            "node": "Supabase人物保存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
