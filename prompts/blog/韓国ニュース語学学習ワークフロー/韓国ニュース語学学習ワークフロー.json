@@ -1,5 +1,5 @@
 {
-  "name": "韓国ニュース語学学習自動巡回ワークフロー（本格詳報・段落対訳版）",
+  "name": "韓国ニュース語学学習自動巡回ワークフロー（本格詳報・一本道安定版）",
   "nodes": [
     {
       "parameters": {
@@ -15,7 +15,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -640,
+        -600,
         200
       ],
       "id": "node-schedule-trigger",
@@ -26,7 +26,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -640,
+        -600,
         40
       ],
       "id": "node-manual-trigger",
@@ -35,7 +35,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons?is_favorite=eq.true&select=id,name,name_en,profile_url,occupation,is_favorite",
+        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons?is_favorite=eq.true&select=id,name,name_en,profile_url,occupation",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -54,37 +54,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -420,
-        100
+        -360,
+        120
       ],
       "id": "node-supabase-get-persons",
       "name": "Supabase (お気に入り人物取得)"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * 【n8n用】お気に入り人物ニュース検索クエリ生成コード\n * \n * 役割:\n *  1. Supabaseの Persons テーブルから取得したお気に入り人物を展開。\n *  2. 日本語名（name）とハングル名（name_en または name）を適切に判別し、Google News 韓国版で確実にヒットするハングル検索クエリを生成。\n *  3. お気に入りが0件の場合のみフォールバック人物（キム・ナムギル、パク・ウンビン、ポン・ジュノ等）を適用。\n */\n\nconst inputItems = $input.all();\nlet favoritePersons = [];\n\n// 1. Supabase から渡された人物データを抽出\nfor (const item of inputItems) {\n  const p = item.json;\n  // Supabase で既に is_favorite=eq.true で絞り込まれているため、名前があれば採用\n  if (p && (p.name || p.name_en)) {\n    // 韓国語名（ハングル）の判定: name_en または name からハングルを優先抽出\n    let koreanName = '';\n    if (p.name_en && /[가-힣]/.test(p.name_en)) {\n      koreanName = p.name_en.trim();\n    } else if (p.name && /[가-힣]/.test(p.name)) {\n      koreanName = p.name.trim();\n    } else {\n      koreanName = (p.name || p.name_en || '').trim();\n    }\n\n    favoritePersons.push({\n      id: p.id || null,\n      name: (p.name || koreanName).trim(),\n      korean_name: koreanName,\n      name_en: (p.name_en || '').trim(),\n      profile_url: p.profile_url || '',\n      occupation: p.occupation || '人物'\n    });\n  }\n}\n\n// 2. お気に入りが未登録（本当に0件）の場合のセーフティ・デフォルト\nif (favoritePersons.length === 0) {\n  favoritePersons = [\n    { id: null, name: 'キム・ナムギル', korean_name: '김남길', name_en: 'Kim Nam-gil', occupation: '배우', profile_url: '' },\n    { id: null, name: 'パク・ウンビン', korean_name: '박은빈', name_en: 'Park Eun-bin', occupation: '배우', profile_url: '' },\n    { id: null, name: 'ポン・ジュノ', korean_name: '봉준호', name_en: 'Bong Joon-ho', occupation: '영화감독', profile_url: '' }\n  ];\n}\n\n// 3. 各人物ごとのニュース検索リクエストを作成\nreturn favoritePersons.map(person => {\n  const searchName = person.korean_name || person.name;\n  const encodedQuery = encodeURIComponent(`\"${searchName}\" when:7d`);\n  const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=ko&gl=KR&ceid=KR:ko`;\n\n  return {\n    json: {\n      category: 'celeb',\n      category_name: `⭐ 推し（${person.name}）`,\n      person_id: person.id,\n      person_name: person.name,\n      person_korean_name: person.korean_name,\n      person_name_en: person.name_en,\n      person_profile_url: person.profile_url,\n      occupation: person.occupation,\n      search_query: searchName,\n      rss_url: rssUrl\n    }\n  };\n});\n"
+        "jsCode": "/**\n * 【n8n用】全カテゴリ・クエリ統合生成コード（5大カテゴリ ＋ 推し人物）\n * \n * 役割:\n *  1. 一般5大カテゴリ（治安、社会・暮らし、政治、経済、外交）のRSSクエリを確実に生成。\n *  2. Supabaseから渡されたお気に入り人物（推し）のハングル検索クエリを生成。\n *  3. 全カテゴリを1つの配列にまとめて一本化し、後続のRSS取得へ一括で流す。\n */\n\nconst queries = [];\n\n// 1. 一般5大重要カテゴリ（犯罪、社会・暮らし、政治、経済、外交）\nqueries.push(\n  {\n    category: 'crime',\n    category_name: '🚨 犯罪・治安',\n    search_query: '사건 사고 OR 경찰 OR 검찰 OR 재판',\n    rss_url: 'https://news.google.com/rss/search?q=%EC%82%AC%EA%B1%B4+%EC%82%AC%EA%B3%A0+OR+%EA%B2%BD%EC%B0%B0+OR+%EA%B2%80%EC%B0%B0+OR+%EC%9E%AC%ED%8C%90+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n  },\n  {\n    category: 'life',\n    category_name: '🏡 暮らし・社会',\n    search_query: '물가 OR 부동산 OR 복지 OR 건강',\n    rss_url: 'https://news.google.com/rss/search?q=%EB%AC%BC%EA%B0%80+OR+%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EB%B3%B5%EC%A7%80+OR+%EA%B1%B4%EA%B0%95+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n  },\n  {\n    category: 'politics',\n    category_name: '🏛️ 政治・国会',\n    search_query: '국회 OR 대통령실 OR 정당',\n    rss_url: 'https://news.google.com/rss/search?q=%EA%B5%AD%ED%9A%8C+OR+%EB%8C%80%ED%86%B5%EB%A0%B9%EC%8B%A4+OR+%EC%A0%95%EB%8B%B9+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n  },\n  {\n    category: 'economy',\n    category_name: '📈 経済・金融',\n    search_query: '금리 OR 환율 OR 코스피 OR 기업',\n    rss_url: 'https://news.google.com/rss/search?q=%EA%B8%88%EB%A6%AC+OR+%ED%99%98%EC%9C%A8+OR+%EC%BD%94%EC%8A%A4%ED%94%BC+OR+%EA%B8%B0%EC%97%85+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n  },\n  {\n    category: 'diplomacy',\n    category_name: '🌐 外交・国際',\n    search_query: '외교 OR 정상회담 OR 안보',\n    rss_url: 'https://news.google.com/rss/search?q=%EC%99%B8%EA%B5%90+OR+%EC%A0%95%EC%83%81%ED%9A%8C%EB%8B%B4+OR+%EC%95%88%EB%B3%B4+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n  }\n);\n\n// 2. お気に入り人物（推し）の抽出\nconst inputItems = $input.all();\nlet favoritePersons = [];\n\nfor (const item of inputItems) {\n  const p = item.json;\n  if (p && (p.name || p.name_en)) {\n    let koreanName = '';\n    if (p.name_en && /[가-힣]/.test(p.name_en)) {\n      koreanName = p.name_en.trim();\n    } else if (p.name && /[가-힣]/.test(p.name)) {\n      koreanName = p.name.trim();\n    } else {\n      koreanName = (p.name || p.name_en || '').trim();\n    }\n\n    favoritePersons.push({\n      id: p.id || null,\n      name: (p.name || koreanName).trim(),\n      korean_name: koreanName,\n      name_en: (p.name_en || '').trim(),\n      profile_url: p.profile_url || '',\n      occupation: p.occupation || '人物'\n    });\n  }\n}\n\n// お気に入りが0件の場合のフォールバック\nif (favoritePersons.length === 0) {\n  favoritePersons = [\n    { id: null, name: 'キム・ナムギル', korean_name: '김남길', name_en: 'Kim Nam-gil', occupation: '배우', profile_url: '' },\n    { id: null, name: 'パク・ウンビン', korean_name: '박은빈', name_en: 'Park Eun-bin', occupation: '배우', profile_url: '' },\n    { id: null, name: 'ポン・ジュノ', korean_name: '봉준호', name_en: 'Bong Joon-ho', occupation: '영화감독', profile_url: '' }\n  ];\n}\n\n// 推し人物のクエリを追加\nfor (const person of favoritePersons) {\n  const searchName = person.korean_name || person.name;\n  const encodedQuery = encodeURIComponent(`\"${searchName}\" when:7d`);\n  queries.push({\n    category: 'celeb',\n    category_name: `⭐ 推し（${person.name}）`,\n    person_id: person.id,\n    person_name: person.name,\n    person_korean_name: person.korean_name,\n    person_name_en: person.name_en,\n    person_profile_url: person.profile_url,\n    occupation: person.occupation,\n    search_query: searchName,\n    rss_url: `https://news.google.com/rss/search?q=${encodedQuery}&hl=ko&gl=KR&ceid=KR:ko`\n  });\n}\n\nreturn queries.map(q => ({ json: q }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -180,
-        100
+        -120,
+        120
       ],
-      "id": "node-code-oshi-query",
-      "name": "推し検索クエリ生成"
-    },
-    {
-      "parameters": {
-        "jsCode": "/**\n * 【n8n用】一般5大カテゴリRSSクエリ定義\n */\nreturn [\n  {\n    json: {\n      category: 'crime',\n      category_name: '🚨 犯罪・治安',\n      search_query: '사건 사고 OR 경찰 OR 검찰 OR 재판',\n      rss_url: 'https://news.google.com/rss/search?q=%EC%82%AC%EA%B1%B4+%EC%82%AC%EA%B3%A0+OR+%EA%B2%BD%EC%B0%B0+OR+%EA%B2%80%EC%B0%B0+OR+%EC%9E%AC%ED%8C%90+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'life',\n      category_name: '🏡 暮らし・社会',\n      search_query: '물가 OR 부동산 OR 복지 OR 건강',\n      rss_url: 'https://news.google.com/rss/search?q=%EB%AC%BC%EA%B0%80+OR+%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EB%B3%B5%EC%A7%80+OR+%EA%B1%B4%EA%B0%95+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'politics',\n      category_name: '🏛️ 政治・国会',\n      search_query: '국회 OR 대통령실 OR 정당',\n      rss_url: 'https://news.google.com/rss/search?q=%EA%B5%AD%ED%9A%8C+OR+%EB%8C%80%ED%86%B5%EB%A0%B9%EC%8B%A4+OR+%EC%A0%95%EB%8B%B9+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'economy',\n      category_name: '📈 経済・金融',\n      search_query: '금리 OR 환율 OR 코스피 OR 기업',\n      rss_url: 'https://news.google.com/rss/search?q=%EA%B8%88%EB%A6%AC+OR+%ED%99%98%EC%9C%A8+OR+%EC%BD%94%EC%8A%A4%ED%94%BC+OR+%EA%B8%B0%EC%97%85+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'diplomacy',\n      category_name: '🌐 外交・国際',\n      search_query: '외교 OR 정상회담 OR 안보',\n      rss_url: 'https://news.google.com/rss/search?q=%EC%99%B8%EA%B5%90+OR+%EC%A0%95%EC%83%81%ED%9A%8C%EB%8B%B4+OR+%EC%95%88%EB%B3%B4+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -180,
-        300
-      ],
-      "id": "node-code-general-categories",
-      "name": "一般5大カテゴリ定義"
+      "id": "node-code-unified-queries",
+      "name": "全カテゴリクエリ統合 (推し＋5大カテゴリ)"
     },
     {
       "parameters": {
@@ -101,21 +88,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        100,
-        200
+        120,
+        120
       ],
       "id": "node-http-google-news-rss",
       "name": "Google News RSS取得"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * 【n8n用】Google News RSS XML 解析＆トップニュース選別コード\n */\nconst rawXml = $input.item.json.data || $input.item.json.body || $input.item.json.response || '';\nconst meta = $input.item.json;\n\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/gi;\nlet match;\nlet count = 0;\n\n// 各カテゴリから最も重要なトップ1記事を厳選抽出（全6カテゴリで計6記事）\nwhile ((match = itemRegex.exec(rawXml)) !== null && count < 1) {\n  count++;\n  const content = match[1];\n  let rawTitle = (content.match(/<title>([\\s\\S]*?)<\\/title>/i)?.[1] || '').replace(/<!\\[CDATA\\[(.*?)\\]\\]>/g, '$1').trim();\n  const link = (content.match(/<link>([\\s\\S]*?)<\\/link>/i)?.[1] || '').trim();\n  const pubDate = (content.match(/<pubDate>([\\s\\S]*?)<\\/pubDate>/i)?.[1] || '').trim();\n  const sourceMatch = content.match(/<source[^>]*>([\\s\\S]*?)<\\/source>/i);\n  let sourceName = sourceMatch ? sourceMatch[1].trim() : '';\n\n  // タイトル末尾のメディア名を分離（例: \"기사 제목 - 연합뉴스\"）\n  let cleanTitle = rawTitle;\n  if (rawTitle.includes(' - ')) {\n    const parts = rawTitle.split(' - ');\n    sourceName = sourceName || parts.pop().trim();\n    cleanTitle = parts.join(' - ').trim();\n  }\n\n  items.push({\n    category: meta.category,\n    category_name: meta.category_name || meta.category,\n    person_id: meta.person_id || null,\n    person_name: meta.person_name || null,\n    person_profile_url: meta.person_profile_url || null,\n    news_title: cleanTitle,\n    raw_title: rawTitle,\n    source_name: sourceName || '한국 주요 언론',\n    source_url: link,\n    published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString()\n  });\n}\n\nreturn items.map(item => ({ json: item }));"
+        "jsCode": "/**\n * 【n8n用】Google News RSS XML 解析＆トップニュース選別コード\n */\nconst rawXml = $input.item.json.data || $input.item.json.body || $input.item.json.response || '';\nconst meta = $input.item.json;\n\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/gi;\nlet match;\nlet count = 0;\n\n// 各カテゴリから最も重要なトップ1記事を厳選抽出\nwhile ((match = itemRegex.exec(rawXml)) !== null && count < 1) {\n  count++;\n  const content = match[1];\n  let rawTitle = (content.match(/<title>([\\s\\S]*?)<\\/title>/i)?.[1] || '').replace(/<!\\[CDATA\\[(.*?)\\]\\]>/g, '$1').trim();\n  const link = (content.match(/<link>([\\s\\S]*?)<\\/link>/i)?.[1] || '').trim();\n  const pubDate = (content.match(/<pubDate>([\\s\\S]*?)<\\/pubDate>/i)?.[1] || '').trim();\n  const sourceMatch = content.match(/<source[^>]*>([\\s\\S]*?)<\\/source>/i);\n  let sourceName = sourceMatch ? sourceMatch[1].trim() : '';\n\n  let cleanTitle = rawTitle;\n  if (rawTitle.includes(' - ')) {\n    const parts = rawTitle.split(' - ');\n    sourceName = sourceName || parts.pop().trim();\n    cleanTitle = parts.join(' - ').trim();\n  }\n\n  items.push({\n    category: meta.category,\n    category_name: meta.category_name || meta.category,\n    person_id: meta.person_id || null,\n    person_name: meta.person_name || null,\n    person_profile_url: meta.person_profile_url || null,\n    news_title: cleanTitle,\n    raw_title: rawTitle,\n    source_name: sourceName || '한국 주요 언론',\n    source_url: link,\n    published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString()\n  });\n}\n\nreturn items.map(item => ({ json: item }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        340,
-        200
+        360,
+        120
       ],
       "id": "node-code-rss-parser",
       "name": "RSS解析・トップ記事抽出"
@@ -128,8 +115,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.4,
       "position": [
-        580,
-        200
+        600,
+        120
       ],
       "id": "node-gemini-chain",
       "name": "Gemini 本格報道記事生成"
@@ -144,21 +131,21 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        580,
-        380
+        600,
+        300
       ],
       "id": "node-gemini-model",
       "name": "Google Gemini Chat Model"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * 【n8n用】Gemini出力パース ＆ Supabase (newsテーブル) 保存用整形コード\n */\nconst items = $input.all();\nconst now = new Date().toISOString();\nconst validCategories = ['crime', 'life', 'politics', 'economy', 'diplomacy', 'celeb'];\n\nconst formattedResults = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const orig = $('RSS解析・トップ記事抽出').all()[i]?.json || {};\n  \n  let rawText = item.json.text || item.json.output || item.json.response || '';\n  if (typeof rawText === 'object') {\n    rawText = JSON.stringify(rawText);\n  }\n  \n  // マークダウン記法除去\n  if (typeof rawText === 'string') {\n    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n  }\n\n  let parsed = null;\n  try {\n    parsed = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;\n  } catch (e) {\n    const match = String(rawText).match(/\\{[\\s\\S]*\\}/);\n    if (match) {\n      try { parsed = JSON.parse(match[0]); } catch (e2) {}\n    }\n  }\n\n  if (!parsed || typeof parsed !== 'object') continue;\n  if (Array.isArray(parsed)) parsed = parsed[0];\n  if (!parsed || (!parsed.title_ko && !parsed.title_ja)) continue;\n\n  // カテゴリの決定\n  let cat = String(parsed.category || orig.category || 'life').toLowerCase().trim();\n  if (!validCategories.includes(cat)) cat = orig.category || 'life';\n\n  // 段落配列\n  let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];\n  if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {\n    paragraphs = [{\n      para_num: 1,\n      title: \"기사 요약\",\n      ko: String(parsed.summary_ko || ''),\n      ja: String(parsed.summary_ja || '')\n    }];\n  }\n\n  // 重要語彙\n  const vocab = Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [];\n\n  formattedResults.push({\n    json: {\n      category: cat,\n      rank: parseInt(parsed.rank, 10) || 1,\n      title_ko: String(parsed.title_ko || orig.news_title || '').trim(),\n      title_ja: String(parsed.title_ja || '').trim(),\n      summary_ko: String(parsed.summary_ko || paragraphs[0]?.ko || '').trim(),\n      summary_ja: String(parsed.summary_ja || paragraphs[0]?.ja || '').trim(),\n      paragraphs: paragraphs,\n      key_vocabulary: vocab,\n      source_name: String(parsed.source_name || orig.source_name || '한국 언론').trim(),\n      source_url: String(parsed.source_url || orig.source_url || '').trim(),\n      person_id: orig.person_id || (parsed.person_id ? parseInt(parsed.person_id, 10) : null),\n      person_name: orig.person_name || parsed.person_name || null,\n      person_profile_url: orig.person_profile_url || parsed.person_profile_url || null,\n      published_at: orig.published_at || now,\n      created_at: now\n    }\n  });\n}\n\nreturn formattedResults;"
+        "jsCode": "/**\n * 【n8n用】Gemini出力パース ＆ Supabase (newsテーブル) 保存用整形コード\n */\nconst items = $input.all();\nconst now = new Date().toISOString();\nconst validCategories = ['crime', 'life', 'politics', 'economy', 'diplomacy', 'celeb'];\n\nconst formattedResults = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const orig = $('RSS解析・トップ記事抽出').all()[i]?.json || {};\n  \n  let rawText = item.json.text || item.json.output || item.json.response || '';\n  if (typeof rawText === 'object') {\n    rawText = JSON.stringify(rawText);\n  }\n  \n  if (typeof rawText === 'string') {\n    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n  }\n\n  let parsed = null;\n  try {\n    parsed = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;\n  } catch (e) {\n    const match = String(rawText).match(/\\{[\\s\\S]*\\}/);\n    if (match) {\n      try { parsed = JSON.parse(match[0]); } catch (e2) {}\n    }\n  }\n\n  if (!parsed || typeof parsed !== 'object') continue;\n  if (Array.isArray(parsed)) parsed = parsed[0];\n  if (!parsed || (!parsed.title_ko && !parsed.title_ja)) continue;\n\n  let cat = String(parsed.category || orig.category || 'life').toLowerCase().trim();\n  if (!validCategories.includes(cat)) cat = orig.category || 'life';\n\n  let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];\n  if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {\n    paragraphs = [{\n      para_num: 1,\n      title: \"기사 요약\",\n      ko: String(parsed.summary_ko || ''),\n      ja: String(parsed.summary_ja || '')\n    }];\n  }\n\n  const vocab = Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [];\n\n  formattedResults.push({\n    json: {\n      category: cat,\n      rank: parseInt(parsed.rank, 10) || 1,\n      title_ko: String(parsed.title_ko || orig.news_title || '').trim(),\n      title_ja: String(parsed.title_ja || '').trim(),\n      summary_ko: String(parsed.summary_ko || paragraphs[0]?.ko || '').trim(),\n      summary_ja: String(parsed.summary_ja || paragraphs[0]?.ja || '').trim(),\n      paragraphs: paragraphs,\n      key_vocabulary: vocab,\n      source_name: String(parsed.source_name || orig.source_name || '한국 언론').trim(),\n      source_url: String(parsed.source_url || orig.source_url || '').trim(),\n      person_id: orig.person_id || (parsed.person_id ? parseInt(parsed.person_id, 10) : null),\n      person_name: orig.person_name || parsed.person_name || null,\n      person_profile_url: orig.person_profile_url || parsed.person_profile_url || null,\n      published_at: orig.published_at || now,\n      created_at: now\n    }\n  });\n}\n\nreturn formattedResults;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        860,
-        200
+        880,
+        120
       ],
       "id": "node-code-supabase-format",
       "name": "Supabase保存データ整形"
@@ -196,8 +183,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
-        200
+        1120,
+        120
       ],
       "id": "node-http-supabase-upsert",
       "name": "Supabase news Upsert"
@@ -211,11 +198,6 @@
             "node": "Supabase (お気に入り人物取得)",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "一般5大カテゴリ定義",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -227,11 +209,6 @@
             "node": "Supabase (お気に入り人物取得)",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "一般5大カテゴリ定義",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -240,25 +217,14 @@
       "main": [
         [
           {
-            "node": "推し検索クエリ生成",
+            "node": "全カテゴリクエリ統合 (推し＋5大カテゴリ)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "推し検索クエリ生成": {
-      "main": [
-        [
-          {
-            "node": "Google News RSS取得",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "一般5大カテゴリ定義": {
+    "全カテゴリクエリ統合 (推し＋5大カテゴリ)": {
       "main": [
         [
           {
