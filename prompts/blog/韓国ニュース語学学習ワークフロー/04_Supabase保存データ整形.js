@@ -4,7 +4,8 @@
  * 役割:
  *  1. Gemini Flash が出力した4段落報道記事＋単語リストを安全にパース。
  *  2. 前段ノード（RSS解析）から元のカテゴリや推し情報（person_id/name）を確実にマージ。
- *  3. Supabase REST API (POST /rest/v1/news) への完全対応オブジェクト配列を出力。
+ *  3. 同一バッチ内での重複URL（source_url）を自動排除。
+ *  4. Supabase REST API (POST /rest/v1/news?on_conflict=source_url) への完全対応オブジェクト配列を出力。
  */
 
 const items = $input.all();
@@ -12,6 +13,7 @@ const now = new Date().toISOString();
 const validCategories = ['crime', 'life', 'politics', 'economy', 'diplomacy', 'celeb'];
 
 const formattedResults = [];
+const seenUrls = new Set();
 
 for (let i = 0; i < items.length; i++) {
   const item = items[i];
@@ -45,6 +47,15 @@ for (let i = 0; i < items.length; i++) {
   let cat = String(parsed.category || orig.category || 'life').toLowerCase().trim();
   if (!validCategories.includes(cat)) cat = orig.category || 'life';
 
+  // 記事URLと重複チェック
+  const sourceUrl = String(parsed.source_url || orig.source_url || '').trim();
+  if (sourceUrl) {
+    if (seenUrls.has(sourceUrl)) {
+      continue; // 同一実行内の重複記事をスキップ
+    }
+    seenUrls.add(sourceUrl);
+  }
+
   // 段落配列 (4段落構成)
   let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];
   if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {
@@ -70,7 +81,7 @@ for (let i = 0; i < items.length; i++) {
       paragraphs: paragraphs,
       key_vocabulary: vocab,
       source_name: String(parsed.source_name || orig.source_name || '한국 언론').trim(),
-      source_url: String(parsed.source_url || orig.source_url || '').trim(),
+      source_url: sourceUrl,
       person_id: orig.person_id || (parsed.person_id ? parseInt(parsed.person_id, 10) : null),
       person_name: orig.person_name || parsed.person_name || null,
       person_profile_url: orig.person_profile_url || parsed.person_profile_url || null,

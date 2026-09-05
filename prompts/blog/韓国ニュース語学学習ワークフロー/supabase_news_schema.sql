@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS "news" (
     "created_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 既存テーブルへのカラム追加・ユニーク制約の保証
 ALTER TABLE "news" ADD COLUMN IF NOT EXISTS "paragraphs" JSONB DEFAULT '[]'::jsonb;
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_news_source_url_unique" ON "news" ("source_url");
 
 CREATE INDEX IF NOT EXISTS "idx_news_category" ON "news" ("category");
 CREATE INDEX IF NOT EXISTS "idx_news_published_at" ON "news" ("published_at" DESC);
@@ -35,6 +37,9 @@ CREATE INDEX IF NOT EXISTS "idx_news_rank" ON "news" ("rank");
 ALTER TABLE "news" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read-only access on news" ON "news" FOR SELECT USING (true);
 CREATE POLICY "Allow anon insert/upsert on news" ON "news" FOR ALL USING (true) WITH CHECK (true);
+
+-- PostgREST のスキーマキャッシュをリロード
+NOTIFY pgrst, 'reload schema';
 
 -- 3. 💡 user_notes テーブルの作成（ユーザーのアイデア・学習メモ・AI共有メモ）
 CREATE TABLE IF NOT EXISTS "user_notes" (
@@ -51,3 +56,4 @@ CREATE INDEX IF NOT EXISTS "idx_user_notes_updated_at" ON "user_notes" ("updated
 
 ALTER TABLE "user_notes" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read-write on user_notes" ON "user_notes" FOR ALL USING (true) WITH CHECK (true);
+NOTIFY pgrst, 'reload schema';
