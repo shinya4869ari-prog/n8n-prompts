@@ -79,7 +79,7 @@ if (favoritePersons.length === 0) {
   ];
 }
 
-// 推し人物のクエリを追加
+// 3. 推し人物のクエリを追加
 for (const person of favoritePersons) {
   const searchName = person.korean_name || person.name;
   const encodedQuery = encodeURIComponent(`"${searchName}" when:7d`);
