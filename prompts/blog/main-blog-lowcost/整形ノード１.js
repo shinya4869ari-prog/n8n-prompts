@@ -753,7 +753,4 @@ return [{
     data: finalData
   }
 }];
-    writerPrompt: writerPrompt, // 置換済みのプロンプト
-    data: finalData
-  }
-}];
+
