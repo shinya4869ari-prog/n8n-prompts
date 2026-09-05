@@ -1,0 +1,332 @@
+{
+  "name": "韓国ニュース語学学習自動巡回ワークフロー（本格詳報・段落対訳版）",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        200
+      ],
+      "id": "node-schedule-trigger",
+      "name": "Schedule Trigger (毎朝7時)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        40
+      ],
+      "id": "node-manual-trigger",
+      "name": "Manual Trigger (手動テスト)"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/Persons?is_favorite=eq.true&select=id,name,name_en,profile_url,occupation",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -420,
+        100
+      ],
+      "id": "node-supabase-get-persons",
+      "name": "Supabase (お気に入り人物取得)"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】お気に入り人物ニュース検索クエリ生成コード\n */\nconst inputItems = $input.all();\nlet favoritePersons = [];\n\nfor (const item of inputItems) {\n  const p = item.json;\n  if (p && (p.is_favorite === true || p.is_favorite === 'true') && (p.name || p.name_en)) {\n    favoritePersons.push({\n      id: p.id || null,\n      name: p.name || '',\n      name_en: p.name_en || '',\n      profile_url: p.profile_url || '',\n      occupation: p.occupation || '人物'\n    });\n  }\n}\n\n// お気に入りが未登録の場合のセーフティ・デフォルト\nif (favoritePersons.length === 0) {\n  favoritePersons = [\n    { id: null, name: '김남길', name_en: 'Kim Nam-gil', occupation: '배우', profile_url: '' },\n    { id: null, name: '박은빈', name_en: 'Park Eun-bin', occupation: '배우', profile_url: '' },\n    { id: null, name: '봉준호', name_en: 'Bong Joon-ho', occupation: '영화감독', profile_url: '' }\n  ];\n}\n\nreturn favoritePersons.map(person => {\n  const searchName = person.name || person.name_en;\n  const encodedQuery = encodeURIComponent(`\"${searchName}\" when:7d`);\n  const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=ko&gl=KR&ceid=KR:ko`;\n\n  return {\n    json: {\n      category: 'celeb',\n      category_name: `⭐ 推し（${searchName}）`,\n      person_id: person.id,\n      person_name: person.name,\n      person_name_en: person.name_en,\n      person_profile_url: person.profile_url,\n      occupation: person.occupation,\n      search_query: searchName,\n      rss_url: rssUrl\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        100
+      ],
+      "id": "node-code-oshi-query",
+      "name": "推し検索クエリ生成"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】一般5大カテゴリRSSクエリ定義\n */\nreturn [\n  {\n    json: {\n      category: 'crime',\n      category_name: '🚨 犯罪・治安',\n      search_query: '사건 사고 OR 경찰 OR 검찰 OR 재판',\n      rss_url: 'https://news.google.com/rss/search?q=%EC%82%AC%EA%B1%B4+%EC%82%AC%EA%B3%A0+OR+%EA%B2%BD%EC%B0%B0+OR+%EA%B2%80%EC%B0%B0+OR+%EC%9E%AC%ED%8C%90+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'life',\n      category_name: '🏡 暮らし・社会',\n      search_query: '물가 OR 부동산 OR 복지 OR 건강',\n      rss_url: 'https://news.google.com/rss/search?q=%EB%AC%BC%EA%B0%80+OR+%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EB%B3%B5%EC%A7%80+OR+%EA%B1%B4%EA%B0%95+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'politics',\n      category_name: '🏛️ 政治・国会',\n      search_query: '국회 OR 대통령실 OR 정당',\n      rss_url: 'https://news.google.com/rss/search?q=%EA%B5%AD%ED%9A%8C+OR+%EB%8C%80%ED%86%B5%EB%A0%B9%EC%8B%A4+OR+%EC%A0%95%EB%8B%B9+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'economy',\n      category_name: '📈 経済・金融',\n      search_query: '금리 OR 환율 OR 코스피 OR 기업',\n      rss_url: 'https://news.google.com/rss/search?q=%EA%B8%88%EB%A6%AC+OR+%ED%99%98%EC%9C%A8+OR+%EC%BD%94%EC%8A%A4%ED%94%BC+OR+%EA%B8%B0%EC%97%85+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  },\n  {\n    json: {\n      category: 'diplomacy',\n      category_name: '🌐 外交・国際',\n      search_query: '외교 OR 정상회담 OR 안보',\n      rss_url: 'https://news.google.com/rss/search?q=%EC%99%B8%EA%B5%90+OR+%EC%A0%95%EC%83%81%ED%9A%8C%EB%8B%B4+OR+%EC%95%88%EB%B3%B4+when:7d&hl=ko&gl=KR&ceid=KR:ko'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        300
+      ],
+      "id": "node-code-general-categories",
+      "name": "一般5大カテゴリ定義"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.rss_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        100,
+        200
+      ],
+      "id": "node-http-google-news-rss",
+      "name": "Google News RSS取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】Google News RSS XML 解析＆トップニュース選別コード\n */\nconst rawXml = $input.item.json.data || $input.item.json.body || $input.item.json.response || '';\nconst meta = $input.item.json;\n\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/gi;\nlet match;\nlet count = 0;\n\n// 各カテゴリから最も重要なトップ1記事を厳選抽出（全6カテゴリで計6記事）\nwhile ((match = itemRegex.exec(rawXml)) !== null && count < 1) {\n  count++;\n  const content = match[1];\n  let rawTitle = (content.match(/<title>([\\s\\S]*?)<\\/title>/i)?.[1] || '').replace(/<!\\[CDATA\\[(.*?)\\]\\]>/g, '$1').trim();\n  const link = (content.match(/<link>([\\s\\S]*?)<\\/link>/i)?.[1] || '').trim();\n  const pubDate = (content.match(/<pubDate>([\\s\\S]*?)<\\/pubDate>/i)?.[1] || '').trim();\n  const sourceMatch = content.match(/<source[^>]*>([\\s\\S]*?)<\\/source>/i);\n  let sourceName = sourceMatch ? sourceMatch[1].trim() : '';\n\n  // タイトル末尾のメディア名を分離（例: \"기사 제목 - 연합뉴스\"）\n  let cleanTitle = rawTitle;\n  if (rawTitle.includes(' - ')) {\n    const parts = rawTitle.split(' - ');\n    sourceName = sourceName || parts.pop().trim();\n    cleanTitle = parts.join(' - ').trim();\n  }\n\n  items.push({\n    category: meta.category,\n    category_name: meta.category_name || meta.category,\n    person_id: meta.person_id || null,\n    person_name: meta.person_name || null,\n    person_profile_url: meta.person_profile_url || null,\n    news_title: cleanTitle,\n    raw_title: rawTitle,\n    source_name: sourceName || '한국 주요 언론',\n    source_url: link,\n    published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString()\n  });\n}\n\nreturn items.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        200
+      ],
+      "id": "node-code-rss-parser",
+      "name": "RSS解析・トップ記事抽出"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "あなたは韓国の主要紙（朝鮮日報、中央日報、聯合ニュース等）のベテラン記者であり、同時に外国人向け韓国語教育の最高専門家です。\n\n以下の韓国ニュース速報情報をもとに、背景や市民の反応、今後の展望までを網羅した【本格的な報道記事（4段落構成、ハングル計800〜1,200文字）】を再構成し、指定のJSON形式で出力してください。\n\n【対象ニュース速報】\n- カテゴリ: {{ $json.category }} ({{ $json.category_name }})\n- 速報タイトル: {{ $json.news_title }}\n- 出典メディア: {{ $json.source_name }}\n{{ $json.person_name ? '- 関連推し人物: ' + $json.person_name : '' }}\n\n【記事執筆の鉄則】\n1. 報道体（ハオチェ・ヘラ体「〜다고 밝혔다 / 〜(으)로 나타났다 / 〜것으로 알려졌다」等）の格式高い標準韓国語を使用すること。\n2. 短文ダイジェストで終わらせず、以下の【4段落構成】でしっかりしたボリュームを持たせること：\n   - 第1段落【事象・発生・公式発表】：何が起き、誰が何を決定・発表したか（約200〜250字）\n   - 第2段落【手口・経緯・背景】：事件や問題の具体的な手口、これまでの捜査や社会情勢の推移（約300〜350字）\n   - 第3段落【反響・市民の声・影響】：国民、被害者、野党、関連業界、専門家などの反応や影響（約250〜300字）\n   - 第4段落【今後の展望・当局の対策】：今後の裁判期日、新制度の施行日、政府の再発防止策（約200字）\n3. 各段落に対応する、極めて自然で流麗な【日本語訳（ja）】を付けること。\n4. 記事の中から、学習者が覚えるべき【重要語彙（8〜12語）】を抽出し、品詞・漢字・難易度（初級/中級/高級）を明記すること。\n5. 出力は必ず以下の有効なJSONオブジェクト1つ（マークダウンの```json等の装飾を含まない生のJSON）のみを返してください。\n\n【出力JSON構造】\n{\n  \"category\": \"{{ $json.category }}\",\n  \"rank\": 1,\n  \"title_ko\": \"記事タイトル（韓国語）\",\n  \"title_ja\": \"記事タイトル（日本語訳）\",\n  \"summary_ko\": \"第1段落を中心とした要約文（韓国語）\",\n  \"summary_ja\": \"要約文（日本語訳）\",\n  \"paragraphs\": [\n    {\n      \"para_num\": 1,\n      \"title\": \"第1段落の見出し\",\n      \"ko\": \"第1段落の本文（韓国語・約200〜250字）\",\n      \"ja\": \"第1段落の日本語訳\"\n    },\n    {\n      \"para_num\": 2,\n      \"title\": \"第2段落の見出し\",\n      \"ko\": \"第2段落の本文（韓国語・約300〜350字）\",\n      \"ja\": \"第2段落の日本語訳\"\n    },\n    {\n      \"para_num\": 3,\n      \"title\": \"第3段落の見出し\",\n      \"ko\": \"第3段落の本文（韓国語・約250〜300字）\",\n      \"ja\": \"第3段落の日本語訳\"\n    },\n    {\n      \"para_num\": 4,\n      \"title\": \"第4段落の見出し\",\n      \"ko\": \"第4段落の本文（韓国語・約200字）\",\n      \"ja\": \"第4段落の日本語訳\"\n    }\n  ],\n  \"key_vocabulary\": [\n    { \"word\": \"단어\", \"hanja\": \"漢字（漢字語の場合）\", \"pos\": \"名詞/動詞等\", \"meaning\": \"日本語の意味\", \"level\": \"初級/中級/高級\" }\n  ],\n  \"source_name\": \"{{ $json.source_name }}\",\n  \"source_url\": \"{{ $json.source_url }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        580,
+        200
+      ],
+      "id": "node-gemini-chain",
+      "name": "Gemini 本格報道記事生成"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        580,
+        380
+      ],
+      "id": "node-gemini-model",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】Gemini出力パース ＆ Supabase (newsテーブル) 保存用整形コード\n */\nconst items = $input.all();\nconst now = new Date().toISOString();\nconst validCategories = ['crime', 'life', 'politics', 'economy', 'diplomacy', 'celeb'];\n\nconst formattedResults = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const orig = $('RSS解析・トップ記事抽出').all()[i]?.json || {};\n  \n  let rawText = item.json.text || item.json.output || item.json.response || '';\n  if (typeof rawText === 'object') {\n    rawText = JSON.stringify(rawText);\n  }\n  \n  // マークダウン記法除去\n  if (typeof rawText === 'string') {\n    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n  }\n\n  let parsed = null;\n  try {\n    parsed = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;\n  } catch (e) {\n    const match = String(rawText).match(/\\{[\\s\\S]*\\}/);\n    if (match) {\n      try { parsed = JSON.parse(match[0]); } catch (e2) {}\n    }\n  }\n\n  if (!parsed || typeof parsed !== 'object') continue;\n  if (Array.isArray(parsed)) parsed = parsed[0];\n  if (!parsed || (!parsed.title_ko && !parsed.title_ja)) continue;\n\n  // カテゴリの決定\n  let cat = String(parsed.category || orig.category || 'life').toLowerCase().trim();\n  if (!validCategories.includes(cat)) cat = orig.category || 'life';\n\n  // 段落配列\n  let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];\n  if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {\n    paragraphs = [{\n      para_num: 1,\n      title: \"기사 요약\",\n      ko: String(parsed.summary_ko || ''),\n      ja: String(parsed.summary_ja || '')\n    }];\n  }\n\n  // 重要語彙\n  const vocab = Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [];\n\n  formattedResults.push({\n    json: {\n      category: cat,\n      rank: parseInt(parsed.rank, 10) || 1,\n      title_ko: String(parsed.title_ko || orig.news_title || '').trim(),\n      title_ja: String(parsed.title_ja || '').trim(),\n      summary_ko: String(parsed.summary_ko || paragraphs[0]?.ko || '').trim(),\n      summary_ja: String(parsed.summary_ja || paragraphs[0]?.ja || '').trim(),\n      paragraphs: paragraphs,\n      key_vocabulary: vocab,\n      source_name: String(parsed.source_name || orig.source_name || '한국 언론').trim(),\n      source_url: String(parsed.source_url || orig.source_url || '').trim(),\n      person_id: orig.person_id || (parsed.person_id ? parseInt(parsed.person_id, 10) : null),\n      person_name: orig.person_name || parsed.person_name || null,\n      person_profile_url: orig.person_profile_url || parsed.person_profile_url || null,\n      published_at: orig.published_at || now,\n      created_at: now\n    }\n  });\n}\n\nreturn formattedResults;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        200
+      ],
+      "id": "node-code-supabase-format",
+      "name": "Supabase保存データ整形"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/news",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ],
+      "id": "node-http-supabase-upsert",
+      "name": "Supabase news Upsert"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (毎朝7時)": {
+      "main": [
+        [
+          {
+            "node": "Supabase (お気に入り人物取得)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "一般5大カテゴリ定義",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger (手動テスト)": {
+      "main": [
+        [
+          {
+            "node": "Supabase (お気に入り人物取得)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "一般5大カテゴリ定義",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase (お気に入り人物取得)": {
+      "main": [
+        [
+          {
+            "node": "推し検索クエリ生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "推し検索クエリ生成": {
+      "main": [
+        [
+          {
+            "node": "Google News RSS取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "一般5大カテゴリ定義": {
+      "main": [
+        [
+          {
+            "node": "Google News RSS取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google News RSS取得": {
+      "main": [
+        [
+          {
+            "node": "RSS解析・トップ記事抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS解析・トップ記事抽出": {
+      "main": [
+        [
+          {
+            "node": "Gemini 本格報道記事生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gemini 本格報道記事生成",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 本格報道記事生成": {
+      "main": [
+        [
+          {
+            "node": "Supabase保存データ整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase保存データ整形": {
+      "main": [
+        [
+          {
+            "node": "Supabase news Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
