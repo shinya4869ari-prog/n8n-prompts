@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS "news" (
 
 -- 既存テーブルへのカラム追加・ユニーク制約の保証
 ALTER TABLE "news" ADD COLUMN IF NOT EXISTS "paragraphs" JSONB DEFAULT '[]'::jsonb;
-CREATE UNIQUE INDEX IF NOT EXISTS "idx_news_source_url_unique" ON "news" ("source_url");
+ALTER TABLE "news" DROP CONSTRAINT IF EXISTS "news_source_url_key";
+ALTER TABLE "news" ADD CONSTRAINT "news_source_url_key" UNIQUE ("source_url");
 
 CREATE INDEX IF NOT EXISTS "idx_news_category" ON "news" ("category");
 CREATE INDEX IF NOT EXISTS "idx_news_published_at" ON "news" ("published_at" DESC);
