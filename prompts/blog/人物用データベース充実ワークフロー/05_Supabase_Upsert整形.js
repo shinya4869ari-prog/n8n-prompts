@@ -1,5 +1,11 @@
 /**
- * 【n8n用】人物データベース (Persons) Supabase Upsert用整形コード (超堅牢・完全保証版)
+ * 【05】Supabase Upsert整形 (Code Node)
+ * 
+ * 役割:
+ *   1. 前段の「入力分割コード」「Wikidata人物情報取得」「Gemini人物クレンジング」のデータを完全統合。
+ *   2. Wikidataの複数検索候補から、職業・国籍・名前をもとに最適な1名をスコアリング選定。
+ *   3. 画像URL（Wikimediaリダイレクト正規化）、SNSアカウント（@除去・URL除去）、性別・国コードをクレンジング。
+ *   4. Supabase "Persons" テーブルと100%合致するUpsert用JSONオブジェクトを出力。
  */
 
 function cleanSnsHandle(handleOrUrl) {

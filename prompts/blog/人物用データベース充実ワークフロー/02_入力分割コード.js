@@ -1,9 +1,9 @@
 /**
- * 【n8n用】人物データ 受付・自動分割コード（映画/ドラマワークフロー連携対応）
+ * 【02】入力分割コード (Code Node)
  * 
  * 役割: 
- *   1. 映画ワークフローから渡された cast, director, cast_en, director_en を自動で1人ずつの個別アイテムに展開
- *   2. Supabase の JSON 配列やフォーム入力も同様に自動展開
+ *   1. 映画/ドラマワークフローから渡された cast, director, cast_en, director_en を自動で1人ずつの個別アイテムに展開。
+ *   2. Supabase の JSON 配列やフォーム入力も同様に自動展開し、1人1アイテムとして後続ノードへ流す。
  */
 
 const input = $input.first()?.json || {};
