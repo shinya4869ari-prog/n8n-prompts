@@ -3,9 +3,10 @@
  * 
  * 役割:
  *   1. 前段の「入力分割コード」「Wikidata人物情報取得」「Gemini人物クレンジング」のデータを完全統合。
- *   2. Wikidataの複数検索候補から、職業・国籍・名前をもとに最適な1名をスコアリング選定。
- *   3. 画像URL（Wikimediaリダイレクト正規化）、SNSアカウント（@除去・URL除去）、性別・国コードをクレンジング。
- *   4. Supabase "Persons" テーブルと100%合致するUpsert用JSONオブジェクトを出力。
+ *   2. 俳優・監督だけでなく、政治家・歴史上の人物・アイドル・学者等あらゆるジャンルを適切にスコアリング選定。
+ *   3. 画像URL正規化、SNSアカウント整形、TMDb ID、国籍コード、役職・職業をクレンジング。
+ *   4. Supabase "Persons" テーブル最新スキーマ（tmdb_id, favorite_youtube含む）と完全互換のUpsert用JSONを出力。
+ *   5. is_favorite を誤って false でリセットしない安全設計（未指定時はキーを除外して既存値を保護）。
  */
 
 function cleanSnsHandle(handleOrUrl) {
@@ -35,12 +36,13 @@ function cleanImageUrl(url) {
 function inferCountryCode(countryStr) {
   if (!countryStr) return 'KR';
   const str = String(countryStr).toLowerCase();
-  if (str.includes('韓') || str.includes('korea') || str === 'kr') return 'KR';
+  if (str.includes('韓') || str.includes('korea') || str === 'kr' || str.includes('朝鮮') || str.includes('joseon') || str.includes('高麗')) return 'KR';
   if (str.includes('日本') || str.includes('japan') || str === 'jp') return 'JP';
-  if (str.includes('アメリカ') || str.includes('usa') || str === 'us') return 'US';
-  if (str.includes('イギリス') || str.includes('uk') || str === 'gb') return 'GB';
+  if (str.includes('アメリカ') || str.includes('usa') || str === 'us' || str.includes('米国')) return 'US';
+  if (str.includes('イギリス') || str.includes('uk') || str === 'gb' || str.includes('英国')) return 'GB';
   if (str.includes('中国') || str.includes('china') || str === 'cn') return 'CN';
   if (str.includes('フランス') || str.includes('france') || str === 'fr') return 'FR';
+  if (str.includes('ドイツ') || str.includes('germany') || str === 'de') return 'DE';
   return countryStr;
 }
 
@@ -53,6 +55,7 @@ function findBestCandidate(bindings, input) {
 
   const targetCountry = String(input.country || '').toLowerCase();
   const targetOcc = String(input.occupation || '').toLowerCase();
+  const targetCat = String(input.category || '').toLowerCase();
   const targetName = String(input.name || '').toLowerCase();
   const targetNameEn = String(input.name_en || '').toLowerCase();
 
@@ -60,37 +63,57 @@ function findBestCandidate(bindings, input) {
     let score = 0;
     const cLabel = String(b.countryLabel?.value || '').toLowerCase();
     const occLabel = String(b.occupationLabel?.value || '').toLowerCase();
+    const posLabel = String(b.positionLabel?.value || '').toLowerCase();
+    const partyLabel = String(b.partyLabel?.value || '').toLowerCase();
     const jaLabel = String(b.personJaLabel?.value || b.personLabel?.value || '').toLowerCase();
     const koLabel = String(b.personKoLabel?.value || '').toLowerCase();
     const enLabel = String(b.personEnLabel?.value || '').toLowerCase();
 
-    // 1. 国籍一致判定
+    // 1. 国籍・所属判定
     if (targetCountry.includes('kr') || targetCountry.includes('韓') || targetOcc.includes('韓')) {
-      if (cLabel.includes('韓') || cLabel.includes('korea')) score += 100;
-      else if (cLabel) score -= 100;
+      if (cLabel.includes('韓') || cLabel.includes('korea') || cLabel.includes('朝鮮') || cLabel.includes('大韓') || cLabel.includes('高麗')) {
+        score += 80;
+      } else if (cLabel) {
+        score -= 50;
+      }
     } else if (targetCountry.includes('jp') || targetCountry.includes('日')) {
-      if (cLabel.includes('日本') || cLabel.includes('japan')) score += 100;
-      else if (cLabel) score -= 100;
+      if (cLabel.includes('日本') || cLabel.includes('japan')) {
+        score += 80;
+      } else if (cLabel) {
+        score -= 50;
+      }
     }
 
-    // 2. 職業一致判定
-    if (targetOcc.includes('俳優') || targetOcc.includes('女優') || targetOcc.includes('actor') || targetOcc.includes('actress')) {
-      if (occLabel.includes('俳優') || occLabel.includes('女優') || occLabel.includes('モデル') || occLabel.includes('タレント')) score += 50;
-      if (occLabel.includes('政治家') || occLabel.includes('学者') || occLabel.includes('軍人') || occLabel.includes('格闘家')) score -= 100;
-    } else if (targetOcc.includes('歌手') || targetOcc.includes('アイドル') || targetOcc.includes('singer')) {
-      if (occLabel.includes('歌手') || occLabel.includes('ミュージシャン') || occLabel.includes('アイドル') || b.membersList?.value) score += 50;
-      if (occLabel.includes('政治家') || occLabel.includes('軍人')) score -= 100;
+    // 2. カテゴリ・職業の一致判定
+    if (targetCat === 'politician' || targetOcc.includes('政治') || targetOcc.includes('大統領') || targetOcc.includes('議員') || targetOcc.includes('官僚')) {
+      if (posLabel.includes('大統領') || posLabel.includes('総理') || posLabel.includes('議員') || posLabel.includes('知事') || posLabel.includes('長官')) score += 100;
+      if (occLabel.includes('政治家') || occLabel.includes('弁護士') || occLabel.includes('検察官') || partyLabel) score += 60;
+    } else if (targetCat === 'historical' || targetOcc.includes('歴史') || targetOcc.includes('王') || targetOcc.includes('将軍')) {
+      if (posLabel.includes('王') || posLabel.includes('君主') || posLabel.includes('皇帝') || posLabel.includes('将軍') || posLabel.includes('提督')) score += 100;
+      if (b.deathDate?.value) score += 40; // 没年がある = 歴史的人物
+    } else if (targetCat === 'idol' || targetCat === 'singer' || targetOcc.includes('アイドル') || targetOcc.includes('歌手')) {
+      if (occLabel.includes('歌手') || occLabel.includes('アイドル') || occLabel.includes('ミュージシャン') || b.membersList?.value) score += 80;
+    } else if (targetCat === 'actor' || targetCat === 'director' || targetOcc.includes('俳優') || targetOcc.includes('女優') || targetOcc.includes('監督')) {
+      if (occLabel.includes('俳優') || occLabel.includes('女優') || occLabel.includes('モデル') || occLabel.includes('映画監督') || occLabel.includes('演出家')) score += 80;
+      if (b.tmdbId?.value) score += 40; // TMDb ID がある = 映像関係者
+    } else if (targetCat === 'author' || targetOcc.includes('学者') || targetOcc.includes('作家') || targetOcc.includes('教授')) {
+      if (occLabel.includes('作家') || occLabel.includes('小説家') || occLabel.includes('学者') || occLabel.includes('教授') || occLabel.includes('ジャーナリスト')) score += 80;
+    } else {
+      // カテゴリ未指定の場合：TMDb ID、公職、または職業があれば加点
+      if (posLabel) score += 30;
+      if (occLabel) score += 20;
+      if (b.tmdbId?.value) score += 30;
     }
 
     // 3. 画像あり
-    if (b.image?.value) score += 20;
+    if (b.image?.value) score += 25;
 
-    // 4. SNSあり
-    if (b.instagram?.value || b.twitter?.value) score += 20;
+    // 4. SNS / 公式情報あり
+    if (b.instagram?.value || b.twitter?.value || b.youtube?.value || b.website?.value) score += 20;
 
-    // 5. 名前一致
-    if (targetName && (jaLabel.includes(targetName) || koLabel.includes(targetName) || enLabel.includes(targetName))) score += 30;
-    if (targetNameEn && (koLabel.includes(targetNameEn) || enLabel.includes(targetNameEn))) score += 30;
+    // 5. 名前の一致度
+    if (targetName && (jaLabel.includes(targetName) || koLabel.includes(targetName) || enLabel.includes(targetName))) score += 40;
+    if (targetNameEn && (koLabel.includes(targetNameEn) || enLabel.includes(targetNameEn))) score += 40;
 
     if (score > bestScore) {
       bestScore = score;
@@ -185,19 +208,18 @@ for (let i = 0; i < loopCount; i++) {
     qid = wikiFirst.person.value.split('/').pop();
   }
 
-  // 名前（あらゆるキー・Wikidata・Geminiから徹底抽出）
+  // 名前（入力、Wikidataラベル、Gemini文頭から徹底抽出）
   let name = input.name || input['人物名'] || input['名前'] || input['name_ja'] || input.person || input.title || wikiFirst.personJaLabel?.value || wikiFirst.personLabel?.value || null;
   if (!name && bioText) {
-    // bioの冒頭（例: "ハヨンは、..."）から抽出
     const match = bioText.match(/^([^\s、,は（\(]+)/);
     if (match) name = match[1];
   }
   if (!name) name = "人物";
 
-  // 国籍（大韓民国 -> KR に変換）
+  // 国籍（大韓民国 / 朝鮮国 -> KR）
   const country = inferCountryCode(wikiFirst.countryLabel?.value || input.country);
 
-  // 🎯 韓国人の場合: ハングル表記 (personKoLabel) を最優先セット
+  // 原語名（韓国人の場合はハングル表記 personKoLabel を最優先）
   let nameEn = null;
   if (country === 'KR') {
     nameEn = wikiFirst.personKoLabel?.value || (input.name_en && /[\uac00-\ud7af]/.test(input.name_en) ? input.name_en : null) || wikiFirst.personEnLabel?.value || input.name_en || null;
@@ -210,10 +232,18 @@ for (let i = 0; i < loopCount; i++) {
   const isGroup = !!members || input.type === 'group';
   const type = isGroup ? 'group' : (input.type || 'individual');
 
-  // 職業
-  let occupation = input.occupation || input['職業'] || wikiFirst.occupationLabel?.value;
+  // 職業・肩書（Wikidataの公職・職業または入力値をスマート適用）
+  let occupation = input.occupation || input['職業・肩書 / 検索ヒント'] || input['職業'];
   if (!occupation) {
-    occupation = isGroup ? '歌手' : '俳優';
+    if (wikiFirst.positionLabel?.value) {
+      occupation = wikiFirst.positionLabel.value;
+    } else if (wikiFirst.occupationLabel?.value) {
+      occupation = wikiFirst.occupationLabel.value;
+    } else if (isGroup) {
+      occupation = 'グループ';
+    } else {
+      occupation = '文化人';
+    }
   }
 
   // 性別
@@ -230,6 +260,13 @@ for (let i = 0; i < loopCount; i++) {
   const instaId = cleanSnsHandle(wikiFirst.instagram?.value || input.instagram_id);
   const ytId = cleanSnsHandle(wikiFirst.youtube?.value || input.youtube_id);
   const officialSite = wikiFirst.website?.value || input.official_site || null;
+
+  // TMDb ID (数値型として安全に抽出)
+  let tmdbId = null;
+  const rawTmdb = input.tmdb_id || wikiFirst.tmdbId?.value;
+  if (rawTmdb !== null && rawTmdb !== undefined && !isNaN(Number(rawTmdb))) {
+    tmdbId = parseInt(rawTmdb, 10);
+  }
 
   // Supabase "Persons" テーブル完全互換レコード
   const personRecord = {
@@ -249,8 +286,15 @@ for (let i = 0; i < loopCount; i++) {
     instagram_id: instaId,
     youtube_id: ytId,
     official_site: officialSite,
-    bio: bioText || input.bio || null
+    bio: bioText || input.bio || null,
+    tmdb_id: tmdbId,
+    favorite_youtube: input.favorite_youtube || null
   };
+
+  // 💡 is_favorite は入力で明示された場合のみ含め、未指定時は既存のお気に入りフラグを上書き保護
+  if (input.is_favorite !== undefined && input.is_favorite !== null) {
+    personRecord.is_favorite = Boolean(input.is_favorite);
+  }
 
   if (personRecord.id === undefined) delete personRecord.id;
 
