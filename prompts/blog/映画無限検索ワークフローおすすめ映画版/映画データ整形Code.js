@@ -28,15 +28,27 @@ if (resultsList.length > 0) {
 
 if (!sourceData?.title && !result?.title && !tmdbNode?.title) return [];
 
-const langToCountry = {
-  'ko': 'KR', 'ja': 'JP', 'en': 'US', 'fr': 'FR', 'de': 'DE',
-  'zh': 'CN', 'ar': 'SA', 'fa': 'IR', 'hi': 'IN', 'th': 'TH',
-  'vi': 'VN', 'id': 'ID', 'tr': 'TR', 'ru': 'RU', 'es': 'ES',
-  'pt': 'BR', 'it': 'IT', 'nl': 'NL', 'pl': 'PL', 'da': 'DK',
-  'sv': 'SE', 'nb': 'NO', 'fi': 'FI',
-};
-const lang = result?.original_language || tmdbNode?.original_language;
-const country = sourceData.target_country || sourceData.country || langToCountry[lang] || lang?.toUpperCase() || null;
+// 🎯【国コード（country-master-lookup連携 ＆ 2文字ISOコード優先抽出）】
+const countryLookup = getNodeData('country-master-lookup') || getNodeData('国マスター') || getNodeData('国マスター検索') || {};
+const lookupCountryCode = countryLookup.countryCode || countryLookup.code || null;
+
+const sourceCountryCode = (sourceData.countryCode && sourceData.countryCode.length === 2) ? sourceData.countryCode.toUpperCase() :
+                         (sourceData.target_country && sourceData.target_country.length === 2) ? sourceData.target_country.toUpperCase() :
+                         (sourceData.country && sourceData.country.length === 2) ? sourceData.country.toUpperCase() : null;
+
+// TMDb公式製作国（ISO 3166-1 2文字コード）
+const tmdbProdCountry = (Array.isArray(result?.production_countries) && result.production_countries[0]?.iso_3166_1) || 
+                        (Array.isArray(tmdbNode?.production_countries) && tmdbNode.production_countries[0]?.iso_3166_1) || null;
+const tmdbOriginCountry = (Array.isArray(result?.origin_country) && result.origin_country[0]) || 
+                          (Array.isArray(tmdbNode?.origin_country) && tmdbNode.origin_country[0]) || null;
+
+// 国コードの決定（国のノード country-master-lookup ➔ 入力データ ➔ TMDb公式製作国）
+const country = lookupCountryCode || 
+                sourceCountryCode || 
+                tmdbProdCountry || 
+                tmdbOriginCountry || 
+                null;
+
 
 // 1. ポスターURLの確定
 let rawPosterPath = sourceData.poster_url || (result?.poster_path ? `https://image.tmdb.org/t/p/w500${result.poster_path}` : (tmdbNode?.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbNode.poster_path}` : null));
@@ -72,6 +84,7 @@ const fetchedCastEn = castArray.length > 0 ? castArray.slice(0, 10).map(c => c.o
 let aiOverview = null;
 let aiCastJa = null;
 let aiDirectorJa = null;
+let aiTitleJa = null;
 
 const aiData = getNodeData('gemini_movie_db_prompt') || getNodeData('claude_movie_db_prompt') || getNodeData('gemini_movie_db') || getNodeData('claude_movie_db') || {};
 const currentInput = $input.first()?.json || {};
@@ -88,18 +101,37 @@ if (typeof aiData === 'string') {
 }
 
 if (rawAiText) {
+  const titleMatch = rawAiText.match(/\[TITLE_JA:\s*(.+?)\]/i) || rawAiText.match(/\[TITLE:\s*(.+?)\]/i);
+  if (titleMatch) {
+    const candidate = titleMatch[1].trim();
+    if (candidate && candidate !== 'なし' && candidate !== 'null' && candidate !== 'undefined') {
+      aiTitleJa = candidate;
+    }
+  }
+
   const dirMatch = rawAiText.match(/\[DIRECTOR_JA:\s*(.+?)\]/i);
-  if (dirMatch) aiDirectorJa = dirMatch[1].trim();
+  if (dirMatch) {
+    const candidate = dirMatch[1].trim();
+    if (candidate && candidate !== 'なし' && candidate !== 'null' && candidate !== 'undefined') {
+      aiDirectorJa = candidate;
+    }
+  }
 
   const castMatch = rawAiText.match(/\[CAST_JA:\s*(.+?)\]/i);
-  if (castMatch) aiCastJa = castMatch[1].trim();
+  if (castMatch) {
+    const candidate = castMatch[1].trim();
+    if (candidate && candidate !== 'なし' && candidate !== 'null' && candidate !== 'undefined') {
+      aiCastJa = candidate;
+    }
+  }
 
   aiOverview = rawAiText
+    .replace(/\[TITLE_JA:\s*(.+?)\]/gi, '')
     .replace(/\[CAST_JA:\s*(.+?)\]/gi, '')
     .replace(/\[DIRECTOR_JA:\s*(.+?)\]/gi, '')
     .replace(/```json/gi, '')
     .replace(/```/g, '')
-    .replace(/\[TITLE:\s*(.+?)\]/i, '')
+    .replace(/\[TITLE:\s*(.+?)\]/gi, '')
     .trim();
 }
 
@@ -168,13 +200,40 @@ const rawForeignOverview = rawEnOverview || rawKoOverview || otherTrans?.data?.o
 const finalOverview = tmdbJaOverview || aiOverview || sourceData.overview || rawForeignOverview || null;
 const originalForeignOverview = (rawForeignOverview && rawForeignOverview !== finalOverview) ? rawForeignOverview : (sourceData.overview_en || rawForeignOverview || null);
 
-// 7. タイトルの確定
+// 7. タイトルの確定（日本語表記を最優先・外国語はAI翻訳/音訳を採用）
 const inputTitle = (/^\d+$/.test(sourceData.title || '') ? null : sourceData.title);
 const isInputTitleJapanese = isJapaneseText(inputTitle);
+const tmdbJaTitle = translationsList.find(t => t.iso_639_1 === 'ja')?.data?.title?.trim() || null;
 const isTmdbTitleJapanese = isJapaneseText(result?.title || tmdbNode?.title);
-const tmdbJaTitle = translationsList.find(t => t.iso_639_1 === 'ja')?.data?.title || null;
-const tmdbEnTitle = translationsList.find(t => t.iso_639_1 === 'en')?.data?.title || null;
-const finalTitle = sourceData.title || (isInputTitleJapanese ? inputTitle : null) || tmdbJaTitle || (isTmdbTitleJapanese ? (result?.title || tmdbNode?.title) : null) || tmdbEnTitle || result?.title || tmdbNode?.title || result?.original_title || tmdbNode?.original_title || null;
+const tmdbTitleIfJa = isTmdbTitleJapanese ? (result?.title || tmdbNode?.title) : null;
+const tmdbEnTitle = translationsList.find(t => t.iso_639_1 === 'en')?.data?.title?.trim() || null;
+
+// 優先順位：
+// 1. TMDb公式日本語邦題
+// 2. 入力タイトルが既に日本語の場合
+// 3. AI（Gemini/Claude）が生成した日本語タイトル（未公開映画のカタカナ音訳・邦題）
+// 4. TMDbタイトルが日本語の場合
+// 5. 入力タイトル
+// 6. TMDb英語タイトル
+// 7. TMDb原題
+const finalTitle = tmdbJaTitle 
+  || (isInputTitleJapanese ? inputTitle : null) 
+  || aiTitleJa 
+  || tmdbTitleIfJa 
+  || inputTitle 
+  || tmdbEnTitle 
+  || result?.title 
+  || tmdbNode?.title 
+  || result?.original_title 
+  || tmdbNode?.original_title 
+  || null;
+
+// 原題（origin_title）の確定：元の外国語/原語タイトルを確実に保持
+const finalOriginTitle = sourceData.origin_title 
+  || result?.original_title 
+  || tmdbNode?.original_title 
+  || (!isInputTitleJapanese ? inputTitle : null) 
+  || finalTitle;
 
 // 8. ジャンルの日本語化
 const genreMap = {
@@ -331,22 +390,28 @@ const cleanStr = (str) => {
   return str.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 };
 
+const cleanPerson = (val) => {
+  const cleaned = cleanStr(val);
+  if (!cleaned || cleaned === 'なし' || cleaned === 'null' || cleaned === 'undefined') return null;
+  return cleaned;
+};
+
 const finalDirector = toKatakanaIfHangul(aiDirectorJa || sourceData.director || fetchedDirector || null)?.replace(/_/g, '・');
 const finalCast = toKatakanaIfHangul(aiCastJa || sourceData.cast || fetchedCast || null)?.replace(/_/g, '・');
 
 return [{
   json: {
     title: cleanStr(finalTitle),
-    origin_title: cleanStr(sourceData.origin_title || result?.original_title || null),
+    origin_title: cleanStr(finalOriginTitle),
     year: sourceData.year || (result?.release_date ? parseInt(result.release_date.substring(0, 4)) : null) || null,
     country,
     genres: cleanStr(genres),
     wikidata_id,
     tmdb_id,
-    director: cleanStr(finalDirector),
-    director_en: cleanStr(sourceData.director_en || fetchedDirectorEn || null),
-    cast: cleanStr(finalCast),
-    cast_en: cleanStr(sourceData.cast_en || fetchedCastEn || null),
+    director: cleanPerson(finalDirector),
+    director_en: cleanPerson(sourceData.director_en || fetchedDirectorEn || null),
+    cast: cleanPerson(finalCast),
+    cast_en: cleanPerson(sourceData.cast_en || fetchedCastEn || null),
     overview: cleanStr(finalOverview),
     overview_en: cleanStr(originalForeignOverview),
     poster_url: posterPath,

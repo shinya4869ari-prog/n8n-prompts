@@ -62,8 +62,11 @@ const crewList = (Array.isArray(tmdbObj.credits?.crew) && tmdbObj.credits.crew) 
 const createdByList = (Array.isArray(tmdbObj.created_by) && tmdbObj.created_by) || 
                       (Array.isArray(tmdbObj.credits?.created_by) && tmdbObj.credits.created_by) || [];
 
-const dirList = crewList.filter(c => c && (c.job === 'Director' || c.job === 'Writer' || c.job === 'Executive Producer'));
-const effectiveDirList = dirList.length > 0 ? dirList : createdByList;
+// 🎯 映画の監督（Director）を最優先抽出し、プロデューサーや脚本家の誤混入を完全防止
+const directorsOnly = crewList.filter(c => c && c.job === 'Director');
+const effectiveDirList = directorsOnly.length > 0 
+  ? directorsOnly 
+  : (createdByList.length > 0 ? createdByList : crewList.filter(c => c && (c.job === 'Writer' || c.job === 'Screenplay')));
 
 const tmdbDirector = effectiveDirList.map(c => c.name || c.original_name).filter(Boolean).join(', ');
 const tmdbDirectorEn = effectiveDirList.map(c => c.original_name || c.name).filter(Boolean).join(', ');
