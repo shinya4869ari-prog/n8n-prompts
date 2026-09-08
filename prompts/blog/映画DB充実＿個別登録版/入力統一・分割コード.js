@@ -14,8 +14,8 @@ const rawInput = $input.first()?.json || {};
 // 1. フォームの入力値を全自動検出（どんなフィールド名・日本語ラベルでも確実に拾う）
 let queryText = '';
 
-// 指定の優先キーを確認
-const priorityKeys = ['title', 'query', 'tmdb_id', 'wikidata_id', 'qid', 'id', 'titles', '作品名', '映画名', 'TMDb ID'];
+// 指定の優先キーを確認（TMDb IDやQIDなどのIDを最優先で拾う）
+const priorityKeys = ['id', 'tmdb_id', 'wikidata_id', 'qid', 'title', 'query', 'titles', '作品名', '映画名', 'TMDb ID'];
 for (const key of priorityKeys) {
   if (rawInput[key] !== undefined && rawInput[key] !== null && String(rawInput[key]).trim() !== '') {
     queryText = String(rawInput[key]).trim();
@@ -37,10 +37,24 @@ if (!queryText) {
   }
 }
 
-// 2. 国・年・言語パラメータの取得
-const targetCountry = rawInput.country || rawInput.target_country || null;
+// 2. 国・年・言語・メディア種別パラメータの取得
+let targetCountry = rawInput.country || rawInput.target_country || null;
+if (targetCountry && typeof targetCountry === 'string' && targetCountry.includes(':')) {
+  targetCountry = targetCountry.split(':')[0].trim();
+}
+if (targetCountry === 'OTHER') targetCountry = null;
+
 const targetYear = rawInput.year || null;
 const targetLang = rawInput.target_lang || 'ja';
+
+// メディア種別（映画 / ドラマ）の自動判別
+let mediaType = null;
+const rawMedia = String(rawInput.media_type || rawInput.type || '').toLowerCase();
+if (rawMedia.includes('tv') || rawMedia.includes('ドラマ') || rawMedia.includes('series')) {
+  mediaType = 'tv';
+} else if (rawMedia.includes('movie') || rawMedia.includes('映画')) {
+  mediaType = 'movie';
+}
 
 // 3. 入力値の種別判定（QID / TMDb ID / IMDb ID / タイトル）
 let wikidataId = null;
@@ -70,6 +84,7 @@ return [{
     year: targetYear,
     target_country: targetCountry,
     country: targetCountry,
+    media_type: mediaType,
     target_lang: targetLang,
     tmdb_id: tmdbId,
     wikidata_id: wikidataId,

@@ -1,0 +1,246 @@
+# 📸 スクショ画像から一発特定！映画・ドラマ個別登録フロー
+
+## 📌 概要
+映画やドラマの紹介画面のスクリーンショット（画像）をフォームにアップロードするだけで、
+**Gemini 1.5 Flash が「タイトル」「公開年」「監督」「キャスト」「TMDb ID」を瞬時に読み取り、誤爆ゼロでSupabaseへ個別登録する拡張モジュール** です。
+
+もちろん、スクショ画像がない場合は今まで通り **手動で TMDb ID や タイトルを入力して送信** することもできるハイブリッド設計です。
+
+---
+
+## 🏗️ ワークフロー配置図
+
+```text
+[On form submission (スクショ添付対応フォーム)]
+       │
+       ▼
+[スクショ有無判定 (IF)]
+   ├── (true: 画像あり) ──▶ [Geminiスクショ解析] ──▶ [スクショ解析結果整形 (Code)] ──┐
+   │                                                                               │
+   └── (false: 画像なし) ──────────────────────────────────────────────────────────┴─▶ [入力統一・分割コード]
+                                                                                            │
+                                                                                            ▼
+                                                                                   （以降の既存ワークフロー）
+```
+
+---
+
+## 📋 n8n コピペ用ノードセット (JSON)
+
+n8n のキャンバス上で以下の JSON をクリップボードにコピーして貼り付け（`Ctrl+V`）できます。
+「On form submission」「スクショ有無判定」「Geminiスクショ解析」「スクショ解析結果整形」の4ノードが接続済みの状態で一括配置されます。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "映画・ドラマ個別登録フォーム（スクショ対応版）",
+        "formDescription": "作品紹介のスクリーンショット画像を添付するか、TMDb ID / タイトルを入力して登録を開始します。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "screenshot",
+              "fieldType": "file",
+              "requiredField": false,
+              "fieldDescription": "📸【スクショ検索】作品の紹介画面・あらすじ画像を添付（AIがタイトル・年・監督・TMDb IDを一発特定！）"
+            },
+            {
+              "fieldLabel": "id",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【手動入力時】TMDb ID または Wikidata QID（例: 1310677, Q124128670）"
+            },
+            {
+              "fieldLabel": "title",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【手動入力時】作品タイトル（※IDやスクショがない場合のみ）"
+            },
+            {
+              "fieldLabel": "media_type",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "all : 自動判定（スクショから自動判別）"
+                  },
+                  {
+                    "option": "movie : 映画"
+                  },
+                  {
+                    "option": "tv : ドラマ・TVシリーズ"
+                  }
+                ]
+              },
+              "defaultValue": "all : 自動判定（スクショから自動判別）",
+              "fieldDescription": "作品の種別"
+            },
+            {
+              "fieldLabel": "country",
+              "fieldType": "dropdown",
+              "requiredField": false,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "KR : 韓国"
+                  },
+                  {
+                    "option": "US : アメリカ"
+                  },
+                  {
+                    "option": "JP : 日本"
+                  },
+                  {
+                    "option": "OTHER : その他・自動判定"
+                  }
+                ]
+              },
+              "defaultValue": "KR : 韓国",
+              "fieldDescription": "主な製作国（スクショがある場合はAIが自動判別）"
+            },
+            {
+              "fieldLabel": "year",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "【任意】公開年・放送年（手動入力時の年代特定用）"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "id": "node-form-trigger-screenshot",
+      "name": "On form submission",
+      "webhookId": "movie-screenshot-form"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-check-binary",
+              "leftValue": "={{ Object.keys($binary || {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        240,
+        240
+      ],
+      "id": "node-check-screenshot",
+      "name": "スクショ有無判定"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "prompt": "={{ `あなたは映画・映像作品の専門リサーチャーです。\n提供された画像（スクリーンショット）から、対象作品のメタデータを正確に特定・抽出し、必ず以下のJSON形式のみで出力してください。\n挨拶、説明文、Markdownの\`\`\`json記法などは一切含めず、純粋なJSONオブジェクトのみを出力してください。\n\n{\n  \"title\": \"作品タイトル（日本語表記）\",\n  \"origin_title\": \"原題（英語や原語タイトルがわかる場合）\",\n  \"year\": \"公開年または放送年（4桁の西暦。例: 2016）\",\n  \"director\": \"監督名（日本語表記）\",\n  \"cast\": \"主要キャスト名（カンマ区切り）\",\n  \"country\": \"主な製作国の2文字コード（例: US, KR, JP, GB等）\",\n  \"media_type\": \"movie または tv（映画ならmovie、ドラマならtv）\",\n  \"tmdb_id\": TMDbの作品ID（数値型。あなたが確実に知っている場合のみ。不明ならnull）\n}\n\n【画像解析の指針】\n- 画像内のタイトル、西暦、監督、出演者情報を精密に読み取ってください。\n- その情報に基づき、対象作品のTMDb IDを特定できる場合は tmdb_id にセットしてください。` }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        140
+      ],
+      "id": "node-gemini-screenshot",
+      "name": "Geminiスクショ解析"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        480,
+        340
+      ],
+      "id": "node-gemini-chat-model-screenshot",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【スクショ解析結果整形コード】\n * Geminiが画像から読み取ったJSONをパースし、既存の「入力統一・分割コード」へ渡せる形に整えます。\n */\nconst item = $input.first()?.json || {};\nlet parsed = {};\n\nlet rawText = item.text || item.output || item.content?.parts?.[0]?.text || '';\nif (typeof item === 'string') rawText = item;\n\n// ```json ... ``` の除去\nrawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n\ntry {\n  parsed = JSON.parse(rawText);\n} catch (e) {\n  const mTitle = rawText.match(/\"title\":\\s*\"([^\"]+)\"/);\n  const mYear = rawText.match(/\"year\":\\s*\"*(\\d{4})\"*?/);\n  const mTmdb = rawText.match(/\"tmdb_id\":\\s*(\\d+)/);\n  parsed = {\n    title: mTitle ? mTitle[1] : '',\n    year: mYear ? mYear[1] : null,\n    tmdb_id: mTmdb ? parseInt(mTmdb[1], 10) : null\n  };\n}\n\nlet formInput = {};\ntry {\n  formInput = $('On form submission').first()?.json || {};\n} catch(e) {}\n\nconst cleanCountry = (c) => {\n  if (!c || c === 'OTHER') return null;\n  if (c.includes(':')) return c.split(':')[0].trim();\n  return c;\n};\n\nconst finalCountry = cleanCountry(formInput.country) || parsed.country || 'KR';\nconst finalMediaType = (formInput.media_type && !formInput.media_type.includes('all')) \n  ? (formInput.media_type.includes('tv') ? 'tv' : 'movie')\n  : (parsed.media_type || 'movie');\n\nconst finalTmdbId = parsed.tmdb_id || (formInput.id && /^\\d+$/.test(formInput.id) ? parseInt(formInput.id, 10) : null);\nconst finalQid = formInput.id && /^Q\\d+$/i.test(formInput.id) ? formInput.id.toUpperCase() : null;\n\nreturn [{\n  json: {\n    ...formInput,\n    ...parsed,\n    query: finalTmdbId ? String(finalTmdbId) : (finalQid || parsed.title || formInput.title || ''),\n    id: finalTmdbId || finalQid || null,\n    tmdb_id: finalTmdbId,\n    wikidata_id: finalQid,\n    title: parsed.title || formInput.title || '',\n    origin_title: parsed.origin_title || null,\n    year: parsed.year || formInput.year || null,\n    director: parsed.director || null,\n    cast: parsed.cast || null,\n    country: finalCountry,\n    target_country: finalCountry,\n    media_type: finalMediaType\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        140
+      ],
+      "id": "node-screenshot-format",
+      "name": "スクショ解析結果整形"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "スクショ有無判定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "スクショ有無判定": {
+      "main": [
+        [
+          {
+            "node": "Geminiスクショ解析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Geminiスクショ解析",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geminiスクショ解析": {
+      "main": [
+        [
+          {
+            "node": "スクショ解析結果整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+```

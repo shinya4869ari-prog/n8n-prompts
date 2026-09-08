@@ -36,7 +36,9 @@ CREATE INDEX IF NOT EXISTS "idx_news_published_at" ON "news" ("published_at" DES
 CREATE INDEX IF NOT EXISTS "idx_news_rank" ON "news" ("rank");
 
 ALTER TABLE "news" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read-only access on news" ON "news";
 CREATE POLICY "Allow public read-only access on news" ON "news" FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow anon insert/upsert on news" ON "news";
 CREATE POLICY "Allow anon insert/upsert on news" ON "news" FOR ALL USING (true) WITH CHECK (true);
 
 -- PostgREST のスキーマキャッシュをリロード
@@ -56,5 +58,48 @@ CREATE TABLE IF NOT EXISTS "user_notes" (
 CREATE INDEX IF NOT EXISTS "idx_user_notes_updated_at" ON "user_notes" ("updated_at" DESC);
 
 ALTER TABLE "user_notes" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read-write on user_notes" ON "user_notes";
 CREATE POLICY "Allow public read-write on user_notes" ON "user_notes" FOR ALL USING (true) WITH CHECK (true);
 NOTIFY pgrst, 'reload schema';
+
+-- 4. 📚 dictionary テーブルの作成（クラウド共通韓国語辞書：漢字語・品詞・意味）
+CREATE TABLE IF NOT EXISTS "dictionary" (
+    "id" BIGSERIAL PRIMARY KEY,
+    "word" TEXT NOT NULL,              -- ハングル表記 (例: '사례', '적발')
+    "hanja" TEXT,                      -- 漢字語表記 (例: '事例', '摘發')
+    "meaning" TEXT NOT NULL,           -- 日本語意味 (例: '事例・ケース・実例')
+    "pos" TEXT DEFAULT '名詞',         -- 品詞 ('名詞', '動詞', '形容詞' など)
+    "level" TEXT DEFAULT '中級',       -- 難易度 ('初級', '中級', '高級')
+    "created_at" TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS "idx_dictionary_word" ON "dictionary" ("word");
+ALTER TABLE "dictionary" DROP CONSTRAINT IF EXISTS "dictionary_word_key";
+ALTER TABLE "dictionary" ADD CONSTRAINT "dictionary_word_key" UNIQUE ("word");
+
+ALTER TABLE "dictionary" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read-only on dictionary" ON "dictionary";
+CREATE POLICY "Allow public read-only on dictionary" ON "dictionary" FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert/upsert on dictionary" ON "dictionary";
+CREATE POLICY "Allow public insert/upsert on dictionary" ON "dictionary" FOR ALL USING (true) WITH CHECK (true);
+
+-- 初期シードデータ（ニュース頻出語の登録例）
+INSERT INTO "dictionary" ("word", "hanja", "meaning", "pos", "level")
+VALUES
+  ('사례', '事例', '事例・ケース・実例', '名詞', '中級'),
+  ('적발', '摘發', '摘発・発覚', '名詞', '中級'),
+  ('종결', '終結', '終結・完了・締めくくり', '名詞', '中級'),
+  ('수사관', '搜査官', '捜査官', '名詞', '中級'),
+  ('부당하다', '不當--', '不当だ・道理に合わない', '形容詞', '中級'),
+  ('전수조사', '全數調査', '全数調査・総点検', '名詞', '高級'),
+  ('허위', '虛僞', '虚偽・偽り・ウソ', '名詞', '中級'),
+  ('과중', '過重', '過重・重すぎること', '名詞', '中級'),
+  ('파장', '波長', '波紋・影響・波及', '名詞', '中級')
+ON CONFLICT ("word") DO UPDATE SET
+  "hanja" = EXCLUDED."hanja",
+  "meaning" = EXCLUDED."meaning",
+  "pos" = EXCLUDED."pos",
+  "level" = EXCLUDED."level";
+
+NOTIFY pgrst, 'reload schema';
+
