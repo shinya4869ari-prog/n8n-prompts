@@ -1,0 +1,530 @@
+{
+  "name": "韓国歌詞・語学学習ワークフロー (スクショ＆ID対応・完全ノンストップ版)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "🎵 韓国歌詞・語学学習データ自動生成フォーム",
+        "formDescription": "YouTube等のスクリーンショット画像を添付するか、Apple Music/iTunesの楽曲ID（track_id）を入力してください。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "screenshot",
+              "fieldType": "file",
+              "requiredField": false,
+              "fieldDescription": "📸【スクショ検索】曲名・アーティスト名が写ったスクショ画像を添付（AIが一発自動特定・登録）"
+            },
+            {
+              "fieldLabel": "track_id",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "🆔【通常入力】Apple Music / iTunes 楽曲ID（例: 1681264206 または 1648228862）"
+            },
+            {
+              "fieldLabel": "search_query",
+              "fieldType": "text",
+              "requiredField": false,
+              "fieldDescription": "🔍【手動検索】曲名やアーティスト名を直接入力（例: 던 빛이 나는 너에게）"
+            },
+            {
+              "fieldLabel": "model",
+              "fieldType": "dropdown",
+              "requiredField": false,
+              "fieldDescription": "🤖【使用モデル】2026年最新の Gemini モデルを選択",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "name": "Gemini 3.7 Flash (本命・高精度・安定稼働)",
+                    "value": "gemini-3.7-flash"
+                  },
+                  {
+                    "name": "Gemini 3.8 Flash (最新フラッグシップFlash)",
+                    "value": "gemini-3.8-flash"
+                  },
+                  {
+                    "name": "Gemini 3.5 Flash (主力安定版Flash)",
+                    "value": "gemini-3.5-flash"
+                  },
+                  {
+                    "name": "Gemini 3.5 Flash-Lite (最軽量・制限回避用)",
+                    "value": "gemini-3.5-flash-lite"
+                  },
+                  {
+                    "name": "Gemini 3.5 Pro (超高精度・長文詳細解説)",
+                    "value": "gemini-3.5-pro"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "custom_lyrics",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "fieldDescription": "📝【公式歌詞貼り付け（任意）】Melon等からコピーした公式歌詞があれば貼り付け（AIが100%正確に教材化）"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        200
+      ],
+      "id": "node-form-trigger",
+      "name": "楽曲登録フォーム (スクショ / ID入力)",
+      "webhookId": "korean-lyrics-import"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-has-screenshot",
+              "leftValue": "={{ Object.keys($binary || {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        200
+      ],
+      "id": "node-check-screenshot",
+      "name": "スクショ有無判定"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ `あなたはYouTubeや音楽配信サービスの画面から楽曲情報を高精度に読み取る専門家です。\n添付されたスクリーンショット画像（YouTube動画タイトル、音楽アプリの再生画面等）から、対象楽曲の「アーティスト名」と「曲名」を正確に読み取ってください。\n\n【抽出ルール】\n1. 動画タイトルに含まれる余計な装飾文字列（例: \"(Official Video)\", \"[MV]\", \"(Official Audio)\", \"MV\", \"Lyrics\" など）はすべて完全に除外してください。\n2. アーティスト名と曲名を分離し、ハングル表記と英字副題がある場合はそれぞれ抽出してください。\n3. iTunes検索用の最適なクエリ（search_query）を生成してください。\n\n必ずMarkdown記法（\\`\\`\\`json）や余計な挨拶を含めず、以下の純粋なJSONオブジェクトのみを出力してください。\n{\n  \"artist\": \"アーティスト名（例: 던 (DAWN)）\",\n  \"title\": \"曲名フル（例: 빛이 나는 너에게 (Dear My Light)）\",\n  \"title_ko\": \"曲名ハングル（例: 빛이 나는 너에게）\",\n  \"title_en\": \"英語曲名・副題（例: Dear My Light）\",\n  \"search_query\": \"iTunes検索用クエリ（例: DAWN Dear My Light）\"\n}` }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        80
+      ],
+      "id": "node-gemini-vision",
+      "name": "Geminiスクショ解析 (Vision)"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -100
+      ],
+      "id": "node-gemini-chat-model",
+      "name": "Google Gemini Vision Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 01_iTunes検索クエリ生成.js\n * ノード名: 「01_iTunes検索クエリ生成」\n * \n * 【役割】\n * - Gemini Vision の出力（画像から読み取ったアーティスト・曲名）をパース\n * - 記号やカッコを除去し、検索ヒット率が最も高いiTunes検索URLをコード側で自動生成\n * - ⚠️ スクショから特定できなかった場合はフォールバックせず、明確なエラーで即時停止\n */\n\nconst item = $input.first()?.json || {};\nlet rawText = item.text || item.output || item.content?.parts?.[0]?.text || '';\nif (typeof item === 'string') rawText = item;\n\nrawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(rawText);\n} catch (e) {\n  const mArtist = rawText.match(/\"artist\":\\s*\"([^\"]+)\"/);\n  const mTitle = rawText.match(/\"title\":\\s*\"([^\"]+)\"/);\n  const mTitleKo = rawText.match(/\"title_ko\":\\s*\"([^\"]+)\"/);\n  const mTitleEn = rawText.match(/\"title_en\":\\s*\"([^\"]+)\"/);\n  parsed = {\n    artist: mArtist ? mArtist[1] : '',\n    title: mTitle ? mTitle[1] : '',\n    title_ko: mTitleKo ? mTitleKo[1] : '',\n    title_en: mTitleEn ? mTitleEn[1] : ''\n  };\n}\n\n// 記号を除去し、検索ヒット率が最も高いクエリをコード側で自動合成\nconst cleanArtist = (parsed.artist || '').replace(/\\([^)]*\\)/g, '').trim() || parsed.artist || '';\nconst cleanTitle = (parsed.title_en || parsed.title_ko || parsed.title || '').replace(/[()[\\]]/g, ' ').trim();\nconst query = `${cleanArtist} ${cleanTitle}`.trim() || parsed.title || '';\n\n// ⚠️ 曲名やアーティスト名が特定できなかった場合は、無駄な検索に進まず明確なエラーで停止\nif (!query || (!cleanTitle && !cleanArtist)) {\n  const detail = rawText ? rawText.slice(0, 120) : 'Geminiからの応答が空です';\n  throw new Error(`⚠️ スクリーンショットから楽曲情報（曲名・アーティスト名）を特定できませんでした。\\n【Geminiの応答】: ${detail}\\n画像の曲名表示が鮮明かご確認いただくか、フォームから楽曲ID（track_id）を直接入力してください。`);\n}\n\n// iTunes Search API\nconst searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&country=US&entity=song&limit=5`;\n\nreturn [{\n  json: {\n    identified: parsed,\n    search_query: query,\n    itunes_search_url: searchUrl\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        80
+      ],
+      "id": "node-format-vision-query",
+      "name": "01_iTunes検索クエリ生成"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.itunes_search_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        80
+      ],
+      "id": "node-http-itunes-search",
+      "name": "iTunes楽曲検索 API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 02_スクショ検索結果確定.js\n */\nlet input = $input.first()?.json || {};\n\nif (typeof input.data === 'string') {\n  try {\n    input = JSON.parse(input.data.trim());\n  } catch (e) {}\n} else if (typeof input === 'string') {\n  try {\n    input = JSON.parse(input.trim());\n  } catch (e) {}\n}\n\nconst results = input.results || [];\n\nif (results.length === 0) {\n  throw new Error(\"iTunesで楽曲が見つかりませんでした。スクショ画像をご確認ください。\");\n}\n\nconst best = results[0];\nconst coverUrl = (best.artworkUrl100 || \"\").replace(\"100x100bb\", \"600x600bb\");\nconst searchQuery = `${best.trackName} ${best.artistName}`;\n\nreturn [{\n  json: {\n    track_meta: {\n      track_id: String(best.trackId),\n      track_name: best.trackName,\n      track_name_en: best.trackName,\n      artist_name: best.artistName,\n      album_name: best.collectionName,\n      album_cover: coverUrl,\n      preview_url: best.previewUrl || '',\n      itunes_url: best.trackViewUrl || '',\n      release_date: best.releaseDate ? best.releaseDate.split('T')[0] : '',\n      genre: best.primaryGenreName || 'K-POP'\n    },\n    lrclib_search_url: `https://lrclib.net/api/search?q=${encodeURIComponent(searchQuery)}`,\n    source: 'screenshot'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        80
+      ],
+      "id": "node-prep-candidates",
+      "name": "02_スクショ検索結果確定"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 03_通常ID入力確定.js\n */\nconst item = $input.first()?.json || {};\nlet trackId = item.track_id || item.id || item.trackId || \"\";\n\nif (typeof trackId === 'string') {\n  const numMatch = trackId.match(/\\d+/);\n  if (numMatch) {\n    trackId = numMatch[0];\n  }\n}\n\nif (!trackId) {\n  trackId = \"1681264206\"; // デフォルト（DAWN - Dear My Light）\n}\n\nreturn [{\n  json: {\n    target_track_id: String(trackId),\n    itunes_lookup_url: `https://itunes.apple.com/lookup?id=${encodeURIComponent(trackId)}&country=US`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        320
+      ],
+      "id": "node-direct-id",
+      "name": "03_通常ID入力確定"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.itunes_lookup_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        340,
+        320
+      ],
+      "id": "node-id-lookup-pre",
+      "name": "ID事前Lookup API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 04_ID検索結果確定.js\n */\nlet input = $input.first()?.json || {};\n\nif (typeof input.data === 'string') {\n  try {\n    input = JSON.parse(input.data.trim());\n  } catch (e) {}\n} else if (typeof input === 'string') {\n  try {\n    input = JSON.parse(input.trim());\n  } catch (e) {}\n}\n\nconst results = input.results || [];\n\nif (results.length === 0) {\n  throw new Error(\"指定されたTrack IDの楽曲が見つかりませんでした。\");\n}\n\nconst track = results[0];\nconst coverUrl = (track.artworkUrl100 || \"\").replace(\"100x100bb\", \"600x600bb\");\nconst searchQuery = `${track.trackName} ${track.artistName}`;\n\nreturn [{\n  json: {\n    track_meta: {\n      track_id: String(track.trackId),\n      track_name: track.trackName,\n      track_name_en: track.trackName,\n      artist_name: track.artistName,\n      album_name: track.collectionName,\n      album_cover: coverUrl,\n      preview_url: track.previewUrl || '',\n      itunes_url: track.trackViewUrl || '',\n      release_date: track.releaseDate ? track.releaseDate.split('T')[0] : '',\n      genre: track.primaryGenreName || 'K-POP'\n    },\n    lrclib_search_url: `https://lrclib.net/api/search?q=${encodeURIComponent(searchQuery)}`,\n    source: 'track_id'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        320
+      ],
+      "id": "node-format-id-candidate",
+      "name": "04_ID検索結果確定"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 06_iTunesレスポンス解析_Geminiリクエスト生成.js\n * ノード名: 「06_iTunesレスポンス解析_Geminiリクエスト生成」\n * \n * 【役割】\n * - 確定した楽曲メタデータを受け取る\n * - 韓国語学習アプリ「K-Learner」仕様の超高精度プロンプト（歌詞、対訳、カタカナルビ、語彙、文法、解説）を構築\n */\n\nlet input = $input.first()?.json || {};\n\n// 先行ノードからの track_meta 取得（直前が LRCLIB ノードでも先行確定ノードから確実に復元）\nlet trackMeta = input.track_meta;\nif (!trackMeta) {\n  try {\n    trackMeta = $('02_スクショ検索結果確定')?.item?.json?.track_meta ||\n                $('04_ID検索結果確定')?.item?.json?.track_meta || {};\n  } catch (e) {\n    trackMeta = {};\n  }\n}\n\n// LRCLIB API レスポンスからの自動歌詞抽出\nlet autoLyrics = \"\";\nlet lrcList = [];\nif (Array.isArray(input)) {\n  lrcList = input;\n} else if (input.data && Array.isArray(input.data)) {\n  lrcList = input.data;\n} else if (Array.isArray($input.all())) {\n  lrcList = $input.all().map(i => i.json);\n}\n\nconst matchedLrc = lrcList.find(item => item && item.plainLyrics && item.plainLyrics.trim().length > 0) || lrcList[0];\nif (matchedLrc && matchedLrc.plainLyrics) {\n  autoLyrics = matchedLrc.plainLyrics.trim();\n}\n\nconst trackName = trackMeta.track_name || \"\";\nconst artistName = trackMeta.artist_name || \"\";\nconst albumName = trackMeta.album_name || \"\";\nconst genre = trackMeta.genre || \"K-POP\";\nconst releaseDate = trackMeta.release_date || \"\";\n\n// フォームからの手動歌詞入力があれば取得\nlet customLyrics = \"\";\ntry {\n  customLyrics = $('楽曲登録フォーム (スクショ / ID入力)')?.item?.json?.custom_lyrics || \"\";\n} catch (e) {}\n\n// Gemini システムプロンプト\nconst systemInstruction = `あなたは韓国語教育の最高峰エキスパートであり、K-POP・韓国ドラマOSTの歌詞対訳プロフェッショナルです。\n韓国語学習アプリ「K-Learner」に格納する、超高品質な「公式歌詞・対訳・語彙・文法」JSONデータを生成してください。\n\n【⚠️ 最重要：公式歌詞の完全性・勝手な作詞の絶対禁止】\n- 本データは【個人利用の語学学習用】です。著作権配慮による要約・一部省略・リピート省略は一切不要であり、厳禁です。\n- Melon、Genie、Bugsなどの公式音源サイトに登録されている「公式フル歌詞」を一言一句完全に一致させて出力してください。\n- 記憶が曖昧だからといって、AIが途中で勝手に作詞・作文・改変・差し替えを行うことは絶対に許されません。\n- イントロ、1番、サビ、2番、ブリッジ（Cメロ）、ラストサビ、アウトロまで、公式音源の歌唱順通りにすべてのフレーズを1行も飛ばさず完全収録してください。\n\n【厳格な要件】\n1. **歌詞行 (sentences)**:\n   - 公式歌詞に基づき、1行（1フレーズ）ずつ分解してください。\n   - \\`ko\\`: 公式ハングル歌詞（一言一句正確に。勝手な言い換え禁止）。\n   - \\`ja\\`: 原文のニュアンス・感情・口語表現を忠実に活かした、自然で美しい日本語対訳。\n   - \\`rubi\\`: 日本人が自然に発音できる正確なカタカナ発音（連音化・濃音化・鼻音化などの音韻変化を反映）。\n\n2. **重要単語 (vocab)**:\n   - 歌詞に登場する重要な単語・表現（8〜15個程度）。\n   - \\`word\\`: 歌詞中の表記または原形。\n   - \\`hanja\\`: 漢字語の場合は漢字表記（固有語は '―'）。\n   - \\`pos\\`: 品詞（名詞、動詞、形容詞など）。\n   - \\`meaning\\`: 日本語の意味。\n   - \\`level\\`: 難易度（初級 / 中級 / 上級 / TOPIK等）。\n\n3. **重要文法・表現 (grammar)**:\n   - 歌詞に登場する韓国語特有の文末表現・助詞・構文（3〜5個程度）。\n   - \\`pattern\\`: パターン（例: '~(으)ㄴ 채로'）。\n   - \\`meaning\\`: 日本語意味。\n   - \\`desc\\`: ニュアンスや使われ方の簡潔な解説。\n\n4. **楽曲・歌詞解説 (lyrics_notes)**:\n   - 楽曲のメッセージ性、歌詞に込められた心理描写、語学的なポイントを解説するHTML文字列の配列（2〜3個）。\n   - 例: '💬 <strong>心理描写:</strong> ...'\n\n【出力フォーマット】\nマークダウン装飾（\\`\\`\\`json）を含めず、必ず以下の完全な純粋JSONオブジェクトのみを返してください。\n{\n  \"title_ko\": \"曲名（韓国語ハングル）\",\n  \"title_ja\": \"曲名（日本語・英語副題）\",\n  \"artist\": \"アーティスト名\",\n  \"category\": \"ジャンル・作品名（例: K-POP / アルバム名）\",\n  \"level\": \"学習目安レベル（例: 初中級・日常感情表現）\",\n  \"sentences\": [\n    {\n      \"ko\": \"...\",\n      \"rubi\": \"...\",\n      \"ja\": \"...\"\n    }\n  ],\n  \"vocab\": [\n    {\n      \"word\": \"...\",\n      \"hanja\": \"...\",\n      \"pos\": \"...\",\n      \"meaning\": \"...\",\n      \"level\": \"...\"\n    }\n  ],\n  \"grammar\": [\n    {\n      \"pattern\": \"...\",\n      \"meaning\": \"...\",\n      \"desc\": \"...\"\n    }\n  ],\n  \"lyrics_notes\": [\n    \"💬 <strong>...:</strong> ...\"\n  ]\n}`;\n\nlet userPrompt = `対象楽曲情報:\n- 曲名: ${trackName}\n- アーティスト: ${artistName}\n- アルバム: ${albumName}\n- ジャンル: ${genre}\n- リリース日: ${releaseDate}`;\n\nlet officialLyrics = \"\";\nif (customLyrics && customLyrics.trim().length > 0) {\n  officialLyrics = customLyrics.trim();\n} else if (autoLyrics && autoLyrics.trim().length > 0) {\n  officialLyrics = autoLyrics.trim();\n}\n\nif (!officialLyrics || officialLyrics.trim().length === 0) {\n  throw new Error(`⚠️ 公式歌詞が取得できませんでした（曲名: ${trackName} / 歌手: ${artistName}）。\\nAIによる勝手な作詞・ハルシネーションを防ぐため、処理を即座に停止しました。\\n曲名・歌手名の表記を確認するか、少し待って再実行してください。`);\n}\n\nuserPrompt += `\\n\\n【公式フル歌詞テキスト（これを100%忠実に使用してください）】:\\n${officialLyrics}\\n\\n⚠️ 最重要注意事項：上記の公式歌詞を一言一句漏らさず全てsentencesに分解し、対訳・ルビ・語彙・文法を付与して出力してください。AIによる勝手な作詞や言い換え、行の削除・省略は絶対に禁止です。`;\n\nreturn [{\n  json: {\n    track_meta: trackMeta,\n    gemini_request: {\n      contents: [\n        {\n          role: \"user\",\n          parts: [\n            { text: systemInstruction + \"\\n\\n\" + userPrompt }\n          ]\n        }\n      ],\n      generationConfig: {\n        temperature: 0.0,\n        response_mime_type: \"application/json\"\n      }\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        200
+      ],
+      "id": "node-parse-itunes",
+      "name": "06_iTunesレスポンス解析_Geminiリクエスト生成"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('楽曲登録フォーム (スクショ / ID入力)').item.json.model || $env.GEMINI_MODEL || 'gemini-3.7-flash' }}:generateContent",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.gemini_request) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        200
+      ],
+      "id": "node-http-gemini-lyrics",
+      "name": "Google Gemini API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 07_トークン計算_コスト算出_Supabase整形.js\n */\nconst geminiResponse = $input.first()?.json || {};\nconst prevNode = $('06_iTunesレスポンス解析_Geminiリクエスト生成')?.first()?.json || {};\nconst trackMeta = prevNode.track_meta || {};\n\nlet responseText = \"\";\nlet promptTokens = 0;\nlet completionTokens = 0;\nlet totalTokens = 0;\n\nif (geminiResponse.candidates && geminiResponse.candidates[0]?.content?.parts) {\n  responseText = geminiResponse.candidates[0].content.parts.map(p => p.text).join(\"\\n\");\n  if (geminiResponse.usageMetadata) {\n    promptTokens = geminiResponse.usageMetadata.promptTokenCount || 0;\n    completionTokens = geminiResponse.usageMetadata.candidatesTokenCount || 0;\n    totalTokens = geminiResponse.usageMetadata.totalTokenCount || (promptTokens + completionTokens);\n  }\n} else if (geminiResponse.choices && geminiResponse.choices[0]?.message?.content) {\n  responseText = geminiResponse.choices[0].message.content;\n  if (geminiResponse.usage) {\n    promptTokens = geminiResponse.usage.prompt_tokens || 0;\n    completionTokens = geminiResponse.usage.completion_tokens || 0;\n    totalTokens = geminiResponse.usage.total_tokens || (promptTokens + completionTokens);\n  }\n} else {\n  responseText = typeof geminiResponse === 'string' ? geminiResponse : JSON.stringify(geminiResponse);\n}\n\n// 為替レート & 単価テーブル (USD per 1M tokens)\nconst USD_TO_JPY = 155.0;\nlet formModel = \"\";\ntry {\n  formModel = $('楽曲登録フォーム (スクショ / ID入力)')?.item?.json?.model || \"\";\n} catch (e) {}\nconst MODEL_NAME = (formModel || trackMeta.model || $env.GEMINI_MODEL || \"gemini-3.7-flash\").toLowerCase();\nlet rates = { input: 0.100, output: 0.400 };\nif (MODEL_NAME.includes(\"pro\")) {\n  rates = { input: 1.250, output: 5.000 };\n} else if (MODEL_NAME.includes(\"lite\") || MODEL_NAME.includes(\"8b\")) {\n  rates = { input: 0.0375, output: 0.150 };\n} else if (MODEL_NAME.includes(\"1.5-flash\")) {\n  rates = { input: 0.075, output: 0.300 };\n} else {\n  rates = { input: 0.100, output: 0.400 };\n}\n\nconst costUsdInput = (promptTokens / 1000000) * rates.input;\nconst costUsdOutput = (completionTokens / 1000000) * rates.output;\nconst totalCostUsd = costUsdInput + costUsdOutput;\nconst totalCostJpy = totalCostUsd * USD_TO_JPY;\n\nconst formattedJpy = totalCostJpy < 0.01 ? `${(totalCostJpy * 100).toFixed(2)} 銭` : `${totalCostJpy.toFixed(3)} 円`;\nconst formattedUsd = `$${totalCostUsd.toFixed(6)}`;\n\nconst costReportText = `\n┌────────────────────────────────────────────────────────┐\n│ 🎵 歌詞学習データ生成完了 & コストレポート             │\n├────────────────────────────────────────────────────────┤\n│ 楽曲: ${trackMeta.track_name || '不明'} (${trackMeta.artist_name || ''})\n│ モデル: ${MODEL_NAME}\n│ 入力トークン: ${promptTokens.toLocaleString()} tokens ($${costUsdInput.toFixed(6)})\n│ 出力トークン: ${completionTokens.toLocaleString()} tokens ($${costUsdOutput.toFixed(6)})\n│ 合計トークン: ${totalTokens.toLocaleString()} tokens\n├────────────────────────────────────────────────────────┤\n│ 💵 発生コスト(USD): ${formattedUsd}\n│ 💴 発生コスト(日本円): 約 ${formattedJpy}\n└────────────────────────────────────────────────────────┘\n`.trim();\n\nconsole.log(costReportText);\n\nlet lyricsData = {};\ntry {\n  let cleanJsonStr = responseText.trim();\n  cleanJsonStr = cleanJsonStr.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n  lyricsData = JSON.parse(cleanJsonStr);\n} catch (err) {\n  console.warn(\"JSONパース失敗:\", err);\n  lyricsData = {\n    title_ko: trackMeta.track_name || \"\",\n    title_ja: trackMeta.track_name || \"\",\n    artist: trackMeta.artist_name || \"\",\n    sentences: [],\n    vocab: [],\n    grammar: [],\n    lyrics_notes: []\n  };\n}\n\nconst trackId = trackMeta.track_id || String(Date.now());\nconst finalLyricsPayload = {\n  id: `lyrics-${trackId}`,\n  title_ko: lyricsData.title_ko || trackMeta.track_name || \"無題\",\n  title_ja: lyricsData.title_ja || trackMeta.track_name || \"無題\",\n  artist: lyricsData.artist || trackMeta.artist_name || \"アーティスト不明\",\n  category: lyricsData.category || \"K-POP / OST\",\n  level: lyricsData.level || \"日常会話・感情表現\",\n  cat_class: \"cat-music\",\n  source: trackMeta.album_name ? `Album『${trackMeta.album_name}』` : \"Apple Music / 公式音源\",\n  preview_url: trackMeta.preview_url || null,\n  itunes_url: trackMeta.itunes_url || null,\n  album_cover: trackMeta.album_cover || null,\n  sentences: Array.isArray(lyricsData.sentences) ? lyricsData.sentences : [],\n  vocab: Array.isArray(lyricsData.vocab) ? lyricsData.vocab : [],\n  grammar: Array.isArray(lyricsData.grammar) ? lyricsData.grammar : [],\n  lyrics_notes: Array.isArray(lyricsData.lyrics_notes) ? lyricsData.lyrics_notes : [],\n  generation_cost: {\n    model: MODEL_NAME,\n    prompt_tokens: promptTokens,\n    completion_tokens: completionTokens,\n    total_tokens: totalTokens,\n    cost_usd: formattedUsd,\n    cost_jpy: formattedJpy,\n    generated_at: new Date().toISOString()\n  }\n};\n\nconst supabaseRecord = {\n  track_id: trackId,\n  track_name: finalLyricsPayload.title_ko,\n  track_name_en: lyricsData.title_en || trackMeta.track_name_en || trackMeta.track_name,\n  artist_name: finalLyricsPayload.artist,\n  artist_name_en: trackMeta.artist_name,\n  country: \"KR\",\n  genre: trackMeta.genre || \"Ballad\",\n  preview_url: finalLyricsPayload.preview_url,\n  itunes_url: finalLyricsPayload.itunes_url,\n  album_cover: finalLyricsPayload.album_cover,\n  spotify_id: null,\n  description: finalLyricsPayload.title_ja,\n  lyrics: JSON.stringify(finalLyricsPayload)\n};\n\nreturn [{\n  json: supabaseRecord\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1550,
+        200
+      ],
+      "id": "node-calc-cost-supabase",
+      "name": "07_トークン計算_コスト算出_Supabase整形"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "tracks",
+        "matchType": "allRules",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "track_id",
+              "fieldValue": "={{ $json.supabase_record.track_id }}"
+            },
+            {
+              "fieldId": "track_name",
+              "fieldValue": "={{ $json.supabase_record.track_name }}"
+            },
+            {
+              "fieldId": "track_name_en",
+              "fieldValue": "={{ $json.supabase_record.track_name_en }}"
+            },
+            {
+              "fieldId": "artist_name",
+              "fieldValue": "={{ $json.supabase_record.artist_name }}"
+            },
+            {
+              "fieldId": "artist_name_en",
+              "fieldValue": "={{ $json.supabase_record.artist_name_en }}"
+            },
+            {
+              "fieldId": "country",
+              "fieldValue": "={{ $json.supabase_record.country }}"
+            },
+            {
+              "fieldId": "genre",
+              "fieldValue": "={{ $json.supabase_record.genre }}"
+            },
+            {
+              "fieldId": "preview_url",
+              "fieldValue": "={{ $json.supabase_record.preview_url }}"
+            },
+            {
+              "fieldId": "itunes_url",
+              "fieldValue": "={{ $json.supabase_record.itunes_url }}"
+            },
+            {
+              "fieldId": "album_cover",
+              "fieldValue": "={{ $json.supabase_record.album_cover }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $json.supabase_record.description }}"
+            },
+            {
+              "fieldId": "lyrics",
+              "fieldValue": "={{ $json.supabase_record.lyrics }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        200
+      ],
+      "id": "node-supabase-upsert",
+      "name": "Supabase tracks テーブル Upsert",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.lrclib_search_url }}",
+        "options": {
+          "neverError": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        200
+      ],
+      "id": "node-http-lrclib-search",
+      "name": "LRCLIB 公式歌詞自動取得 API"
+    }
+  ],
+  "connections": {
+    "楽曲登録フォーム (スクショ / ID入力)": {
+      "main": [
+        [
+          {
+            "node": "スクショ有無判定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "スクショ有無判定": {
+      "main": [
+        [
+          {
+            "node": "Geminiスクショ解析 (Vision)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "03_通常ID入力確定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Vision Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Geminiスクショ解析 (Vision)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geminiスクショ解析 (Vision)": {
+      "main": [
+        [
+          {
+            "node": "01_iTunes検索クエリ生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01_iTunes検索クエリ生成": {
+      "main": [
+        [
+          {
+            "node": "iTunes楽曲検索 API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iTunes楽曲検索 API": {
+      "main": [
+        [
+          {
+            "node": "02_スクショ検索結果確定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02_スクショ検索結果確定": {
+      "main": [
+        [
+          {
+            "node": "LRCLIB 公式歌詞自動取得 API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03_通常ID入力確定": {
+      "main": [
+        [
+          {
+            "node": "ID事前Lookup API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ID事前Lookup API": {
+      "main": [
+        [
+          {
+            "node": "04_ID検索結果確定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04_ID検索結果確定": {
+      "main": [
+        [
+          {
+            "node": "LRCLIB 公式歌詞自動取得 API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06_iTunesレスポンス解析_Geminiリクエスト生成": {
+      "main": [
+        [
+          {
+            "node": "Google Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini API": {
+      "main": [
+        [
+          {
+            "node": "07_トークン計算_コスト算出_Supabase整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07_トークン計算_コスト算出_Supabase整形": {
+      "main": [
+        [
+          {
+            "node": "Supabase tracks テーブル Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LRCLIB 公式歌詞自動取得 API": {
+      "main": [
+        [
+          {
+            "node": "06_iTunesレスポンス解析_Geminiリクエスト生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
