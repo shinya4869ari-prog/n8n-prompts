@@ -815,58 +815,8 @@
       </div>
 
       <!-- TradingView Widget BEGIN -->
-      <div class="tradingview-widget-container" style="height: 440px; width: 100%;">
+      <div class="tradingview-widget-container" id="tvWidgetContainer" style="height: 440px; width: 100%;">
         <div class="tradingview-widget-container__widget" style="height: calc(100% - 32px); width: 100%;"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-        {
-          "symbols": [
-            [
-              "NASDAQ 100 (QQQ)",
-              "NASDAQ:QQQ|1D"
-            ],
-            [
-              "ゴールド 純金 (GLD)",
-              "AMEX:GLD|1D"
-            ],
-            [
-              "S&P 500 (SPY)",
-              "AMEX:SPY|1D"
-            ],
-            [
-              "2631 (東証ナス100)",
-              "TSE:2631|1D"
-            ],
-            [
-              "1540 (純金信託)",
-              "TSE:1540|1D"
-            ]
-          ],
-          "chartOnly": false,
-          "width": "100%",
-          "height": "100%",
-          "locale": "ja",
-          "colorTheme": "dark",
-          "autosize": true,
-          "showVolume": false,
-          "showMA": false,
-          "hideDateRanges": false,
-          "hideMarketStatus": false,
-          "hideSymbolLogo": false,
-          "scalePosition": "right",
-          "scaleMode": "Normal",
-          "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          "noTimeScale": false,
-          "valuesTracking": "1",
-          "changeMode": "price-and-percent",
-          "chartType": "area",
-          "headerFontSize": "medium",
-          "backgroundColor": "rgba(15, 23, 42, 0)",
-          "gridLineColor": "rgba(255, 255, 255, 0.05)",
-          "lineColor": "#00e5ff",
-          "topColor": "rgba(0, 229, 255, 0.28)",
-          "bottomColor": "rgba(0, 229, 255, 0.01)"
-        }
-        </script>
       </div>
       <!-- TradingView Widget END -->
 
@@ -887,10 +837,10 @@
       </div>
     </div>
 
-    <!-- SECTION 3: Seesaw Balance Strategy (NASDAQ100 2631 × GOLD 1540 シーソー運用) -->
+    <!-- SECTION 3: Seesaw Balance Strategy (NASDAQ100 2631 x GOLD 1540) -->
     <div class="card seesaw-card">
       <div class="section-label">
-        <span>⚖️ シーソー運用（2631 × 1540）</span>
+        <span>⚖️ シーソー運用 (2631 x 1540)</span>
         <span style="font-size:0.72rem; color:var(--gold-amber-light); font-weight:700;">50 : 50 TARGET</span>
       </div>
 
@@ -1084,7 +1034,52 @@
 
       renderHoldingsList();
       recalculateAll();
+      initTradingViewWidget();
     });
+
+    // TradingViewウィジェットの動的読み込み（エディタ構文エラー回避）
+    function initTradingViewWidget() {
+      const tvContainer = document.getElementById('tvWidgetContainer');
+      if (!tvContainer) return;
+      const tvScript = document.createElement('script');
+      tvScript.type = 'text/javascript';
+      tvScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+      tvScript.async = true;
+      tvScript.innerHTML = JSON.stringify({
+        symbols: [
+          ["NASDAQ 100 (QQQ)", "NASDAQ:QQQ|1D"],
+          ["ゴールド 純金 (GLD)", "AMEX:GLD|1D"],
+          ["S&P 500 (SPY)", "AMEX:SPY|1D"],
+          ["2631 (東証ナス100)", "TSE:2631|1D"],
+          ["1540 (純金信託)", "TSE:1540|1D"]
+        ],
+        chartOnly: false,
+        width: "100%",
+        height: "100%",
+        locale: "ja",
+        colorTheme: "dark",
+        autosize: true,
+        showVolume: false,
+        showMA: false,
+        hideDateRanges: false,
+        hideMarketStatus: false,
+        hideSymbolLogo: false,
+        scalePosition: "right",
+        scaleMode: "Normal",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        noTimeScale: false,
+        valuesTracking: "1",
+        changeMode: "price-and-percent",
+        chartType: "area",
+        headerFontSize: "medium",
+        backgroundColor: "rgba(15, 23, 42, 0)",
+        gridLineColor: "rgba(255, 255, 255, 0.05)",
+        lineColor: "#00e5ff",
+        topColor: "rgba(0, 229, 255, 0.28)",
+        bottomColor: "rgba(0, 229, 255, 0.01)"
+      });
+      tvContainer.appendChild(tvScript);
+    }
 
     function savePortfolio() {
       localStorage.setItem('seesaw_portfolio_data_v3', JSON.stringify(portfolio));
