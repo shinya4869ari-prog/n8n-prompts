@@ -176,7 +176,7 @@
     }
 
     .section-label {
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -299,20 +299,6 @@
       position: relative;
     }
 
-    .alloc-seg-tracers {
-      background: linear-gradient(90deg, #0284c7, #00e5ff 70%, #f59e0b);
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-    }
-
-    .alloc-seg-ideco {
-      background: linear-gradient(90deg, #6366f1, #a855f7);
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
-    }
-
-    .alloc-seg-custom {
-      background: linear-gradient(90deg, #10b981, #06b6d4);
-    }
-
     .alloc-legend {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -362,7 +348,7 @@
     }
 
     .account-badge {
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
@@ -458,7 +444,6 @@
       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
     }
 
-    /* Add Asset Button */
     .add-asset-btn {
       width: 100%;
       background: rgba(255, 255, 255, 0.04);
@@ -482,7 +467,7 @@
     }
 
     /* ============================================================
-       Seesaw Balance Scale Visualizer (2631 × 1540 シーソー)
+       Seesaw Balance Scale Visualizer & Inputs (2631 × 1540)
     ============================================================ */
     .seesaw-card {
       text-align: center;
@@ -578,6 +563,7 @@
     .signal-card {
       border: 1px solid rgba(56, 189, 248, 0.3);
       background: linear-gradient(145deg, rgba(15, 30, 50, 0.8), rgba(20, 36, 60, 0.65));
+      text-align: left;
     }
 
     .signal-card.balanced {
@@ -609,6 +595,58 @@
       line-height: 1.5;
     }
 
+    /* Dedicated Position Input Cards for 2631 & 1540 */
+    .seesaw-position-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    .position-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .position-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-nasdaq-pos {
+      background: var(--nasdaq-cyan-dim);
+      color: var(--nasdaq-cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .badge-gold-pos {
+      background: var(--gold-amber-dim);
+      color: var(--gold-amber-light);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .position-subtotal {
+      text-align: right;
+    }
+
+    .position-subtotal-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .position-subtotal-pct {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
     /* Stepper buttons */
     .stepper-row {
       display: flex;
@@ -632,6 +670,10 @@
     .step-btn:hover {
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
+    }
+
+    .step-btn:active {
+      transform: scale(0.96);
     }
 
     /* Settings Accordion */
@@ -749,7 +791,7 @@
       </div>
     </div>
 
-    <!-- SECTION 2: Holdings List (口座区分別 保有商品一覧) -->
+    <!-- SECTION 2: Holdings List (口座別 保有銘柄内訳) -->
     <div class="card">
       <div class="section-label">
         <span>💼 保有銘柄・口座別内訳</span>
@@ -765,61 +807,125 @@
       </button>
     </div>
 
-    <!-- SECTION 3: Seesaw Balance Strategy (2631 × 1540 リバランス判定) -->
+    <!-- SECTION 3: Seesaw Balance Strategy (NASDAQ100 2631 × GOLD 1540 シーソー運用) -->
     <div class="card seesaw-card">
       <div class="section-label">
-        <span>⚖️ シーソー運用 (NASDAQ × GOLD) 判定</span>
-        <span style="font-size:0.7rem; color:var(--gold-amber-light);">50:50 Target</span>
+        <span>⚖️ シーソー運用（2631 × 1540）</span>
+        <span style="font-size:0.72rem; color:var(--gold-amber-light); font-weight:700;">50 : 50 TARGET</span>
       </div>
 
+      <!-- Live Tilting Balance Beam -->
       <div class="seesaw-stage">
         <div class="seesaw-beam-wrap" id="seesawBeam">
           <div class="seesaw-pan pan-nasdaq">
             <span class="pan-label">2631</span>
-            <span class="pan-pct" id="panPctNasdaq">50%</span>
+            <span class="pan-pct" id="panPctNasdaq">52%</span>
           </div>
           <div class="seesaw-beam-bar"></div>
           <div class="seesaw-pan pan-gold">
             <span class="pan-label">1540</span>
-            <span class="pan-pct" id="panPctGold">50%</span>
+            <span class="pan-pct" id="panPctGold">48%</span>
           </div>
         </div>
         <div class="seesaw-fulcrum"></div>
       </div>
-      <div class="seesaw-balance-status" id="seesawStatus">⚖️ 理想的な均衡状態です</div>
+      <div class="seesaw-balance-status" id="seesawStatus">📈 ナスダック(2631) が優勢に傾いています</div>
 
       <!-- Rebalance Signal Box -->
-      <div class="card signal-card" id="signalContainer" style="margin-top:14px; text-align:left;">
+      <div class="card signal-card" id="signalContainer" style="margin-top:14px;">
         <div class="signal-header">
           <div style="font-size:0.75rem; font-weight:700; color:var(--nasdaq-cyan);" id="signalTag">
-            🎯 シーソー・リバランス判定
+            🎯 リバランス売買シグナル
           </div>
-          <div style="font-size:0.72rem; padding:2px 8px; border-radius:10px;" id="signalBadgeState">比率良好</div>
+          <div style="font-size:0.72rem; padding:2px 8px; border-radius:10px; font-weight:600;" id="signalBadgeState">比率良好</div>
         </div>
         <div class="signal-body" id="signalText">
           ✨ 比率バランス良好（調整不要）
         </div>
         <div class="signal-detail" id="signalDetail">
-          Tracers NASDAQ100ゴールドプラス内の均等配分、またはETFでの運用比率をリアルタイムに算出します。
+          現在の乖離額は1口の売買単位に満たないため、リバランスの必要はありません。このまま運用を継続してください。
         </div>
       </div>
 
-      <!-- Seesaw ETF Parameters Accordion -->
-      <div style="margin-top:12px;">
-        <div class="settings-toggle" onclick="toggleSeesawInputs()">
-          <span style="font-size:0.75rem; color:var(--text-muted);">▼ 2631 / 1540 の個別口数・株価でシミュレーションする</span>
-        </div>
-        <div id="seesawInputDrawer" style="display:none; margin-top:10px;">
-          <div class="holding-inputs-grid" style="border:none; padding:0;">
-            <div class="input-field-block">
-              <label class="input-label">2631 口数 / 株価</label>
-              <input type="number" id="qty2631" class="custom-input" value="76" oninput="recalcSeesaw()">
-              <input type="number" id="price2631" class="custom-input" value="32500" style="margin-top:4px;" oninput="recalcSeesaw()">
+      <!-- Position Card 1: 2631 (MAXIS ナスダック100) -->
+      <div class="seesaw-position-card">
+        <div class="position-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="position-badge badge-nasdaq-pos">2631</span>
+            <div>
+              <div style="font-size:0.92rem; font-weight:700;">MAXIS ナスダック100</div>
+              <div style="font-size:0.68rem; color:var(--text-dim);">米ハイテク株指数連動ETF</div>
             </div>
-            <div class="input-field-block">
-              <label class="input-label">1540 口数 / 価格</label>
-              <input type="number" id="qty1540" class="custom-input" value="125" oninput="recalcSeesaw()">
-              <input type="number" id="price1540" class="custom-input" value="20000" style="margin-top:4px;" oninput="recalcSeesaw()">
+          </div>
+          <div class="position-subtotal">
+            <div class="position-subtotal-val" id="subtotal2631">¥260,000</div>
+            <div class="position-subtotal-pct" id="subtotalPct2631">52.0%</div>
+          </div>
+        </div>
+        <div class="holding-inputs-grid" style="border:none; padding:0;">
+          <div class="input-field-block">
+            <label class="input-label">
+              <span>保有口数</span>
+              <span style="color:var(--nasdaq-cyan);">口</span>
+            </label>
+            <input type="number" id="qty2631" class="custom-input" value="8" min="0" step="1" oninput="recalcSeesaw()">
+            <div class="stepper-row">
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty2631', -1)">-1</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty2631', 1)">+1</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty2631', 5)">+5</button>
+            </div>
+          </div>
+          <div class="input-field-block">
+            <label class="input-label">
+              <span>現在株価</span>
+              <span style="color:var(--nasdaq-cyan);">円</span>
+            </label>
+            <input type="number" id="price2631" class="custom-input" value="32500" min="1" step="10" oninput="recalcSeesaw()">
+            <div class="stepper-row">
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('price2631', -100)">-100</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('price2631', 100)">+100</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Position Card 2: 1540 (純金上場信託) -->
+      <div class="seesaw-position-card">
+        <div class="position-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="position-badge badge-gold-pos">1540</span>
+            <div>
+              <div style="font-size:0.92rem; font-weight:700;">純金上場信託 (金の果実)</div>
+              <div style="font-size:0.68rem; color:var(--text-dim);">金現物国内保管型ETF</div>
+            </div>
+          </div>
+          <div class="position-subtotal">
+            <div class="position-subtotal-val" id="subtotal1540">¥240,000</div>
+            <div class="position-subtotal-pct" id="subtotalPct1540">48.0%</div>
+          </div>
+        </div>
+        <div class="holding-inputs-grid" style="border:none; padding:0;">
+          <div class="input-field-block">
+            <label class="input-label">
+              <span>保有口数</span>
+              <span style="color:var(--gold-amber-light);">口</span>
+            </label>
+            <input type="number" id="qty1540" class="custom-input" value="12" min="0" step="1" oninput="recalcSeesaw()">
+            <div class="stepper-row">
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty1540', -1)">-1</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty1540', 1)">+1</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('qty1540', 5)">+5</button>
+            </div>
+          </div>
+          <div class="input-field-block">
+            <label class="input-label">
+              <span>現在価格</span>
+              <span style="color:var(--gold-amber-light);">円</span>
+            </label>
+            <input type="number" id="price1540" class="custom-input" value="20000" min="1" step="10" oninput="recalcSeesaw()">
+            <div class="stepper-row">
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('price1540', -100)">-100</button>
+              <button type="button" class="step-btn" onclick="adjustSeesawInput('price1540', 100)">+100</button>
             </div>
           </div>
         </div>
@@ -848,11 +954,11 @@
   <div class="toast-msg" id="toast">✨ 保存しました</div>
 
   <script>
-    // ユーザー様の実保有初期データ
+    // ユーザー様の実保有初期データ（「(左)」「(右)」を削除してすっきり表示）
     const DEFAULT_PORTFOLIO = [
       {
         id: 'asset-tracers',
-        account: '特定口座 (左)',
+        account: '特定口座',
         accountType: 'tokutei',
         name: 'Tracers NASDAQ100ゴールドプラス',
         capital: 3739706,
@@ -862,7 +968,7 @@
       },
       {
         id: 'asset-ideco',
-        account: 'iDeCo (右)',
+        account: 'iDeCo',
         accountType: 'ideco',
         name: '楽天・プラス・S&P500インデックス',
         capital: 388988,
@@ -876,7 +982,7 @@
 
     // 初期化
     window.addEventListener('DOMContentLoaded', () => {
-      const saved = localStorage.getItem('seesaw_portfolio_data_v2');
+      const saved = localStorage.getItem('seesaw_portfolio_data_v3');
       if (saved) {
         try {
           portfolio = JSON.parse(saved);
@@ -886,12 +992,22 @@
       } else {
         portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO));
       }
+
+      // シーソー用の保存値復元
+      ['qty2631', 'price2631', 'qty1540', 'price1540'].forEach(id => {
+        const val = localStorage.getItem('seesaw_' + id);
+        if (val !== null) {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        }
+      });
+
       renderHoldingsList();
       recalculateAll();
     });
 
     function savePortfolio() {
-      localStorage.setItem('seesaw_portfolio_data_v2', JSON.stringify(portfolio));
+      localStorage.setItem('seesaw_portfolio_data_v3', JSON.stringify(portfolio));
       const ind = document.getElementById('saveStatusIndicator');
       ind.innerText = 'Auto-Saved ⚡';
       setTimeout(() => { ind.innerText = 'Auto-Saved ⚡'; }, 1000);
@@ -902,7 +1018,7 @@
       const container = document.getElementById('holdingsListContainer');
       container.innerHTML = '';
 
-      portfolio.forEach((item, index) => {
+      portfolio.forEach((item) => {
         const profit = item.valuation - item.capital;
         const profitPct = item.capital > 0 ? (profit / item.capital) * 100 : 0;
         const badgeClass = item.accountType === 'tokutei' ? 'badge-tokutei' : (item.accountType === 'ideco' ? 'badge-ideco' : 'badge-other');
@@ -1076,12 +1192,18 @@
       recalcSeesaw();
     }
 
-    // シーソー計算
+    // シーソー計算（2631 × 1540）
     function recalcSeesaw() {
       const q2631 = parseFloat(document.getElementById('qty2631').value) || 0;
       const p2631 = parseFloat(document.getElementById('price2631').value) || 0;
       const q1540 = parseFloat(document.getElementById('qty1540').value) || 0;
       const p1540 = parseFloat(document.getElementById('price1540').value) || 0;
+
+      // 保存
+      localStorage.setItem('seesaw_qty2631', q2631);
+      localStorage.setItem('seesaw_price2631', p2631);
+      localStorage.setItem('seesaw_qty1540', q1540);
+      localStorage.setItem('seesaw_price1540', p1540);
 
       const val2631 = q2631 * p2631;
       const val1540 = q1540 * p1540;
@@ -1090,6 +1212,13 @@
       const pct2631 = total > 0 ? (val2631 / total) * 100 : 50;
       const pct1540 = total > 0 ? (val1540 / total) * 100 : 50;
 
+      // 小計表示更新
+      document.getElementById('subtotal2631').innerText = '¥' + Math.floor(val2631).toLocaleString('ja-JP');
+      document.getElementById('subtotalPct2631').innerText = pct2631.toFixed(1) + '%';
+      document.getElementById('subtotal1540').innerText = '¥' + Math.floor(val1540).toLocaleString('ja-JP');
+      document.getElementById('subtotalPct1540').innerText = pct1540.toFixed(1) + '%';
+
+      // 天秤アニメーション
       const beam = document.getElementById('seesawBeam');
       const panN = document.getElementById('panPctNasdaq');
       const panG = document.getElementById('panPctGold');
@@ -1133,8 +1262,8 @@
           badgeState.style.color = 'var(--nasdaq-cyan)';
           badgeState.innerText = '要リバランス';
 
-          signalText.innerHTML = `【2631】を <strong style="color:var(--nasdaq-cyan);">${sellQty}</strong> 口 売却 ➔ 【1540】を <strong style="color:var(--gold-amber-light);">${buyQty}</strong> 口 買付`;
-          signalDetail.innerHTML = `利益確定: 約 ¥${sellAmount.toLocaleString('ja-JP')} ➔ ゴールド再投資: 約 ¥${buyAmount.toLocaleString('ja-JP')}`;
+          signalText.innerHTML = `【2631】を <strong style="color:var(--nasdaq-cyan); font-size:1.25rem;">${sellQty}</strong> 口 売却<br>➔ 【1540】を <strong style="color:var(--gold-amber-light); font-size:1.25rem;">${buyQty}</strong> 口 買付`;
+          signalDetail.innerHTML = `利益確定: 約 <strong>¥${sellAmount.toLocaleString('ja-JP')}</strong> ➔ ゴールド再投資: 約 <strong>¥${buyAmount.toLocaleString('ja-JP')}</strong>（残余キャッシュ: ¥${(sellAmount - buyAmount).toLocaleString('ja-JP')}）`;
         } else if (-diff2631 > p1540) {
           const sellQty = Math.floor(-diff2631 / p1540);
           const sellAmount = sellQty * p1540;
@@ -1146,8 +1275,8 @@
           badgeState.style.color = 'var(--gold-amber-light)';
           badgeState.innerText = '要リバランス';
 
-          signalText.innerHTML = `【1540】を <strong style="color:var(--gold-amber-light);">${sellQty}</strong> 口 売却 ➔ 【2631】を <strong style="color:var(--nasdaq-cyan);">${buyQty}</strong> 口 買付`;
-          signalDetail.innerHTML = `利益確定: 約 ¥${sellAmount.toLocaleString('ja-JP')} ➔ ナスダック再投資: 約 ¥${buyAmount.toLocaleString('ja-JP')}`;
+          signalText.innerHTML = `【1540】を <strong style="color:var(--gold-amber-light); font-size:1.25rem;">${sellQty}</strong> 口 売却<br>➔ 【2631】を <strong style="color:var(--nasdaq-cyan); font-size:1.25rem;">${buyQty}</strong> 口 買付`;
+          signalDetail.innerHTML = `利益確定: 約 <strong>¥${sellAmount.toLocaleString('ja-JP')}</strong> ➔ ナスダック再投資: 約 <strong>¥${buyAmount.toLocaleString('ja-JP')}</strong>（残余キャッシュ: ¥${(sellAmount - buyAmount).toLocaleString('ja-JP')}）`;
         } else {
           signalBox.className = 'card signal-card balanced';
           badgeState.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -1155,14 +1284,17 @@
           badgeState.innerText = '比率良好';
 
           signalText.innerHTML = `✨ 比率バランス良好（調整不要）`;
-          signalDetail.innerHTML = `現在の乖離額は売買単位未満のため、このまま運用を継続してください。`;
+          signalDetail.innerHTML = `現在の乖離額（約 ¥${Math.abs(Math.floor(diff2631)).toLocaleString('ja-JP')}）は1口の売買単位に満たないため、リバランスの必要はありません。このまま運用を継続してください。`;
         }
       }
     }
 
-    function toggleSeesawInputs() {
-      const el = document.getElementById('seesawInputDrawer');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    function adjustSeesawInput(id, delta) {
+      const el = document.getElementById(id);
+      let val = parseFloat(el.value) || 0;
+      val = Math.max(0, val + delta);
+      el.value = val;
+      recalcSeesaw();
     }
 
     function toggleSettingsDrawer() {
