@@ -132,6 +132,7 @@ const HTML_CONTENT = $(<!DOCTYPE html>
       letter-spacing: -0.02em;
       line-height: 1.15;
       background: linear-gradient(90deg, #ffffff 30%, var(--nasdaq-cyan) 70%, var(--gold-amber-light) 100%);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
