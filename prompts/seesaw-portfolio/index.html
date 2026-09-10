@@ -807,6 +807,86 @@
       </button>
     </div>
 
+    <!-- SECTION: Real-Time Market Charts (保有商品・市場チャート) -->
+    <div class="card" style="padding: 16px 14px 12px;">
+      <div class="section-label" style="margin-bottom: 8px;">
+        <span>📊 保有銘柄・市場リアルタイムチャート</span>
+        <span style="font-size:0.7rem; color:var(--nasdaq-cyan);">TradingView LIVE</span>
+      </div>
+
+      <!-- TradingView Widget BEGIN -->
+      <div class="tradingview-widget-container" style="height: 440px; width: 100%;">
+        <div class="tradingview-widget-container__widget" style="height: calc(100% - 32px); width: 100%;"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+        {
+          "symbols": [
+            [
+              "NASDAQ 100 (QQQ)",
+              "NASDAQ:QQQ|1D"
+            ],
+            [
+              "ゴールド 純金 (GLD)",
+              "AMEX:GLD|1D"
+            ],
+            [
+              "S&P 500 (SPY)",
+              "AMEX:SPY|1D"
+            ],
+            [
+              "2631 (東証ナス100)",
+              "TSE:2631|1D"
+            ],
+            [
+              "1540 (純金信託)",
+              "TSE:1540|1D"
+            ]
+          ],
+          "chartOnly": false,
+          "width": "100%",
+          "height": "100%",
+          "locale": "ja",
+          "colorTheme": "dark",
+          "autosize": true,
+          "showVolume": false,
+          "showMA": false,
+          "hideDateRanges": false,
+          "hideMarketStatus": false,
+          "hideSymbolLogo": false,
+          "scalePosition": "right",
+          "scaleMode": "Normal",
+          "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          "noTimeScale": false,
+          "valuesTracking": "1",
+          "changeMode": "price-and-percent",
+          "chartType": "area",
+          "headerFontSize": "medium",
+          "backgroundColor": "rgba(15, 23, 42, 0)",
+          "gridLineColor": "rgba(255, 255, 255, 0.05)",
+          "lineColor": "#00e5ff",
+          "topColor": "rgba(0, 229, 255, 0.28)",
+          "bottomColor": "rgba(0, 229, 255, 0.01)"
+        }
+        </script>
+      </div>
+      <!-- TradingView Widget END -->
+
+      <!-- Quick Market Links -->
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-subtle);">
+        <a href="https://finance.yahoo.co.jp/quote/2631.T" target="_blank" rel="noopener" class="util-btn" style="flex:1; text-decoration:none; padding:6px 8px; font-size:0.7rem;">
+          📈 2631 (東証)
+        </a>
+        <a href="https://finance.yahoo.co.jp/quote/1540.T" target="_blank" rel="noopener" class="util-btn" style="flex:1; text-decoration:none; padding:6px 8px; font-size:0.7rem;">
+          🪙 1540 (純金)
+        </a>
+        <a href="https://finance.yahoo.co.jp/quote/9C311228" target="_blank" rel="noopener" class="util-btn" style="flex:1; text-decoration:none; padding:6px 8px; font-size:0.7rem;">
+          📄 Tracers投信
+        </a>
+        <a href="https://finance.yahoo.co.jp/quote/9I31223A" target="_blank" rel="noopener" class="util-btn" style="flex:1; text-decoration:none; padding:6px 8px; font-size:0.7rem;">
+          🚀 楽天S&P500
+        </a>
+      </div>
+    </div>
+
     <!-- SECTION 3: Seesaw Balance Strategy (NASDAQ100 2631 × GOLD 1540 シーソー運用) -->
     <div class="card seesaw-card">
       <div class="section-label">
