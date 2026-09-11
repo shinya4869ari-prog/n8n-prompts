@@ -178,15 +178,6 @@ for (let i = 0; i < items.length; i++) {
       person_id: orig.person_id || null,
       person_name: orig.person_name || parsed.person_name || null,
       person_profile_url: orig.person_profile_url || null,
-      generation_cost: {
-        model: MODEL_NAME,
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: totalTokens,
-        cost_usd: formattedUsd,
-        cost_jpy: formattedJpy,
-        generated_at: now
-      },
       published_at: orig.published_at || now,
       created_at: now
     }
