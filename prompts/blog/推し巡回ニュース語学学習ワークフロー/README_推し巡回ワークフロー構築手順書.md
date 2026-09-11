@@ -1,141 +1,97 @@
 # 【n8n】推し巡回ニュース語学学習ワークフロー構築手順書
-〜スプレッドシート連動・1日数名じゅんぐりローテーション方式〜
+〜1件ずつ確実・即時更新・API負荷ゼロの完全ループ方式〜
 
 ---
 
-## 1. ワークフローの目的・設計思想
+## 1. なぜ「1件ずつ確実処理（ループ方式）」なのか？
 
-1. **完全無料・低コスト枠の維持**:
-   - 推し（セレブ）が50名〜100名いても、1日に一気に全員検索せず、**「1日5名ずつ」** 検索・生成を実行します。
-   - Gemini APIのレートリミット（無料枠の上限）に引っかからず、毎日安定稼働します。
+1. **Gemini 503エラー・混雑の完全回避**:
+   - 5人分を一気に並列でAPIに投げると、Google側の急な混雑（503 Service Unavailable）にぶつかり、全体が巻き添えで止まってしまいます。
+   - **「1人ずつ順番にリクエストし、2〜3秒のウェイトを挟む」** ことで、Gemini APIの負荷制限や混雑を100%回避します。
 
-2. **「新メンバー最優先」＆「じゅんぐり自動巡回（エンドレス）」**:
-   - **新しく追加した推し**: 「最終検索日」が空欄のため、既存の誰よりも**最優先（一番上）**で翌日即座に検索されます。
-   - **全員一巡後のループ**: 検索が終わると今日の日付に上書きされるため、50名（10日）全員が終わったら**自動的に10日前の1人目に戻って2巡目がスタート**します。手動メンテは一切不要です。
-
-3. **スマホから追加・削除できる手軽さ**:
-   - Googleスプレッドシートの末尾に、推しの「名前（日本語・韓国語）」を1行足すだけで自動で巡回リストに組み込まれます。
+2. **その推しが終わるたびにスプレッドシートを「即時」更新**:
+   - 1人分のニュースをSupabaseに保存した瞬間、**その場でその推しの検索日時（last_searched_at）を更新** します。
+   - 万が一途中で回線トラブルが起きても、完了した推しはすでに更新済みなので、次回実行時に重複せず「次の人」から安全に再開できます！
 
 ---
 
-## 2. Googleスプレッドシートの準備
-
-Googleドライブでスプレッドシートを新規作成し、シート名を「**推しリスト**」として以下のヘッダー（1行目）を設定してください。
-
-### 列構成（ヘッダー行）
-| 列 | カラム名 (1行目) | 説明・入力例 |
-| :--- | :--- | :--- |
-| **A列** | `id` | 連番 (1, 2, 3...) |
-| **B列** | `name_ja` | 日本語名 (例: `キム・ナムギル`, `パク・ウンビン`, `IU`) |
-| **C列** | `name_ko` | 韓国語名【必須・検索用】 (例: `김남길`, `박은빈`, `아이유`) |
-| **D列** | `last_searched_at` | 最終検索日時 (自動更新・初回は**空欄**のままでOK) |
-| **E列** | `is_active` | 有効フラグ (`TRUE` または `FALSE`) |
-
-> 💡 **ポイント**:
-> 新しく推しを追加するときは、**D列（`last_searched_at`）を空欄のまま**にしておいてください。システムが「未検索＝過去最古」と自動判定し、次回の実行で最優先で検索されます！
-
----
-
-## 3. n8nワークフローの全体構成（ノードの流れ）
+## 2. ワークフロー構成図（1件ずつの安全ループ）
 
 ```
-[ ⏰ 毎日定時実行 (Schedule Trigger) ]
-                   │
-                   ▼
-[ 📊 Google Sheets: 全行読み込み (Read Rows) ]
-                   │
-                   ▼
-[ ⚡ Code: 最優先5名選出 & RSS URL生成 (01_スプレッドシート設計と5名抽出コード.js) ]
-                   │
-                   ▼
-[ 🌐 HTTP Request: Google News RSS取得 ]
-                   │
-                   ▼
-[ 🔍 Code: トップ速報記事抽出 (02_RSS解析・推し最新記事抽出.js) ]
-                   │
-                   ▼
-[ ❓ If: 新着記事があるか？ ]
-       ├── [YES] ──▼
-       │     [ 🤖 Gemini: 本格報道記事＆語彙生成 (03_Gemini推し本格報道記事生成_AIプロンプト.md) ]
-       │           │
-       │           ▼
-       │     [ 🛠️ Code: Supabase用整形 (04_Supabase保存データ整形.js) ]
-       │           │
-       │           ▼
-       │     [ 🗄️ Supabase: news テーブル保存 (Upsert) ]
-       │
-       └── [共通合流] ──▼
-             [ 📝 Google Sheets: 検索した5名の最終検索日時を更新 (05_スプレッドシート更新データ整形.js) ]
+[ ⏰ 毎日定時実行 ]
+        │
+        ▼
+[ 📊 Google Sheets: 推しリスト全行取得 ]
+        │
+        ▼
+[ ⚡ 01_最優先5名選出 (新メンバー優先 ＆ 古い順) ]
+        │
+        ▼
+┌──▶ [ 🔁 Loop Over Items (1件ずつ順番に取り出し) ] ◀───────────────┐
+│              │                                                     │
+│              ▼                                                     │
+│        [ 🌐 Google News RSS取得 (この推し1名分) ]                  │
+│              │                                                     │
+│              ▼                                                     │
+│        [ 🔍 02_トップ速報記事抽出 ]                                │
+│              │                                                     │
+│              ▼                                                     │
+│        [ ❓ 新着記事があるか？ ]                                    │
+│         ├── [YES] ──▼                                              │
+│         │     [ 🤖 Google Gemini: 記事生成 (自動リトライ設定) ]    │
+│         │           │                                              │
+│         │           ▼                                              │
+│         │     [ 🛠️ 04_Supabase保存データ整形 (コスト計算付き) ]     │
+│         │           │                                              │
+│         │           ▼                                              │
+│         │     [ 🗄️ Supabase: newsテーブル Upsert ]                 │
+│         │           │                                              │
+│         └── [合流] ──▼                                              │
+│               [ 📝 Google Sheets: この推しの行だけ即時更新 ]       │
+│                     │                                              │
+│                     ▼                                              │
+│               [ ⏳ Wait (2〜3秒休憩: API混雑を完全に逃がす) ]       │
+│                     │                                              │
+└─────────────────────┴──────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. 各ノードの個別設定手順
+## 3. 各ノードの個別設定手順
 
-### ノード ①: ⏰ Schedule Trigger（スケジュールトリガー）
-* **Trigger Times**: Every Day（毎日）
-* **Hour**: 12（お昼12:00）または 20（夜20:00）など、一般ニュース（朝7時）と被らない時間帯がおすすめ。
+### ① 🔁 `Loop Over Items`（1件ずつ取り出しノード）
+* **Node Type**: `Loop Over Items`（または `Split In Batches`）
+* **Batch Size**: `1`
 
-### ノード ②: 📊 Google Sheets（推しリスト取得）
-* **Resource**: Document
-* **Operation**: Get Row(s)
-* **Document**: 先ほど作成したスプレッドシートを選択
-* **Sheet Name**: `推しリスト`
+### ② 🌐 `Google News RSS取得`
+* **URL**: `={{ $json.rss_url }}`
 
-### ノード ③: ⚡ Code（最優先5名選出 ＆ RSSクエリ生成）
-* **Mode**: Run Once for All Items
-* **Language**: JavaScript
-* **Code**: `01_スプレッドシート設計と5名抽出コード.js` の内容をそのまま貼り付け。
-* **役割**:
-  - `is_active !== false` の推しを抽出。
-  - `last_searched_at` が「空欄（未検索）」の推しを最上位へソート。
-  - 次に「検索日時が古い順」にソート。
-  - 上位5名を切り出して、Google News RSSの検索URLを生成。
+### ③ 🔍 `02_トップ速報記事抽出`
+* **Code**: [02_RSS解析・推し最新記事抽出.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/02_RSS解析・推し最新記事抽出.js)
 
-### ノード ④: 🌐 HTTP Request（Google News RSS取得）
-* **Method**: GET
-* **URL**: `{{ $json.rss_url }}`
-* **Response Format**: Text (XML)
+### ④ ❓ `新着記事があるか？`
+* **Condition**: `{{ $json.has_news }}` equals `true`
 
-### ノード ⑤: 🔍 Code（トップ速報記事抽出）
-* **Mode**: Run Once for Each Item
-* **Language**: JavaScript
-* **Code**: `02_RSS解析・推し最新記事抽出.js` の内容をそのまま貼り付け。
-* **役割**: RSSから直近7日間の最新ニュース1件を抽出し、推しの名前（韓国語）をメタデータとして紐付け。
-
-### ノード ⑥: ❓ If（記事存在チェック）
-* **Condition**: String -> `{{ $json.news_title }}` is not empty
-* ニュースがあった場合のみGeminiへ流し、記事がなかった場合はGeminiをスキップしてスプレッドシートの日時更新へ流します（無駄なAPI呼び出しゼロ）。
-
-### ノード ⑦: 🤖 Google Gemini（推し本格報道記事 ＆ 重要単語生成）
+### ⑤ 🤖 `Google Gemini: 推し報道記事生成`
 * **URL**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
-* **Header**: `x-goog-api-key`: `{{ $env.GEMINI_API_KEY }}` （※URLパラメータではなくHTTPヘッダー認証）
-* **Prompt**: `03_Gemini推し本格報道記事生成_AIプロンプト.md` の内容。
+* **Header**: `x-goog-api-key`: `{{ $env.GEMINI_API_KEY }}`
+* **JSON Body**: `={{ JSON.stringify($json.gemini_request) }}`
+* **Settings（歯車タブ）**:
+  - **Retry On Fail**: ON
+  - **Max Tries**: 3
+  - **Wait Between Tries**: 3000 ms（一時混雑時に自動で3秒待ってリトライ！）
 
-### ノード ⑧: 🛠️ Code（Supabase保存用整形）
-* **Code**: `04_Supabase保存データ整形.js` を貼り付け。
+### ⑥ 🛠️ `04_Supabase保存データ整形`
+* **Code**: [04_Supabase保存データ整形.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/04_Supabase保存データ整形.js)
 
-### ノード ⑨: 🗄️ Supabase（ニュース保存）
-* **Table**: `news`
-* **Operation**: Upsert
-* **Conflict Column**: `source_url`
+### ⑦ 🗄️ `Supabase: newsテーブル Upsert`
+* **URL**: `{{ $env.SUPABASE_URL }}/rest/v1/news?on_conflict=source_url`
 
-### ノード ⑩: 📝 Google Sheets（最終検索日時の更新）
-* **Operation**: Update Row(s)
-* **Row Number**: `{{ $json.row_number }}`
-* **Fields**: `last_searched_at` に `{{ $now.format('YYYY-MM-DD HH:mm:ss') }}` をセット。
-* **効果**: 今回検索した5名の日時が「今日」に更新され、明日は自動的に次の5名が選ばれます！
+### ⑧ 📝 `Google Sheets: 最終検索日時更新`（即時更新）
+* **Operation**: Update Row
+* **Column to match on**: `row_number`
+* **Values to Update**: `last_searched_at` に `{{ $now.format('YYYY-MM-DD HH:mm:ss') }}`
 
----
-
-## 5. 📁 構成ファイル一覧 ＆ 一発インポート用完全版JSON
-
-| ファイル名 | ノード名 / 種別 | 役割 |
-| :--- | :--- | :--- |
-| **[01_スプレッドシート設計と5名抽出コード.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/01_スプレッドシート設計と5名抽出コード.js)** | `01_最優先5名選出 & RSS URL生成` (Code) | 新メンバー最優先＆過去最古順に5名選出しRSS URL生成 |
-| **[02_RSS解析・推し最新記事抽出.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/02_RSS解析・推し最新記事抽出.js)** | `02_トップ速報記事抽出` (Code) | RSSから推し最新記事を抽出（記事なし時も安全処理） |
-| **[03_Gemini推し本格報道記事生成_AIプロンプト.md](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/03_Gemini推し本格報道記事生成_AIプロンプト.md)** | `Google Gemini: 推し報道記事生成` (HTTP/AI) | 芸能・ドラマ・音楽等に特化した4段落報道体＋重要語彙10〜15語 |
-| **[04_Supabase保存データ整形.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/04_Supabase保存データ整形.js)** | `04_Supabase保存データ整形` (Code) | Supabase `news` テーブル（`category: celeb`）用整形 |
-| **[05_スプレッドシート更新データ整形.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/05_スプレッドシート更新データ整形.js)** | `05_スプレッドシート更新データ整形` (Code) | 検索完了した5名の日時更新用ペイロード生成 |
-| **[推し巡回ニュース語学学習完全版ワークフロー.json](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/推し巡回ニュース語学学習完全版ワークフロー.json)** | ワークフロー全体JSON | **n8nのキャンバスにそのまま貼り付けて即座に全構築できる完全定義ファイル** |
-
+### ⑨ ⏳ `Wait` ノード（休憩ノード）
+* **Wait Amount**: `2` または `3` seconds
+* この後、`Loop Over Items` の入力ループ端子に戻すことで、次の推しへ安全に進みます。
