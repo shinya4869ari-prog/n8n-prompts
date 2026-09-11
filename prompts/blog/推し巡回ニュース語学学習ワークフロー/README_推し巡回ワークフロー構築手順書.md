@@ -107,9 +107,10 @@ Googleドライブでスプレッドシートを新規作成し、シート名�
 * **Condition**: String -> `{{ $json.news_title }}` is not empty
 * ニュースがあった場合のみGeminiへ流し、記事がなかった場合はGeminiをスキップしてスプレッドシートの日時更新へ流します（無駄なAPI呼び出しゼロ）。
 
-### ノード ⑦: 🤖 Gemini（推し本格報道記事 ＆ 重要単語生成）
-* **Model**: `gemini-2.5-flash`
-* **Prompt**: `03_Gemini推し本格報道記事生成_AIプロンプト.md` の内容を貼り付け。
+### ノード ⑦: 🤖 Google Gemini（推し本格報道記事 ＆ 重要単語生成）
+* **URL**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
+* **Header**: `x-goog-api-key`: `{{ $env.GEMINI_API_KEY }}` （※URLパラメータではなくHTTPヘッダー認証）
+* **Prompt**: `03_Gemini推し本格報道記事生成_AIプロンプト.md` の内容。
 
 ### ノード ⑧: 🛠️ Code（Supabase保存用整形）
 * **Code**: `04_Supabase保存データ整形.js` を貼り付け。
