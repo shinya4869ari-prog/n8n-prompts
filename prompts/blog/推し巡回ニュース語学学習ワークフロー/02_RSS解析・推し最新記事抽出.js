@@ -17,12 +17,20 @@ for (let i = 0; i < allInputs.length; i++) {
   
   let meta = inputItem.json;
   try {
-    const prevNode = $('最優先5名選出 & RSS URL生成') || $('01_最優先5名選出 & RSS URL生成') || $('01_スプレッドシート設計と5名抽出コード') || $('Code');
-    const prevItem = prevNode.all()[i]?.json;
-    if (prevItem) {
-      meta = { ...prevItem, ...meta };
+    // n8nのループ中の現在の推しデータを確実に直接取得！
+    const loopItem = $('Loop Over Items').item.json;
+    if (loopItem && (loopItem.person_name || loopItem.person_korean_name || loopItem.row_number)) {
+      meta = { ...loopItem, ...meta };
     }
-  } catch (e) {}
+  } catch (e) {
+    try {
+      const prevNode = $('最優先5名選出 & RSS URL生成') || $('01_最優先5名選出 & RSS URL生成') || $('01_スプレッドシート設計と5名抽出コード') || $('Code');
+      const prevItem = prevNode.all()[i]?.json;
+      if (prevItem) {
+        meta = { ...prevItem, ...meta };
+      }
+    } catch (e2) {}
+  }
 
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
   const match = itemRegex.exec(rawXml);
