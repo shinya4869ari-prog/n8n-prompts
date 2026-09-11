@@ -124,3 +124,17 @@ Googleドライブでスプレッドシートを新規作成し、シート名�
 * **Row Number**: `{{ $json.row_number }}`
 * **Fields**: `last_searched_at` に `{{ $now.format('YYYY-MM-DD HH:mm:ss') }}` をセット。
 * **効果**: 今回検索した5名の日時が「今日」に更新され、明日は自動的に次の5名が選ばれます！
+
+---
+
+## 5. 📁 構成ファイル一覧 ＆ 一発インポート用完全版JSON
+
+| ファイル名 | ノード名 / 種別 | 役割 |
+| :--- | :--- | :--- |
+| **[01_スプレッドシート設計と5名抽出コード.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/01_スプレッドシート設計と5名抽出コード.js)** | `01_最優先5名選出 & RSS URL生成` (Code) | 新メンバー最優先＆過去最古順に5名選出しRSS URL生成 |
+| **[02_RSS解析・推し最新記事抽出.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/02_RSS解析・推し最新記事抽出.js)** | `02_トップ速報記事抽出` (Code) | RSSから推し最新記事を抽出（記事なし時も安全処理） |
+| **[03_Gemini推し本格報道記事生成_AIプロンプト.md](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/03_Gemini推し本格報道記事生成_AIプロンプト.md)** | `Google Gemini: 推し報道記事生成` (HTTP/AI) | 芸能・ドラマ・音楽等に特化した4段落報道体＋重要語彙10〜15語 |
+| **[04_Supabase保存データ整形.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/04_Supabase保存データ整形.js)** | `04_Supabase保存データ整形` (Code) | Supabase `news` テーブル（`category: celeb`）用整形 |
+| **[05_スプレッドシート更新データ整形.js](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/05_スプレッドシート更新データ整形.js)** | `05_スプレッドシート更新データ整形` (Code) | 検索完了した5名の日時更新用ペイロード生成 |
+| **[推し巡回ニュース語学学習完全版ワークフロー.json](file:///c:/Users/shiny/.gemini/antigravity/scratch/n8n-prompts/prompts/blog/推し巡回ニュース語学学習ワークフロー/推し巡回ニュース語学学習完全版ワークフロー.json)** | ワークフロー全体JSON | **n8nのキャンバスにそのまま貼り付けて即座に全構築できる完全定義ファイル** |
+

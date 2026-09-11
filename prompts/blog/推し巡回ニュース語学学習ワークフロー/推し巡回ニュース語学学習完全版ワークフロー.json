@@ -1,0 +1,367 @@
+{
+  "name": "推し巡回ニュース語学学習ワークフロー (スプレッドシート連動・1日数名自動ローテーション)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 12 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        300
+      ],
+      "id": "node-schedule-trigger",
+      "name": "毎日定時実行 (Schedule Trigger)"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetName": {
+          "__rl": true,
+          "value": "推しリスト",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        300
+      ],
+      "id": "node-read-sheets",
+      "name": "Google Sheets: 推しリスト全行取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】Googleスプレッドシート「推しリスト」読み込み ＆ 最優先5名選出コード\n * \n * 役割:\n *  1. Google Sheetsノード（推しリスト）から渡された全行データを取得。\n *  2. 有効（is_active !== false）かつ韓国語名（name_ko）が登録されている推しを抽出。\n *  3. 【超重要ソートアルゴリズム】:\n *     - 第1優先: last_searched_at が空欄（新しく追加された推し）を最優先で一番上にする。\n *     - 第2優先: last_searched_at が古い順（昇順: 昔に検索した人ほど先頭へ）。\n *     => これにより「新メンバー即時検索」＋「全員終わったら自動で1人目に戻る永久ループ」を実現！\n *  4. 上位5名を切り出し、Google News RSS検索用URL（韓国語名クエリ）を生成して出力。\n */\n\n// 1日に検索する推しの人数（デフォルト: 5名）\nconst BATCH_SIZE = 5;\n\nconst allRows = $input.all();\nconst validCelebrities = [];\n\nfor (let i = 0; i < allRows.length; i++) {\n  const row = allRows[i].json;\n  \n  // n8nのGoogle Sheetsノードは row_number (または rowNumber / 行番号) を提供します\n  const rowNumber = row.row_number || row.rowNumber || (i + 2); // 1行目がヘッダーの場合のフォールバック\n\n  // 有効フラグ判定（未設定または true/'TRUE' の場合は有効）\n  const isActive = row.is_active === undefined || row.is_active === true || String(row.is_active).toUpperCase() === 'TRUE';\n  \n  // 韓国語名の取得と検証\n  const nameKo = (row.name_ko || '').trim();\n  const nameJa = (row.name_ja || nameKo).trim();\n\n  if (!isActive || !nameKo) {\n    continue; // 無効または韓国語名が無い行はスキップ\n  }\n\n  // 最終検索日時のパース（未検索・空欄チェック）\n  let lastSearchedRaw = row.last_searched_at;\n  let lastSearchedTime = null;\n  let isNew = true;\n\n  if (lastSearchedRaw && String(lastSearchedRaw).trim() !== '' && String(lastSearchedRaw).toLowerCase() !== 'null') {\n    const parsedDate = new Date(lastSearchedRaw);\n    if (!isNaN(parsedDate.getTime())) {\n      lastSearchedTime = parsedDate.getTime();\n      isNew = false;\n    }\n  }\n\n  validCelebrities.push({\n    row_number: rowNumber,\n    id: row.id || null,\n    name_ja: nameJa,\n    name_ko: nameKo,\n    last_searched_at: lastSearchedRaw || null,\n    last_searched_time: lastSearchedTime,\n    is_new: isNew\n  });\n}\n\n// -------------------------------------------------------------\n// ソート処理:\n// 1. 新規追加（is_new === true）を最優先（最上位へ）\n// 2. 検索履歴がある場合は、最終検索日時が古い順（昇順）\n// -------------------------------------------------------------\nvalidCelebrities.sort((a, b) => {\n  if (a.is_new && !b.is_new) return -1; // aが新規なら先頭\n  if (!a.is_new && b.is_new) return 1;  // bが新規なら先頭\n  if (a.is_new && b.is_new) return (a.row_number || 0) - (b.row_number || 0); // 新規同士はシートの上にある順\n\n  // どちらも検索履歴がある場合は、古い日時順\n  return a.last_searched_time - b.last_searched_time;\n});\n\n// 今日の巡回対象（上位5名）を抽出\nconst targetCelebrities = validCelebrities.slice(0, BATCH_SIZE);\n\n// 各推しのGoogle News RSS取得用オブジェクトを生成\nconst outputItems = targetCelebrities.map(celeb => {\n  // 韓国語名を完全一致フレーズ検索 + 直近7日間\n  const searchQuery = `\"${celeb.name_ko}\" when:7d`;\n  const encodedQuery = encodeURIComponent(searchQuery);\n  const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=ko&gl=KR&ceid=KR:ko`;\n\n  return {\n    json: {\n      row_number: celeb.row_number,\n      person_id: celeb.id,\n      person_name: celeb.name_ja,\n      person_korean_name: celeb.name_ko,\n      category: 'celeb',\n      category_name: `⭐ 推し巡回（${celeb.name_ja}）`,\n      search_query: celeb.name_ko,\n      rss_url: rssUrl,\n      last_searched_at_prev: celeb.last_searched_at,\n      is_new_member: celeb.is_new\n    }\n  };\n});\n\nreturn outputItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        300
+      ],
+      "id": "node-select-5-celebs",
+      "name": "01_最優先5名選出 & RSS URL生成"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.rss_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ],
+      "id": "node-fetch-rss",
+      "name": "Google News RSS取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】推し巡回 Google News RSS XML解析 ＆ 最新記事抽出コード\n * \n * 役割:\n *  1. HTTP Requestノードで取得した各推し（最大5名）のRSS XMLを解析。\n *  2. 推し1名につき「最新のトップ1記事」を抽出。\n *  3. メディア名やタイトルの余分なゴミを取り除き、クリーンなオブジェクトに整形。\n *  4. 記事が見つからなかった場合も安全にハンドリング（has_news: false）。\n *     => 後続の「If（記事有無チェック）」ノードで無駄なGemini API消費を完全防止！\n */\n\nconst allInputs = $input.all();\nconst results = [];\n\nfor (let i = 0; i < allInputs.length; i++) {\n  const inputItem = allInputs[i];\n  \n  // HTTP RequestノードのレスポンスXMLを取得\n  const rawXml = inputItem.json.data || inputItem.json.body || inputItem.json.response || '';\n  \n  // 前段（01ノード）から渡された推しのメタデータを引き継ぐ\n  // ※n8nのHTTP Requestノードの設定で「Include Input Data in Output」がONの場合、\n  // または pairedItem / $node 経由で取得します\n  let meta = inputItem.json;\n  try {\n    const prevNode = $('最優先5名選出 & RSS URL生成') || $('01_スプレッドシート設計と5名抽出コード') || $('Code');\n    const prevItem = prevNode.all()[i]?.json;\n    if (prevItem) {\n      meta = { ...prevItem, ...meta };\n    }\n  } catch (e) {\n    // 取得できない場合は inputItem.json そのまま使用\n  }\n\n  const itemRegex = /<item>([\\s\\S]*?)<\\/item>/gi;\n  const match = itemRegex.exec(rawXml);\n\n  if (match) {\n    // ニュース記事が存在する場合\n    const content = match[1];\n    let rawTitle = (content.match(/<title>([\\s\\S]*?)<\\/title>/i)?.[1] || '')\n      .replace(/<!\\[CDATA\\[(.*?)\\]\\]>/g, '$1')\n      .replace(/&amp;/g, '&')\n      .replace(/&quot;/g, '\"')\n      .replace(/&#39;/g, \"'\")\n      .trim();\n\n    const link = (content.match(/<link>([\\s\\S]*?)<\\/link>/i)?.[1] || '').trim();\n    const pubDate = (content.match(/<pubDate>([\\s\\S]*?)<\\/pubDate>/i)?.[1] || '').trim();\n    const sourceMatch = content.match(/<source[^>]*>([\\s\\S]*?)<\\/source>/i);\n    let sourceName = sourceMatch ? sourceMatch[1].trim() : '';\n\n    // \"記事タイトル - ニュース提供社\" からメディア名を分離\n    let cleanTitle = rawTitle;\n    if (rawTitle.includes(' - ')) {\n      const parts = rawTitle.split(' - ');\n      sourceName = sourceName || parts.pop().trim();\n      cleanTitle = parts.join(' - ').trim();\n    }\n\n    results.push({\n      json: {\n        has_news: true,\n        row_number: meta.row_number,\n        person_id: meta.person_id || null,\n        person_name: meta.person_name || '',\n        person_korean_name: meta.person_korean_name || '',\n        category: 'celeb',\n        category_name: meta.category_name || `⭐ 推し（${meta.person_name}）`,\n        news_title: cleanTitle,\n        raw_title: rawTitle,\n        source_name: sourceName || '한국 연예 언론',\n        source_url: link,\n        published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString()\n      }\n    });\n  } else {\n    // 直近7日間にニュースがなかった場合\n    results.push({\n      json: {\n        has_news: false,\n        row_number: meta.row_number,\n        person_id: meta.person_id || null,\n        person_name: meta.person_name || '',\n        person_korean_name: meta.person_korean_name || '',\n        category: 'celeb',\n        category_name: meta.category_name || `⭐ 推し（${meta.person_name}）`,\n        news_title: '',\n        raw_title: '',\n        source_name: '',\n        source_url: '',\n        published_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        300
+      ],
+      "id": "node-parse-rss",
+      "name": "02_トップ速報記事抽出"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-has-news",
+              "leftValue": "={{ $json.has_news }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "id": "node-if-news-found",
+      "name": "新着記事があるか？"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={{ $env.GEMINI_API_KEY }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  contents: [\n    {\n      role: \"user\",\n      parts: [\n        {\n          text: `あなたは韓国の主要エンタメ・文化紙（OSEN、スポーツ朝鮮、イルガンスポーツ、聯合ニュース等）のベテラン芸能記者であり、同時に外国人向け韓国語教育の最高専門家です。\n\n提供された推し（セレブ・俳優・K-POPアイドル等）のニュース速報をもとに、ファンの反響や作品の背景、今後の公式スケジュールまでを網羅した【本格的なエンタメ報道記事（4段落、ハングル計800〜1,200文字）】を再構成し、指定のJSON形式で出力してください。\n\n【記事執筆の鉄則】\n1. 芸能報道体（ハオチェ・ヘラ体「〜다고 밝혔다 / 〜(으)로 알려졌다 / 〜에 대한 기대감을 높였다」等）の格式高く洗練された韓国語を使用すること。\n2. 短文ダイジェストで終わらせず、以下の【4段落構成】で読み応えのある充実したボリュームを持たせること：\n   - 第1段落【活動・発表・最新近況】：誰がどんな新作（ドラマ/映画/アルバム/ファンミーティング等）や近況を発表したか（約200〜250字）\n   - 第2段落【作品詳細・経緯・見どころ】：今回の役柄、コンセプト、撮影エピソード、過去の代表作からの進化（約300〜350字）\n   - 第3段落【ファン・国内外の反響・業界評価】：ファンコミュニティやSNSの熱狂、メディアや関係者からの高評価（約250〜300字）\n   - 第4段落【今後のスケジュール・公開予定・抱負】：初放送日、劇場公開日、公演日程、本人が語った今後の意気込み（約200字）\n3. 各段落に対応する、極めて自然で流麗な【日本語訳（ja）】および【日本語タイトル（title_ja）】を付けること。\n   ※【厳禁】日本語訳の中にハングル（例: 배우, 팬미팅, 개봉 等）を絶対に混入させないこと。必ず完全に自然な日本語（「俳優」「ファンミーティング」「公開」等）に翻訳すること。\n4. 記事の中から、学習者が覚えるべき【重要語彙（10〜15語）】を抽出し、品詞・漢字・難易度（初級/中級/高級）を明記すること。\n   （※芸能・演技・音楽・心情表現など、ドラマ視聴や推し活、日常会話に直結する単語をバランスよく選定すること）\n5. カテゴリは、固定で \\`celeb\\` を付与すること。\n\n【JSON出力フォーマット仕様】\n必ず以下の有効なJSON配列（\\`\\`\\`json ... \\`\\`\\`）のみを出力してください。\n[\n  {\n    \"category\": \"celeb\",\n    \"rank\": 1,\n    \"title_ko\": \"記事の韓国語タイトル\",\n    \"title_ja\": \"記事の日本語タイトル（完全日本語訳）\",\n    \"summary_ko\": \"韓国語全体要約\",\n    \"summary_ja\": \"日本語全体要約\",\n    \"paragraphs\": [\n      {\n        \"para_num\": 1,\n        \"title\": \"第1段落の韓国語小見出し\",\n        \"ko\": \"第1段落の韓国語本文（活動・発表・最新近況 / 約200〜250字）\",\n        \"ja\": \"第1段落の日本語訳\"\n      },\n      {\n        \"para_num\": 2,\n        \"title\": \"第2段落の韓国語小見出し\",\n        \"ko\": \"第2段落の韓国語本文（作品詳細・経緯・見どころ / 約300〜350字）\",\n        \"ja\": \"第2段落の日本語訳\"\n      },\n      {\n        \"para_num\": 3,\n        \"title\": \"第3段落の韓国語小見出し\",\n        \"ko\": \"第3段落の韓国語本文（ファン・国内外の反響・業界評価 / 約250〜300字）\",\n        \"ja\": \"第3段落の日本語訳\"\n      },\n      {\n        \"para_num\": 4,\n        \"title\": \"第4段落の韓国語小見出し\",\n        \"ko\": \"第4段落の韓国語本文（今後のスケジュール・公開予定・抱負 / 約200字）\",\n        \"ja\": \"第4段落の日本語訳\"\n      }\n    ],\n    \"key_vocabulary\": [\n      {\n        \"word\": \"단어\",\n        \"hanja\": \"漢字表記（固有語の場合は ―）\",\n        \"pos\": \"品詞（名詞/動詞/形容詞等）\",\n        \"meaning\": \"日本語の意味\",\n        \"level\": \"初級/中級/高級\"\n      }\n    ]\n  }\n]\n\n============================================================\n▼ 今すぐ処理すべき推しニュース速報（このニュースを記事化してください）\n============================================================\n【推し人物】: {{ $json.person_name }} ({{ $json.person_korean_name }})\n【ニュース速報タイトル】: {{ $json.news_title }}\n【発信元メディア】: {{ $json.source_name }}\n【参照URL】: {{ $json.source_url }}\n\n【実行命令】:\n前置きや挨拶（「了解しました」「承知いたしました」等）は一切出力しないでください。\n直ちに上記のニュース速報をもとに、指定フォーマットの【JSON配列（\\`\\`\\`json ... \\`\\`\\`）】のみを出力してください。\n`\n        }\n      ]\n    }\n  ],\n  generationConfig: {\n    temperature: 0.2,\n    responseMimeType: \"application/json\"\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        180
+      ],
+      "id": "node-gemini-article",
+      "name": "Google Gemini: 推し報道記事生成"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】Gemini出力パース ＆ Supabase (newsテーブル) 保存用データ整形コード\n * \n * 役割:\n *  1. Gemini Flash が生成した推し報道記事（4段落＋語彙リスト）のJSONを安全にパース。\n *  2. 前段（RSS解析）の「本物のURL・メディア名・推し氏名」を確実に注入。\n *  3. 日本語タイトルのハングル混入防止＆重複URLチェック。\n *  4. Supabaseの news テーブルのスキーマに完全準拠したオブジェクト配列を返却。\n */\n\nconst items = $input.all();\nconst now = new Date().toISOString();\nconst formattedResults = [];\nconst seenUrls = new Set();\n\n// タイトル日本語訳にハングルが混ざっていた場合の簡易辞書\nconst hangulFixMap = {\n  '배우': '俳優',\n  '가수': '歌手',\n  '감독': '監督',\n  '출연': '出演',\n  '개봉': '公開',\n  '팬미팅': 'ファンミーティング',\n  '콘서트': 'コンサート',\n  '공개': '公開',\n  '확정': '確定',\n  '발표': '発表'\n};\n\nfunction cleanJapaneseText(text) {\n  if (!text) return '';\n  let cleaned = String(text);\n  for (const [ko, ja] of Object.entries(hangulFixMap)) {\n    cleaned = cleaned.split(ko).join(ja);\n  }\n  return cleaned.trim();\n}\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  \n  // 前段ノード（トップ速報記事抽出）のメタデータを取得\n  let orig = {};\n  try {\n    const rssNode = $('トップ速報記事抽出') || $('02_RSS解析・推し最新記事抽出') || $('Code1');\n    orig = rssNode.all()[i]?.json || {};\n  } catch (e) {\n    orig = item.json;\n  }\n\n  let rawText = item.json.text || item.json.output || item.json.response || '';\n  if (typeof rawText === 'object') {\n    rawText = JSON.stringify(rawText);\n  }\n\n  // マークダウン記法（```json ... ```）の除去\n  if (typeof rawText === 'string') {\n    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n  }\n\n  let parsed = null;\n  try {\n    parsed = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;\n  } catch (e) {\n    const match = String(rawText).match(/\\{[\\s\\S]*\\}/);\n    if (match) {\n      try { parsed = JSON.parse(match[0]); } catch (e2) {}\n    }\n  }\n\n  if (!parsed || typeof parsed !== 'object') continue;\n  if (Array.isArray(parsed)) parsed = parsed[0];\n  if (!parsed || (!parsed.title_ko && !parsed.title_ja)) continue;\n\n  // 1. URLの決定: 前段RSSの実URLを最優先（AIの誤出力を遮断）\n  let sourceUrl = String(orig.source_url || parsed.source_url || '').trim();\n  if (sourceUrl.includes('{{') || sourceUrl.includes('$json') || !sourceUrl.startsWith('http')) {\n    sourceUrl = String(orig.source_url || '').trim();\n  }\n  if (!sourceUrl || !sourceUrl.startsWith('http')) {\n    sourceUrl = `https://news.google.com/articles/celeb_${Date.now()}_${i}`;\n  }\n\n  // 重複記事のスキップ\n  if (seenUrls.has(sourceUrl)) {\n    continue;\n  }\n  seenUrls.add(sourceUrl);\n\n  // 2. メディア名\n  let sourceName = String(orig.source_name || parsed.source_name || '한국 연예 언론').trim();\n  if (sourceName.includes('{{') || sourceName.includes('$json')) {\n    sourceName = String(orig.source_name || '한국 연예 언론').trim();\n  }\n\n  // 3. タイトル\n  const titleKo = String(parsed.title_ko || orig.news_title || '').trim();\n  const titleJa = cleanJapaneseText(parsed.title_ja || '');\n\n  // 4. 段落構成\n  let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];\n  if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {\n    paragraphs = [{\n      para_num: 1,\n      title: '기사 요약',\n      ko: String(parsed.summary_ko || ''),\n      ja: cleanJapaneseText(parsed.summary_ja || '')\n    }];\n  } else {\n    paragraphs = paragraphs.map(p => ({\n      para_num: p.para_num || 1,\n      title: p.title || '',\n      ko: p.ko || '',\n      ja: cleanJapaneseText(p.ja || '')\n    }));\n  }\n\n  // 5. 重要語彙リスト\n  const vocab = Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [];\n\n  formattedResults.push({\n    json: {\n      category: 'celeb',\n      rank: 1,\n      title_ko: titleKo,\n      title_ja: titleJa,\n      summary_ko: String(parsed.summary_ko || paragraphs[0]?.ko || '').trim(),\n      summary_ja: cleanJapaneseText(parsed.summary_ja || paragraphs[0]?.ja || ''),\n      paragraphs: paragraphs,\n      key_vocabulary: vocab,\n      source_name: sourceName,\n      source_url: sourceUrl,\n      person_id: orig.person_id || null,\n      person_name: orig.person_name || parsed.person_name || null,\n      person_profile_url: orig.person_profile_url || null,\n      published_at: orig.published_at || now,\n      created_at: now\n    }\n  });\n}\n\nreturn formattedResults;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        180
+      ],
+      "id": "node-format-supabase",
+      "name": "04_Supabase保存データ整形"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/news?on_conflict=source_url",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY || $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        180
+      ],
+      "id": "node-supabase-upsert",
+      "name": "Supabase: newsテーブル Upsert"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 【n8n用】Googleスプレッドシート「最終検索日時（last_searched_at）」更新用データ整形コード\n * \n * 役割:\n *  1. 今回検索を実行した5名のデータ（最優先5名選出ノード）を取得。\n *  2. 各行の `row_number` と、現在日時（YYYY-MM-DD HH:mm:ss）をセット。\n *  3. 後続の「Google Sheets: Update Row(s)」ノードに渡してスプレッドシートを更新！\n * \n * 効果:\n *  - 検索が終わった推しの最終検索日が「今日」になるため、\n *    明日以降は自動的に「まだ検索されていない推し」や「より過去に検索された推し」が優先されます。\n *  - 50名全員を回りきると、10日前に検索した1人目の日付が一番古くなり、何の手動操作もなしに自然と2巡目が始まります！\n */\n\n// 現在日時（日本時間: JST YYYY-MM-DD HH:mm:ss）を生成\nconst now = new Date();\nconst jstOffset = 9 * 60 * 60 * 1000;\nconst jstDate = new Date(now.getTime() + jstOffset);\nconst formattedDate = jstDate.toISOString().replace('T', ' ').substring(0, 19);\n\n// 最優先5名選出ノード（または前段ノード）から今回処理したアイテムを取得\nlet targetItems = [];\n\ntry {\n  const selectNode = $('最優先5名選出 & RSS URL生成') || $('01_スプレッドシート設計と5名抽出コード') || $('Code');\n  targetItems = selectNode.all();\n} catch (e) {\n  // 取得できない場合は、現在の入力ノードから取得\n  targetItems = $input.all();\n}\n\nconst updatePayloads = [];\n\nfor (const item of targetItems) {\n  const data = item.json;\n  const rowNum = data.row_number;\n\n  if (rowNum) {\n    updatePayloads.push({\n      json: {\n        row_number: rowNum,\n        name_ja: data.person_name || '',\n        name_ko: data.person_korean_name || '',\n        last_searched_at: formattedDate\n      }\n    });\n  }\n}\n\nreturn updatePayloads;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        420
+      ],
+      "id": "node-format-sheets-update",
+      "name": "05_スプレッドシート更新データ整形"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "sheetName": {
+          "__rl": true,
+          "value": "推しリスト",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "last_searched_at": "={{ $json.last_searched_at }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2160,
+        420
+      ],
+      "id": "node-update-sheets",
+      "name": "Google Sheets: 最終検索日時更新"
+    }
+  ],
+  "connections": {
+    "毎日定時実行 (Schedule Trigger)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: 推しリスト全行取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets: 推しリスト全行取得": {
+      "main": [
+        [
+          {
+            "node": "01_最優先5名選出 & RSS URL生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01_最優先5名選出 & RSS URL生成": {
+      "main": [
+        [
+          {
+            "node": "Google News RSS取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google News RSS取得": {
+      "main": [
+        [
+          {
+            "node": "02_トップ速報記事抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02_トップ速報記事抽出": {
+      "main": [
+        [
+          {
+            "node": "新着記事があるか？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新着記事があるか？": {
+      "main": [
+        [
+          {
+            "node": "Google Gemini: 推し報道記事生成",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "05_スプレッドシート更新データ整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini: 推し報道記事生成": {
+      "main": [
+        [
+          {
+            "node": "04_Supabase保存データ整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04_Supabase保存データ整形": {
+      "main": [
+        [
+          {
+            "node": "Supabase: newsテーブル Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: newsテーブル Upsert": {
+      "main": [
+        [
+          {
+            "node": "05_スプレッドシート更新データ整形",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05_スプレッドシート更新データ整形": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: 最終検索日時更新",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
