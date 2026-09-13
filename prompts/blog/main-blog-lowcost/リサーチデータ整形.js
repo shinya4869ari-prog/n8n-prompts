@@ -113,7 +113,7 @@ for (const item of items) {
           origin_title: movie.原題 || movie.origin_title || title,
           poster_url: movie.poster_url || movie.poster_path || "",
           country: movie.country || resolvedCountry,
-          overview: movie.あらすじ || movie.overview || movie.歴史クロス解説 || "",
+          overview: movie.あらすじ || movie.overview || "",
           tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0,
           imdb_url: movie.imdb_url || "",
           year: parsedYear,
