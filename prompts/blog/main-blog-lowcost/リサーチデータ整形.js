@@ -73,7 +73,10 @@ for (const item of items) {
           tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0, // ★ nullエラー防止のため、IDが無い場合は0を指定
           imdb_url: movie.imdb_url || "",
           year: parsedYear, // ★ 追加：制作年数（公開年）
-          wikidata_id: movie.wikidata_id || null
+          wikidata_id: movie.wikidata_id || null,
+          related_event: movie.関連事件 || movie.related_event || "",
+          historical_significance: movie.歴史クロス解説 || movie.historical_significance || "",
+          type: movie.種別 || "映画"
         }
       });
     }
