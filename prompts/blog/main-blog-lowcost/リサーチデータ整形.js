@@ -13,32 +13,34 @@ function safeParse(val) {
   clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 
   // 1. そのままパース
-  try { return JSON.parse(clean); } catch(e) {}
+  try { return JSON.parse(clean); } catch (e) {}
 
   // 2. { ... } オブジェクト切り出し
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    try { return JSON.parse(clean.substring(firstBrace, lastBrace + 1)); } catch(e) {}
+    try { return JSON.parse(clean.substring(firstBrace, lastBrace + 1)); } catch (e) {}
   }
 
   // 3. [ ... ] 配列切り出し
   const firstBracket = clean.indexOf('[');
   const lastBracket = clean.lastIndexOf(']');
   if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-    try { return JSON.parse(clean.substring(firstBracket, lastBracket + 1)); } catch(e) {}
+    try { return JSON.parse(clean.substring(firstBracket, lastBracket + 1)); } catch (e) {}
   }
 
   return null;
 }
 
 // === メイン処理 ===
+// ワークフロー全体から共通の国名を取得（フォールバック用）
+let fallbackCountry = "";
+try { fallbackCountry = $('PromptLoader').first()?.json?.country || $('国名変換Code').first()?.json?.country || ""; } catch(e) {}
+
 for (const item of items) {
   const json = item.json || {};
-  const countryName = json.country || "";
 
   // 1. 映画データが含まれるターゲットの特定（優先順位順）
-  // ★ Supabaseのキャッシュ ($json.research25) を最優先で検出！
   let rawSource = json.research25 
                || json.content?.parts?.[0]?.text 
                || json.output 
@@ -52,6 +54,12 @@ for (const item of items) {
   if (!parsed && typeof rawSource === 'object') {
     parsed = rawSource;
   }
+
+  // 国名の特定（パース後オブジェクト ➜ 入力JSON ➜ フォールバック）
+  const resolvedCountry = parsed?.country 
+                       || json.country 
+                       || fallbackCountry 
+                       || "インドネシア";
 
   // 3. 映画配列（Array）の抽出
   let allMovies = [];
@@ -104,7 +112,7 @@ for (const item of items) {
           cast: movie.cast || movie.出演 || "出演者不明",
           origin_title: movie.原題 || movie.origin_title || title,
           poster_url: movie.poster_url || movie.poster_path || "",
-          country: countryName,
+          country: movie.country || resolvedCountry,
           overview: movie.あらすじ || movie.overview || movie.歴史クロス解説 || "",
           tmdb_id: movie.tmdb_id ? parseInt(movie.tmdb_id) : 0,
           imdb_url: movie.imdb_url || "",
