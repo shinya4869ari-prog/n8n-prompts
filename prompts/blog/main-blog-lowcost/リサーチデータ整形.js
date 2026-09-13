@@ -1,33 +1,28 @@
-// === リサーチデータ整形（超堅牢・AI出力全対応版） ===
+// === リサーチデータ整形（Supabaseキャッシュ & Gemini直接出力 完全両対応版） ===
 const items = $input.all();
 let results = [];
 let seenTitles = new Set();
 
-// --- JSON超強力パース関数 ---
-function forceParseJSON(text) {
-  if (!text) return null;
-  if (typeof text === 'object') return text;
-  if (typeof text !== 'string') return null;
+// --- JSON安全パース関数 ---
+function safeParse(val) {
+  if (!val) return null;
+  if (typeof val === 'object') return val;
+  if (typeof val !== 'string') return null;
 
-  let clean = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+  let clean = val.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+  clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 
-  // 1. ```json ... ``` のマークダウンブロックを最優先抽出
-  const mdMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  if (mdMatch && mdMatch[1]) {
-    try { return JSON.parse(mdMatch[1].trim()); } catch(e) {}
-  }
-
-  // 2. そのままパース
+  // 1. そのままパース
   try { return JSON.parse(clean); } catch(e) {}
 
-  // 3. { ... } オブジェクト切り出し
+  // 2. { ... } オブジェクト切り出し
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     try { return JSON.parse(clean.substring(firstBrace, lastBrace + 1)); } catch(e) {}
   }
 
-  // 4. [ ... ] 配列切り出し
+  // 3. [ ... ] 配列切り出し
   const firstBracket = clean.indexOf('[');
   const lastBracket = clean.lastIndexOf(']');
   if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
@@ -37,91 +32,62 @@ function forceParseJSON(text) {
   return null;
 }
 
-// --- 映画配列（Array）をオブジェクト内のどこからでも救出する関数 ---
-function extractMoviesArray(data) {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (typeof data !== 'object') return [];
-
-  // 代表的なキー候補
-  const candidateKeys = [
-    '映像作品', 'movies', '映画', 'おすすめ映画ランキング', 
-    '作品', '作品リスト', '映画リスト', 'recommendations', 'items', 'list'
-  ];
-  for (const k of candidateKeys) {
-    if (Array.isArray(data[k]) && data[k].length > 0) return data[k];
-  }
-
-  // オブジェクト内のすべてのプロパティを探索
-  for (const k of Object.keys(data)) {
-    if (Array.isArray(data[k]) && data[k].length > 0) {
-      // 配列の要素がオブジェクトなら映画リストとみなす
-      if (typeof data[k][0] === 'object') return data[k];
-    }
-  }
-
-  return [];
-}
-
 // === メイン処理 ===
 for (const item of items) {
   const json = item.json || {};
+  const countryName = json.country || "";
 
-  // 1. テキスト抽出（あらゆるGemini/n8n出力構造を網羅）
-  let rawText = '';
-  if (json.content?.parts?.[0]?.text) {
-    rawText = json.content.parts[0].text;
-  } else if (json.output) {
-    rawText = typeof json.output === 'string' ? json.output : JSON.stringify(json.output);
-  } else if (typeof json.message === 'object' && json.message?.content) {
-    rawText = json.message.content;
-  } else if (typeof json.message === 'string') {
-    rawText = json.message;
-  } else if (json.text) {
-    rawText = json.text;
-  } else if (json.response?.text) {
-    rawText = json.response.text;
-  } else if (typeof json === 'string') {
-    rawText = json;
-  } else {
-    rawText = JSON.stringify(json);
+  // 1. 映画データが含まれるターゲットの特定（優先順位順）
+  // ★ Supabaseのキャッシュ ($json.research25) を最優先で検出！
+  let rawSource = json.research25 
+               || json.content?.parts?.[0]?.text 
+               || json.output 
+               || json.text 
+               || json.message?.content 
+               || json.message
+               || json;
+
+  // 2. パース実行
+  let parsed = safeParse(rawSource);
+  if (!parsed && typeof rawSource === 'object') {
+    parsed = rawSource;
   }
 
-  // 2. パース
-  let data = null;
-  if (Array.isArray(json.映像作品) || Array.isArray(json.movies)) {
-    data = json;
-  } else if (rawText) {
-    data = forceParseJSON(rawText);
+  // 3. 映画配列（Array）の抽出
+  let allMovies = [];
+  if (Array.isArray(parsed)) {
+    allMovies = parsed;
+  } else if (parsed && typeof parsed === 'object') {
+    // 既知のキーを探索
+    allMovies = parsed.映像作品 
+             || parsed.movies 
+             || parsed.映画 
+             || parsed.おすすめ映画ランキング 
+             || parsed.作品 
+             || parsed.list 
+             || [];
+
+    // もし上記で見つからず、中身に配列があればそれを採用
+    if (allMovies.length === 0) {
+      for (const k of Object.keys(parsed)) {
+        if (Array.isArray(parsed[k]) && parsed[k].length > 0 && typeof parsed[k][0] === 'object') {
+          allMovies = parsed[k];
+          break;
+        }
+      }
+    }
   }
 
-  // 3. 映画配列の救出
-  let allMovies = extractMoviesArray(data);
-
-  // もし救出できなかった場合の最終フォールバック（item.json直下をスキャン）
-  if (allMovies.length === 0) {
-    allMovies = extractMoviesArray(json);
-  }
-
-  // 国名の取得
-  let countryName = data?.country || json.country || "";
-  if (!countryName) {
-    try { countryName = $('PromptLoader').first()?.json?.country || ""; } catch(e) {}
-  }
-
-  // 4. 出力フォーマットの整形
+  // 4. 映画1本ごとのオブジェクト整形
   for (const movie of allMovies) {
     if (!movie || typeof movie !== 'object') continue;
 
-    // タイトルキーの超柔軟取得
     const title = movie.タイトル_日本語 
                || movie.title 
                || movie.タイトル 
                || movie.邦題 
                || movie.原題 
                || movie.name 
-               || movie.映画名
-               || Object.values(movie).find(v => typeof v === 'string' && v.length > 0)
                || "タイトル不明";
 
     if (title !== "タイトル不明" && !seenTitles.has(title)) {
@@ -145,25 +111,13 @@ for (const item of items) {
           year: parsedYear,
           wikidata_id: movie.wikidata_id || null,
           related_event: movie.関連事件 || movie.related_event || "",
-          historical_significance: movie.歴史クロス解説 || movie.historical_significance || movie.overview || "",
+          historical_significance: movie.歴史クロス解説 || movie.historical_significance || "",
           type: movie.種別 || movie.type || "映画",
           is_serious: movie.is_serious !== undefined ? movie.is_serious : true
         }
       });
     }
   }
-}
-
-// もし1件も取れなかった場合、後続が落ちないようにデバッグ情報を1件返却（原因がすぐわかる）
-if (results.length === 0) {
-  const sampleJson = items[0]?.json || {};
-  return [{
-    json: {
-      _ERROR: "映画リストの抽出に失敗しました（入力データの形式を確認してください）",
-      received_keys: Object.keys(sampleJson),
-      received_snippet: JSON.stringify(sampleJson).substring(0, 300)
-    }
-  }];
 }
 
 return results;
