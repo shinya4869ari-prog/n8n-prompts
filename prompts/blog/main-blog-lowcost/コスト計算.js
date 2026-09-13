@@ -71,8 +71,9 @@ let promptTokens = tokenUsage.promptTokens || tokenUsage.promptTokenCount || 0;
 let completionTokens = tokenUsage.completionTokens || tokenUsage.candidatesTokenCount || 0;
 
 // 4. n8nがトークンを渡さなかった場合の文字数からの超高精度推計
-if (!completionTokens && item.output) {
-  completionTokens = Math.round(item.output.length * 0.95);
+const rawOutputText = item.output || item.content?.parts?.[0]?.text || item.text || '';
+if (!completionTokens && rawOutputText) {
+  completionTokens = Math.round(rawOutputText.length * 0.95);
 }
 if (!promptTokens) {
   promptTokens = 2450;
