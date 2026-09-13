@@ -1,28 +1,45 @@
 // === Gemini コスト自動計算コード（モデル完全自動検出版） ===
 const item = $input.first()?.json || {};
 
-// 1. モデル名の完全自動検出
+// 1. モデル名の完全自動検出（n8n内部パラメータ・モデルノード網羅）
 let detectedModel = item.model || item.response?.model || item.usageMetadata?.model || '';
 
 if (!detectedModel) {
   const candidateNodes = [
-    'Google Gemini Chat Model',
     'gemini-3-flash',
+    'Google Gemini Chat Model',
     'Gemini Chat Model',
-    'Chat Model',
-    'Google PaLM Chat Model'
+    'gemini-3.6-flash',
+    'Chat Model'
   ];
   for (const nodeName of candidateNodes) {
     try {
-      const p = $('researcher1')?.first()?.json?.model || $('researcher2')?.first()?.json?.model || $(nodeName)?.first()?.json?.model;
-      if (p) { detectedModel = p; break; }
+      const n = $node[nodeName];
+      if (n && n.parameter) {
+        const val = n.parameter.modelName?.value || n.parameter.modelName || n.parameter.model?.value || n.parameter.model;
+        if (val) {
+          detectedModel = String(val).replace(/^models\//, '');
+          break;
+        }
+      }
     } catch(e) {}
   }
 }
 
-// 検出できなかった場合はデフォルトで 3.8 Flash
+// それでも見つからない場合、前段ノードから探索
 if (!detectedModel) {
-  detectedModel = 'gemini-3.8-flash';
+  const prevList = ['researcher2', 'researcher1', 'researcher25'];
+  for (const name of prevList) {
+    try {
+      const m = $(name).first()?.json?.model || $node[name]?.parameter?.model;
+      if (m) { detectedModel = String(m).replace(/^models\//, ''); break; }
+    } catch(e) {}
+  }
+}
+
+// 最終フォールバック
+if (!detectedModel) {
+  detectedModel = 'gemini-3.6-flash';
 }
 
 // 2. モデル別料金テーブル（USD / 100万トークン）
