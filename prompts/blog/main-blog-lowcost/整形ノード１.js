@@ -1,82 +1,109 @@
-const r1Raw = $('researcher1').first().json;
-const r2Raw = $('researcher2').first().json; // Perplexityノードの出力
-const r25Raw = $('researcher25').first().json; // 映像作品（歴史連動）エージェントの出力
-let supabaseMovieRaw = null;
-try {
-  supabaseMovieRaw = $('Supabase映画データ').first().json; 
-} catch (e) {
-  // ノードが削除されている場合はnullのままにする
-}
+// ==============================================================================
+// 📋 整形ノード１（Supabaseキャッシュ・スキップ＆Merge4完全対応版）
+// ==============================================================================
 
-// Agent停止チェック (AIエージェントとして動くresearcher1とresearcher25を監視します)
-for (const [raw, name] of [[r1Raw, 'researcher1'], [r25Raw, 'researcher25']]) {
-  const out = typeof raw.output === 'string' ? raw.output : (typeof raw.json === 'string' ? raw.json : '');
-  const hasAgentStopped = out.includes('Agent stopped') || out.includes('max iterations');
-  const isToolLogOnly = out.startsWith('Calling ') || out.includes('Calling Perplexity');
-  
-  if (hasAgentStopped || isToolLogOnly) {
-    throw new Error(`【${name}】Agentが正常に完了せず、途中で停止しました。再実行してください。`);
+// --- 安全なノード取得ヘルパー（未実行ノード参照エラーを防止） ---
+function safeGet(nodeName) {
+  try {
+    const node = $(nodeName);
+    if (!node) return null;
+    return node.first()?.json || null;
+  } catch (e) {
+    return null;
   }
 }
 
+function safeGetAll(nodeName) {
+  try {
+    const node = $(nodeName);
+    if (!node) return [];
+    return node.all() || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// 1. キャッシュ確認ノードからの事前取得
+const cacheJson = safeGet('キャッシュ確認');
+
+// 2. r1 / r2 / r25 の多重フォールバック探索
+// 優先順位: Supabaseキャッシュ ➜ 即時保存ノード ➜ 各リサーチノード ➜ 入力($input)
+let r1Raw = cacheJson?.research1 
+         || safeGet('★リサーチ1即時保存')?.research1 
+         || safeGet('リサーチ1即時保存')?.research1 
+         || safeGet('researcher1');
+
+let r2Raw = cacheJson?.research2 
+         || safeGet('★リサーチ2即時保存')?.research2 
+         || safeGet('リサーチ2即時保存')?.research2 
+         || safeGet('researcher2');
+
+let r25Raw = cacheJson?.research25 
+          || safeGet('★リサーチ25即時保存')?.research25 
+          || safeGet('リサーチ25即時保存')?.research25 
+          || safeGet('researcher25');
+
+// もし上記で見つからない場合、現在の入力（Merge4等）から探す
+if (!r1Raw || !r2Raw || !r25Raw) {
+  try {
+    const allInputs = $input.all();
+    for (const item of allInputs) {
+      const j = item.json || {};
+      if (!r1Raw && (j.research1 || j.制度の9つの皿 || j.地理)) r1Raw = j.research1 || j;
+      if (!r2Raw && (j.research2 || j.歴史的背景 || j.直近の動向)) r2Raw = j.research2 || j;
+      if (!r25Raw && (j.research25 || j.映像作品 || j.おすすめ映画)) r25Raw = j.research25 || j;
+    }
+  } catch (e) {}
+}
+
+let supabaseMovieRaw = safeGet('Supabase映画データ');
+
+// --- JSON安全パース＆修復関数 ---
 const parseOutput = (node, nodeName) => {
   try {
     let rawVal = node;
-
-    // ★最優先：もし入力自体が二重エスケープ等の「文字列」なら、まずデ코드して本来のオブジェクトや文字列にする
-    if (typeof rawVal === 'string') {
-      try {
-        const trimmed = rawVal.trim();
-        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-          rawVal = JSON.parse(trimmed);
-        } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          rawVal = JSON.parse(trimmed);
-        }
-      } catch (e) {
-        // パース失敗時はそのまま文字列として進む
-      }
+    if (rawVal === undefined || rawVal === null) {
+      throw new Error('データが存在しません(null/undefined)');
     }
 
+    // 既にオブジェクトで主要キーを持つ場合はそのまま返却
     if (typeof rawVal === 'object' && rawVal !== null) {
-      // すでに目的のキーを持っている場合はそのままオブジェクトとして返す
-      if (rawVal.歴史的背景 || rawVal.映像作品 || rawVal.おすすめ映画) {
+      if (rawVal.歴史的背景 || rawVal.映像作品 || rawVal.おすすめ映画 || rawVal.制度の9つの皿 || rawVal.地理) {
         return rawVal;
       }
-      // メッセージ内容や出力を最優先で展開する
+      // 出力ラッパーのアンラップ
       if (rawVal.message !== undefined) {
-        if (typeof rawVal.message === 'string') {
-          rawVal = rawVal.message;
-        } else if (rawVal.message.content !== undefined) {
-          rawVal = rawVal.message.content; // 一般的なPerplexityオブジェクト
-        } else if (Array.isArray(rawVal.message) && rawVal.message[0] && rawVal.message[0].content !== undefined) {
-          rawVal = rawVal.message[0].content; // 配列の場合
-        } else {
-          rawVal = JSON.stringify(rawVal.message); // 未知の構造の場合
-        }
+        if (typeof rawVal.message === 'string') rawVal = rawVal.message;
+        else if (rawVal.message.content !== undefined) rawVal = rawVal.message.content;
+        else if (Array.isArray(rawVal.message) && rawVal.message[0]?.content !== undefined) rawVal = rawVal.message[0].content;
+        else rawVal = JSON.stringify(rawVal.message);
       } else if (rawVal.output !== undefined) {
         rawVal = rawVal.output;
       } else if (rawVal.json !== undefined) {
         rawVal = rawVal.json;
-      } else {
-        // それ以外のラッパーオブジェクトの場合、文字列化する
-        rawVal = JSON.stringify(rawVal);
+      } else if (rawVal.content?.parts?.[0]?.text !== undefined) {
+        rawVal = rawVal.content.parts[0].text;
+      } else if (rawVal.text !== undefined) {
+        rawVal = rawVal.text;
       }
+    }
+
+    if (typeof rawVal === 'object' && rawVal !== null) {
+      return rawVal;
     }
 
     let raw = String(rawVal).trim();
-    if (!raw || raw === '') throw new Error('outputが空です');
+    if (!raw) throw new Error('出力が空です');
 
-    // ★二重エスケープ対策：全体がダブルクォーテーションで囲まれたJSON文字列の場合、デコードする
+    // マークダウンコードブロック除去
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+    // 二重エスケープ除去
     if (raw.startsWith('"') && raw.endsWith('"')) {
-      try {
-        raw = JSON.parse(raw);
-      } catch (e) {
-        // デコード失敗時はそのまま進む
-      }
+      try { raw = JSON.parse(raw); } catch (e) {}
     }
 
-    // 「Calling Perplexity...」などのシステムログが前後に入っている場合を考慮し、
-    // 最初の { から最後の } まで（または [ から ] まで）を切り抜く
+    // { ... } または [ ... ] の切り出し
     const startIdx = raw.indexOf('{');
     const endIdx = raw.lastIndexOf('}');
     if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
@@ -90,74 +117,55 @@ const parseOutput = (node, nodeName) => {
     }
 
     let cleaned = raw
-      .replace(/```json|```/g, '')
       .replace(/,(\s*[}\]])/g, '$1')
       .trim();
 
-    // 【文字単位ステートマシン：超堅牢版】
-    // AIが文字列値の中に出力してしまった「生のダブルクォーテーション」と「生の改行」を
-    // 1文字ずつ走査して自動修復する。
-    // 判定ロジック：文字列内で " に遭遇したとき、閉じクォーテーションとして正当か超厳格に判定する
-    //   - 後続文字が ':' | '}' | ']' | 終端 → 正当な閉じクォーテーション
-    //   - 後続文字が ',' の場合 → そのカンマの先の非空白文字が '"' | '}' | ']' なら正当な閉じクォーテーション、それ以外は値の途中の生クォーテーション
-    //   - それ以外              → 値の途中にある生クォーテーション → \" にエスケープ
+    // 文字単位ステートマシンによる生改行・生クォーテーション自動修復
     let repaired = '';
     let i = 0;
     while (i < cleaned.length) {
       const ch = cleaned[i];
       if (ch === '\\') {
-        // エスケープ済み文字（\" \n \t 等）はそのまま保持してスキップ
         repaired += ch + (cleaned[i + 1] || '');
         i += 2;
         continue;
       }
       if (ch === '"') {
-        // 文字列の開始クォーテーション
         repaired += '"';
         i++;
-        // 文字列の中身を読み進める
         while (i < cleaned.length) {
           const c = cleaned[i];
           if (c === '\\') {
-            // 文字列内のエスケープ済み文字はそのまま保持
             repaired += c + (cleaned[i + 1] || '');
             i += 2;
             continue;
           }
           if (c === '"') {
-            // 閉じクォーテーション候補 → 先読みで判定
             let j = i + 1;
             while (j < cleaned.length && /\s/.test(cleaned[j])) j++;
             const next = cleaned[j];
-
             let isValidClose = false;
             if (next === ':' || next === '}' || next === ']' || j >= cleaned.length) {
               isValidClose = true;
             } else if (next === ',') {
-              // カンマの場合、そのカンマのさらに先を検証する
               let k = j + 1;
               while (k < cleaned.length && /\s/.test(cleaned[k])) k++;
               const afterComma = cleaned[k];
-              // カンマの次の実質的な文字が、別のキー/値の開始（"）、オブジェクト閉じ（}）、配列閉じ（]）であれば本物の閉じ
               if (afterComma === '"' || afterComma === '}' || afterComma === ']') {
                 isValidClose = true;
               }
             }
-
             if (isValidClose) {
-              // 正当な閉じクォーテーション
               repaired += '"';
               i++;
               break;
             } else {
-              // 値の途中にある生のダブルクォーテーション → エスケープ
               repaired += '\\"';
               i++;
             }
           } else if (c === '\r' || c === '\n') {
-            // 文字列内の生の改行文字 → \\n にエスケープ
             repaired += '\\n';
-            if (c === '\r' && cleaned[i + 1] === '\n') i++; // CRLF を1つとして処理
+            if (c === '\r' && cleaned[i + 1] === '\n') i++;
             i++;
           } else {
             repaired += c;
@@ -169,35 +177,33 @@ const parseOutput = (node, nodeName) => {
       repaired += ch;
       i++;
     }
-    cleaned = repaired;
 
-    return JSON.parse(cleaned);
-  } catch (e) { 
-    throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}. データ冒頭: ${String(rawVal).substring(0, 200)}`); 
+    return JSON.parse(repaired);
+  } catch (e) {
+    throw new Error(`【${nodeName}】JSONパース失敗: ${e.message}。データ冒頭: ${String(node).substring(0, 200)}`);
   }
 };
 
+// --- 刑務所推移データの同期調整関数 ---
 const adjustPrisonTrend = (trendArray, chiAnObj) => {
+  if (!Array.isArray(trendArray)) trendArray = [];
+  if (!chiAnObj) return trendArray;
   const latestCount = chiAnObj['刑務所総収容者数'];
   const latestYear = chiAnObj['刑務所総収容者数_年'];
   if (latestCount && latestCount !== '欠測' && latestCount !== '-' && latestYear) {
     const latestYearNum = parseInt(String(latestYear).replace(/[^0-9]/g, ''));
     if (!isNaN(latestYearNum)) {
-      // すでに同じ年のデータが配列に存在するかチェック
       const existingIndex = trendArray.findIndex(d => {
         const y = parseInt(String(d.年).replace(/[^0-9]/g, ''));
         return y === latestYearNum;
       });
       if (existingIndex !== -1) {
-        // すでに存在する場合は、その年のデータを最新の数値で同期・上書きする
         trendArray[existingIndex].総収容者数 = latestCount;
       } else {
-        // 配列内の最大年を取得
         const maxYear = trendArray.reduce((max, d) => {
           const y = parseInt(String(d.年).replace(/[^0-9]/g, ''));
           return (!isNaN(y) && y > max) ? y : max;
         }, 0);
-        // 最新データの年が、既存のどの年よりも新しい場合のみ、末尾のデータを上書きして最新データとする
         if (latestYearNum > maxYear && trendArray.length > 0) {
           trendArray[trendArray.length - 1] = {
             年: latestYear,
@@ -210,11 +216,18 @@ const adjustPrisonTrend = (trendArray, chiAnObj) => {
   return trendArray;
 };
 
-const r1 = parseOutput(r1Raw, 'researcher1');
-if (!r1 || !r1.country || !r1.地理) {
-  throw new Error(`【researcher1】必要なデータ（国名や地理データ）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
+// ==============================================================================
+// 1. 各リサーチデータのパースと加工
+// ==============================================================================
+
+const r1 = parseOutput(r1Raw, 'リサーチ1 (制度/地理/犯罪)');
+if (!r1 || (!r1.country && !r1.国名) || !r1.地理) {
+  throw new Error(`【リサーチ1】必要なデータ（国名や地理データ）が取得できませんでした。Supabaseキャッシュまたはリサーチ1の出力を確認してください。`);
 }
-if (r1 && r1.地理) {
+if (!r1.country && r1.国名) r1.country = r1.国名;
+
+// 日本面積比の計算
+if (r1.地理) {
   const areaRaw = r1.地理.面積_km2;
   if (areaRaw && areaRaw !== 'データなし') {
     const areaNum = parseFloat(String(areaRaw).replace(/,/g, ''));
@@ -229,119 +242,8 @@ if (r1 && r1.地理) {
   }
 }
 
-const r2 = parseOutput(r2Raw, 'researcher2');
-if (!r2 || !r2.歴史的背景) {
-  const keys = r2 ? Object.keys(r2).join(', ') : 'null';
-  const rawStr = r2Raw ? String(r2Raw.output ?? r2Raw.json ?? JSON.stringify(r2Raw)).substring(0, 200) : 'empty';
-  throw new Error(`【researcher2】Perplexityから必要な歴史・動向データが取得できませんでした。取得できたキー: [${keys}], データ冒頭: ${rawStr}`);
-}
-
-const r25 = parseOutput(r25Raw, 'researcher25');
-if (!r25 || !r25.映像作品) {
-  throw new Error(`【researcher25】必要な映像作品（歴史連動）が取得できませんでした。Agentが途中で停止した可能性があります。再実行してください。`);
-}
-
-let recommendedMovies = [];
-try {
-  let subItems = [];
-  const candidateNodes = [
-    "Call '映画無限検索ワークフロー　おすすめ映画版 gemini'",
-    "Call '映画無限検索ワークフロー おすすめ映画版 gemini'",
-    "映画無限検索ワークフロー　おすすめ映画版 gemini",
-    "映画無限検索ワークフロー おすすめ映画版 gemini",
-    "Call '映画無限検索ワークフロー　おすすめ映画版'",
-    "Call '映画無限検索ワークフロー おすすめ映画版'",
-    "映画無限検索ワークフロー　おすすめ映画版",
-    "映画無限検索ワークフロー おすすめ映画版",
-    "Call '映画無限検索ワークフロー gemini'",
-    "映画無限検索ワークフロー gemini",
-    "Call '映画無限検索ワークフロー'",
-    "映画無限検索ワークフロー",
-    "Call 'おすすめ映画'",
-    "おすすめ映画",
-    "Call 'おすすめ映画ワークフロー'",
-    "おすすめ映画ワークフロー",
-    "Execute Workflow",
-    "Execute Sub-Workflow",
-    "Execute Workflow1",
-    "Execute Workflow2",
-    "Execute Workflow3"
-  ];
-  for (const nodeName of candidateNodes) {
-    try {
-      const found = $(nodeName).all();
-      if (found && found.length > 0) {
-        // 人物ノード（name, occupation）と映画ノード（title, origin_title, tmdb_id, タイトル_日本語）を明確に区別して映画のみを抽出
-        const validMovies = found.filter(i => {
-          const j = i.json || i || {};
-          // 映画固有のプロパティを保持し、人物専用オブジェクト（occupation等のみ）を除外
-          return (j.title || j.origin_title || j.tmdb_id || j.タイトル_日本語) && !j.occupation;
-        });
-        if (validMovies.length > 0) {
-          subItems = validMovies;
-          break;
-        }
-      }
-    } catch (err) {}
-  }
-
-  if (subItems.length === 0) {
-    try {
-      const inputs = $input.all();
-      const inputMovies = inputs.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
-      if (inputMovies.length > 0) subItems = inputMovies;
-    } catch (err) {}
-  }
-
-  recommendedMovies = subItems.map(item => {
-    const movie = item.json || {};
-    
-    // フルURLのポスターURLから最終Codeが期待する相対パス (/xxxx.jpg) を抽出
-    let posterPath = "";
-    const rawPoster = movie.poster_url || movie.poster_path || "";
-    if (rawPoster) {
-      const match = String(rawPoster).match(/\/t\/p\/w\d+(\/[^?#]+)/);
-      posterPath = match ? match[1] : rawPoster;
-    }
-
-    return {
-      "タイトル_日本語": movie.title || movie.タイトル_日本語 || movie.name || "",
-      "原題": movie.origin_title || movie.原題 || "",
-      "種別": movie.type || movie.種別 || "映画",
-      "公開年": movie.year || movie.公開年 || "",
-      "director": movie.director || movie.director_name || movie.監督 || "",
-      "cast": movie.cast || movie.キャスト || movie.出演 || "",
-      "概要": movie.overview || movie.概要 || movie.ai_summary || "",
-      "tmdb_id": movie.tmdb_id || null,
-      "poster_path": posterPath,
-      "imdb_id": movie.wikidata_id || movie.imdb_id || movie.imdb_url || ""
-    };
-  });
-} catch (e) {}
-
-if (recommendedMovies.length === 0) {
-  try {
-    if (supabaseMovieRaw) {
-      const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
-      recommendedMovies = supabaseMovie.おすすめ映画 || supabaseMovie.おすすめ映画ランキング || [];
-    }
-  } catch (err) {}
-}
-
-if (recommendedMovies.length === 0) {
-  if (Array.isArray(r25?.おすすめ映画) && r25.おすすめ映画.length > 0) {
-    recommendedMovies = r25.おすすめ映画;
-  } else if (Array.isArray(r25?.おすすめ映画ランキング) && r25.おすすめ映画ランキング.length > 0) {
-    recommendedMovies = r25.おすすめ映画ランキング;
-  } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
-    recommendedMovies = r2.おすすめ映画;
-  } else if (Array.isArray(r2?.おすすめ映画ランキング) && r2.おすすめ映画ランキング.length > 0) {
-    recommendedMovies = r2.おすすめ映画ランキング;
-  }
-}
-
-// 重大犯罪事件を発生年の新しい順（降順）に強制ソート
-if (r1 && Array.isArray(r1.重大犯罪事件)) {
+// 重大犯罪事件を発生年の新しい順（降順）にソート
+if (Array.isArray(r1.重大犯罪事件)) {
   r1.重大犯罪事件.sort((a, b) => {
     const yearA = parseInt(String(a.発生年).replace(/[^0-9]/g, '')) || 0;
     const yearB = parseInt(String(b.発生年).replace(/[^0-9]/g, '')) || 0;
@@ -349,62 +251,131 @@ if (r1 && Array.isArray(r1.重大犯罪事件)) {
   });
 }
 
-let supabaseMusicRaw = null;
+const r2 = parseOutput(r2Raw, 'リサーチ2 (歴史100年/最新動向)');
+if (!r2 || !r2.歴史的背景) {
+  const keys = r2 ? Object.keys(r2).join(', ') : 'null';
+  throw new Error(`【リサーチ2】必要な歴史・動向データが取得できませんでした。取得できたキー: [${keys}]`);
+}
+
+const r25 = parseOutput(r25Raw, 'リサーチ25 (映像作品/映画)');
+if (!r25 || (!r25.映像作品 && !r25.おすすめ映画 && !r25.おすすめ映画ランキング && !Array.isArray(r25))) {
+  throw new Error(`【リサーチ25】必要な映像作品（歴史連動映画）が取得できませんでした。`);
+}
+
+// ==============================================================================
+// 2. おすすめ映画データの集約（映画サブワークフロー / r25 / Supabase）
+// ==============================================================================
+let recommendedMovies = [];
 try {
-  supabaseMusicRaw = $('Supabase音楽データ').first()?.json || $('Supabase 音楽データ').first()?.json || $('Supabase音楽').first()?.json || null;
+  let subItems = [];
+  const candidateNodes = [
+    "Call '映画DB充実＿個別登録版'",
+    "映画DB充実＿個別登録版",
+    "Call '映画無限検索ワークフロー　おすすめ映画版 gemini'",
+    "Call '映画無限検索ワークフロー おすすめ映画版 gemini'",
+    "映画無限検索ワークフロー　おすすめ映画版 gemini",
+    "映画無限検索ワークフロー おすすめ映画版 gemini",
+    "Call 'おすすめ映画'",
+    "おすすめ映画",
+    "Execute Workflow",
+    "Execute Sub-Workflow"
+  ];
+  for (const nodeName of candidateNodes) {
+    const found = safeGetAll(nodeName);
+    if (found && found.length > 0) {
+      const validMovies = found.filter(i => {
+        const j = i.json || i || {};
+        return (j.title || j.origin_title || j.tmdb_id || j.タイトル_日本語) && !j.occupation;
+      });
+      if (validMovies.length > 0) {
+        subItems = validMovies;
+        break;
+      }
+    }
+  }
+
+  if (subItems.length === 0) {
+    const inputs = $input.all();
+    const inputMovies = inputs.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
+    if (inputMovies.length > 0) subItems = inputMovies;
+  }
+
+  if (subItems.length > 0) {
+    recommendedMovies = subItems.map(item => {
+      const movie = item.json || {};
+      let posterPath = "";
+      const rawPoster = movie.poster_url || movie.poster_path || "";
+      if (rawPoster) {
+        const match = String(rawPoster).match(/\/t\/p\/w\d+(\/[^?#]+)/);
+        posterPath = match ? match[1] : rawPoster;
+      }
+
+      return {
+        "タイトル_日本語": movie.title || movie.タイトル_日本語 || movie.name || "",
+        "原題": movie.origin_title || movie.原題 || "",
+        "種別": movie.type || movie.種別 || "映画",
+        "公開年": movie.year || movie.公開年 || "",
+        "director": movie.director || movie.director_name || movie.監督 || "",
+        "cast": movie.cast || movie.キャスト || movie.出演 || "",
+        "概要": movie.overview || movie.概要 || movie.ai_summary || "",
+        "tmdb_id": movie.tmdb_id || null,
+        "poster_path": posterPath,
+        "imdb_id": movie.wikidata_id || movie.imdb_id || movie.imdb_url || "",
+        "related_event": movie.related_event || movie.関連事件 || "",
+        "historical_significance": movie.historical_significance || movie.歴史クロス解説 || ""
+      };
+    });
+  }
 } catch (e) {}
 
+// サブワークフローから取れなかった場合のフォールバック
+if (recommendedMovies.length === 0 && supabaseMovieRaw) {
+  try {
+    const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
+    recommendedMovies = supabaseMovie.おすすめ映画 || supabaseMovie.おすすめ映画ランキング || [];
+  } catch (err) {}
+}
+
+if (recommendedMovies.length === 0) {
+  const r25Movies = r25.おすすめ映画 || r25.おすすめ映画ランキング || (Array.isArray(r25.映像作品) ? r25.映像作品 : (Array.isArray(r25) ? r25 : []));
+  if (Array.isArray(r25Movies) && r25Movies.length > 0) {
+    recommendedMovies = r25Movies;
+  } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
+    recommendedMovies = r2.おすすめ映画;
+  }
+}
+
+// ==============================================================================
+// 3. おすすめ音楽データの集約
+// ==============================================================================
+let supabaseMusicRaw = safeGet('Supabase音楽データ') || safeGet('Supabase 音楽データ') || safeGet('Supabase音楽');
 let recommendMusic = [];
 try {
   let musicItems = [];
   const musicCandidateNodes = [
+    "Call '音楽データベース充実ワークフロー'",
+    "音楽データベース充実ワークフロー",
     "Call '音楽検索ワークフロー'",
-    "Call '音楽検索ワークフロー　おすすめ音楽版'",
-    "Call '音楽検索ワークフロー おすすめ音楽版'",
     "音楽検索ワークフロー",
-    "音楽検索ワークフロー　おすすめ音楽版",
-    "音楽検索ワークフロー おすすめ音楽版",
-    "Call '音楽検索'",
-    "音楽検索",
-    "Call '音楽検索ワークフロー iTunes Search API版'",
-    "音楽検索ワークフロー iTunes Search API版",
     "Call 'おすすめ音楽'",
-    "おすすめ音楽",
-    "音楽データ",
-    "Call '音楽'",
-    "音楽",
-    "Execute Workflow",
-    "Execute Sub-Workflow",
-    "Execute Workflow1",
-    "Execute Workflow2",
-    "Execute Workflow3",
-    "Execute Workflow4",
-    "Execute Workflow5",
-    "Execute Sub-Workflow1",
-    "Execute Sub-Workflow2",
-    "Execute Subworkflow"
+    "おすすめ音楽"
   ];
   for (const nodeName of musicCandidateNodes) {
-    try {
-      const found = $(nodeName).all();
-      if (found && found.length > 0) {
-        musicItems = found;
-        break;
-      }
-    } catch (err) {}
+    const found = safeGetAll(nodeName);
+    if (found && found.length > 0) {
+      musicItems = found;
+      break;
+    }
   }
 
   if (musicItems.length === 0) {
-    try {
-      const inputs = $input.all();
-      const inputMusic = inputs.filter(i => i.json && (i.json.track_name || i.json.track_id || i.json.recommend_music || i.json.tracks));
-      if (inputMusic.length > 0) musicItems = inputMusic;
-    } catch (err) {}
+    const inputs = $input.all();
+    const inputMusic = inputs.filter(i => i.json && (i.json.track_name || i.json.track_id || i.json.recommend_music || i.json.tracks));
+    if (inputMusic.length > 0) musicItems = inputMusic;
   }
 
   if (musicItems.length > 0) {
     const firstObj = musicItems[0].json || musicItems[0] || {};
-    // パターンA: 複数Items（トラック単体配列、またはSupabase保存ノードが返した行配列）
     if (musicItems.length > 1 && (firstObj.track_name || firstObj.track_id || firstObj.曲名)) {
       recommendMusic = musicItems.map(item => {
         const d = item.json || item || {};
@@ -421,14 +392,12 @@ try {
         };
       });
     } else {
-      // パターンB: 単一Item（AIスクリーナー出力オブジェクト、またはJSON文字列）
       let parsed = null;
       try {
-        parsed = parseOutput(firstObj, '音楽検索ワークフロー');
+        parsed = parseOutput(firstObj, '音楽検索');
       } catch (err) {
         parsed = firstObj;
       }
-
       if (parsed) {
         const rawList = parsed.recommend_music || parsed.tracks || parsed.おすすめ音楽 || parsed.recommend_tracks || (Array.isArray(parsed) ? parsed : []);
         if (Array.isArray(rawList) && rawList.length > 0) {
@@ -443,19 +412,6 @@ try {
             "album_cover": item.album_cover || item.ジャケット || "",
             "description": item.description || item.概要 || ""
           }));
-        } else if (firstObj.track_name || firstObj.track_id || firstObj.曲名) {
-          // 単一のトラックオブジェクトが1件だけ返ってきた場合
-          recommendMusic = [{
-            "track_name": firstObj.track_name || firstObj.曲名 || "",
-            "track_name_en": firstObj.track_name_en || firstObj.曲名_英語 || "",
-            "artist_name": firstObj.artist_name || firstObj.アーティスト || "",
-            "artist_name_en": firstObj.artist_name_en || firstObj.アーティスト_英語 || "",
-            "release_year": firstObj.release_year || firstObj.年 || firstObj.リリース年 || "",
-            "preview_url": firstObj.preview_url || "",
-            "itunes_url": firstObj.itunes_url || firstObj.spotify_url || "",
-            "album_cover": firstObj.album_cover || firstObj.ジャケット || "",
-            "description": firstObj.description || firstObj.概要 || ""
-          }];
         }
       }
     }
@@ -489,28 +445,30 @@ if (recommendMusic.length === 0) {
   }
 }
 
+// 記事生成用のマージデータ
 const r2Merged = {
-  country: r2.country,
+  country: r2.country || r1.country,
   歴史的背景: r2.歴史的背景,
   直近の動向: r2.直近の動向,
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
-  映像作品: r25.映像作品,
+  映像作品: r25.映像作品 || recommendedMovies,
   おすすめ映画: recommendedMovies,
   おすすめ音楽: recommendMusic
 };
 
-// 対象国Googleシート
-const keizai = $('①経済').first().json;
-const chiAn = $('②治安指標').first().json;
-const bukka = $('③物価').first().json;
-const boeki = $('④貿易').first().json;
+// ==============================================================================
+// 4. スプレッドシート固定データ（対象国 ＆ 日本）
+// ==============================================================================
+const keizai = safeGet('①経済') || {};
+const chiAn = safeGet('②治安指標') || {};
+const bukka = safeGet('③物価') || {};
+const boeki = safeGet('④貿易') || {};
 
-// 日本Googleシート
-const jKeizai = $('Japan_①経済').first().json;
-const jChiAn = $('Japan_②治安指標').first().json;
-const jBukka = $('Japan_③物価').first().json;
-const jBoeki = $('Japan_④貿易').first().json;
+const jKeizai = safeGet('Japan_①経済') || {};
+const jChiAn = safeGet('Japan_②治安指標') || {};
+const jBukka = safeGet('Japan_③物価') || {};
+const jBoeki = safeGet('Japan_④貿易') || {};
 
 const jPrison = adjustPrisonTrend([
   { 年: jChiAn['収容推移1_年'], 総収容者数: jChiAn['収容推移1_総収容者数'] },
@@ -538,9 +496,8 @@ const jDeath = [
   { 順位: '10位', 死因: jChiAn['死因10位'] }
 ];
 
-// --- シェア（%）の表記揺れを統一する安全なフォーマッタ ---
 const createShareFormatter = (rawList) => {
-  const numeric = rawList
+  const numeric = (rawList || [])
     .map(v => (v !== undefined && v !== null && v !== '') ? parseFloat(v) : NaN)
     .filter(v => !isNaN(v) && v > 0);
   const isDecimal = numeric.length > 0 && numeric.every(v => v < 1);
@@ -671,16 +628,16 @@ const japanFixed = {
     インフレ率: { 値: jKeizai['インフレ率'], 年: jKeizai['インフレ率_年'], 出典: jKeizai['インフレ率_出典'] }
   },
   治安指標: {
-    '殺人率': { 値: jChiAn['殺人率'], '出典・年': `${jChiAn['殺人率_出典']} ${getCleanYearString(jChiAn['殺人率_年'])}`.trim() },
-    '交通事故死亡率': { 値: jChiAn['交通事故死亡率'], '出典・年': `${jChiAn['交通事故死亡率_出典']} ${getCleanYearString(jChiAn['交通事故死亡率_年'])}`.trim() },
-    '自殺率': { 値: jChiAn['自殺率'], '出典・年': `${jChiAn['自殺率_出典']} ${getCleanYearString(jChiAn['自殺率_年'])}`.trim() },
-    '失業率': { 値: jChiAn['失業率'], '出典・年': `${jChiAn['失業率_出典']} ${getCleanYearString(jChiAn['失業率_年'])}`.trim() },
-    '貧困率': { 値: jChiAn['貧困率'], '出典・年': `${jChiAn['貧困率_出典']} ${getCleanYearString(jChiAn['貧困率_年'])}`.trim() },
-    'ジニ係数': { 値: jChiAn['ジニ係数'], '出典・年': `${jChiAn['ジニ係数_出典']} ${getCleanYearString(jChiAn['ジニ係数_年'])}`.trim() },
-    '刑務所稼働率': { 値: jChiAn['刑務所稼働率'], '出典・年': `${jChiAn['刑務所稼働率_出典']} ${getCleanYearString(jChiAn['刑務所稼働率_年'])}`.trim() },
-    '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典']} ${getCleanYearString(jChiAn['刑務所総収容者数_年'])}`.trim() },
-    'GPIスコア': { 値: jChiAn['GPIスコア'], '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() },
-    'GPI順位': { 値: jChiAn['GPI順位'], '出典・年': `${jChiAn['GPI出典']} ${getCleanYearString(jChiAn['GPI年'])}`.trim() }
+    '殺人率': { 値: jChiAn['殺人率'], '出典・年': `${jChiAn['殺人率_出典'] || ''} ${getCleanYearString(jChiAn['殺人率_年'])}`.trim() },
+    '交通事故死亡率': { 値: jChiAn['交通事故死亡率'], '出典・年': `${jChiAn['交通事故死亡率_出典'] || ''} ${getCleanYearString(jChiAn['交通事故死亡率_年'])}`.trim() },
+    '自殺率': { 値: jChiAn['自殺率'], '出典・年': `${jChiAn['自殺率_出典'] || ''} ${getCleanYearString(jChiAn['自殺率_年'])}`.trim() },
+    '失業率': { 値: jChiAn['失業率'], '出典・年': `${jChiAn['失業率_出典'] || ''} ${getCleanYearString(jChiAn['失業率_年'])}`.trim() },
+    '貧困率': { 値: jChiAn['貧困率'], '出典・年': `${jChiAn['貧困率_出典'] || ''} ${getCleanYearString(jChiAn['貧困率_年'])}`.trim() },
+    'ジニ係数': { 値: jChiAn['ジニ係数'], '出典・年': `${jChiAn['ジニ係数_出典'] || ''} ${getCleanYearString(jChiAn['ジニ係数_年'])}`.trim() },
+    '刑務所稼働率': { 値: jChiAn['刑務所稼働率'], '出典・年': `${jChiAn['刑務所稼働率_出典'] || ''} ${getCleanYearString(jChiAn['刑務所稼働率_年'])}`.trim() },
+    '刑務所総収容者数': { 値: jChiAn['刑務所総収容者数'], '出典・年': `${jChiAn['刑務所総収容者数_出典'] || ''} ${getCleanYearString(jChiAn['刑務所総収容者数_年'])}`.trim() },
+    'GPIスコア': { 値: jChiAn['GPIスコア'], '出典・年': `${jChiAn['GPI出典'] || ''} ${getCleanYearString(jChiAn['GPI年'])}`.trim() },
+    'GPI順位': { 値: jChiAn['GPI順位'], '出典・年': `${jChiAn['GPI出典'] || ''} ${getCleanYearString(jChiAn['GPI年'])}`.trim() }
   },
   刑務所推移: jPrison,
   死因トップ10: jDeath,
@@ -716,6 +673,7 @@ const japanFixed = {
   },
   貿易出典_日本: jBoeki['貿易統計_出典']
 };
+
 // --- スプレッドシートのデータ不足バリデーション ---
 const targetCountry = r1.country || "対象国";
 const hasEconomy = keizai && Object.keys(keizai).length > 0 && keizai['総人口'] !== undefined;
@@ -728,8 +686,11 @@ if (!hasEconomy || !hasTrade || !hasBukka) {
 （検出状況 -> 経済: ${hasEconomy ? '○' : '×'}, 貿易: ${hasTrade ? '○' : '×'}, 物価: ${hasBukka ? '○' : '×'}）`);
 }
 
-const writerPromptTemplate = $('PromptLoader').first().json.writerPrompt || "";
-// --- データの集約 ---
+// ==============================================================================
+// 5. データの最終集約とライター用プロンプト生成
+// ==============================================================================
+const writerPromptTemplate = safeGet('PromptLoader')?.writerPrompt || "";
+
 const finalData = {
   対象国データ: r1,
   対象国データ_記事: r2Merged,
@@ -737,7 +698,7 @@ const finalData = {
   日本固定データ: japanFixed
 };
 
-// --- ライター用プロンプトのデータ埋め込み ---
+// ライター用プロンプトのデータ埋め込み
 const writerPrompt = writerPromptTemplate
   .replace('{{ JSON.stringify($json.data) }}', JSON.stringify(finalData))
   .replace('{{ $json.rate }}', bukka['為替レート'] || '')
@@ -745,12 +706,11 @@ const writerPrompt = writerPromptTemplate
 
 return [{
   json: {
-    country: r1.country,
-    world_bank_code: r1.world_bank_code,
-    countryEn: r1.countryEn || $('国名変換Code').first().json.countryEn || "",
-    capital: $('国名変換Code').first().json.capital || "",
+    country: r1.country || targetCountry,
+    world_bank_code: r1.world_bank_code || "",
+    countryEn: r1.countryEn || safeGet('国名変換Code')?.countryEn || "",
+    capital: safeGet('国名変換Code')?.capital || "",
     writerPrompt: writerPrompt, // 置換済みのプロンプト
     data: finalData
   }
 }];
-
