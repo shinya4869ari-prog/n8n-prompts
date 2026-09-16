@@ -1,6 +1,15 @@
 const item = $input.first().json;
-const raw = item.originalData?.output || item.output || "";
-const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+const raw = item.originalData?.output || item.output || item.text || item.content || item;
+let data = item;
+if (typeof raw === 'string' && raw.trim() !== '') {
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    data = item;
+  }
+} else if (typeof raw === 'object' && raw !== null) {
+  data = raw;
+}
 
 return [{
   json: {

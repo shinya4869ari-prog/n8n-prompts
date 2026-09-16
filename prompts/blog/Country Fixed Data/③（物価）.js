@@ -1,21 +1,47 @@
-const item = $input.first().json;
-const raw = item.output || item.originalData?.output || "";
+let researcherNode = {};
+try {
+  researcherNode = $('固定データ Researcher').first().json;
+} catch (e) {
+  researcherNode = $input.first().json;
+}
 
-const cleaned = (() => {
-  const s = String(raw).trim();
-  const fenceMatch = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (fenceMatch) return fenceMatch[1].trim();
-  const start = s.indexOf('{');
-  const end = s.lastIndexOf('}');
-  if (start !== -1 && end !== -1 && end > start) return s.slice(start, end + 1);
-  return s;
-})();
+function extractRawText(node) {
+  if (!node) return "";
+  if (typeof node === 'string') return node;
+  if (node["物価"] || node["治安・社会指標"]) return node;
+  if (node.output !== undefined) return typeof node.output === 'string' ? node.output : JSON.stringify(node.output);
+  if (node.text !== undefined) return typeof node.text === 'string' ? node.text : JSON.stringify(node.text);
+  if (node.content !== undefined) return typeof node.content === 'string' ? node.content : JSON.stringify(node.content);
+  if (node.message?.content !== undefined) return typeof node.message.content === 'string' ? node.message.content : JSON.stringify(node.message.content);
+  if (node.originalData?.output !== undefined) return typeof node.originalData.output === 'string' ? node.originalData.output : JSON.stringify(node.originalData.output);
+  if (node.response !== undefined) return typeof node.response === 'string' ? node.response : JSON.stringify(node.response);
+  for (const key of Object.keys(node)) {
+    if (typeof node[key] === 'string' && node[key].includes('{')) {
+      return node[key];
+    }
+  }
+  return JSON.stringify(node);
+}
+
+const rawCandidate = extractRawText(researcherNode);
 
 let data;
-try {
-  data = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;
-} catch (e) {
-  throw new Error(`物価データのパースに失敗: ${e.message}\n先頭200文字: ${String(raw).slice(0, 200)}`);
+if (typeof rawCandidate === 'object' && rawCandidate !== null && (rawCandidate["物価"] || rawCandidate["治安・社会指標"])) {
+  data = rawCandidate;
+} else {
+  const s = String(rawCandidate).trim();
+  const fenceMatch = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  let cleaned = fenceMatch ? fenceMatch[1].trim() : s;
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    cleaned = cleaned.slice(start, end + 1);
+  }
+  try {
+    data = JSON.parse(cleaned);
+  } catch (e) {
+    throw new Error(`物価データのパースに失敗: ${e.message}\n受信データキー: [${Object.keys(researcherNode || {}).join(', ')}]\n先頭200文字: ${s.slice(0, 200)}`);
+  }
 }
 const b = data["物価"];
 
