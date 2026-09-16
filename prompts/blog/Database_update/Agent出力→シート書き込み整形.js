@@ -1,5 +1,12 @@
 const input = $input.first().json;
-const agentOutput_raw = input.output ?? "";
+const agentOutput_raw = input.output 
+  ?? input.content?.parts?.[0]?.text 
+  ?? input.parts?.[0]?.text 
+  ?? input.text 
+  ?? input.content 
+  ?? input.response 
+  ?? input.originalData?.output 
+  ?? "";
 const rowData = input.rowData ?? {};
 const now = new Date();
 const jstDate = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60 * 1000);

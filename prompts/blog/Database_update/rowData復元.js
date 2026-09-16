@@ -1,4 +1,12 @@
-const agentOut = $input.first().json.output ?? "";
+const inJson = $input.first().json;
+const agentOut = inJson.output 
+  ?? inJson.content?.parts?.[0]?.text 
+  ?? inJson.parts?.[0]?.text 
+  ?? inJson.text 
+  ?? inJson.content 
+  ?? inJson.response 
+  ?? inJson.originalData?.output 
+  ?? "";
 const runIndex = $runIndex;
 
 let rowData;
