@@ -5,21 +5,19 @@ try {
   researcherNode = $input.first().json;
 }
 
+// output, text, content.parts[0].text など Gemini/AI ノードのあらゆる出力形式に対応
 function extractRawText(node) {
   if (!node) return "";
   if (typeof node === 'string') return node;
   if (node["物価"] || node["治安・社会指標"]) return node;
-  if (node.output !== undefined) return typeof node.output === 'string' ? node.output : JSON.stringify(node.output);
-  if (node.text !== undefined) return typeof node.text === 'string' ? node.text : JSON.stringify(node.text);
-  if (node.content !== undefined) return typeof node.content === 'string' ? node.content : JSON.stringify(node.content);
-  if (node.message?.content !== undefined) return typeof node.message.content === 'string' ? node.message.content : JSON.stringify(node.message.content);
-  if (node.originalData?.output !== undefined) return typeof node.originalData.output === 'string' ? node.originalData.output : JSON.stringify(node.originalData.output);
-  if (node.response !== undefined) return typeof node.response === 'string' ? node.response : JSON.stringify(node.response);
-  for (const key of Object.keys(node)) {
-    if (typeof node[key] === 'string' && node[key].includes('{')) {
-      return node[key];
-    }
-  }
+  if (node.content?.parts?.[0]?.text) return node.content.parts[0].text;
+  if (node.parts?.[0]?.text) return node.parts[0].text;
+  if (node.candidates?.[0]?.content?.parts?.[0]?.text) return node.candidates[0].content.parts[0].text;
+  if (typeof node.text === 'string') return node.text;
+  if (typeof node.output === 'string') return node.output;
+  if (typeof node.content === 'string') return node.content;
+  if (node.originalData?.output) return node.originalData.output;
+  if (node.response) return typeof node.response === 'string' ? node.response : JSON.stringify(node.response);
   return JSON.stringify(node);
 }
 
