@@ -9,16 +9,19 @@ const today = new Date().toISOString().split('T')[0];
 
 let html = "";
 try {
-  html = $input.first().json.data || "";
-} catch (e) {
+  const inJson = $input.first()?.json || {};
+  html = inJson.data || inJson.html || inJson.body || (typeof inJson === 'string' ? inJson : "");
+} catch (e) {}
+
+if (!html) {
   try {
-    html = $('Numbeoデータ抽出').first().json.data || "";
-  } catch (err) {
-    throw new Error(`Numbeoデータ抽出: HTMLデータの取得に失敗しました。(${err.message})`);
-  }
+    const fallbackNode = $('Numbeoデータ抽出')?.first()?.json || $('HTTP Request（Numbeo）')?.first()?.json || {};
+    html = fallbackNode.data || fallbackNode.html || fallbackNode.body || "";
+  } catch (err) {}
 }
 
-if (!html) throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。");
+if (!html) throw new Error("Numbeoデータ抽出: 取得したHTMLデータが空です。HTTP Requestノードが正常に実行されているか確認してください。");
+
 
 // ==========================================
 // ブロック2: 価格抽出ロジック（部分一致への改良）

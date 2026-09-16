@@ -1,7 +1,13 @@
 // WPB (World Prison Brief) HTMLデータから刑務所データを抽出するコード
 
-const html = $input.first().json.data; // HTTP Requestノードの生のHTML
-const countryEn = $input.first().json.countryEn || "";
+const inJson = $input.first()?.json || {};
+const html = inJson.data || inJson.html || inJson.body || (typeof inJson === 'string' ? inJson : "");
+const countryEn = inJson.countryEn || $('プロンプト取得用 Code')?.first()?.json?.base?.countryEn || "";
+
+if (!html) {
+  throw new Error("WPBデータ抽出: HTMLデータが空です。HTTP Requestノードが正常に実行されているか確認してください。");
+}
+
 
 // 1. 最新稼働率 (Occupancy level) の抽出
 let occupancyVal = "欠測";
