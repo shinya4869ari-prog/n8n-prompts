@@ -26,11 +26,12 @@ try {
     .replace(/\{\{[^}]+\}\}/g, '');
   };
 
-  const forceInstruction = "You MUST use the search tool (Tavily/Perplexity) BEFORE answering. Never rely on your own knowledge for social, price, and trade statistics.\n\n";
+  const forceInstruction = "You MUST use Google Search to verify the latest statistics before answering. Never guess. Output strictly valid JSON only.\n\n";
 
   return [{
     json: {
       researcherPrompt: forceInstruction + evaluateTemplate(researcherContent, context),
+
       base: base,
       capitalEn: base.capitalEn || "",
       capitalEnNumbeo: base.capitalEnNumbeo || "",
