@@ -170,4 +170,14 @@ for (const [name, row] of Object.entries(countryMap)) {
     }
 }
 
+if (results.length === 0) {
+    return [{
+        json: {
+            message: "更新が必要な項目はありませんでした（すべて最新です）",
+            skipped: true,
+            staleItems: []
+        }
+    }];
+}
+
 return results;
