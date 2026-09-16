@@ -43,7 +43,7 @@ if (typeof rawCandidate === 'object' && rawCandidate !== null && (rawCandidate["
     throw new Error(`物価データのパースに失敗: ${e.message}\n受信データキー: [${Object.keys(researcherNode || {}).join(', ')}]\n先頭200文字: ${s.slice(0, 200)}`);
   }
 }
-const b = data["物価"];
+const b = data?.["物価"] || data?.["物価・為替指標"] || data?.["物価指標"] || data || {};
 
 let numbeo = null;
 try {

@@ -45,7 +45,7 @@ const hub = $('プロンプト取得用 Code').first().json;
 const base = hub.base;
 const wb = item.wb || {};
 
-const t = data["治安・社会指標"] || {};
+const t = data?.["治安・社会指標"] || data?.["治安指標"] || data || {};
 
 // 1. 犯罪データ
 const crimeRaw = t["犯罪トップ5"] || [];
