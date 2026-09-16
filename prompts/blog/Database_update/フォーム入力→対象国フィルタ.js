@@ -16,27 +16,75 @@
 //     └─> 項目検出・国別マージ（既存ノード）
 // ============================================================
 
-// フォームの入力を取得（フィールド名: "targetCountry"）
-const formData = $input.first().json;
-const specifiedCountry = (formData?.targetCountry ?? formData?.country ?? "").trim();
+// 1. 指定された国名 (targetCountry) の取得
+let specifiedCountry = "";
 
-// 全シートデータを取得（input 2 以降に治安/物価シートを接続する想定）
-// ※ n8n の "Merge" ノードで治安・物価シートをマージしてからこのノードに渡す場合は
-//   $input.all() でそのまま受け取れます
-const allRows = $input.all().map(i => i.json).filter(row => row["国名（日本語）"]);
+// (A) $input から探索
+for (const item of $input.all()) {
+  const d = item.json;
+  const val = (d?.targetCountry ?? d?.country ?? d?.["国名（日本語）"] ?? "").trim();
+  if (val && !d["殺人率_年"] && !d["為替レート"]) { // シートの行データ自体ではない場合
+    specifiedCountry = val;
+    break;
+  }
+}
 
+// (B) トリガーノードから探索
 if (!specifiedCountry) {
-  // ② 空欄の場合 → 全件をそのまま返す
+  const triggerNames = [
+    'When Executed by Another Workflow',
+    'Execute Workflow Trigger',
+    'n8n Form Trigger',
+    'When clicking ‘Test workflow’'
+  ];
+  for (const name of triggerNames) {
+    try {
+      const t = $(name).first()?.json;
+      const val = (t?.targetCountry ?? t?.country ?? t?.["国名（日本語）"] ?? "").trim();
+      if (val) {
+        specifiedCountry = val;
+        break;
+      }
+    } catch (e) {}
+  }
+}
+
+// 2. 全シートデータの取得
+let allRows = [];
+
+// (A) $input.all() から取得
+allRows = $input.all().map(i => i.json).filter(row => row && row["国名（日本語）"]);
+
+// (B) $input にない場合はシートノードから直接取得
+if (allRows.length === 0) {
+  const sheetNodeNames = ['治安', '物価', 'Google Sheets 読み込み（治安）', 'Google Sheets 読み込み（物価）'];
+  for (const sName of sheetNodeNames) {
+    try {
+      const sItems = $(sName).all();
+      if (sItems && sItems.length > 0) {
+        allRows.push(...sItems.map(i => i.json).filter(row => row && row["国名（日本語）"]));
+      }
+    } catch (e) {}
+  }
+}
+
+if (allRows.length === 0) {
+  throw new Error("シートデータが取得できませんでした。「治安」または「物価」シートノードが実行されているか確認してください。");
+}
+
+// 3. フィルタ処理
+if (!specifiedCountry) {
+  // 国名未指定の場合は全件処理
   return allRows.map(row => ({ json: row }));
 }
 
-// ① 国名が指定されている場合 → 日本語国名で完全一致フィルタ
+// 国名完全一致フィルタ
 const matched = allRows.filter(row => row["国名（日本語）"] === specifiedCountry);
 
 if (matched.length === 0) {
   throw new Error(
-    `フォームで指定された国「${specifiedCountry}」がスプレッドシートに見つかりませんでした。\n` +
-    `国名（日本語）を正確に入力してください。`
+    `指定された国「${specifiedCountry}」がスプレッドシートに見つかりませんでした。\n` +
+    `シート上の国名と完全一致しているか確認してください。（取得できた国数: ${allRows.length}件）`
   );
 }
 
