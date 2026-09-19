@@ -687,10 +687,8 @@ if (!hasEconomy || !hasTrade || !hasBukka) {
 }
 
 // ==============================================================================
-// 5. データの最終集約とライター用プロンプト生成
+// 5. データの最終集約
 // ==============================================================================
-const writerPromptTemplate = safeGet('PromptLoader')?.writerPrompt || "";
-
 const finalData = {
   対象国データ: r1,
   対象国データ_記事: r2Merged,
@@ -698,19 +696,13 @@ const finalData = {
   日本固定データ: japanFixed
 };
 
-// ライター用プロンプトのデータ埋め込み
-const writerPrompt = writerPromptTemplate
-  .replace('{{ JSON.stringify($json.data) }}', JSON.stringify(finalData))
-  .replace('{{ $json.rate }}', bukka['為替レート'] || '')
-  .replace('{{ $json.rate_date }}', bukka['為替取得日'] || '');
-
 return [{
   json: {
     country: r1.country || targetCountry,
     world_bank_code: r1.world_bank_code || "",
     countryEn: r1.countryEn || safeGet('国名変換Code')?.countryEn || "",
     capital: safeGet('国名変換Code')?.capital || "",
-    writerPrompt: writerPrompt, // 置換済みのプロンプト
     data: finalData
   }
 }];
+
