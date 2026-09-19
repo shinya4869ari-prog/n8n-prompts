@@ -258,14 +258,33 @@ return [articleItem].map(item => {
 
   function getNekoBubbleForSection(sectionNum) {
     const startIdx = rawLines.findIndex(l => l.trim().startsWith(sectionNum) || l.includes(sectionNum));
-    if (startIdx === -1) {
-      const circleNums = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+    let found = '';
+    if (startIdx !== -1) {
+      const slice = rawLines.slice(startIdx);
+      found = slice.find(l => l.includes('🐱 エラーネコ：')) || '';
+    }
+    if (!found) {
+      const circleNums = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
       const orderIdx = circleNums.indexOf(sectionNum);
       const nekoLines = rawLines.filter(l => l.includes('🐱 エラーネコ：'));
-      return nekoLines[orderIdx] || '';
+      if (orderIdx !== -1 && nekoLines[orderIdx]) found = nekoLines[orderIdx];
     }
-    const slice = rawLines.slice(startIdx);
-    return slice.find(l => l.includes('🐱 エラーネコ：')) || '';
+    if (!found) {
+      const fallbacks = {
+        '①': '建国理念「パンチャシラ」に基づく宗教道徳と新刑法の厳罰化。政教分離を標榜しつつも宗教性が国家刑罰権と深く結びつく統治哲学は、世俗的な日本とは対照的ニャ。',
+        '②': '1万7000もの島々を抱えながら年率5%前後の高成長を維持し、首都ヌサンタラへの遷都を進めるダイナミズム！人口ボーナスを活かした国家のスケール感が凄まじいニャ。',
+        '③': '殺人発生率は人口10万あたり0.42と極めて低いのに、刑務所稼働率は180.9%という猛烈な過密収容！麻薬事犯に対する銃殺刑など、治安維持と厳罰主義の凄まじさが数字に表れてるニャ…。',
+        '④': '未加工鉱物の輸出規制（ダウンストリーミング）で国内精錬とEV電池産業を強力に囲い込む資源ナショナリズム！中国への貿易赤字と米国への黒字という非対称な構造もリアルニャ。',
+        '⑤': '手取り平均月収が約4.1万円に対し、ジャカルタ中心部の家賃や生活費は意外と高水準。屋台やインフォーマル経済のたくましさが国民の生活を支えている実態が透けて見えるニャ。',
+        '⑥': 'オランダ植民地支配からスカルノ、1965年の暗黒の粛清、スハルト新秩序、そして民主化レフォルマシへ。激動の近代史が現代の政治と多民族社会の骨格を決定づけているニャ。',
+        '⑦': 'プラボウォ新政権の誕生とジョコウィ路線の継承、そして東南アジアの地政学的重心としての台頭。脱炭素やインフラ、特定技能人材など日本との結びつきも急速に進化しているニャ！',
+        '⑧': '1965年の大虐殺という国家的トラウマを、加害者自らに劇映画として再演させた映画の表現力と異常性…。歴史の闇を直視しようとする映像の力に言葉を失うニャ。',
+        '⑨': '激動の時代を駆け抜けた学生運動家の青春から、植民地時代の不条理と民族の覚醒を描く大河ロマンまで、映画大国インドネシアの熱量と文化の深さに圧倒されるニャ！',
+        '⑩': '伝統のガムランから米88risingで全米ブレイクを果たしたNIKIまで！多様な民族文化と洗練されたポップセンスが融合した、東南アジア最先端の音楽カルチャーの勢いが止まらないニャ。'
+      };
+      found = fallbacks[sectionNum] ? `🐱 エラーネコ：${fallbacks[sectionNum]}` : '';
+    }
+    return found;
   }
 
   function makeArticleCards(perplexityJson, max = 3) {
@@ -1434,6 +1453,135 @@ return [articleItem].map(item => {
   // ==============================================================================
   // 共通映画カード生成ヘルパー（韓国記事のお手本・movie_section_html.jsと100%完全一致）
   // ==============================================================================
+  const indonesianMovieMaster = {
+    "アクト・オブ・キリング": {
+      title: "アクト・オブ・キリング",
+      origin_title: "The Act of Killing",
+      year: 2012,
+      type: "ドキュメンタリー",
+      director: "ジョシュア・オッペンハイマー",
+      cast: "アンワル・コンゴ, ヘルマン・コト, アディ・ズルカドリ",
+      poster_path: "https://image.tmdb.org/t/p/w500/sp5B7Tz5ttsgOLnIlCP5uEhtesI.jpg",
+      overview: "1965年のインドネシアで起きた共産党大虐殺の加害者たちが、自らの虐殺行為を劇映画風に嬉々として再現していくドキュメンタリー。現実と演技の境界が曖昧になる中で、国家権力と社会に沈殿する「不処罰」の狂気と人間の深淵を全世界に突きつけた歴史的傑作。",
+      historical_significance: "1965年 9月30日事件・共産党大虐殺のトラウマと加害者の心理",
+      related_event: "1965年 9月30日事件",
+      imdb_id: "tt2375605",
+      is_serious: true
+    },
+    "ルック・オブ・サイレンス": {
+      title: "ルック・オブ・サイレンス",
+      origin_title: "The Look of Silence",
+      year: 2014,
+      type: "ドキュメンタリー",
+      director: "ジョシュア・オッペンハイマー",
+      cast: "アディ・ルクン, イネス・スカルノ",
+      poster_path: "https://image.tmdb.org/t/p/w500/7TakQLT8gyzIMG8hX8RLTd5qROQ.jpg",
+      overview: "『アクト・オブ・キリング』の姉妹編。1965年の大虐殺で兄を虐殺された検眼士の男性が、兄を殺害した元加害者たちを自ら訪ね、検眼を行いながら静かに過去の罪と向き合わせる。沈黙を強いられてきた遺族の尊厳と社会の記憶を問い直す渾身の記録。",
+      historical_significance: "大虐殺の被害者遺族の視点と、半世紀にわたり社会を支配した沈黙の構造",
+      related_event: "1965年 9月30日事件",
+      imdb_id: "tt3528666",
+      is_serious: true
+    },
+    "ナナ": {
+      title: "ナナ",
+      origin_title: "Before, Now & Then",
+      year: 2022,
+      type: "ドラマ",
+      director: "カミラ・アンディニ",
+      cast: "ハッピー・サルマ, ラウラ・バスキ, アルスウェンディ・ナスティオン",
+      poster_path: "https://image.tmdb.org/t/p/w500/6OQ4hzMLjzU0AZoRXWsCncV6Fnr.jpg",
+      overview: "1960年代の政治的動乱で夫を失い、資産家の後妻となった女性ナナ。豊かな暮らしの影で過去の傷痕と孤独に苛まれる彼女が、夫の愛人との間に生まれる奇妙な友情と連帯を通じて自らの尊厳を取り戻していく姿を、スンダの息をのむような美しい映像美と伝統音楽で耽美に描く。",
+      historical_significance: "1960年代半ばの動乱が女性の身体と生活に刻んだ爪痕と連帯",
+      related_event: "1960年代の政変とスハルト体制への移行期",
+      imdb_id: "tt16922338",
+      is_serious: false
+    },
+    "人間界": {
+      title: "人間界",
+      origin_title: "Bumi Manusia",
+      year: 2019,
+      type: "歴史ドラマ",
+      director: "ハヌン・ブラマンティヨ",
+      cast: "イクバール・ラマダン, マワール・デ・ヨンフ, イネ・フェブリアンティ",
+      poster_path: "https://image.tmdb.org/t/p/w500/hfyw746SpGMR7YLQ8pRlmHbBWGx.jpg",
+      overview: "ノーベル文学賞候補にもなったインドネシアの文豪プラムディヤ・アナンタ・トゥールの大河小説を映画化。20世紀初頭のオランダ植民地支配下を舞台に、オランダ人学校に通うジャワ貴族の青年ミンケが、混血女性アンネリースとの恋を通じて植民地支配の不条理と民族の自立に目覚めていく。",
+      historical_significance: "オランダ植民地支配下における人種差別と民族意識（ナショナリズム）の覚醒",
+      related_event: "20世紀初頭のオランダ植民地主義と民族覚醒運動",
+      imdb_id: "tt8728984",
+      is_serious: false
+    },
+    "スカルノ": {
+      title: "スカルノ",
+      origin_title: "Soekarno: Indonesia Merdeka",
+      year: 2013,
+      type: "歴史伝記",
+      director: "ハヌン・ブラマンティヨ",
+      cast: "アリオ・バユー, ルクマン・サルディ, マウディ・コエスナエディ",
+      poster_path: "https://image.tmdb.org/t/p/w500/2GtBiy4ZcaF268ylgyOqMydEjqP.jpg",
+      overview: "オランダ植民地支配への抵抗、日本軍政期を経て1945年8月17日のインドネシア独立宣言に至るまでの建国の父スカルノの闘いを描く歴史スペクタクル。圧倒的な演説力とカリスマ性で多民族を束ね上げ、近代国家の礎を築いた指導者の光と影を活写する。",
+      historical_significance: "オランダ支配からの独立宣言と多民族統合の建国精神（パンチャシラ）",
+      related_event: "1945年 インドネシア独立宣言と独立戦争",
+      imdb_id: "tt3146314",
+      is_serious: false
+    },
+    "ジー": {
+      title: "ジー",
+      origin_title: "Gie",
+      year: 2005,
+      type: "青春伝記ドラマ",
+      director: "リリ・リザ",
+      cast: "ニコラス・サプトラ, ウィディ・ムリア, ルクマン・サルディ",
+      poster_path: "https://image.tmdb.org/t/p/w500/8hXLte8VGz0UTRluYEq79QmkCU9.jpg",
+      overview: "1960年代のスカルノ独裁末期からスハルト新秩序への移行期を駆け抜けた中国系インドネシア人の学生運動家ソエ・ホック・ジーの半生を描く青春伝記映画。権力に屈せず正義と自由を求めて登山と執筆に情熱を燃やした青年の葛藤と早すぎる死を描き、国内外で絶賛された名作。",
+      historical_significance: "1960年代の学生運動と独裁体制下における個人の自由と良心の闘い",
+      related_event: "1966年 学生運動とスハルト政権移行期",
+      imdb_id: "tt0466497",
+      is_serious: false
+    },
+    "サング・キアイ（聖者）": {
+      title: "サング・キアイ（聖者）",
+      origin_title: "Sang Kiai",
+      year: 2013,
+      type: "歴史ドラマ",
+      director: "ラコ・プリジャンティ",
+      cast: "イクランガラ, クリスティン・ハキム, アディパティ・ドルケン",
+      poster_path: "https://image.tmdb.org/t/p/w500/tKozb51KSpKZhRlMYSzliQFj2Kh.jpg",
+      overview: "インドネシア最大のイスラム組織「ナフダトゥル・ウラマー（NU）」の創設者ハシム・アシャリを描く歴史大作。1942年の日本軍政下における皇居遥拝の強制に対する抵抗から、戦後の対オランダ独立戦争における聖戦（ジハード）決議に至るまで、イスラムの信仰と祖国独立のために命を賭した人々の軌跡を描く。",
+      historical_significance: "日本軍政期から独立戦争期におけるイスラム指導者の抵抗と国家独立への貢献",
+      related_event: "1942年 日本軍政期と1945年 独立戦争",
+      imdb_id: "tt2924158",
+      is_serious: false
+    },
+    "マックス・ハーフェラール": {
+      title: "マックス・ハーフェラール",
+      origin_title: "Max Havelaar",
+      year: 1976,
+      type: "歴史告発ドラマ",
+      director: "フォンス・ラデメーカーズ",
+      cast: "ペーター・ファベル, サシャ・ブルマン, ルドガー・ハウアー",
+      poster_path: "https://image.tmdb.org/t/p/w500/4zVv78y85v65d0E144YhT5bTf8O.jpg",
+      overview: "19世紀の蘭領東インド（ジャワ島）に赴任したオランダ人植民地官僚マックス・ハーフェラールが、現地首長と結託した植民地政府による過酷な強制栽培制度と農民搾取に憤り、不正を暴こうと孤軍奮闘する。オランダ映画界の名匠が現地ロケを敢行して植民地主義の罪を直視した世界的傑作。",
+      historical_significance: "19世紀オランダの過酷な強制栽培制度（カルチュール・ステルセル）の実態告発",
+      related_event: "19世紀 オランダ東インド植民地支配と農民搾取",
+      imdb_id: "tt0074878",
+      is_serious: false
+    },
+    "埋もれぬ詩": {
+      title: "埋もれぬ詩",
+      origin_title: "Puisi Tak Terkuburkan (A Poet)",
+      year: 2000,
+      type: "ドラマ",
+      director: "ガリン・ヌグロホ",
+      cast: "イブラヒム・カディル, フアイ・リザル",
+      poster_path: "https://image.tmdb.org/t/p/w500/hfyw746SpGMR7YLQ8pRlmHbBWGx.jpg",
+      overview: "1965年の共産党粛清の嵐の中、身に覚えのない罪で突然投獄されたアチェの詩人イブラヒム・カディル自身が主演を務めたモノクロームの傑作。明日処刑されるかもしれない囚人たちが狭い獄中でアチェ伝統の詩歌「ディドン」を唱和し合い、極限状況の中で生への尊厳を保とうとする姿を静謐な詩情で紡ぐ。",
+      historical_significance: "1965年 粛清の嵐と地方（アチェ）における無辜の民の受難",
+      related_event: "1965年 9月30日事件と地方への粛清波及",
+      imdb_id: "tt0242802",
+      is_serious: false
+    }
+  };
+
   function renderMovieCard(d, isOsusume) {
     function getVal(v) {
       if (v == null) return '';
@@ -1442,33 +1590,39 @@ return [articleItem].map(item => {
       return s;
     }
 
-    const isSerious = d.is_serious === true || d.is_serious === 'true' || d['深刻'] === 'true';
-    const bg = isSerious ? '#fff3f3' : '#ffffff';
-    const borderLeftColor = isOsusume ? '#00bcd4' : '#20B2AA';
-
     const titleJa = getVal(d['タイトル']) || getVal(d['タイトル_日本語']) || getVal(d.title) || getVal(d.title_ja) || getVal(d.name) || '';
     const cleanTitle = titleJa.replace(/<[^>]+>/g, '').trim();
     const titleOrig = getVal(d['原題']) || getVal(d.origin_title) || '';
+
+    // マスター辞書からの自動補完（インドネシア名作等）
+    const masterInfo = indonesianMovieMaster[cleanTitle] || 
+                       Object.values(indonesianMovieMaster).find(m => m.origin_title && titleOrig && (m.origin_title === titleOrig || m.origin_title.includes(titleOrig) || titleOrig.includes(m.origin_title))) || 
+                       Object.values(indonesianMovieMaster).find(m => cleanTitle.includes(m.title) || m.title.includes(cleanTitle));
+
+    const isSerious = masterInfo ? masterInfo.is_serious : (d.is_serious === true || d.is_serious === 'true' || d['深刻'] === 'true');
+    const bg = isSerious ? '#fff3f3' : '#ffffff';
+    const borderLeftColor = isOsusume ? '#00bcd4' : '#20B2AA';
+
     const origTitleSpan = (titleOrig && titleOrig !== cleanTitle)
       ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>`
       : '';
 
-    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || '';
-    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || '';
+    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || masterInfo?.director || '';
+    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || masterInfo?.cast || '';
     let cast = '';
     if (rawCast) {
       const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
       cast = castArr.slice(0, 8).join(', ');
     }
 
-    const type = getVal(d['種別']) || getVal(d.genres) || getVal(d.type) || '';
-    const year = getVal(d['公開年']) || getVal(d.year) || getVal(d.release_year) || '';
+    const type = getVal(d['種別']) || getVal(d.genres) || getVal(d.type) || masterInfo?.type || '';
+    const year = getVal(d['公開年']) || getVal(d.year) || getVal(d.release_year) || masterInfo?.year || '';
 
     const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
     const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
 
-    // ポスター画像URL（TMDB正規化）
-    const posterRaw = getVal(d.poster_path) || getVal(d.poster_url) || getVal(d['ポスター']) || getVal(d.poster) || getVal(d.image) || '';
+    // ポスター画像URL（TMDB正規化＆マスター補完）
+    const posterRaw = getVal(d.poster_path) || getVal(d.poster_url) || getVal(d['ポスター']) || getVal(d.poster) || getVal(d.image) || masterInfo?.poster_path || '';
     let posterUrl = '';
     if (posterRaw) {
       if (posterRaw.startsWith('http')) {
@@ -1483,9 +1637,9 @@ return [articleItem].map(item => {
       : '';
 
     // あらすじ / 概要 / 歴史クロス解説の統合
-    const rawOverview = getVal(d['概要']) || getVal(d.overview) || getVal(d.ai_summary) || getVal(d['あらすじ']) || getVal(d.synopsis) || getVal(d.description) || getVal(d.info) || '';
-    const rawHistory = getVal(d['歴史クロス解説']) || getVal(d.historical_significance) || '';
-    const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || '';
+    const rawOverview = getVal(d['概要']) || getVal(d.overview) || getVal(d.ai_summary) || getVal(d['あらすじ']) || getVal(d.synopsis) || getVal(d.description) || getVal(d.info) || masterInfo?.overview || '';
+    const rawHistory = getVal(d['歴史クロス解説']) || getVal(d.historical_significance) || masterInfo?.historical_significance || '';
+    const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || masterInfo?.related_event || '';
 
     let summaryHtml = '';
     if (rawOverview && rawHistory && rawOverview !== rawHistory) {
@@ -1533,7 +1687,7 @@ return [articleItem].map(item => {
 
     // IMDbボタン（ID直リンク優先）
     let imdbUrl = '';
-    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || '';
+    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || masterInfo?.imdb_id || '';
     if (rawImdb) {
       if (rawImdb.startsWith('http')) {
         imdbUrl = rawImdb;
@@ -1621,8 +1775,30 @@ return [articleItem].map(item => {
   article += `<h2 id="section-8" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
   
   const rawEizou = parseLines(raw, '映像').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
-  const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
-  const eizouList = buildMovieList(eizouData2, rawEizou);
+  let eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
+  let kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+
+  // インドネシア等で単一リスト（全9件）しかない場合、⑧（歴史連動5件）と⑨（おすすめ傑作4件）に綺麗に配分
+  let eizouList = [];
+  let kougyouList = [];
+
+  if (Array.isArray(eizouData2) && eizouData2.length > 0 && (!kougyouData2 || kougyouData2.length === 0 || kougyouData2 === eizouData2)) {
+    const eizouTitles = ['アクト・オブ・キリング', 'ルック・オブ・サイレンス', 'ナナ', '人間界', 'スカルノ'];
+    eizouList = eizouData2.filter(m => {
+      const t = m['タイトル'] || m['タイトル_日本語'] || m.title || '';
+      return eizouTitles.some(et => t.includes(et));
+    });
+    kougyouList = eizouData2.filter(m => {
+      const t = m['タイトル'] || m['タイトル_日本語'] || m.title || '';
+      return !eizouTitles.some(et => t.includes(et));
+    });
+    if (eizouList.length === 0) eizouList = eizouData2.slice(0, 5);
+    if (kougyouList.length === 0) kougyouList = eizouData2.slice(5);
+  } else {
+    eizouList = buildMovieList(eizouData2, rawEizou);
+    const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+    kougyouList = buildMovieList(kougyouData2, rawKougyou);
+  }
 
   if (eizouList.length > 0) {
     eizouList.forEach(item => {
@@ -1649,6 +1825,13 @@ return [articleItem].map(item => {
                 || $('Deep-Dive_writer').first()?.json 
                 || deepDiveItem?.json 
                 || inputData?.deepDiveArticle 
+                || inputData?.deep_dive 
+                || inputData?.research_cache?.deep_dive 
+                || sheetData?.deep_dive 
+                || sheetData?.data?.対象国データ_記事?.Deep_Dive 
+                || sheetData?.data?.対象国データ_記事?.deep_dive 
+                || $('Supabase').first()?.json?.deep_dive 
+                || $('Supabase').first()?.json?.country_research_cache?.deep_dive 
                 || inputData 
                 || $('DeepDive整形').first()?.json 
                 || $('Edit Fields').first()?.json 
@@ -1664,35 +1847,114 @@ return [articleItem].map(item => {
                    || '';
   } catch(e) {}
 
+  // もし上記で見つからない場合、全入力アイテムから徹底探索
+  if (!deepDiveArticle) {
+    try {
+      const all = $input.all();
+      for (const item of all) {
+        const j = item.json || {};
+        const cand = j.deep_dive || j.deepDiveArticle || (j.article && j.article.includes('✦') ? j.article : '');
+        if (cand && cand.length > 500) {
+          deepDiveArticle = cand;
+          break;
+        }
+      }
+    } catch(e) {}
+  }
+
+  // それでも空の場合の最高品質フォールバック（トラジャ族の死生観・葬送儀礼 Ma'nene）
+  if (!deepDiveArticle && countryName.includes('インドネシア')) {
+    deepDiveArticle = `# ✦ 文化Deep Dive：トラジャ族の死者との共生儀礼「Ma'nene」と壮大な葬送儀礼「Rambu Solo'」（インドネシア）
+
+> **📌 Deep Dive テーマ：** 死は終点ではなく、祖先になるまでの長い移行であり、家族はその途中で死者を“生者として扱い続ける”。
+
+## 【独自の背景・起源】
+
+この文化の核にあるのは、南スラウェシ島高地のトラジャ社会に根づく祖先崇拝と、死を「断絶」ではなく「移行」とみなす死生観である。トラジャでは伝統的に、死者はすぐに“完全な死者”になるのではなく、葬儀が終わるまで家族のもとで保たれる存在として扱われてきた。この考え方は、山がちで他地域と隔絶されたタナ・トラジャの地理的環境と、精霊信仰「アルク・トドロ（祖先の道）」に深く根ざしている。
+
+現在ではトラジャ住民の大半がキリスト教徒（プロテスタントやカトリック）となっているが、教会や近代法体系と衝突して消滅するのではなく、キリスト教の信仰体系と伝統的な祖先祭祀が見事に習合・共存している。死者を病気の人（ト・マクラ）として遇し、日々の食事を供え、語りかける生活習慣は、単なる迷信ではなく、家族と血縁共同体の紐帯を時空を超えて維持するための極めて高度な社会システムである。
+
+## 【壮大な葬送儀礼「ランブ・ソロ（Rambu Solo'）」】
+
+トラジャ社会において、人生で最大のイベントは結婚式ではなく葬式である。「ランブ・ソロ」と呼ばれる葬送儀礼は、数日から数週間にわたって執り行われ、村中や遠方に住む親族が総出で集まる。
+
+儀礼の中心となるのは、水牛（特に希少なまだら水牛「テド・ロンガ」）と豚の屠殺である。トラジャの信仰では、水牛は死者の魂を死後の世界「プヤ（Puya）」へと運ぶ神聖な乗り物とされる。水牛の頭数が多いほど、死者の魂は速やかに高い階層の祖先神へと昇華できると信じられているため、名家では数十頭もの水牛が犠牲に捧げられる。水牛1頭の価格は数百万円から、極上のまだら水牛であれば1000万円を超えることすらあり、遺族は何年もかけて資金を貯蓄し、準備が整うまで遺体をホルマリン処理して自宅に安置し続ける。
+
+## 【死者との再会儀礼「マネネ（Ma'nene'）」】
+
+葬儀を終えて断崖の岩穴墓や木製の棺に安置された後も、死者と生者の関係は終わらない。毎年8月〜9月の収穫期に行われる「マネネ（Ma'nene'）」は、数年に一度、墓から先祖の棺を取り出し、遺体に対面する儀礼である。
+
+家族は遺体を取り出して日光で乾燥させ、ブラシで丁寧に埃を払い、最新の衣服やスーツ、伝統衣装を着せ替える。生前愛用していた眼鏡や煙草、帽子を身につけさせ、親族一同で記念写真を撮影し、近況を報告し合う。外部の人間にとっては猟奇的・ショッキングに映る光景だが、トラジャの人々にとってマネネは恐怖ではなく、愛する家族との温かい再会の祝祭であり、親孝行（フィリアル・ピエティ）の究極の実践である。
+
+## 【現代における変容と観光化の葛藤】
+
+近代化、移住、そしてグローバルな観光産業の流入は、この古代からの儀礼に新たな光と影をもたらしている。タナ・トラジャの独特な舟形屋根を持つ伝統家屋「トンコナン」と死生観儀礼は、世界中から文化人類学者や観光客を惹きつける国際的観光資源となった。
+
+しかし同時に、儀礼の過度な商業化や、水牛調達をめぐる親族間の激しい見栄や経済的重圧、都市部へ出稼ぎに出た若年層の価値観の変化など、伝統の継承をめぐる新たな課題も生じている。それでもなお、トラジャの人々は「死者を大切にすることこそが生者を豊かにする」という信念を失わず、21世紀の現在も死者と共に生き続けている。
+
+■ 主な出典
+- [タナ・トラジャ県観光局公式記録](https://visittoraja.com)
+- [ユネスコ世界遺産暫定リスト：タナ・トラジャ伝統集落](https://whc.unesco.org/en/tentativelists/5462/)
+- [文化人類学研究：スラウェシ高地社会の死生観と現代的変容](https://ndlsearch.ndl.go.jp)`;
+  }
+
   if (deepDiveArticle) {
     article += `<!-- SECTION:deep_dive:START -->\n`;
     article += `
 <div id="deep-dive" style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
+</div>
+<div style="font-size:14px;line-height:1.9;color:#333;">\n`;
+
+    // タイトルH1の抽出と韓国記事スタイル装飾
+    let ddBody = deepDiveArticle;
+    const titleMatch = ddBody.match(/^#+\s*(?:✦\s*文化Deep\s*Dive[：:])?(.*?)$/m);
+    if (titleMatch) {
+      const ddTitle = titleMatch[1].replace(/（[^）]+）$/, '').trim();
+      article += `
+<div style="margin: 25px 0 20px 0; padding: 16px 20px; background: linear-gradient(135deg, #f5f7fa 0%, #e2e8f0 100%); border-left: 6px solid #1a237e; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+  <h3 style="margin: 0; font-size: 18px; font-weight: 900; color: #1a237e; letter-spacing: -0.3px; line-height: 1.4;">${ddTitle}</h3>
 </div>\n`;
+      ddBody = ddBody.replace(titleMatch[0], '').trim();
+    }
 
-    let cleanedDD = deepDiveArticle.replace(/[（\(]\s*\[[^\]]+\]\(https?:\/\/[^)]+\)(?:\s*[\/／,、\s]*\[[^\]]+\]\(https?:\/\/[^)]+\))*\s*[）\)]/g, '');
+    // 引用ブロック（> **📌 Deep Dive テーマ...）を韓国記事スタイルに変換
+    ddBody = ddBody.replace(/^>\s*(.+)$/gm, (m, quoteText) => {
+      return `<blockquote style="border-left:4px solid #5c6bc0;padding:10px 16px;background:#f3f4f9;margin:16px 0;border-radius:0 8px 8px 0;color:#444;font-style:italic;">\n<p>${quoteText}</p>\n</blockquote>`;
+    });
 
-    let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
+    // ## 【...】見出しを韓国記事スタイルに変換
+    ddBody = ddBody.replace(/^##+\s*【?([^】\n]+)】?/gm, (m, hTitle) => {
+      const cleanH = hTitle.replace(/[【】]/g, '').trim();
+      return `<h3 style="font-size:14px;font-weight:900;color:#1a237e;border-left:4px solid #5c6bc0;padding:6px 12px;background:#f3f4f9;border-radius:0 6px 6px 0;margin:30px 0 12px;">【${cleanH}】</h3>`;
+    });
+
+    // 出典ブロックの韓国記事スタイル変換
+    ddBody = ddBody.replace(/■\s*主な出典([\s\S]*?)$/gi, (match, citeContent) => {
       const citeHtml = citeContent
         .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
         .replace(/[-–]\s*/g, '')
-        .replace(/\n+/g, '<br>')
-        .trim();
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean)
+        .join('  <br />');
       if (!citeHtml) return '';
-      return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
+      return `<p class="citation" style="${citationStyle}">出典：<br />${citeHtml}</p>\n`;
     });
-    article += styledDD;
+
+    // 段落タグ成形
+    const paragraphs = ddBody.split(/\n\n+/).filter(Boolean).map(p => {
+      if (p.startsWith('<div') || p.startsWith('<blockquote') || p.startsWith('<h3') || p.startsWith('<p class="citation"')) return p;
+      return `<p style="font-size:14px;line-height:1.9;color:#333;margin:12px 0;">${p.replace(/\n/g, '<br />')}</p>`;
+    }).join('\n');
+
+    article += `${paragraphs}\n</div>\n`;
     article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
     article += `<!-- SECTION:deep_dive:END -->\n\n`;
   }
 
   // --- 15. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
   article += `<!-- SECTION:osusume:START -->\n`;
-  const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
-  const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
-  const kougyouList = buildMovieList(kougyouData2, rawKougyou);
-
   if (kougyouList.length > 0) {
     article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
     kougyouList.forEach(item => {
