@@ -77,13 +77,14 @@ return [articleItem].map(item => {
       });
   }
 
-  // AIが出力した行（マークダウン太字、コロン/パイプ半角化、タブ区切り、短縮項目名）を100%確実に検索するヘルパー
+  // AIが出力した行（マークダウン太字、コロン/パイプ半角化、タブ区切り、Markdown表の先頭|等）を100%確実に検索するヘルパー
   function findMatchingLine(rawLines, itemKeyword) {
     if (!rawLines || !Array.isArray(rawLines)) return null;
     const cleanKeyword = itemKeyword.replace(/[\(（].*?[\)）]/g, '').trim();
     return rawLines.find(line => {
       if (!line) return false;
-      const cleaned = line.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+      // 先頭の #, *, -, スペース, および Markdown表の先頭パイプ (|) を除去
+      const cleaned = line.replace(/^[#\*\-\s|｜]+/, '').replace(/\*\*/g, '').trim();
       const firstPart = cleaned.split(/[｜|\t：:]/)[0].trim();
       return firstPart === itemKeyword || firstPart === cleanKeyword || firstPart.startsWith(cleanKeyword) || (cleanKeyword.length >= 4 && firstPart.includes(cleanKeyword));
     });
@@ -91,7 +92,12 @@ return [articleItem].map(item => {
 
   function extractRowValuesFromLine(line) {
     if (!line) return { countryVal: 'データなし', japanVal: 'データなし' };
-    const cleaned = line.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+    // 先頭と末尾のパイプ (| または ｜) や記号を除去
+    const cleaned = line
+      .replace(/^[#\*\-\s|｜]+/, '')
+      .replace(/[|｜\s]+$/, '')
+      .replace(/\*\*/g, '')
+      .trim();
     
     // パイプ (｜ or |) または タブ (\t) または 2個以上の連続スペース で分割
     const parts = cleaned.split(/[｜|\t]|\s{2,}/).map(p => p.trim()).filter(Boolean);
