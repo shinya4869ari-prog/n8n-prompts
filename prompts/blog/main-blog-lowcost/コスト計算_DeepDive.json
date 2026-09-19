@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// === Perplexity コスト自動計算コード（文化DeepDive用） ===\nconst item = $input.first()?.json || {};\n\n// 1. モデル名の取得\nconst detectedModel = item.model || 'sonar';\nconst isSonarPro = detectedModel.toLowerCase().includes('pro');\n\n// 料金テーブル（USD / 100万トークン）＋ 検索リクエスト固定費\nconst PRICING_TABLE = {\n  sonar:    { input: 1.00, output: 1.00, searchFee: 0.005 },\n  sonarPro: { input: 3.00, output: 15.00, searchFee: 0.005 }\n};\nconst pricing = isSonarPro ? PRICING_TABLE.sonarPro : PRICING_TABLE.sonar;\nconst USD_JPY_RATE = 155;\n\n// 2. トークン数の取得\nconst usage = item.usage || {};\nlet promptTokens = usage.prompt_tokens || usage.promptTokens || 0;\nlet completionTokens = usage.completion_tokens || usage.completionTokens || 0;\n\n// 未取得時の推計\nconst rawOutputText = item.choices?.[0]?.message?.content || item.output || item.text || '';\nif (!completionTokens && rawOutputText) {\n  completionTokens = Math.round(rawOutputText.length * 0.95);\n}\nif (!promptTokens) {\n  promptTokens = 1500;\n}\nconst totalTokens = promptTokens + completionTokens;\n\n// 3. コスト計算（トークン料金 ＋ 1回の検索リクエスト固定費）\nconst tokenCostUsd = (promptTokens * pricing.input / 1000000) + (completionTokens * pricing.output / 1000000);\nconst costUsd = tokenCostUsd + pricing.searchFee;\nconst costJpy = costUsd * USD_JPY_RATE;\n\nconst costJpyFormatted = `${costJpy.toFixed(2)}円`;\nconst costUsdFormatted = `$${costUsd.toFixed(5)}`;\nconst tierLabel = isSonarPro ? 'Perplexity (sonar-pro)' : 'Perplexity (sonar)';\n\nconst costSummary = `💰 DeepDive(Perplexity)コスト: ${costJpyFormatted} (${costUsdFormatted}) [${detectedModel} | 入力: ${promptTokens.toLocaleString()} tok / 出力: ${completionTokens.toLocaleString()} tok]`;\n\n// 4. 返却\nreturn [{\n  json: {\n    \"_COST_SUMMARY\": costSummary,\n    cost_report: {\n      step: '文化DeepDive',\n      detected_model: detectedModel,\n      pricing_tier: tierLabel,\n      cost_jpy: costJpyFormatted,\n      cost_usd: costUsdFormatted,\n      total_tokens: totalTokens,\n      prompt_tokens: promptTokens,\n      completion_tokens: completionTokens,\n      search_fee_usd: `$${pricing.searchFee}`\n    },\n    ...item\n  }\n}];"
+      },
+      "id": "cost-calc-deepdive-node",
+      "name": "コスト計算_DeepDive",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ]
+    }
+  ],
+  "connections": {},
+  "pinData": {}
+}

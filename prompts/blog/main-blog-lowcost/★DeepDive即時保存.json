@@ -1,0 +1,45 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://uvjpiuinsgklddzhzpio.supabase.co/rest/v1/country_research_cache?on_conflict=country&select=country,deep_dive,updated_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            },
+            {
+              "name": "apikey",
+              "value": "sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_iW0cu7wjxn_rKjAd1O5Prg_tmecdAkX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  country: $('国名変換Code').first().json.country,\n  deep_dive: $json.choices?.[0]?.message?.content || $json.content?.parts?.[0]?.text || $json.text || $json.output || '',\n  updated_at: new Date().toISOString()\n}) }}",
+        "options": {}
+      },
+      "id": "deepdive-supabase-save-node",
+      "name": "★DeepDive即時保存",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        300
+      ]
+    }
+  ],
+  "connections": {},
+  "pinData": {}
+}
