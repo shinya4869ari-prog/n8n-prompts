@@ -282,23 +282,37 @@ return [articleItem].map(item => {
     const line = findMatchingLine(rawLines, item);
     const { countryVal } = extractRowValuesFromLine(line);
     let val = countryVal;
+
+    // スプレッドシート / リサーチ1 からの直接取得・フォールバック
+    const geoRaw = sheetData.data?.対象国データ?.地理 || {};
+    if (item === '位置' && (val === 'データなし' || !val)) {
+      val = geoRaw.位置 || 'データなし';
+    }
     if (item === '面積') {
-      if (val.includes('データなし') || val === 'データなし') {
-        const areaRaw = sheetData.data?.対象国データ?.地理?.面積_km2;
+      if (val.includes('データなし') || val === 'データなし' || !val) {
+        const areaRaw = geoRaw.面積_km2;
         if (areaRaw && areaRaw !== 'データなし') {
           const areaNum = parseFloat(String(areaRaw).replace(/,/g, ''));
           if (!isNaN(areaNum)) {
             const ratio = areaNum / 377900;
             const ratioStr = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
-            val = val === 'データなし'
-              ? `${areaNum.toLocaleString()}km²（日本の面積の約${ratioStr}倍）`
-              : val.replace('データなし', ratioStr);
+            val = `${areaNum.toLocaleString()}km²（日本の面積の約${ratioStr}倍）`;
           }
         }
       }
     }
+    if (item === '公用語' && (val === 'データなし' || !val)) {
+      val = geoRaw.公用語 || 'データなし';
+    }
+    if (item === '日本からの飛行距離' && (val === 'データなし' || !val)) {
+      if (geoRaw.日本からの飛行距離_km) {
+        val = `${geoRaw.日本からの飛行距離_km}km` + (geoRaw.フライト時間 ? `（フライト時間：${geoRaw.フライト時間}）` : '');
+      } else if (geoRaw.フライト時間) {
+        val = geoRaw.フライト時間;
+      }
+    }
     if (item === '外務省危険レベル' && (val === 'データなし' || !val)) {
-      val = sheetData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || 'データなし';
+      val = sheetData.data?.固定データ?.治安指標?.外務省危険レベル?.レベル || geoRaw.外務省危険レベル || 'データなし';
     }
     return { 項目: item, 値: val };
   });
@@ -429,9 +443,18 @@ return [articleItem].map(item => {
   article += `<!-- SECTION:seido:START -->\n`;
   article += `<h2 id="section-1" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">①</span> 制度の9つの皿</h2>\n`;
   const seidoItems = ['国家の形と統治機構', '行政トップ', '立法と選挙制度', '司法と法制度', '社会保障・医療・年金', '教育制度', '徴税・財政制度', '安全保障と兵役', '基本権と価値観'];
+  const targetSeidoFixed = sheetData.data?.対象国データ?.制度の9つの皿 || {};
+  const japanSeidoFixed = sheetData.data?.日本固定データ?.制度の9つの皿 || {};
+
   const seidoRows = seidoItems.map(item => {
     const line = findMatchingLine(rawLines, item);
-    const { countryVal, japanVal } = extractRowValuesFromLine(line);
+    let { countryVal, japanVal } = extractRowValuesFromLine(line);
+    if (countryVal === 'データなし' || !countryVal) {
+      countryVal = targetSeidoFixed[item] || 'データなし';
+    }
+    if (japanVal === 'データなし' || !japanVal) {
+      japanVal = japanSeidoFixed[item]?.値 || japanSeidoFixed[item] || 'データなし';
+    }
     return [item, countryVal, japanVal];
   });
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
@@ -515,9 +538,40 @@ return [articleItem].map(item => {
   }
 
   const econItems = ['総人口', 'GDP（名目・USドル）', '一人当たりGDP', 'GDP成長率', '政府債務残高（GDP比）', '経常収支（GDP比）', 'インフレ率'];
+  const econKeyMap = {
+    '総人口': '総人口',
+    'GDP（名目・USドル）': 'GDP_USD',
+    '一人当たりGDP': '一人当たりGDP',
+    'GDP成長率': 'GDP成長率',
+    '政府債務残高（GDP比）': '政府債務残高_GDP比',
+    '経常収支（GDP比）': '経常収支_GDP比',
+    'インフレ率': 'インフレ率'
+  };
+  const targetEconFixed = sheetData.data?.固定データ?.経済データ || {};
+  const japanEconFixed = sheetData.data?.日本固定データ?.経済データ || {};
+
   const econRows = econItems.map(item => {
     const line = findMatchingLine(rawLines, item);
-    const { countryVal, japanVal } = extractRowValuesFromLine(line);
+    let { countryVal, japanVal } = extractRowValuesFromLine(line);
+
+    const fixedKey = econKeyMap[item];
+    // 対象国の値フォールバック
+    if (countryVal === 'データなし' || !countryVal) {
+      const fixedObj = targetEconFixed[fixedKey];
+      if (fixedObj && fixedObj.値 !== undefined && fixedObj.値 !== null && fixedObj.値 !== '' && fixedObj.値 !== 'データなし') {
+        const yearStr = fixedObj.年 ? `（${String(fixedObj.年).replace(/年$/, '')}年）` : '';
+        countryVal = String(fixedObj.値) + yearStr;
+      }
+    }
+    // 日本の値フォールバック
+    if (japanVal === 'データなし' || !japanVal) {
+      const jFixedObj = japanEconFixed[fixedKey];
+      if (jFixedObj && jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '' && jFixedObj.値 !== 'データなし') {
+        const yearStr = jFixedObj.年 ? `（${String(jFixedObj.年).replace(/年$/, '')}年）` : '';
+        japanVal = String(jFixedObj.値) + yearStr;
+      }
+    }
+
     return [item, formatEconValue(item, countryVal), formatEconValue(item, japanVal)];
   });
   article += makeTable(['経済指標', countryLabel, japanLabel], econRows, ['30%', '35%', '35%']);
@@ -553,9 +607,59 @@ return [articleItem].map(item => {
   article += `<!-- SECTION:chian:START -->\n`;
   article += `<h2 id="section-3" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">③</span> 治安と平和の衡量</h2>\n`;
   const chiAnItems = ['殺人率（10万人あたり）', '交通事故死亡率（10万人あたり）', '自殺率（10万人あたり）', '失業率', '貧困率', 'ジニ係数', '刑務所稼働率', '刑務所総収容者数', 'GPI（世界平和度指数）'];
+  const chiAnKeyMap = {
+    '殺人率（10万人あたり）': '殺人率',
+    '交通事故死亡率（10万人あたり）': '交通事故死亡率',
+    '自殺率（10万人あたり）': '自殺率',
+    '失業率': '失業率',
+    '貧困率': '貧困率',
+    'ジニ係数': 'ジニ係数',
+    '刑務所稼働率': '刑務所稼働率',
+    '刑務所総収容者数': '刑務所総収容者数',
+    'GPI（世界平和度指数）': 'GPI'
+  };
+  const targetChiAnFixed = sheetData.data?.固定データ?.治安指標 || {};
+  const japanChiAnFixed = sheetData.data?.日本固定データ?.治安指標 || {};
+
   const chiAnRows = chiAnItems.map(item => {
     const line = findMatchingLine(rawLines, item);
-    const { countryVal, japanVal } = extractRowValuesFromLine(line);
+    let { countryVal, japanVal } = extractRowValuesFromLine(line);
+
+    const fixedKey = chiAnKeyMap[item];
+    if (countryVal === 'データなし' || !countryVal) {
+      const fixedObj = targetChiAnFixed[fixedKey];
+      if (fixedObj) {
+        if (fixedKey === 'GPI') {
+          const score = fixedObj.スコア || '';
+          const rank = fixedObj.順位 ? `順位:${fixedObj.順位}位` : '';
+          const src = fixedObj.出典 || 'Vision of Humanity';
+          const yr = fixedObj.年 ? `${fixedObj.年}年` : '';
+          countryVal = `${score} / ${rank}（${src} ${yr}）`.trim();
+        } else if (fixedObj.値 !== undefined && fixedObj.値 !== null && fixedObj.値 !== '') {
+          const src = fixedObj.出典 || '';
+          const yr = fixedObj.年 ? `${fixedObj.年}年` : '';
+          const srcStr = (src || yr) ? `（${src} ${yr}）`.trim() : '';
+          countryVal = `${fixedObj.値} ${srcStr}`.trim();
+        }
+      }
+    }
+
+    if (japanVal === 'データなし' || !japanVal) {
+      const jFixedObj = japanChiAnFixed[fixedKey];
+      if (jFixedObj) {
+        if (fixedKey === 'GPI') {
+          const score = jFixedObj.スコア || japanChiAnFixed['GPIスコア']?.値 || '';
+          const rank = jFixedObj.順位 ? `順位:${jFixedObj.順位}位` : (japanChiAnFixed['GPI順位']?.値 ? `順位:${japanChiAnFixed['GPI順位'].値}位` : '');
+          const src = jFixedObj.出典 || 'Vision of Humanity';
+          const yr = jFixedObj.年 ? `${jFixedObj.年}年` : '';
+          japanVal = `${score} / ${rank}（${src} ${yr}）`.trim();
+        } else if (jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '') {
+          const srcYr = jFixedObj['出典・年'] || `${jFixedObj.出典 || ''} ${jFixedObj.年 || ''}`.trim();
+          japanVal = `${jFixedObj.値} ${srcYr ? '（' + srcYr + '）' : ''}`.trim();
+        }
+      }
+    }
+
     const formatSource = (val) => {
       if (!val || val === 'データなし') return 'データなし';
       const main = val.replace(/\s*[（(].*$/, '');
@@ -577,7 +681,31 @@ return [articleItem].map(item => {
     if (kikenMatch) article += `<p style="color:#d32f2f;font-weight:bold;background:#fff3f3;padding:10px;border-radius:8px;">${kikenMatch[0]}</p>\n`;
   }
 
-  const prisonData = parseLines(raw, '刑務所推移');
+  let prisonData = parseLines(raw, '刑務所推移');
+  if (prisonData.length === 0) {
+    const fixedTargetPrison = sheetData.data?.固定データ?.刑務所推移 || [];
+    const fixedJapanPrison = sheetData.data?.日本固定データ?.刑務所推移 || [];
+    if (fixedTargetPrison.length > 0 || fixedJapanPrison.length > 0) {
+      const yearMap = {};
+      fixedTargetPrison.forEach(d => {
+        if (d.年) {
+          yearMap[d.年] = yearMap[d.年] || {};
+          yearMap[d.年][countryName] = String(d.総収容者数 || '');
+        }
+      });
+      fixedJapanPrison.forEach(d => {
+        if (d.年) {
+          yearMap[d.年] = yearMap[d.年] || {};
+          yearMap[d.年]['日本'] = String(d.総収容者数 || '');
+        }
+      });
+      prisonData = Object.keys(yearMap).sort().map(y => ({
+        年: y,
+        [countryName]: yearMap[y][countryName] || '-',
+        日本: yearMap[y]['日本'] || '-'
+      }));
+    }
+  }
   if (prisonData.length > 0) {
     article += `<h3 style="${h3Style}">刑務所収容者数の推移</h3>\n`;
 
@@ -679,8 +807,33 @@ return [articleItem].map(item => {
     article += `<p class="citation" style="${citationStyle}">出典：World Prison Brief</p>\n`;
   }
 
-  const shiinData = parseLines(raw, '死因');
-  const crimeData = parseLines(raw, '犯罪');
+  let shiinData = parseLines(raw, '死因');
+  let crimeData = parseLines(raw, '犯罪');
+
+  // 犯罪データフォールバック
+  if (crimeData.length === 0) {
+    const fixedCrime = sheetData.data?.固定データ?.治安指標?.犯罪トップ5 || [];
+    if (fixedCrime.length > 0) {
+      crimeData = fixedCrime.map(c => ({
+        '順位': c.順位,
+        '種別': c.犯罪種別,
+        '出典': c.出典 || sheetData.data?.固定データ?.治安指標?.犯罪_出典 || ''
+      }));
+    }
+  }
+
+  // 死因データフォールバック
+  if (shiinData.length === 0) {
+    const targetDeaths = sheetData.data?.固定データ?.死因トップ10 || [];
+    const japanDeaths = sheetData.data?.日本固定データ?.死因トップ10 || [];
+    if (targetDeaths.length > 0 || japanDeaths.length > 0) {
+      shiinData = Array.from({ length: 10 }, (_, i) => ({
+        '順位': `${i + 1}位`,
+        [countryName]: targetDeaths[i] || 'データなし',
+        '日本': (japanDeaths[i] && typeof japanDeaths[i] === 'object' ? japanDeaths[i].死因 : japanDeaths[i]) || 'データなし'
+      }));
+    }
+  }
 
   // 犯罪トップ5表
   article += `<h3 style="${h3Style}">犯罪種別ランキング</h3>\n`;
@@ -748,8 +901,14 @@ return [articleItem].map(item => {
   // --- 9. ④ 貿易の衡量 ---
   article += `<!-- SECTION:boeki:START -->\n`;
   article += `<h2 id="section-4" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">④</span> 貿易の衡量</h2>\n`;
-  const yushutsuData = parseLines(raw, '輸出');
-  const yunyuData = parseLines(raw, '輸入');
+  let yushutsuData = parseLines(raw, '輸出');
+  let yunyuData = parseLines(raw, '輸入');
+  if (yushutsuData.length === 0 && yunyuData.length === 0) {
+    const fixedExport = sheetData.data?.固定データ?.貿易?.輸出 || [];
+    const fixedImport = sheetData.data?.固定データ?.貿易?.輸入 || [];
+    yushutsuData = fixedExport.map(e => ({ 品目: e.品目 }));
+    yunyuData = fixedImport.map(i => ({ 品目: i.品目 }));
+  }
   if (yushutsuData.length > 0 || yunyuData.length > 0) {
     const tradeRows = [];
     for (let i = 0; i < 10; i++) {
@@ -758,7 +917,17 @@ return [articleItem].map(item => {
     article += makeTable(['順位', '輸出主要品目', '輸入主要品目'], tradeRows, ['10%', '45%', '45%']);
   }
 
-  const boekiAiteData = parseLines(raw, '貿易相手');
+  let boekiAiteData = parseLines(raw, '貿易相手');
+  if (boekiAiteData.length === 0) {
+    const fixedPartners = sheetData.data?.固定データ?.貿易?.貿易相手国 || [];
+    if (fixedPartners.length > 0) {
+      boekiAiteData = fixedPartners.map(p => ({
+        '順位': p.順位,
+        '国名': p.国名,
+        'シェア': p.シェア
+      }));
+    }
+  }
   if (boekiAiteData.length > 0) {
     article += `<h3 style="${h3Style}">主要な貿易相手国</h3>\n`;
     const partnerRows = boekiAiteData.map(d => [d['順位'], d['国名'], d['シェア']]);
@@ -792,7 +961,26 @@ return [articleItem].map(item => {
     if (rateTextMatch) currentRate = parseFloat(rateTextMatch[1]);
   }
 
-  const bukkaData = parseLines(raw, '物価');
+  let bukkaData = parseLines(raw, '物価');
+  if (bukkaData.length === 0) {
+    const fixedBukka = sheetData.data?.固定データ?.物価 || {};
+    const defaultItems = [
+      { key: '外食', name: '外食（安めの店・1食）' },
+      { key: 'ビッグマック', name: 'ビッグマック（1個）' },
+      { key: 'ビール', name: 'ビール（レストラン500ml）' },
+      { key: '水', name: 'ミネラルウォーター（500ml）' },
+      { key: 'タバコ', name: 'タバコ（マルボロ1箱）' },
+      { key: 'ガソリン', name: 'ガソリン（1L）' },
+      { key: '光熱費', name: '電気・水道・ガス（月額）' },
+      { key: '家賃', name: '家賃1LDK(市中心)' },
+      { key: '月収', name: '平均月収（手取り）' },
+      { key: 'Netflix', name: 'Netflix（スタンダード）' }
+    ];
+    bukkaData = defaultItems.map(item => ({
+      '項目': item.name,
+      [countryName]: fixedBukka[item.key]?.現地通貨 || 'データなし'
+    }));
+  }
   const bukkaEmoji = { 'ビール（レストラン500ml）': '🍺', 'タバコ（マルボロ1箱）': '🚬', 'ミネラルウォーター（500ml）': '💧', 'ビッグマック（1個）': '🍔', 'ガソリン（1L）': '⛽', '外食（安めの店・1食）': '🍜', '電気・水道・ガス（月額）': '💡', '家賃1LDK(市中心)': '🏠', '平均月収（手取り）': '💴', 'Netflix（スタンダード）': '📺' };
 
   function formatValueWithCommas(val) {
