@@ -1333,43 +1333,46 @@ return [articleItem].map(item => {
   // 共通映画カード生成ヘルパー（韓国記事のお手本・movie_section_html.jsと100%完全一致）
   // ==============================================================================
   function renderMovieCard(d, isOsusume) {
+    function getVal(v) {
+      if (v == null) return '';
+      const s = String(v).trim();
+      if (['空白', '-', 'EMPTY', 'null', 'undefined', 'なし', '欠測'].includes(s)) return '';
+      return s;
+    }
+
     const isSerious = d.is_serious === true || d.is_serious === 'true' || d['深刻'] === 'true';
     const bg = isSerious ? '#fff3f3' : '#ffffff';
     const borderLeftColor = isOsusume ? '#00bcd4' : '#20B2AA';
 
-    const titleJa = d['タイトル'] || d['タイトル_日本語'] || d.title || d.title_ja || d.name || '';
-    const cleanTitle = String(titleJa).replace(/<[^>]+>/g, '').trim();
-    const titleOrig = (d['原題'] || d.origin_title || '');
+    const titleJa = getVal(d['タイトル']) || getVal(d['タイトル_日本語']) || getVal(d.title) || getVal(d.title_ja) || getVal(d.name) || '';
+    const cleanTitle = titleJa.replace(/<[^>]+>/g, '').trim();
+    const titleOrig = getVal(d['原題']) || getVal(d.origin_title) || '';
     const origTitleSpan = (titleOrig && titleOrig !== cleanTitle)
       ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>`
       : '';
 
-    const director = (d['director'] && d['director'] !== '空白' && d['director'] !== '-' && d['director'] !== 'EMPTY')
-      ? d['director']
-      : (d.director_name || d['監督'] || '');
-    const rawCast = (d['cast'] && d['cast'] !== '空白' && d['cast'] !== '-' && d['cast'] !== 'EMPTY')
-      ? d['cast']
-      : (d['キャスト'] || d['出演'] || '');
+    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || '';
+    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || '';
     let cast = '';
     if (rawCast) {
       const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
       cast = castArr.slice(0, 8).join(', ');
     }
 
-    const type = d['種別'] || d.genres || d.type || '';
-    const year = d['公開年'] || d.year || d.release_year || '';
+    const type = getVal(d['種別']) || getVal(d.genres) || getVal(d.type) || '';
+    const year = getVal(d['公開年']) || getVal(d.year) || getVal(d.release_year) || '';
 
     const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
     const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
 
     // ポスター画像URL（TMDB正規化）
-    const posterRaw = d.poster_path || d.poster_url || d['ポスター'] || '';
+    const posterRaw = getVal(d.poster_path) || getVal(d.poster_url) || getVal(d['ポスター']) || getVal(d.poster) || getVal(d.image) || '';
     let posterUrl = '';
-    if (posterRaw && posterRaw !== 'null' && posterRaw !== 'EMPTY' && posterRaw !== '-') {
-      if (String(posterRaw).startsWith('http')) {
+    if (posterRaw) {
+      if (posterRaw.startsWith('http')) {
         posterUrl = posterRaw;
       } else {
-        const prefix = String(posterRaw).startsWith('/') ? '' : '/';
+        const prefix = posterRaw.startsWith('/') ? '' : '/';
         posterUrl = `https://image.tmdb.org/t/p/w500${prefix}${posterRaw}`;
       }
     }
@@ -1377,8 +1380,28 @@ return [articleItem].map(item => {
       ? `<div style="flex-shrink:0;margin-left:12px;"><img decoding="async" src="${posterUrl}" alt="${cleanTitle}" style="width:90px;max-height:135px;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none';"></div>`
       : '';
 
-    // あらすじ / 概要
-    const summary = (d['概要'] || d.overview || d.ai_summary || d.info || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    // あらすじ / 概要 / 歴史クロス解説の統合
+    const rawOverview = getVal(d['概要']) || getVal(d.overview) || getVal(d.ai_summary) || getVal(d['あらすじ']) || getVal(d.synopsis) || getVal(d.description) || getVal(d.info) || '';
+    const rawHistory = getVal(d['歴史クロス解説']) || getVal(d.historical_significance) || '';
+    const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || '';
+
+    let summaryHtml = '';
+    if (rawOverview && rawHistory && rawOverview !== rawHistory) {
+      const overviewParagraphs = rawOverview.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+      summaryHtml = `
+      <div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">
+        ${overviewParagraphs || rawOverview}
+      </div>
+      <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
+        <strong>🏛️ 歴史的背景とのリンク${relatedEvent ? `（${relatedEvent}）` : ''}：</strong><br>${rawHistory}
+      </div>`;
+    } else {
+      const singleText = rawOverview || rawHistory;
+      if (singleText) {
+        const paragraphs = singleText.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+        summaryHtml = `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${paragraphs || singleText}</div>`;
+      }
+    }
 
     // 国家の天秤ポップアップ onclick（base64エンコード）
     function encText(t) {
@@ -1399,8 +1422,8 @@ return [articleItem].map(item => {
 
     // YouTube予告編ボタン（trailer_url直リンク優先）
     let youtubeBtn = '';
-    const trailerUrl = d.trailer_url || d.trailer || '';
-    if (trailerUrl && String(trailerUrl).startsWith('http') && trailerUrl !== 'EMPTY') {
+    const trailerUrl = getVal(d.trailer_url) || getVal(d.trailer) || '';
+    if (trailerUrl && trailerUrl.startsWith('http')) {
       youtubeBtn = `<a href="${trailerUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>`;
     } else {
       youtubeBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(cleanTitle + ' trailer')}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>`;
@@ -1408,18 +1431,18 @@ return [articleItem].map(item => {
 
     // IMDbボタン（ID直リンク優先）
     let imdbUrl = '';
-    const rawImdb = d.imdb_id || d.imdb_url || d.imdb || '';
+    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || '';
     if (rawImdb) {
-      if (String(rawImdb).startsWith('http')) {
+      if (rawImdb.startsWith('http')) {
         imdbUrl = rawImdb;
       } else {
-        const cleanId = String(rawImdb).replace(/.*\/title\//, '').replace(/\/.*/, '').trim();
+        const cleanId = rawImdb.replace(/.*\/title\//, '').replace(/\/.*/, '').trim();
         if (cleanId) imdbUrl = `https://www.imdb.com/title/${cleanId}/`;
       }
     }
     if (!imdbUrl) {
       const isHangul = /[\uac00-\ud7af]/.test(titleOrig);
-      const searchTarget = (!isHangul && titleOrig) ? titleOrig : (d.title_en || d['title_en'] || cleanTitle || titleOrig);
+      const searchTarget = (!isHangul && titleOrig) ? titleOrig : (getVal(d.title_en) || cleanTitle || titleOrig);
       if (searchTarget) imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(searchTarget)}`;
     }
     const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
@@ -1440,7 +1463,7 @@ return [articleItem].map(item => {
       ${headerHtml}
       <div style="font-size:12px;color:#008080;font-weight:bold;margin-bottom:10px;">${type}${(type && year) ? ' &nbsp;•&nbsp; ' : ''}${year}${directorStr}</div>
       ${castHtml}
-      ${summary ? `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${summary}</div>` : ''}
+      ${summaryHtml}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${youtubeBtn}
         ${imdbBtn}
@@ -1451,26 +1474,53 @@ return [articleItem].map(item => {
 </div>`;
   }
 
+  // マスターデータ（sheetData）とライター出力（raw）を安全かつリッチに統合するヘルパー
+  function buildMovieList(masterList, writerList) {
+    function getVal(v) {
+      if (v == null) return '';
+      const s = String(v).trim();
+      if (['空白', '-', 'EMPTY', 'null', 'undefined', 'なし', '欠測'].includes(s)) return '';
+      return s;
+    }
+
+    const masters = Array.isArray(masterList) ? masterList : [];
+    const writers = Array.isArray(writerList) ? writerList : [];
+
+    if (masters.length === 0 && writers.length === 0) return [];
+    if (masters.length === 0) return writers;
+
+    // マスターデータを正（ベース）として全件採用
+    return masters.map(m => {
+      const mTitleJa = (getVal(m['タイトル_日本語']) || getVal(m.title) || getVal(m.title_ja) || getVal(m['タイトル']) || '').replace(/<[^>]+>/g, '').trim();
+      const mTitleOrig = (getVal(m['原題']) || getVal(m.origin_title) || '').trim();
+
+      const matchedWriter = writers.find(w => {
+        const wTitle = (getVal(w['タイトル']) || getVal(w['タイトル_日本語']) || '').replace(/<[^>]+>/g, '').trim();
+        const wOrig = (getVal(w['原題']) || '').trim();
+        return (wTitle && (wTitle === mTitleJa || mTitleJa.includes(wTitle) || wTitle.includes(mTitleJa))) ||
+               (wOrig && mTitleOrig && (wOrig === mTitleOrig || mTitleOrig.includes(wOrig) || wOrig.includes(mTitleOrig)));
+      });
+
+      const merged = Object.assign({}, m);
+      if (matchedWriter) {
+        for (const k of Object.keys(matchedWriter)) {
+          const val = getVal(matchedWriter[k]);
+          if (val && !getVal(merged[k])) {
+            merged[k] = val;
+          }
+        }
+      }
+      return merged;
+    });
+  }
+
   // --- 13. ⑧ 映像で知る${countryName} ---
   article += `<!-- SECTION:eizou:START -->\n`;
   article += `<h2 id="section-8" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
   
   const rawEizou = parseLines(raw, '映像').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   const eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
-  let eizouList = [];
-  if (rawEizou.length > 0) {
-    eizouList = rawEizou.map(d => {
-      const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
-      const apiData = (Array.isArray(eizouData2) ? eizouData2 : []).find(api => 
-        (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
-        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
-        (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
-      ) || {};
-      return Object.assign({}, apiData, d);
-    });
-  } else if (Array.isArray(eizouData2) && eizouData2.length > 0) {
-    eizouList = eizouData2;
-  }
+  const eizouList = buildMovieList(eizouData2, rawEizou);
 
   if (eizouList.length > 0) {
     eizouList.forEach(item => {
@@ -1539,21 +1589,7 @@ return [articleItem].map(item => {
   article += `<!-- SECTION:osusume:START -->\n`;
   const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   const kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
-  
-  let kougyouList = [];
-  if (rawKougyou.length > 0) {
-    kougyouList = rawKougyou.map(d => {
-      const cleanTitle = (d['タイトル'] || '').replace(/<[^>]+>/g, '').trim();
-      const apiData = (Array.isArray(kougyouData2) ? kougyouData2 : []).find(api => 
-        (api['タイトル_日本語'] && (String(api['タイトル_日本語']) === cleanTitle || String(api['タイトル_日本語']).includes(cleanTitle) || cleanTitle.includes(String(api['タイトル_日本語'])))) || 
-        (api['原題'] && (String(api['原題']) === cleanTitle || String(api['原題']).includes(cleanTitle) || cleanTitle.includes(String(api['原題'])))) ||
-        (api['title'] && (String(api['title']) === cleanTitle || String(api['title']).includes(cleanTitle) || cleanTitle.includes(String(api['title']))))
-      ) || {};
-      return Object.assign({}, apiData, d);
-    });
-  } else if (Array.isArray(kougyouData2) && kougyouData2.length > 0) {
-    kougyouList = kougyouData2;
-  }
+  const kougyouList = buildMovieList(kougyouData2, rawKougyou);
 
   if (kougyouList.length > 0) {
     article += `<h2 id="section-9" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑨</span> 特別枠：${countryName} おすすめ映画・映像作品</h2>\n`;
