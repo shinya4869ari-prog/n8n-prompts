@@ -484,19 +484,36 @@ return [articleItem].map(item => {
   const targetSeidoFixed = sheetData.data?.対象国データ?.制度の9つの皿 || {};
   const japanSeidoFixed = sheetData.data?.日本固定データ?.制度の9つの皿 || {};
 
+  // 日本の固定制度マスターデータ（韓国記事のお手本仕様）
+  const defaultJapanSeido = {
+    '国家の形と統治機構': '立憲君主制（象徴天皇制）・議院内閣制・単一国家',
+    '行政トップ': '内閣総理大臣：高市早苗（2025年10月就任）',
+    '立法と選挙制度': '二院制（衆議院・参議院）・小選挙区比例代表並立制',
+    '司法と法制度': '最高裁判所を頂点とする三審制・大陸法基調',
+    '社会保障・医療・年金': '国民皆保険・国民年金（自己負担原則3割・受給開始65歳）',
+    '教育制度': '6-3-3-4制・義務教育9年・大学進学率約57%',
+    '徴税・財政制度': '消費税10%（軽減税率8%）・所得税最高45%・相続税最高55%',
+    '安全保障と兵役': '自衛隊（志願制）・兵役義務なし・日米安保基軸',
+    '基本権と価値観': '死刑制度維持（絞首刑・執行継続）・同性婚未承認'
+  };
+
   const seidoRows = seidoItems.map(item => {
-    const line = findMatchingLine(rawLines, item);
-    let { countryVal, japanVal } = extractRowValuesFromLine(line);
-    if (countryVal === 'データなし' || !countryVal) {
-      countryVal = targetSeidoFixed[item] || 'データなし';
+    // 対象国の値：スプレッドシートの固定データを最優先、なければライターのパース値
+    let countryVal = targetSeidoFixed[item]?.値 || targetSeidoFixed[item] || '';
+    if (!countryVal || countryVal === 'データなし') {
+      const line = findMatchingLine(rawLines, item);
+      const parsed = extractRowValuesFromLine(line);
+      countryVal = parsed.countryVal || 'データなし';
     }
-    if (japanVal === 'データなし' || !japanVal) {
-      japanVal = japanSeidoFixed[item]?.値 || japanSeidoFixed[item] || 'データなし';
-    }
+
+    // 日本の値：日本の固定データを100%直接バインド（AIが勝手に生成した比較文章は一切使用しない）
+    let japanVal = japanSeidoFixed[item]?.値 || japanSeidoFixed[item] || defaultJapanSeido[item] || 'データなし';
+
     return [item, countryVal, japanVal];
   });
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
 
+  // 解説文の抽出（Markdownテーブル行・区切り線を100%完全に排除）
   const seidoSectionText = extractSectionText(raw,
     ['① 制度の9つの皿', '制度の9つの皿', '基本権と価値観'],
     ['② 地理と経済の衡量', '地理と経済の衡量', '## 2', '2. 経済', '位置：', '位置:']
@@ -505,9 +522,12 @@ return [articleItem].map(item => {
     seidoSectionText
       .split('\n')
       .filter(l => {
-        const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+        const trimmed = l.trim();
+        // Markdown表行（|で始まる行、|を含む行、区切り線）を完全に排除
+        if (trimmed.startsWith('|') || trimmed.includes('|') || trimmed.startsWith(':-') || trimmed.startsWith('-:')) return false;
+        const cleaned = trimmed.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
         if (seidoItems.some(item => cleaned.startsWith(item))) return false;
-        if (cleaned.startsWith('## 2') || cleaned.startsWith('2. 経済') || cleaned.startsWith('主要マクロ経済指標') || cleaned.startsWith('| 品目') || cleaned.startsWith('## 3') || cleaned.startsWith('## 4') || cleaned.startsWith('## 5')) return false;
+        if (cleaned.startsWith('##') || cleaned.startsWith('2. 経済') || cleaned.startsWith('主要マクロ経済指標') || cleaned.startsWith('区分') || cleaned.startsWith('制度概要')) return false;
         return true;
       })
       .join('\n')
@@ -669,45 +689,80 @@ return [articleItem].map(item => {
   const targetChiAnFixed = sheetData.data?.固定データ?.治安指標 || {};
   const japanChiAnFixed = sheetData.data?.日本固定データ?.治安指標 || {};
 
-  const chiAnRows = chiAnItems.map(item => {
-    const line = findMatchingLine(rawLines, item);
-    let { countryVal, japanVal } = extractRowValuesFromLine(line);
+  // 日本の固定治安マスターデータ（韓国記事のお手本仕様）
+  const defaultJapanChiAn = {
+    '殺人率': '0.23（UNODC・2024年）',
+    '交通事故死亡率': '2.1（WHO・2025年）',
+    '自殺率': '15.4（厚生労働省・2025年）',
+    '失業率': '2.5%（IMF・2026年）',
+    '貧困率': '15.4%（厚生労働省・2021年）',
+    'ジニ係数': '39.9（World Bank・2021年）',
+    '刑務所稼働率': '47.3%（World Prison Brief・2023年）',
+    '刑務所総収容者数': '41,232人（World Prison Brief・2025年）',
+    'GPI': 'スコア 1.489・10位（Vision of Humanity・2026年）'
+  };
 
+  const chiAnRows = chiAnItems.map(item => {
     const fixedKey = chiAnKeyMap[item];
-    if (countryVal === 'データなし' || !countryVal) {
-      const fixedObj = targetChiAnFixed[fixedKey];
-      if (fixedObj) {
-        if (fixedKey === 'GPI') {
-          const score = fixedObj.スコア || '';
-          const rank = fixedObj.順位 ? `順位:${fixedObj.順位}位` : '';
-          const src = fixedObj.出典 || 'Vision of Humanity';
-          const yr = fixedObj.年 ? `${fixedObj.年}年` : '';
-          countryVal = `${score} / ${rank}（${src} ${yr}）`.trim();
-        } else if (fixedObj.値 !== undefined && fixedObj.値 !== null && fixedObj.値 !== '') {
-          const src = fixedObj.出典 || '';
-          const yr = fixedObj.年 ? `${fixedObj.年}年` : '';
-          const srcStr = (src || yr) ? `（${src} ${yr}）`.trim() : '';
-          countryVal = `${fixedObj.値} ${srcStr}`.trim();
+
+    // 1. 対象国の値：スプレッドシートの固定データを最優先！
+    let countryVal = '';
+    const fixedObj = targetChiAnFixed[fixedKey];
+    if (fixedObj) {
+      if (fixedKey === 'GPI') {
+        const score = fixedObj.スコア || targetChiAnFixed['GPIスコア']?.値 || '';
+        let rank = fixedObj.順位 || targetChiAnFixed['GPI順位']?.値 || '';
+        if (rank) rank = String(rank).replace(/位+$/, '') + '位';
+        const src = fixedObj.出典 || targetChiAnFixed['GPI出典']?.値 || 'Vision of Humanity';
+        let yr = fixedObj.年 || targetChiAnFixed['GPI年']?.値 || '';
+        if (yr) yr = String(yr).replace(/年+$/, '') + '年';
+        if (score) {
+          countryVal = `スコア ${score}${rank ? '・' + rank : ''}（${src}・${yr || '2026年'}）`.trim();
         }
+      } else if (fixedObj.値 !== undefined && fixedObj.値 !== null && fixedObj.値 !== '' && fixedObj.値 !== '欠測') {
+        const src = fixedObj.出典 || '';
+        let yr = fixedObj.年 || '';
+        if (yr) yr = String(yr).replace(/年+$/, '') + '年';
+        const srcStr = (src || yr) ? `（${src}・${yr}）`.replace(/・（|（・/g, '（').trim() : '';
+        countryVal = `${fixedObj.値}${srcStr ? ' ' + srcStr : ''}`.trim();
       }
     }
 
-    if (japanVal === 'データなし' || !japanVal) {
-      if (fixedKey === 'GPI') {
-        const score = japanChiAnFixed['GPI']?.スコア || japanChiAnFixed['GPIスコア']?.値 || '1.336';
-        const rawRank = japanChiAnFixed['GPI']?.順位 || japanChiAnFixed['GPI順位']?.値 || '17';
-        const rank = rawRank ? `順位:${rawRank}位` : '';
-        const src = japanChiAnFixed['GPI']?.出典 || japanChiAnFixed['GPIスコア']?.出典 || 'Vision of Humanity';
-        const yr = japanChiAnFixed['GPI']?.年 || japanChiAnFixed['GPIスコア']?.年 || '2025年';
-        japanVal = `${score} / ${rank}（${src} ${yr.endsWith('年') ? yr : yr + '年'}）`.trim();
+    // 固定データになければライターからフォールバック取得
+    if (!countryVal || countryVal === 'データなし') {
+      const line = findMatchingLine(rawLines, item);
+      const parsed = extractRowValuesFromLine(line);
+      let rawVal = parsed.countryVal;
+      if (rawVal && rawVal !== 'データなし') {
+        // 「日本：2.1件...」のような比較コメントが含まれていた場合は除去
+        rawVal = rawVal.replace(/（[^）]*日本[^）]*）/g, '').replace(/\([^)]*日本[^)]*\)/g, '').trim();
+        countryVal = rawVal;
       } else {
-        const jFixedObj = japanChiAnFixed[fixedKey];
-        if (jFixedObj) {
-          if (jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '') {
-            const srcYr = jFixedObj['出典・年'] || `${jFixedObj.出典 || ''} ${jFixedObj.年 || ''}`.trim();
-            japanVal = `${jFixedObj.値} ${srcYr ? '（' + srcYr + '）' : ''}`.trim();
-          }
-        }
+        countryVal = 'データなし';
+      }
+    }
+
+    // 2. 日本の値：日本の固定データから100%直接バインド！（ライターの出力に依存しない）
+    let japanVal = '';
+    if (fixedKey === 'GPI') {
+      const score = japanChiAnFixed['GPI']?.スコア || japanChiAnFixed['GPIスコア']?.値 || '1.489';
+      let rawRank = japanChiAnFixed['GPI']?.順位 || japanChiAnFixed['GPI順位']?.値 || '10';
+      const rank = rawRank ? `${String(rawRank).replace(/位+$/, '')}位` : '';
+      const src = japanChiAnFixed['GPI']?.出典 || japanChiAnFixed['GPIスコア']?.出典 || 'Vision of Humanity';
+      let yr = japanChiAnFixed['GPI']?.年 || japanChiAnFixed['GPIスコア']?.年 || '2026年';
+      yr = yr.endsWith('年') ? yr : yr + '年';
+      japanVal = `スコア ${score}${rank ? '・' + rank : ''}（${src}・${yr}）`.trim();
+    } else {
+      const jFixedObj = japanChiAnFixed[fixedKey];
+      if (jFixedObj && jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '' && jFixedObj.値 !== '欠測') {
+        let srcYr = jFixedObj['出典・年'] || `${jFixedObj.出典 || ''} ${jFixedObj.年 || ''}`.trim();
+        // 組織名内部のスペース（World Bank等）は維持し、末尾の年号との境界のみ「・」にする
+        srcYr = srcYr.replace(/\s+(\d+年?)$/, '・$1');
+        japanVal = `${jFixedObj.値}（${srcYr}）`.trim();
+      } else if (defaultJapanChiAn[fixedKey]) {
+        japanVal = defaultJapanChiAn[fixedKey];
+      } else {
+        japanVal = 'データなし';
       }
     }
 
@@ -715,7 +770,7 @@ return [articleItem].map(item => {
       if (!val || val === 'データなし') return 'データなし';
       const main = val.replace(/\s*[（(].*$/, '');
       const source = val.match(/\s*([（(].*)$/);
-      return `<span style="font-weight:900; font-size:15px;">${main}</span>` + (source ? `<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">${source[1]}</span>` : '');
+      return `<span style="font-weight:900; font-size:15px; color:#111;">${main}</span>` + (source ? `<br><span style="font-size:11.5px; color:#888; font-weight:normal; line-height:1.4; display:inline-block; margin-top:2px;">${source[1]}</span>` : '');
     };
     return [item, formatSource(countryVal), formatSource(japanVal)];
   });
