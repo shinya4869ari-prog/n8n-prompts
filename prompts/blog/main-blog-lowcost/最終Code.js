@@ -26,7 +26,7 @@ return [articleItem].map(item => {
   }
   const moviesData = [];
   
-  let raw = mainItem?.json?.article || mainItem?.json?.output || mainItem?.json?.text || inputData?.article || inputData?.output || "";
+  let raw = mainItem?.json?.article || mainItem?.json?.output || mainItem?.json?.text || mainItem?.json?.writer_draft || inputData?.article || inputData?.output || inputData?.text || inputData?.writer_draft || inputData?.raw || "";
   // 直列接続などで $input が response_extraction1 等の出力（===places===）に上書きされている場合の安全策
   if (!raw || raw.startsWith('===places===')) {
     try {
@@ -45,6 +45,8 @@ return [articleItem].map(item => {
   const rawLines = raw.split('\n');
 
   const countryName = $('国名変換Code').first().json.country || inputData.country || '対象国';
+  const countryEn = $('国名変換Code').first().json.countryEn || inputData.countryEn || '';
+  const regionName = $('国名変換Code').first().json.region || inputData.region || 'その他';
   const currencySymbol = $('国名変換Code').first().json.currencySymbol || '';
   const rate = $('国名変換Code').first().json.rate || 1;
 
@@ -441,41 +443,86 @@ return [articleItem].map(item => {
 </div>
 `;
 
-  // --- 5. 導入文（「数字と事実（Fact）から〜」までの純粋な導入段落のみを抽出） ---
-  let introText = "";
-  const factLineIdx = rawLines.findIndex(l => (l.includes('数字と事実') || l.includes('Fact') || l.includes('FACT')) && !l.startsWith('①'));
-  if (factLineIdx !== -1) {
-    introText = rawLines.slice(0, factLineIdx + 1).join('\n').trim();
-  } else {
-    const fallbackIdx = rawLines.findIndex(l => 
-      l.match(/^(?:#+\s*)?(?:①|1\.)/) || 
-      l.startsWith('位置：') || l.startsWith('位置:') ||
-      (l.includes('｜') && (l.includes('国家の形') || l.includes('行政トップ')))
-    );
-    if (fallbackIdx !== -1) {
-      introText = rawLines.slice(0, fallbackIdx).join('\n').trim();
+  // --- 5. 導入文（韓国ブログ正解完全準拠：抽出・サニタイズ・自動生成フォールバック） ---
+  const expectedFirstLine = `あなたはこの ${countryName}（${capital || '首都'}）-${countryEn || ''}-という国を知っていますか？`;
+  const expectedLastLine = `数字と事実（Fact）から、国家の真実を紐解きます。`;
+
+  let introParagraphs = [];
+
+  if (raw && typeof raw === 'string') {
+    const rawIntroLines = raw.split('\n').map(l => l.trim());
+    
+    // 1. 「あなたはこの」から「数字と事実」までの範囲を探す
+    let startIdx = rawIntroLines.findIndex(l => l.includes('あなたはこの') && l.includes('知っていますか'));
+    let endIdx = rawIntroLines.findIndex(l => (l.includes('数字と事実') || l.includes('Fact') || l.includes('FACT')) && !l.startsWith('①'));
+
+    let candidateText = '';
+    if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
+      candidateText = rawIntroLines.slice(startIdx, endIdx + 1).join('\n');
+    } else if (endIdx !== -1) {
+      candidateText = rawIntroLines.slice(0, endIdx + 1).join('\n');
     } else {
-      introText = rawLines.slice(0, 10).join('\n').trim();
+      const fallbackEnd = rawIntroLines.findIndex(l => 
+        l.match(/^(?:#+\s*)?(?:①|1\.)/) || 
+        l.startsWith('位置：') || l.startsWith('位置:') ||
+        (l.includes('｜') && (l.includes('国家の形') || l.includes('行政トップ')))
+      );
+      if (fallbackEnd !== -1) {
+        candidateText = rawIntroLines.slice(0, fallbackEnd).join('\n');
+      }
+    }
+
+    if (candidateText) {
+      // AI前置き挨拶、タイトル、Markdown記号を完全排除
+      const cleanCandidate = candidateText
+        .replace(/^提供されたデータに基づき.*$/gm, '')
+        .replace(/^.*分析レポート.*$/gm, '')
+        .replace(/^.*包括.*プロファイル.*$/gm, '')
+        .replace(/^#+.*$/gm, '')
+        .replace(/^[-=]{2,}$/gm, '')
+        .trim();
+
+      introParagraphs = cleanCandidate
+        .split(/\n{2,}/)
+        .map(p => p.trim())
+        .filter(p => {
+          if (!p) return false;
+          if (p.startsWith('①') || p.includes('｜') || p.startsWith('|') || p.startsWith('---')) return false;
+          if (p.includes('提供されたデータ') || p.includes('分析レポート')) return false;
+          // 禁止地理・人口データの排除（〜万の島々、〜億人の人口、面積など）
+          if (p.match(/\d+万|\d+億|平方キロ|km²|北緯|東経|南緯|西経/)) return false;
+          return true;
+        });
     }
   }
 
-  // 重複タイトルや余計な記号を綺麗にクリーンアップ
-  introText = introText
-    .replace(/^#+.*$/gm, '')
-    .trim();
-
-  if (introText) {
-    const introHtml = introText
-      .split(/\n{2,}/)
-      .map(p => {
-        const cleanP = p.trim().replace(/^[\s\n]+|[\s\n]+$/g, '');
-        if (!cleanP || cleanP.startsWith('①') || cleanP.includes('｜')) return '';
-        return `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${cleanP.split('\n').join('<br>')}</p>`;
-      })
-      .filter(Boolean)
-      .join('\n');
-    article += introHtml + '\n';
+  // もし抽出された段落が少なすぎる、または冒頭文が含まれない場合は、韓国ブログと100%同一の正解テンプレートを生成
+  if (introParagraphs.length < 3 || !introParagraphs[0].includes('あなたはこの')) {
+    introParagraphs = [
+      expectedFirstLine,
+      `${regionName || 'アジア'}の要衝に位置し、独自の歴史と豊かな文化を育んできたこの国は、めまぐるしいスピードで近代化と劇的な変化を遂げています。`,
+      `世界を魅了する独自の文化や急成長するエネルギーという華やかな「光」を持つ一方で、激しい社会格差や歴史的・構造的な課題という深刻な「影」も抱え込んでいます。`,
+      `なぜ、同じアジアの海を共有しながら、国家の統治機構や安全保障のあり方がこれほどまでに大きく異なるのでしょうか？`,
+      `そしてなぜ、似通った現代の課題に直面しながらも、日本とは全く異なるアプローチで未来を切り開こうとしているのでしょうか？`,
+      `日本との対比を通じて、この国の隠された輪郭を浮き彫りにしていきます。`,
+      expectedLastLine
+    ];
+  } else {
+    // 抽出された段落を正解フォーマットに確実に補正
+    if (!introParagraphs[0].includes('あなたはこの')) {
+      introParagraphs.unshift(expectedFirstLine);
+    }
+    const lastP = introParagraphs[introParagraphs.length - 1];
+    if (!lastP.includes('数字と事実')) {
+      introParagraphs.push(expectedLastLine);
+    }
   }
+
+  // 韓国ブログ正解と同一のスタイルでHTML化して追加
+  const introHtml = introParagraphs
+    .map(p => `<p style="font-size:15px; line-height:2.0; color:#333; margin:18px 0; text-align:justify; text-justify:inter-ideograph;">${p}</p>`)
+    .join('\n');
+  article += introHtml + '\n';
 
   // --- 6. ① 制度の9つの皿 ---
   article += `<!-- SECTION:seido:START -->\n`;
@@ -1795,9 +1842,7 @@ return [articleItem].map(item => {
     "南米": 21,
     "その他": 1
   };
-  const regionName = $('国名変換Code').first().json.region || "その他";
   const categoryId = categoryIdMap[regionName] || 1;
-  const countryEn = $('国名変換Code').first().json.countryEn || "";
 
   return {
     json: {
