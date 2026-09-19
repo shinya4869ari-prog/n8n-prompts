@@ -1,12 +1,12 @@
 // ==============================================================================
-// 💰 メインブログ 記事1本・全AIノード一括コスト計算コード（超見やすい決定版）
+// 💰 メインブログ 記事1本・全AIノード一括コスト計算コード（完全修正版）
 // 
 // 【配置場所】: 「リンク挿入ノード」の直後（またはWordPress投稿・完成HTML保存の前）
 // 【機能】: 
 //   1. ワークフロー内で実行された全AI（Perplexity 5連＋文化DeepDive / Gemini Flash各所）を一撃集計
-//   2. Perplexityの出力形式（message, citations, id）を確実に検知して正確に金額計上
-//   3. キャッシュ利用で未実行のノードは「0円（キャッシュ）」として明記
-//   4. 余計な記事本文データは一切含めず、各ノードの金額が縦一列で一目で分かる超明快アウトプット
+//   2. Perplexityの全レスポンス形式（results配列, message, citations, id）を完全検知
+//   3. Geminiの誤ったPro判定バグを完全解消（本文中の英単語による誤爆を防止し、全てFlashで正確計算）
+//   4. 各ノードが何円か縦一列で一目で分かる超明快アウトプット
 // ==============================================================================
 
 const USD_JPY_RATE = 155; // 1ドル = 155円換算
@@ -23,13 +23,13 @@ const PRICING = {
   }
 };
 
-// --- ヘルパー: モデル名の抽出 ---
-function extractGeminiModel(source) {
-  if (!source) return 'gemini-flash-latest';
-  const str = typeof source === 'string' ? source : JSON.stringify(source);
-  const m = str.match(/models\/(gemini-[a-zA-Z0-9\.\-_]+)/i) || str.match(/(gemini-(?:1\.5|2\.0|flash|pro)[a-zA-Z0-9\.\-_]*)/i);
-  if (m) return m[1].toLowerCase();
-  return str.toLowerCase().includes('pro') ? 'gemini-pro' : 'gemini-flash-latest';
+// --- ヘルパー: モデル名の抽出（明示的なmodelプロパティのみ判定し誤爆を完全防止） ---
+function extractGeminiModel(data) {
+  if (!data || typeof data !== 'object') return 'gemini-flash-latest';
+  // 明示的なモデル設定プロパティのみをチェック（記事本文のJSON文字列から検索しない）
+  const modelStr = String(data.model || data.response?.model || data.modelName || '').toLowerCase();
+  if (modelStr.includes('pro')) return 'gemini-pro';
+  return 'gemini-flash-latest';
 }
 
 // --- ヘルパー: 各AIノードのメトリクス安全取得 ---
@@ -46,17 +46,22 @@ function inspectNode(candidateNames, expectedType) {
         const usage = data.usage || data.response?.usage || {};
         const pTok = usage.prompt_tokens || 0;
         const cTok = usage.completion_tokens || 0;
-        const modelStr = (data.model || data.response?.model || '').toLowerCase();
+        const modelStr = String(data.model || data.response?.model || '').toLowerCase();
         const isSonarPro = modelStr.includes('pro');
         const pricing = isSonarPro ? PRICING.perplexity.sonar_pro : PRICING.perplexity.sonar;
 
-        // Perplexityの多様なレスポンス構造（message, citations, id, output, text, choices等）
+        // Perplexityの多様なレスポンス構造（results配列、message, citations, id, output, text等）
+        const rawResults = Array.isArray(data.results) ? data.results : [];
         const rawMessage = data.message || data.output || data.text || data.choices?.[0]?.message?.content || (typeof data === 'string' ? data : '');
         const hasPerpId = Boolean(data.id && (data.citations || data.created));
-        const hasContent = pTok > 0 || cTok > 0 || Boolean(rawMessage) || hasPerpId || Array.isArray(data.citations);
+        const hasContent = pTok > 0 || cTok > 0 || Boolean(rawMessage) || hasPerpId || Array.isArray(data.citations) || rawResults.length > 0;
 
         if (hasContent) {
-          const completionTokens = cTok || (rawMessage ? Math.round(rawMessage.length * 0.9) : 800);
+          let textLen = rawMessage ? rawMessage.length : 0;
+          if (rawResults.length > 0) {
+            textLen = rawResults.reduce((sum, r) => sum + (r.snippet ? r.snippet.length : 0) + (r.title ? r.title.length : 0), 0);
+          }
+          const completionTokens = cTok || (textLen ? Math.round(textLen * 0.9) : 800);
           const promptTokens = pTok || 1200;      // リサーチ用入力推計
           const searchFee = pricing.search_fee;   // 1リクエスト = 1検索 ($0.005 = 約0.78円)
           const tokenCostUsd = (promptTokens * pricing.input + completionTokens * pricing.output) / 1000000;
@@ -92,7 +97,7 @@ function inspectNode(candidateNames, expectedType) {
 
         if (pTok > 0 || cTok > 0 || rawText) {
           if (!pTok) pTok = 3000; // フォールバック入力推計
-          const modelName = extractGeminiModel(data) || 'gemini-flash-latest';
+          const modelName = extractGeminiModel(data);
           const isPro = modelName.includes('pro');
           const pricing = isPro ? PRICING.gemini.pro : PRICING.gemini.flash;
 
@@ -150,7 +155,7 @@ const TARGET_NODES = [
   // 5. エンティティ抽出・リンク (Gemini)
   { label: '⑨ リンク・エンティティ抽出 (Gemini)', keys: ['response_extraction1', 'response_extraction', 'エンティティ抽出'], type: 'gemini', group: 'リンク・抽出' },
 
-  // 6. 左半分・リサーチ1, 2, 25 (新規実行時のみ計上・キャッシュ時は0円)
+  // 6. 左半分・リサーチ1, 2, 25
   { label: '⑩ リサーチ1: 制度/地理 (Gemini)', keys: ['researcher1'],                                              type: 'gemini',     group: '基礎リサーチ' },
   { label: '⑪ リサーチ2: 100年史 (Gemini)',   keys: ['researcher2'],                                              type: 'gemini',     group: '基礎リサーチ' },
   { label: '⑫ リサーチ25: 映画 (Gemini)',     keys: ['researcher25'],                                             type: 'gemini',     group: '基礎リサーチ' }
@@ -194,7 +199,7 @@ for (const target of TARGET_NODES) {
       cost_usd: `$${result.costUsd.toFixed(5)}`
     });
   } else {
-    flatNodeList[target.label] = '0 円 (キャッシュ・未実行)';
+    flatNodeList[target.label] = '0 円 (未実行 / データなし)';
   }
 }
 
