@@ -179,13 +179,38 @@ return [articleItem].map(item => {
     return `<table style="${tableStyle}">${thead}${tbody}</table>`;
   }
 
+  function extractSectionText(text, startKeywords, endKeywords) {
+    if (!text) return '';
+    const lines = text.split('\n');
+    const startIdx = lines.findIndex(l => startKeywords.some(k => l.includes(k)));
+    if (startIdx === -1) return '';
+
+    const extracted = [];
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (endKeywords.some(k => line.includes(k))) break;
+      if (line.includes('🐱 エラーネコ：')) break;
+      if (line.match(/^(?:#+\s*)?(?:[①-⑩]|\d+\.|\bSECTION\b|##\s*\d+)/i) && !line.startsWith('###')) {
+        break;
+      }
+      extracted.push(line);
+    }
+    return extracted.join('\n').trim();
+  }
+
   function extractTextBetween(text, start, end) {
+    if (!text) return '';
     const lines = text.split('\n');
     const startIdx = lines.findIndex(l => l.includes(start));
     if (startIdx === -1) return '';
     const slice = lines.slice(startIdx + 1);
     const endIdx = slice.findIndex(l => l.includes(end));
-    return (endIdx === -1 ? slice : slice.slice(0, endIdx)).join('\n').trim();
+    if (endIdx === -1) {
+      // 終了マーカーが見つからない場合は、次のセクション見出しの手前で止める安全策
+      const nextSecIdx = slice.findIndex(l => l.match(/^(?:#+\s*)?(?:[①-⑩]|\d+\.|\bSECTION\b|##\s*\d+)/i) && !l.startsWith('###'));
+      return (nextSecIdx === -1 ? slice.slice(0, 15) : slice.slice(0, nextSecIdx)).join('\n').trim();
+    }
+    return slice.slice(0, endIdx).join('\n').trim();
   }
 
   function cleanMarkdown(text) {
@@ -342,7 +367,10 @@ return [articleItem].map(item => {
   // --- 4. ヒーローステータスカード（冒頭） ---
   const kikenLevelRaw = geoData.find(d => d.項目 === '外務省危険レベル')?.値 || 'データなし';
   const kikenLevel = parseInt(String(kikenLevelRaw).replace(/[^0-9]/g, '')) || 0;
-  const location = geoData.find(d => d.項目 === '位置')?.値 || '不明';
+  let location = geoData.find(d => d.項目 === '位置')?.値;
+  if (!location || location === 'データなし' || location === '不明') {
+    location = sheetData.data?.対象国データ?.地理?.位置 || $('国名変換Code').first()?.json?.region || '世界';
+  }
 
   let headerBg = 'linear-gradient(135deg, #f0fafa 0%, #e0f5f5 100%)';
   let statusColor = '#00bcd4';
@@ -459,13 +487,18 @@ return [articleItem].map(item => {
   });
   article += makeTable(['制度の項目', countryLabel, japanLabel], seidoRows, ['30%', '35%', '35%']);
 
-  const seidoSectionText = extractTextBetween(raw, '① 制度の9つの皿', '🐱 エラーネコ：') || extractTextBetween(raw, '基本権と価値観', '🐱 エラーネコ：') || extractTextBetween(raw, '制度の9つの皿', '🐱 エラーネコ：');
+  const seidoSectionText = extractSectionText(raw,
+    ['① 制度の9つの皿', '制度の9つの皿', '基本権と価値観'],
+    ['② 地理と経済の衡量', '地理と経済の衡量', '## 2', '2. 経済', '位置：', '位置:']
+  );
   const seidoExplanation = cleanMarkdown(
     seidoSectionText
       .split('\n')
       .filter(l => {
         const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
-        return !seidoItems.some(item => cleaned.startsWith(item));
+        if (seidoItems.some(item => cleaned.startsWith(item))) return false;
+        if (cleaned.startsWith('## 2') || cleaned.startsWith('2. 経済') || cleaned.startsWith('主要マクロ経済指標') || cleaned.startsWith('| 品目') || cleaned.startsWith('## 3') || cleaned.startsWith('## 4') || cleaned.startsWith('## 5')) return false;
+        return true;
       })
       .join('\n')
   );
@@ -578,14 +611,19 @@ return [articleItem].map(item => {
   const econCite = sheetData.data?.固定データ?.経済データ?.GDP_USD?.出典 || 'IMF World Economic Outlook';
   article += `<p class="citation" style="${citationStyle}">出典：${econCite}</p>\n`;
 
-  const econSectionText = extractTextBetween(raw, '② 地理と経済の衡量', '🐱 エラーネコ：') || extractTextBetween(raw, '地理と経済の衡量', '🐱 エラーネコ：');
+  const econSectionText = extractSectionText(raw,
+    ['② 地理と経済の衡量', '地理と経済の衡量', '## 2', '2. 経済'],
+    ['③ 治安と平和の衡量', '治安と平和の衡量', '## 3', '3. 治安', '殺人率']
+  );
   const econExplanation = cleanMarkdown(
     econSectionText
       .split('\n')
       .filter(l => {
         const cleaned = l.replace(/^[#\*\-\s]+/, '').replace(/\*\*/g, '').trim();
         const isGeoOrEconLine = geoItems.concat(econItems).some(item => cleaned.startsWith(item)) || cleaned.startsWith('外務省危険レベル');
-        return !isGeoOrEconLine;
+        if (isGeoOrEconLine) return false;
+        if (cleaned.startsWith('## 3') || cleaned.startsWith('3. 治安') || cleaned.startsWith('主要マクロ経済指標') || cleaned.startsWith('| 品目') || cleaned.startsWith('## 4')) return false;
+        return true;
       })
       .join('\n')
   );
@@ -848,16 +886,36 @@ return [articleItem].map(item => {
   }
 
   // 犯罪の傾向テキスト
-  const crimeFeature = cleanMarkdown(extractTextBetween(raw, '犯罪の傾向', '重大犯罪｜'));
+  let crimeFeature = cleanMarkdown(extractSectionText(raw,
+    ['犯罪の傾向', '治安・社会指標と犯罪動向', '## 3', '3. 治安'],
+    ['重大犯罪｜', '重大犯罪', '死因｜', '死因トップ', '主要な死因', '④ 貿易の衡量', '貿易の衡量', '## 4']
+  ));
+  if (!crimeFeature) {
+    const r1Crime = sheetData.data?.対象国データ?.犯罪の傾向 || {};
+    const parts = [];
+    if (r1Crime.特有のパターン) parts.push(r1Crime.特有のパターン);
+    if (r1Crime.外国人への注意) parts.push(r1Crime.外国人への注意);
+    if (parts.length > 0) crimeFeature = parts.join('\n\n');
+  }
   if (crimeFeature) {
     article += `\n${crimeFeature}\n`;
-  } else {
-    const fallbackCrimeFeature = cleanMarkdown(extractTextBetween(raw, '犯罪の傾向', '死因｜順位：1位'));
-    if (fallbackCrimeFeature) article += `\n${fallbackCrimeFeature}\n`;
   }
 
   // 重大犯罪事件テーブル
-  const majorCrimeData = parseLines(raw, '重大犯罪');
+  let majorCrimeData = parseLines(raw, '重大犯罪');
+  if (majorCrimeData.length === 0) {
+    const r1Crimes = sheetData.data?.対象国データ?.重大犯罪事件 || [];
+    if (Array.isArray(r1Crimes) && r1Crimes.length > 0) {
+      majorCrimeData = r1Crimes.map(c => ({
+        '発生年': c.発生年 || '',
+        '事件名': c.事件名 || '',
+        '犯人名': c.犯人名 || '',
+        '被害者属性': c.被害者属性 || '',
+        '概要': c.概要 || c.事件概要 || '',
+        '出典': c.出典 || ''
+      }));
+    }
+  }
   if (majorCrimeData.length > 0) {
     article += `<h3 style="${h3Style}">国内の重大犯罪事件（2000年以降）</h3>\n`;
     const majorCrimeRows = majorCrimeData.map(d => [
@@ -1181,7 +1239,19 @@ return [articleItem].map(item => {
   // --- 11. ⑥ 歴史的背景 ---
   article += `<!-- SECTION:rekishi:START -->\n`;
   article += `<h2 id="section-6" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑥</span> 歴史的背景（近代100年）</h2>\n`;
-  const rekishiData = parseLines(raw, '歴史');
+  let rekishiData = parseLines(raw, '歴史');
+  if (rekishiData.length === 0) {
+    const fixedRekishi = sheetData.data?.対象国データ_記事?.歴史的背景 || [];
+    if (Array.isArray(fixedRekishi) && fixedRekishi.length > 0) {
+      rekishiData = fixedRekishi.map(d => ({
+        '年': d.年 || '',
+        '事象名': d.事象名 || '',
+        '種別': d.種別 || '歴史',
+        '概要': d.概要 || '',
+        '出典': d.出典 || ''
+      }));
+    }
+  }
   if (rekishiData.length > 0) {
     const tableStyle = `border-collapse:separate;border-spacing:0;width:100%;font-size:14px;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);`;
     const thStyle = `border:1px solid #eee;padding:12px 14px;background:linear-gradient(135deg,#e0f5f5,#f0f8f8);text-align:left;`;
@@ -1218,10 +1288,21 @@ return [articleItem].map(item => {
   // --- 12. ⑦ 直近の動向 ---
   article += `<!-- SECTION:doukou:START -->\n`;
   article += `<h2 id="section-7" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑦</span> 直近の動向</h2>\n`;
-  const dohContent = cleanMarkdown(extractTextBetween(raw, '<p>【政治経済社会】</p>', '🐱 エラーネコ：'));
+  let dohContent = cleanMarkdown(extractSectionText(raw,
+    ['【政治経済社会】', '直近の動向', '⑦ 直近の動向'],
+    ['⑧ 映像で知る', '映像で知る', '映像作品', '## 8', '## 5']
+  ));
+  if (!dohContent) {
+    const fixedDoh = sheetData.data?.対象国データ_記事?.直近の動向 || {};
+    const parts = [];
+    if (fixedDoh.政治経済社会) parts.push(`<strong>【政治・経済・社会】</strong><br>${fixedDoh.政治経済社会}`);
+    if (fixedDoh.驚く統計や習慣) parts.push(`<strong>【独自の習慣・社会統計】</strong><br>${fixedDoh.驚く統計や習慣}`);
+    if (fixedDoh.日本との関連) parts.push(`<strong>【日本との関係・共通課題】</strong><br>${fixedDoh.日本との関連}`);
+    if (parts.length > 0) dohContent = parts.join('<br><br>');
+  }
   if (dohContent) {
     const formattedDoh = dohContent.replace(/<p>/g, '<p style="margin-bottom:1.5em;">');
-    article += `<p>【政治経済社会】</p>\n${formattedDoh}\n`;
+    article += `${formattedDoh}\n`;
     // 【動的出典】直近の動向の出典をシートから取得（ない場合は信頼できるフォールバックを表示）
     let dohCite = sheetData.data?.対象国データ_記事?.直近の動向?.出典 || '';
     if (!dohCite || dohCite === '欠測' || dohCite === 'データなし') {
@@ -1327,46 +1408,6 @@ return [articleItem].map(item => {
   article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
   article += `\n<!-- SECTION:eizou:END -->\n\n`;
 
-  // --- 14. Deep-Dive ---
-  let deepDiveArticle = '';
-  try {
-    const ddNode = $('整形3').first()?.json 
-                || $('★DeepDive即時保存').first()?.json 
-                || $('文化DeepDive').first()?.json 
-                || deepDiveItem?.json 
-                || inputData 
-                || $('DeepDive整形').first()?.json 
-                || $('Edit Fields').first()?.json 
-                || {};
-    deepDiveArticle = ddNode.article || ddNode.deep_dive || ddNode.deepDiveArticle || ddNode.message || ddNode.output || ddNode.text || '';
-  } catch(e) {}
-  console.log('deepDiveArticle length:', deepDiveArticle.length);
-
-  if (deepDiveArticle) {
-    article += `<!-- SECTION:deep_dive:START -->\n`;
-    // --- Deep Dive セクション仕切り ---
-    article += `
-<div id="deep-dive" style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
-  <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
-</div>\n`;
-
-    // 本文中に残っている丸括弧で囲まれたマークダウンリンク（[出典](URL)）を括弧ごと除去
-    let cleanedDD = deepDiveArticle.replace(/[（\(]\s*\[[^\]]+\]\(https?:\/\/[^)]+\)(?:\s*[\/／,、\s]*\[[^\]]+\]\(https?:\/\/[^)]+\))*\s*[）\)]/g, '');
-
-    // ディープダイブの「■ 主な出典」を全箇所まとめてメイン記事の出典スタイルに統一
-    let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
-      const citeHtml = citeContent
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
-        .replace(/[-–]\s*/g, '')
-        .replace(/\n+/g, '<br>')
-        .trim();
-      if (!citeHtml) return '';
-      return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
-    });
-    article += styledDD;
-    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
-    article += `<!-- SECTION:deep_dive:END -->\n`;
-  }
 
   // --- 15. ⑨ 特別枠：${countryName} おすすめ映画・映像作品 ---
   article += `\n<!-- SECTION:osusume:START -->\n`;
@@ -1593,9 +1634,42 @@ return [articleItem].map(item => {
   }
   article += `<!-- SECTION:music:END -->\n`;
 
-  // --- 17. ライブログ ---
-  const logMatch = raw.match(/(### 【ライブ検索[\s\S]*$)/);
-  if (logMatch) article += '\n' + logMatch[1];
+  // --- 16. ✦ Deep Dive（文化・奇習・宗教観の深掘り特集：目次11番・記事のクライマックス） ---
+  let deepDiveArticle = '';
+  try {
+    const ddNode = $('整形3').first()?.json 
+                || $('★DeepDive即時保存').first()?.json 
+                || $('文化DeepDive').first()?.json 
+                || deepDiveItem?.json 
+                || inputData 
+                || $('DeepDive整形').first()?.json 
+                || $('Edit Fields').first()?.json 
+                || {};
+    deepDiveArticle = ddNode.article || ddNode.deep_dive || ddNode.deepDiveArticle || ddNode.message || ddNode.output || ddNode.text || '';
+  } catch(e) {}
+
+  if (deepDiveArticle) {
+    article += `\n<!-- SECTION:deep_dive:START -->\n`;
+    article += `
+<div id="deep-dive" style="border-top:4px solid #1a237e; margin:80px 0 40px; padding-top:40px;">
+  <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
+</div>\n`;
+
+    let cleanedDD = deepDiveArticle.replace(/[（\(]\s*\[[^\]]+\]\(https?:\/\/[^)]+\)(?:\s*[\/／,、\s]*\[[^\]]+\]\(https?:\/\/[^)]+\))*\s*[）\)]/g, '');
+
+    let styledDD = cleanedDD.replace(/■\s*主な出典([\s\S]*?)(?=\u3010|<h[1-6]|$)/gi, (match, citeContent) => {
+      const citeHtml = citeContent
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
+        .replace(/[-–]\s*/g, '')
+        .replace(/\n+/g, '<br>')
+        .trim();
+      if (!citeHtml) return '';
+      return `<p class="citation" style="${citationStyle}">出典：${citeHtml}</p>\n`;
+    });
+    article += styledDD;
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
+    article += `<!-- SECTION:deep_dive:END -->\n`;
+  }
 
   const finalArticleText = article;
 
