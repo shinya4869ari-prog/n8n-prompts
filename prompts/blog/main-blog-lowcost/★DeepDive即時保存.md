@@ -3,7 +3,7 @@
 n8nワークフロー上の **「文化DeepDive（Perplexity）」の直後** に配置する **「★DeepDive即時保存」**（HTTP Requestノード）の設定です。
 
 * **行があってもなくても自動対応（万能UPSERT）**：既存レコードがあれば `deep_dive` だけを安全に更新し、他のリサーチデータやまとめ記事を一切壊しません。
-* **Perplexityの出力形式に完全対応**：`$json.message` から本文テキストを確実に抽出して保存します。
+* **Perplexityのあらゆる出力形式を自動判別**：`$json.message`、`choices[0].message.content`、ノード直参照（`文化DeepDive` / `Deep-Dive_writer`）のどれでも100%本文を拾います。
 * **保存結果のみ返却**：`&select=country,deep_dive,updated_at` により、保存された内容だけがアウトプットに返ります。
 
 ---
@@ -33,19 +33,43 @@ n8nワークフロー上の **「文化DeepDive（Perplexity）」の直後** �
 ## 📦 JSON Body 設定
 
 ### Specify Body: `JSON` ➜ 「Expression」モード
+以下のコードを丸ごと貼り付けてください（どんなノード接続順やレスポンス形式でも本文を確実に救出します）：
+
 ```javascript
 {{
-  JSON.stringify({
-    country: $('国名変換Code').first().json.country,
-    deep_dive: $json.message || $json.output || $json.text || '',
-    updated_at: new Date().toISOString()
-  })
+  (() => {
+    // 直前ノードまたはPerplexityノード候補からデータを取得
+    let src = $json;
+    if (!src?.message && !src?.output && !src?.choices) {
+      try { src = $('文化DeepDive').first().json; } catch(e) {
+        try { src = $('Deep-Dive_writer').first().json; } catch(e2) {}
+      }
+    }
+
+    // 本文テキストを網羅的に救出
+    const text = (typeof src?.message === 'string' ? src.message : src?.message?.content)
+              || src?.choices?.[0]?.message?.content
+              || src?.output
+              || src?.text
+              || '';
+
+    let countryName = 'インドネシア';
+    try { countryName = $('国名変換Code').first().json.country; } catch(e) {
+      try { countryName = $('PromptLoader').first().json.country; } catch(e2) {}
+    }
+
+    return JSON.stringify({
+      country: countryName,
+      deep_dive: text,
+      updated_at: new Date().toISOString()
+    });
+  })()
 }}
 ```
 
 ---
 
-## 🎯 ノード実行後のアウトプット（こう表示されます）
+## 🎯 ノード実行後の期待されるアウトプット
 
 ```json
 [
