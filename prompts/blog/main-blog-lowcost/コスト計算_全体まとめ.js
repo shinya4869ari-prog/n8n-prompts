@@ -217,21 +217,18 @@ for (const [grp, gData] of Object.entries(groupSummary)) {
 console.log('====================================================');
 
 // ==============================================================================
-// 入力データ（記事本文やメタデータ等）を100%保持しつつ、最上部にコストレポートを付加
+// 必要なコスト情報のみをスッキリ出力（記事本文などの巨大データは引きずらない）
 // ==============================================================================
 return [{
   json: {
-    "_TOTAL_COST_SUMMARY": summaryText,
-    "total_cost_report": {
-      total_jpy: `${totalCostJpy.toFixed(2)}円`,
-      total_usd: `$${totalCostUsd.toFixed(4)}`,
-      total_tokens: totalTokens,
-      total_web_searches: totalSearches,
-      perplexity_total_jpy: `${totalPerpCostJpy.toFixed(2)}円`,
-      gemini_total_jpy: `${totalGeminiCostJpy.toFixed(2)}円`,
-      group_summary: groupSummary,
-      executed_nodes: nodeDetails
-    },
-    ...item
+    summary: summaryText,
+    total_jpy: `${totalCostJpy.toFixed(2)}円`,
+    total_usd: `$${totalCostUsd.toFixed(4)}`,
+    total_tokens: totalTokens,
+    total_web_searches: totalSearches,
+    perplexity_total_jpy: `${totalPerpCostJpy.toFixed(2)}円`,
+    gemini_total_jpy: `${totalGeminiCostJpy.toFixed(2)}円`,
+    group_summary: groupSummary,
+    executed_nodes: nodeDetails
   }
 }];
