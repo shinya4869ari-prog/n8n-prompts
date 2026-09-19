@@ -1,21 +1,20 @@
 // ==============================================================================
-// 💰 メインブログ 記事1本・全AIノード一括コスト計算コード（万能集計版）
+// 💰 メインブログ 記事1本・全AIノード一括コスト計算コード（超見やすい決定版）
 // 
 // 【配置場所】: 「リンク挿入ノード」の直後（またはWordPress投稿・完成HTML保存の前）
 // 【機能】: 
-//   1. ワークフロー内で実行された全AI（Gemini / Perplexity）のトークンとAPI費用を一撃合算
-//   2. 途中ノード（リサーチ1~25、Perplexity 5連、まとめ、writer、文化DeepDive、リンク抽出）を完全網羅
-//   3. キャッシュ利用で実行されなかったノードは「0円」として自動スキップ
-//   4. 入力データ（記事HTMLやタイトル等）を100%そのまま透過（後続ノードを一切破壊しない）
+//   1. ワークフロー内で実行された全AI（Perplexity 5連＋文化DeepDive / Gemini Flash各所）を一撃集計
+//   2. Perplexityの出力形式（message, citations, id）を確実に検知して正確に金額計上
+//   3. キャッシュ利用で未実行のノードは「0円（キャッシュ）」として明記
+//   4. 余計な記事本文データは一切含めず、各ノードの金額が縦一列で一目で分かる超明快アウトプット
 // ==============================================================================
 
-const item = $input.first()?.json || {};
 const USD_JPY_RATE = 155; // 1ドル = 155円換算
 
 // --- 料金テーブル（USD / 100万トークン） ---
 const PRICING = {
   gemini: {
-    flash: { input: 0.10, output: 0.40 }, // Gemini 1.5/2.0/3.0~3.8 Flash
+    flash: { input: 0.10, output: 0.40 }, // Gemini Flash
     pro:   { input: 1.25, output: 5.00 }  // Gemini Pro系列
   },
   perplexity: {
@@ -51,12 +50,15 @@ function inspectNode(candidateNames, expectedType) {
         const isSonarPro = modelStr.includes('pro');
         const pricing = isSonarPro ? PRICING.perplexity.sonar_pro : PRICING.perplexity.sonar;
 
-        // トークン情報または出力テキストがあるか
-        const hasContent = pTok > 0 || cTok > 0 || data.choices?.[0]?.message?.content || data.output || data.text;
+        // Perplexityの多様なレスポンス構造（message, citations, id, output, text, choices等）
+        const rawMessage = data.message || data.output || data.text || data.choices?.[0]?.message?.content || (typeof data === 'string' ? data : '');
+        const hasPerpId = Boolean(data.id && (data.citations || data.created));
+        const hasContent = pTok > 0 || cTok > 0 || Boolean(rawMessage) || hasPerpId || Array.isArray(data.citations);
+
         if (hasContent) {
-          const promptTokens = pTok || 1000;      // 未取得時のフォールバック推計
-          const completionTokens = cTok || 800;
-          const searchFee = pricing.search_fee;   // 1リクエスト = 1検索
+          const completionTokens = cTok || (rawMessage ? Math.round(rawMessage.length * 0.9) : 800);
+          const promptTokens = pTok || 1200;      // リサーチ用入力推計
+          const searchFee = pricing.search_fee;   // 1リクエスト = 1検索 ($0.005 = 約0.78円)
           const tokenCostUsd = (promptTokens * pricing.input + completionTokens * pricing.output) / 1000000;
           const costUsd = tokenCostUsd + searchFee;
           const costJpy = costUsd * USD_JPY_RATE;
@@ -126,32 +128,32 @@ function inspectNode(candidateNames, expectedType) {
 }
 
 // ==============================================================================
-// 全AIノードの走査と集計定義
+// 全AIノードの走査と集計定義（全12ノード完全網羅）
 // ==============================================================================
 const TARGET_NODES = [
   // 1. 特集Perplexity 5連
-  { label: '特集: 犯罪 (Perplexity)',       keys: ['犯罪記事Perplexity'],                                       type: 'perplexity', group: '特集Perplexity 5連' },
-  { label: '特集: 物価 (Perplexity)',       keys: ['物価記事Perplexity'],                                       type: 'perplexity', group: '特集Perplexity 5連' },
-  { label: '特集: 地理・経済 (Perplexity)', keys: ['地理・経済記事Perplexity'],                                 type: 'perplexity', group: '特集Perplexity 5連' },
-  { label: '特集: 死因 (Perplexity)',       keys: ['死因記事Perplexity'],                                       type: 'perplexity', group: '特集Perplexity 5連' },
-  { label: '特集: 貿易 (Perplexity)',       keys: ['貿易記事Perplexity'],                                       type: 'perplexity', group: '特集Perplexity 5連' },
+  { label: '① 特集: 犯罪 (Perplexity)',       keys: ['犯罪記事Perplexity', '犯罪記事 Perplexity', '犯罪Perplexity'],                                       type: 'perplexity', group: 'Perplexity 5連' },
+  { label: '② 特集: 物価 (Perplexity)',       keys: ['物価記事Perplexity', '物価記事 Perplexity', '物価Perplexity'],                                       type: 'perplexity', group: 'Perplexity 5連' },
+  { label: '③ 特集: 地理・経済 (Perplexity)', keys: ['地理・経済記事Perplexity', '地理・経済記事 Perplexity', '地理経済記事Perplexity', '地理経済Perplexity'], type: 'perplexity', group: 'Perplexity 5連' },
+  { label: '④ 特集: 死因 (Perplexity)',       keys: ['死因記事Perplexity', '死因記事 Perplexity', '死因Perplexity'],                                       type: 'perplexity', group: 'Perplexity 5連' },
+  { label: '⑤ 特集: 貿易 (Perplexity)',       keys: ['貿易記事Perplexity', '貿易記事 Perplexity', '貿易Perplexity'],                                       type: 'perplexity', group: 'Perplexity 5連' },
 
-  // 2. 特集まとめ記事 (Gemini)
-  { label: '特集まとめ記事 (Gemini)',       keys: ['検索結果まとめ記事', 'まとめ記事Gemini'],                   type: 'gemini',     group: 'まとめ記事' },
+  // 2. 文化DeepDive (Perplexity)
+  { label: '⑥ 文化DeepDive (Perplexity)',     keys: ['文化DeepDive', '文化DeepDive (Perplexity)', 'Deep-Dive_writer', 'DeepDive_writer', '文化DeepDivePerplexity'], type: 'perplexity', group: '文化DeepDive' },
 
-  // 3. メインライター (Gemini)
-  { label: 'メイン執筆 (Gemini)',           keys: ['writer', 'メインライター', 'Gemini Writer'],                 type: 'gemini',     group: 'メインライター' },
+  // 3. 特集まとめ記事 (Gemini)
+  { label: '⑦ 特集まとめ記事 (Gemini)',       keys: ['検索結果まとめ記事', 'まとめ記事Gemini', 'まとめ記事'],                   type: 'gemini',     group: 'まとめ記事' },
 
-  // 4. 文化DeepDive (Perplexity)
-  { label: '文化DeepDive (Perplexity)',     keys: ['文化DeepDive', 'Deep-Dive_writer', 'DeepDive_writer'],     type: 'perplexity', group: '文化DeepDive' },
+  // 4. メインライター (Gemini)
+  { label: '⑧ メイン執筆 (Gemini)',           keys: ['writer', 'メインライター', 'Gemini Writer'],                 type: 'gemini',     group: 'メインライター' },
 
   // 5. エンティティ抽出・リンク (Gemini)
-  { label: 'エンティティ抽出 (Gemini)',     keys: ['response_extraction1', 'response_extraction', 'エンティティ抽出'], type: 'gemini', group: 'リンク・エンティティ' },
+  { label: '⑨ リンク・エンティティ抽出 (Gemini)', keys: ['response_extraction1', 'response_extraction', 'エンティティ抽出'], type: 'gemini', group: 'リンク・抽出' },
 
   // 6. 左半分・リサーチ1, 2, 25 (新規実行時のみ計上・キャッシュ時は0円)
-  { label: 'リサーチ1: 制度/地理 (Gemini)', keys: ['researcher1'],                                              type: 'gemini',     group: '基礎リサーチ(新規時)' },
-  { label: 'リサーチ2: 100年史 (Gemini)',   keys: ['researcher2'],                                              type: 'gemini',     group: '基礎リサーチ(新規時)' },
-  { label: 'リサーチ25: 映画 (Gemini)',     keys: ['researcher25'],                                             type: 'gemini',     group: '基礎リサーチ(新規時)' }
+  { label: '⑩ リサーチ1: 制度/地理 (Gemini)', keys: ['researcher1'],                                              type: 'gemini',     group: '基礎リサーチ' },
+  { label: '⑪ リサーチ2: 100年史 (Gemini)',   keys: ['researcher2'],                                              type: 'gemini',     group: '基礎リサーチ' },
+  { label: '⑫ リサーチ25: 映画 (Gemini)',     keys: ['researcher25'],                                             type: 'gemini',     group: '基礎リサーチ' }
 ];
 
 // --- 集計実行 ---
@@ -163,7 +165,7 @@ let totalGeminiCostJpy = 0;
 let totalSearches = 0;
 
 const nodeDetails = [];
-const groupSummary = {};
+const flatNodeList = {};
 
 for (const target of TARGET_NODES) {
   const result = inspectNode(target.keys, target.type);
@@ -175,16 +177,11 @@ for (const target of TARGET_NODES) {
 
     if (result.type === 'Perplexity') {
       totalPerpCostJpy += result.costJpy;
+      flatNodeList[target.label] = `${result.costJpy.toFixed(2)} 円 (${result.model} / 1検索)`;
     } else {
       totalGeminiCostJpy += result.costJpy;
+      flatNodeList[target.label] = `${result.costJpy.toFixed(2)} 円 (${result.model} / ${result.totalTokens.toLocaleString()} tok)`;
     }
-
-    if (!groupSummary[target.group]) {
-      groupSummary[target.group] = { costJpy: 0, costUsd: 0, nodes: [] };
-    }
-    groupSummary[target.group].costJpy += result.costJpy;
-    groupSummary[target.group].costUsd += result.costUsd;
-    groupSummary[target.group].nodes.push(target.label);
 
     nodeDetails.push({
       label: target.label,
@@ -192,12 +189,12 @@ for (const target of TARGET_NODES) {
       type: result.type,
       model: result.model,
       tokens: result.totalTokens,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
       searchCount: result.searchCount,
       cost_jpy: `${result.costJpy.toFixed(2)}円`,
       cost_usd: `$${result.costUsd.toFixed(5)}`
     });
+  } else {
+    flatNodeList[target.label] = '0 円 (キャッシュ・未実行)';
   }
 }
 
@@ -205,28 +202,22 @@ for (const target of TARGET_NODES) {
 const summaryText = `💰【記事1本 総AIコスト】: ${totalCostJpy.toFixed(2)}円 ($${totalCostUsd.toFixed(4)}) ` +
   `[Perplexity: ${totalPerpCostJpy.toFixed(2)}円 (Web検索${totalSearches}回) / Gemini: ${totalGeminiCostJpy.toFixed(2)}円 (計${totalTokens.toLocaleString()} tok)]`;
 
-// コンソールログ出力（n8n実行画面で即座に確認可能）
 console.log('====================================================');
 console.log(summaryText);
-console.log('--- グループ別内訳 ---');
-for (const [grp, gData] of Object.entries(groupSummary)) {
-  console.log(`・${grp}: ${gData.costJpy.toFixed(2)}円 ($${gData.costUsd.toFixed(4)}) [${gData.nodes.join(', ')}]`);
-}
 console.log('====================================================');
 
 // ==============================================================================
-// 必要なコスト情報のみをスッキリ出力（記事本文などの巨大データは引きずらない）
+// 🎯 各ノードが何円か一目で分かる超明快な出力フォーマット
 // ==============================================================================
 return [{
   json: {
-    summary: summaryText,
-    total_jpy: `${totalCostJpy.toFixed(2)}円`,
-    total_usd: `$${totalCostUsd.toFixed(4)}`,
-    total_tokens: totalTokens,
-    total_web_searches: totalSearches,
-    perplexity_total_jpy: `${totalPerpCostJpy.toFixed(2)}円`,
-    gemini_total_jpy: `${totalGeminiCostJpy.toFixed(2)}円`,
-    group_summary: groupSummary,
-    executed_nodes: nodeDetails
+    "💰【合計AIコスト】": `${totalCostJpy.toFixed(2)} 円 ($${totalCostUsd.toFixed(4)})`,
+    "────────── 種類別内訳 ──────────": "───────────────────────────────",
+    "🔍 Perplexity合計": `${totalPerpCostJpy.toFixed(2)} 円 (Web検索 ${totalSearches}回)`,
+    "⚡ Gemini合計": `${totalGeminiCostJpy.toFixed(2)} 円 (計 ${totalTokens.toLocaleString()} tokens)`,
+    "─────── 各ノードの費用一覧 ───────": "───────────────────────────────",
+    ...flatNodeList,
+    "───────────────────────────────": "───────────────────────────────",
+    "詳細データ": nodeDetails
   }
 }];
