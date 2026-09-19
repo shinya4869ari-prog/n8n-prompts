@@ -26,13 +26,11 @@ const PRICING = {
 
 // --- ヘルパー: モデル名の抽出 ---
 function extractGeminiModel(source) {
-  if (!source) return null;
+  if (!source) return 'gemini-flash-latest';
   const str = typeof source === 'string' ? source : JSON.stringify(source);
-  const m1 = str.match(/gemini-(3\.[0-8]|2\.[0-9]|1\.5)-(flash|pro)(?:-[a-z0-9]+)?/i);
-  if (m1) return m1[0].toLowerCase();
-  const m2 = str.match(/models\/(gemini-[a-zA-Z0-9\.\-]+)/i);
-  if (m2) return m2[1].toLowerCase();
-  return null;
+  const m = str.match(/models\/(gemini-[a-zA-Z0-9\.\-_]+)/i) || str.match(/(gemini-(?:1\.5|2\.0|flash|pro)[a-zA-Z0-9\.\-_]*)/i);
+  if (m) return m[1].toLowerCase();
+  return str.toLowerCase().includes('pro') ? 'gemini-pro' : 'gemini-flash-latest';
 }
 
 // --- ヘルパー: 各AIノードのメトリクス安全取得 ---
@@ -92,7 +90,7 @@ function inspectNode(candidateNames, expectedType) {
 
         if (pTok > 0 || cTok > 0 || rawText) {
           if (!pTok) pTok = 3000; // フォールバック入力推計
-          const modelName = extractGeminiModel(data) || 'gemini-3.6-flash';
+          const modelName = extractGeminiModel(data) || 'gemini-flash-latest';
           const isPro = modelName.includes('pro');
           const pricing = isPro ? PRICING.gemini.pro : PRICING.gemini.flash;
 
