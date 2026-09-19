@@ -297,3 +297,9 @@ data.対象国データ_記事.おすすめ音楽 にデータがある場合の
  - **最終データ同期**: {{ $json.now_date }}
  - **適用為替レート**: 1 {{ $json.currencyCode }} = {{ $json.rate }} JPY（{{ $json.rate_date }}現在）
  - **検証状況**: JSONデータに基づく整合性チェック完了
+
+---
+
+## 提供データ（JSON）
+{{ JSON.stringify($json.data) }}
+
