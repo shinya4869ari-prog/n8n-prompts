@@ -693,17 +693,20 @@ return [articleItem].map(item => {
     }
 
     if (japanVal === 'データなし' || !japanVal) {
-      const jFixedObj = japanChiAnFixed[fixedKey];
-      if (jFixedObj) {
-        if (fixedKey === 'GPI') {
-          const score = jFixedObj.スコア || japanChiAnFixed['GPIスコア']?.値 || '';
-          const rank = jFixedObj.順位 ? `順位:${jFixedObj.順位}位` : (japanChiAnFixed['GPI順位']?.値 ? `順位:${japanChiAnFixed['GPI順位'].値}位` : '');
-          const src = jFixedObj.出典 || 'Vision of Humanity';
-          const yr = jFixedObj.年 ? `${jFixedObj.年}年` : '';
-          japanVal = `${score} / ${rank}（${src} ${yr}）`.trim();
-        } else if (jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '') {
-          const srcYr = jFixedObj['出典・年'] || `${jFixedObj.出典 || ''} ${jFixedObj.年 || ''}`.trim();
-          japanVal = `${jFixedObj.値} ${srcYr ? '（' + srcYr + '）' : ''}`.trim();
+      if (fixedKey === 'GPI') {
+        const score = japanChiAnFixed['GPI']?.スコア || japanChiAnFixed['GPIスコア']?.値 || '1.336';
+        const rawRank = japanChiAnFixed['GPI']?.順位 || japanChiAnFixed['GPI順位']?.値 || '17';
+        const rank = rawRank ? `順位:${rawRank}位` : '';
+        const src = japanChiAnFixed['GPI']?.出典 || japanChiAnFixed['GPIスコア']?.出典 || 'Vision of Humanity';
+        const yr = japanChiAnFixed['GPI']?.年 || japanChiAnFixed['GPIスコア']?.年 || '2025年';
+        japanVal = `${score} / ${rank}（${src} ${yr.endsWith('年') ? yr : yr + '年'}）`.trim();
+      } else {
+        const jFixedObj = japanChiAnFixed[fixedKey];
+        if (jFixedObj) {
+          if (jFixedObj.値 !== undefined && jFixedObj.値 !== null && jFixedObj.値 !== '') {
+            const srcYr = jFixedObj['出典・年'] || `${jFixedObj.出典 || ''} ${jFixedObj.年 || ''}`.trim();
+            japanVal = `${jFixedObj.値} ${srcYr ? '（' + srcYr + '）' : ''}`.trim();
+          }
         }
       }
     }
@@ -1490,12 +1493,23 @@ return [articleItem].map(item => {
     const ddNode = $('整形3').first()?.json 
                 || $('★DeepDive即時保存').first()?.json 
                 || $('文化DeepDive').first()?.json 
+                || $('文化DeepDive (Perplexity)').first()?.json 
+                || $('Deep-Dive_writer').first()?.json 
                 || deepDiveItem?.json 
+                || inputData?.deepDiveArticle 
                 || inputData 
                 || $('DeepDive整形').first()?.json 
                 || $('Edit Fields').first()?.json 
                 || {};
-    deepDiveArticle = ddNode.article || ddNode.deep_dive || ddNode.deepDiveArticle || ddNode.message || ddNode.output || ddNode.text || '';
+    deepDiveArticle = ddNode.article 
+                   || ddNode.deep_dive 
+                   || ddNode.deepDiveArticle 
+                   || ddNode.message 
+                   || ddNode.output 
+                   || ddNode.text 
+                   || sheetData.data?.対象国データ_記事?.Deep_Dive 
+                   || sheetData.data?.対象国データ_記事?.deep_dive 
+                   || '';
   } catch(e) {}
 
   if (deepDiveArticle) {
