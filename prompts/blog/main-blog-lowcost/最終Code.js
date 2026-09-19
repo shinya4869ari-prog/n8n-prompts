@@ -20,8 +20,16 @@ return [articleItem].map(item => {
   // 直列接続などで $input が response_extraction1 等の出力（===places===）に上書きされている場合の安全策
   if (!raw || raw.startsWith('===places===')) {
     try {
-      const writerNode = $('記事集合').first()?.json || $('整列2').first()?.json || $('writer_pro').first()?.json || $('検索結果まとめ記事').first()?.json || $('Writer').first()?.json || {};
-      raw = writerNode.article || writerNode.output || writerNode.text || raw;
+      const writerNode = $('★執筆即時保存').first()?.json 
+                      || $('writer').first()?.json 
+                      || $('整形2').first()?.json 
+                      || $('記事集合').first()?.json 
+                      || $('整列2').first()?.json 
+                      || $('writer_pro').first()?.json 
+                      || $('検索結果まとめ記事').first()?.json 
+                      || $('Writer').first()?.json 
+                      || {};
+      raw = writerNode.writer_draft || writerNode.article || writerNode.output || writerNode.text || raw;
     } catch(e) {}
   }
   const rawLines = raw.split('\n');
@@ -295,7 +303,8 @@ return [articleItem].map(item => {
   let chirigeiKaisetu = '';
   let bukkaKaisetu = '';
   try {
-    const aiText = $('検索結果まとめ記事').first().json?.text || $('検索結果まとめ記事').first().json?.content?.parts?.[0]?.text || $('検索結果まとめ記事').first().json?.output || '';
+    const summaryNode = $('★まとめ記事即時保存').first()?.json || $('検索結果まとめ記事').first()?.json || {};
+    const aiText = summaryNode.summary_article || summaryNode.text || summaryNode.content?.parts?.[0]?.text || summaryNode.output || '';
     const boekiMatch = aiText.match(/(?:\[貿易解説\]|##\s*貿易解説)([\s\S]*?)(?=(?:\[|##\s*)(?:死因解説|犯罪解説|地理・経済解説|物価解説)|$)/);
     const shiinMatch = aiText.match(/(?:\[死因解説\]|##\s*死因解説)([\s\S]*?)(?=(?:\[|##\s*)(?:犯罪解説|地理・経済解説|物価解説)|$)/);
     const hanzaiMatch = aiText.match(/(?:\[犯罪解説\]|##\s*犯罪解説)([\s\S]*?)(?=(?:\[|##\s*)(?:地理・経済解説|物価解説)|$)/);
@@ -1127,11 +1136,15 @@ return [articleItem].map(item => {
   // --- 14. Deep-Dive ---
   let deepDiveArticle = '';
   try {
-    deepDiveArticle = deepDiveItem?.json?.deepDiveArticle || inputData?.deepDiveArticle || '';
-    if (!deepDiveArticle) {
-      const ddNode = $('DeepDive整形').first()?.json || $('Edit Fields').first()?.json || $('DeepDive').first()?.json || {};
-      deepDiveArticle = ddNode.deepDiveArticle || ddNode.output || ddNode.text || '';
-    }
+    const ddNode = $('整形3').first()?.json 
+                || $('★DeepDive即時保存').first()?.json 
+                || $('文化DeepDive').first()?.json 
+                || deepDiveItem?.json 
+                || inputData 
+                || $('DeepDive整形').first()?.json 
+                || $('Edit Fields').first()?.json 
+                || {};
+    deepDiveArticle = ddNode.article || ddNode.deep_dive || ddNode.deepDiveArticle || ddNode.message || ddNode.output || ddNode.text || '';
   } catch(e) {}
   console.log('deepDiveArticle length:', deepDiveArticle.length);
 
