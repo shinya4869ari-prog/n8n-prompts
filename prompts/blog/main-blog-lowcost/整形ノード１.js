@@ -41,6 +41,7 @@ let r2Raw = cacheJson?.research2
 let r25Raw = cacheJson?.research25 
           || safeGet('★リサーチ25即時保存')?.research25 
           || safeGet('リサーチ25即時保存')?.research25 
+          || safeGet('ポスター・ID反映')
           || safeGet('researcher25');
 
 // もし上記で見つからない場合、現在の入力（Merge4等）から探す
@@ -296,7 +297,12 @@ try {
 
   if (subItems.length === 0) {
     const inputs = $input.all();
-    const inputMovies = inputs.filter(i => i.json && (i.json.title || i.json.origin_title || i.json.tmdb_id));
+    // 映像作品（歴史連動）のデータを誤っておすすめ映画として拾わないよう除外
+    const inputMovies = inputs.filter(i => {
+      const j = i.json || {};
+      const isHistoricalMovie = j.historical_significance || j.歴史クロス解説 || j.related_event || j.関連事件;
+      return (j.title || j.origin_title || j.tmdb_id) && !isHistoricalMovie && !j.occupation;
+    });
     if (inputMovies.length > 0) subItems = inputMovies;
   }
 
@@ -328,7 +334,7 @@ try {
   }
 } catch (e) {}
 
-// サブワークフローから取れなかった場合のフォールバック
+// サブワークフローから取れなかった場合のフォールバック（※映像作品は絶対に流用しない）
 if (recommendedMovies.length === 0 && supabaseMovieRaw) {
   try {
     const supabaseMovie = parseOutput(supabaseMovieRaw, 'Supabase映画データ');
@@ -337,9 +343,10 @@ if (recommendedMovies.length === 0 && supabaseMovieRaw) {
 }
 
 if (recommendedMovies.length === 0) {
-  const r25Movies = r25.おすすめ映画 || r25.おすすめ映画ランキング || (Array.isArray(r25.映像作品) ? r25.映像作品 : (Array.isArray(r25) ? r25 : []));
-  if (Array.isArray(r25Movies) && r25Movies.length > 0) {
-    recommendedMovies = r25Movies;
+  if (Array.isArray(r25.おすすめ映画) && r25.おすすめ映画.length > 0) {
+    recommendedMovies = r25.おすすめ映画;
+  } else if (Array.isArray(r25.おすすめ映画ランキング) && r25.おすすめ映画ランキング.length > 0) {
+    recommendedMovies = r25.おすすめ映画ランキング;
   } else if (Array.isArray(r2?.おすすめ映画) && r2.おすすめ映画.length > 0) {
     recommendedMovies = r2.おすすめ映画;
   }
@@ -452,7 +459,7 @@ const r2Merged = {
   直近の動向: r2.直近の動向,
   犯罪の傾向: r1.犯罪の傾向,
   重大犯罪事件: r1.重大犯罪事件,
-  映像作品: r25.映像作品 || recommendedMovies,
+  映像作品: (Array.isArray(r25.映像作品) && r25.映像作品.length > 0) ? r25.映像作品 : (Array.isArray(r25) ? r25 : []),
   おすすめ映画: recommendedMovies,
   おすすめ音楽: recommendMusic
 };
