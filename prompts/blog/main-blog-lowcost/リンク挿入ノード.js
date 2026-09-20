@@ -242,40 +242,36 @@ function insertLinks(articleText) {
   for (const cand of uniquePatterns) {
     if (linkedInThisArticle.has(cand.entity.name)) continue;
 
-    let mapUrl;
     const qidParam = cand.entity.wikidata_id || cand.entity.qid || '';
     const tmdbParam = cand.entity.tmdb_id || '';
+    const hasValidId = Boolean(qidParam || tmdbParam);
     const idParam = qidParam ? `&qid=${encodeURIComponent(qidParam)}` : (tmdbParam ? `&tmdb_id=${encodeURIComponent(tmdbParam)}` : '');
 
-    if (cand.entity.type === 'keywords') {
-      mapUrl = `https://map.seronworks.dev/?mode=incident${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
-    } else if (cand.entity.type === 'crimes') {
-      mapUrl = `https://map.seronworks.dev/?mode=incident${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
-    } else if (cand.entity.type === 'people') {
-      mapUrl = `https://map.seronworks.dev/?mode=person${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
-    } else if (cand.entity.type === 'movies') {
-      mapUrl = `https://map.seronworks.dev/?mode=movie${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
+    let linkButtonHTML;
+    if (hasValidId) {
+      let mapUrl;
+      if (cand.entity.type === 'keywords' || cand.entity.type === 'crimes') {
+        mapUrl = `https://map.seronworks.dev/?mode=incident${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
+      } else if (cand.entity.type === 'people') {
+        mapUrl = `https://map.seronworks.dev/?mode=person${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
+      } else if (cand.entity.type === 'movies') {
+        mapUrl = `https://map.seronworks.dev/?mode=movie${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
+      } else {
+        mapUrl = `https://map.seronworks.dev/?${idParam ? idParam.slice(1) + '&' : ''}q=${encodeURIComponent(cand.entity.name)}`;
+      }
+      linkButtonHTML = `<br><br><a href="${mapUrl}" target="history_gallery" rel="noopener noreferrer" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
     } else {
-      mapUrl = `https://map.seronworks.dev/?${idParam ? idParam.slice(1) + '&' : ''}q=${encodeURIComponent(cand.entity.name)}`;
+      const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(cand.entity.name)}`;
+      linkButtonHTML = `<br><br><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 20px;background:#4285f4;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🔍 Googleで検索する</a>`;
     }
 
-    let spanHTML;
-    if (cand.entity.type === 'crimes' || cand.entity.type === 'movies') {
-      const mode = cand.entity.type === 'crimes' ? 'incident' : 'movie';
-      const mapUrl = `https://map.seronworks.dev/?mode=${mode}${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
-      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
-      const n = enc(cand.entity.name);
-      const i = enc(linkHTML);
-      const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
-      spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
-    } else {
-      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
-      const n = enc(cand.entity.name);
-      const i = enc(cand.entity.info + linkHTML);
-      
-      const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
-      spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
-    }
+    const infoText = cand.entity.info ? String(cand.entity.info).trim() : '';
+    const modalContent = infoText ? (infoText + linkButtonHTML) : linkButtonHTML.replace(/^<br><br>/, '');
+
+    const n = enc(cand.entity.name);
+    const i = enc(modalContent);
+    const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
+    const spanHTML = `<span style="color:#20B2AA;border-bottom:1px dashed #20B2AA;cursor:pointer;font-weight:bold;" onclick='${onclick}'>${cand.pattern}</span>`;
 
     const tradePartners = ["アメリカ合衆国","中国","台湾","韓国","香港","タイ","シンガポール","インド","ベトナム","ドイツ"];
     const isTradePartner = cand.entity.type === 'places' && tradePartners.includes(cand.pattern);
