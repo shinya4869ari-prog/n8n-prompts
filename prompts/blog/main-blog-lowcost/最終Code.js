@@ -1547,23 +1547,35 @@ return [articleItem].map(item => {
     const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || getVal(matchedPool?.['関連事件']) || getVal(matchedPool?.related_event) || '';
 
     let summaryHtml = '';
-    if (rawOverview && rawHistory && rawOverview !== rawHistory) {
-      const overviewParagraphs = rawOverview.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
-      summaryHtml = `
-      <div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">
-        ${overviewParagraphs || rawOverview}
-      </div>
-      <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
-        <strong>🏛️ 歴史クロス解説${relatedEvent ? `（連動事件：${relatedEvent}）` : ''}：</strong><br>${rawHistory}
-      </div>`;
-    } else if (rawHistory) {
-      summaryHtml = `
-      <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
-        <strong>🏛️ 歴史クロス解説${relatedEvent ? `（連動事件：${relatedEvent}）` : ''}：</strong><br>${rawHistory}
-      </div>`;
-    } else if (rawOverview) {
-      const paragraphs = rawOverview.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
-      summaryHtml = `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${paragraphs || rawOverview}</div>`;
+    if (!isOsusume) {
+      // ⑧ 映像作品: あらすじ（overview）の重複を排除し、「関連事件」と「歴史クロス解説」をスッキリ表示
+      const mainText = rawHistory || rawOverview;
+      if (mainText) {
+        summaryHtml = `
+        <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.75;color:#2c3e50;">
+          ${relatedEvent ? `<div style="font-weight:bold;margin-bottom:6px;color:#00838f;font-size:13px;">🏛️ 関連事件：<span style="color:#004d40;">${relatedEvent}</span></div>` : ''}
+          <div style="font-weight:bold;margin-bottom:4px;color:#006064;">📜 歴史クロス解説：</div>
+          <div>${mainText}</div>
+        </div>`;
+      }
+    } else {
+      // ⑨ おすすめ映画: あらすじ（概要）をメインに表示
+      if (rawOverview && rawHistory && rawOverview !== rawHistory) {
+        const overviewParagraphs = rawOverview.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+        summaryHtml = `
+        <div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:12px;letter-spacing:0.02em;">
+          ${overviewParagraphs || rawOverview}
+        </div>
+        <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
+          <strong>🏛️ 歴史クロス解説${relatedEvent ? `（関連事件：${relatedEvent}）` : ''}：</strong><br>${rawHistory}
+        </div>`;
+      } else {
+        const singleText = rawOverview || rawHistory;
+        if (singleText) {
+          const paragraphs = singleText.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+          summaryHtml = `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${paragraphs || singleText}</div>`;
+        }
+      }
     }
 
     // 国家の天秤ポップアップ onclick（base64エンコード）
