@@ -212,7 +212,8 @@ console.log(summaryText);
 console.log('====================================================');
 
 // ==============================================================================
-// 🎯 前段のデータ（article, title, country等）を100%維持して後続にパススルー
+// 🎯 コスト計算結果を一番上に配置（n8n画面で即座に確認可能・スクロール不要）
+// 🎯 後続のWordPress投稿用データ（article, title等）は末尾に配置して透過
 // ==============================================================================
 let prevData = {};
 try {
@@ -223,10 +224,7 @@ try {
 
 return [{
   json: {
-    ...prevData, // 👈 前段（リンク挿入）の記事データ（article, title, country, categories等）を丸ごと維持！
-    ai_cost_jpy: Number(totalCostJpy.toFixed(2)),
-    ai_cost_usd: Number(totalCostUsd.toFixed(4)),
-    ai_cost_summary: summaryText,
+    // ⬇️ 【最上部】n8nの出力画面を開いた瞬間にスクロール不要でパッと見えるコスト情報
     "💰【合計AIコスト】": `${totalCostJpy.toFixed(2)} 円 ($${totalCostUsd.toFixed(4)})`,
     "────────── 種類別内訳 ──────────": "───────────────────────────────",
     "🔍 Perplexity合計": `${totalPerpCostJpy.toFixed(2)} 円 (Web検索 ${totalSearches}回)`,
@@ -234,6 +232,9 @@ return [{
     "─────── 各ノードの費用一覧 ───────": "───────────────────────────────",
     ...flatNodeList,
     "───────────────────────────────": "───────────────────────────────",
-    "詳細データ": nodeDetails
+    "詳細データ": nodeDetails,
+
+    // ⬇️ 【最下部】後続のWordPress投稿に必要なデータ（画面の上部を占有しないよう末尾に配置）
+    ...prevData
   }
 }];
