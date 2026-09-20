@@ -77,8 +77,8 @@ const directorObj = crewArray.find(c => c.job === 'Director');
 const fetchedDirector = directorObj?.name || directorObj?.original_name || null;
 const fetchedDirectorEn = directorObj?.original_name || directorObj?.name || null;
 
-const fetchedCast = castArray.length > 0 ? castArray.slice(0, 10).map(c => c.name || c.original_name).filter(Boolean).join(', ') : null;
-const fetchedCastEn = castArray.length > 0 ? castArray.slice(0, 10).map(c => c.original_name || c.name).filter(Boolean).join(', ') : null;
+const fetchedCast = castArray.length > 0 ? castArray.slice(0, 5).map(c => c.name || c.original_name).filter(Boolean).join(', ') : null;
+const fetchedCastEn = castArray.length > 0 ? castArray.slice(0, 5).map(c => c.original_name || c.name).filter(Boolean).join(', ') : null;
 
 // 6. 🤖 AI（Gemini / Claude / $input）による日本語あらすじの安全抽出
 let aiOverview = null;
@@ -397,7 +397,10 @@ const cleanPerson = (val) => {
 };
 
 const finalDirector = toKatakanaIfHangul(aiDirectorJa || sourceData.director || fetchedDirector || null)?.replace(/_/g, '・');
-const finalCast = toKatakanaIfHangul(aiCastJa || sourceData.cast || fetchedCast || null)?.replace(/_/g, '・');
+const rawFinalCast = toKatakanaIfHangul(aiCastJa || sourceData.cast || fetchedCast || null)?.replace(/_/g, '・');
+const finalCast = rawFinalCast ? rawFinalCast.split(/[,、/，\n]\s*/).slice(0, 5).join(', ') : null;
+const rawFinalCastEn = sourceData.cast_en || fetchedCastEn || null;
+const finalCastEn = rawFinalCastEn ? rawFinalCastEn.split(/[,、/，\n]\s*/).slice(0, 5).join(', ') : null;
 
 return [{
   json: {
@@ -411,7 +414,7 @@ return [{
     director: cleanPerson(finalDirector),
     director_en: cleanPerson(sourceData.director_en || fetchedDirectorEn || null),
     cast: cleanPerson(finalCast),
-    cast_en: cleanPerson(sourceData.cast_en || fetchedCastEn || null),
+    cast_en: cleanPerson(finalCastEn),
     overview: cleanStr(finalOverview),
     overview_en: cleanStr(originalForeignOverview),
     poster_url: posterPath,
