@@ -59,7 +59,7 @@ for (const item of items) {
   const resolvedCountry = parsed?.country 
                        || json.country 
                        || fallbackCountry 
-                       || "インドネシア";
+                       || "";
 
   // 3. 映画配列（Array）の抽出
   let allMovies = [];
