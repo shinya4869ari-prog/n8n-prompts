@@ -212,10 +212,21 @@ console.log(summaryText);
 console.log('====================================================');
 
 // ==============================================================================
-// 🎯 各ノードが何円か一目で分かる超明快な出力フォーマット
+// 🎯 前段のデータ（article, title, country等）を100%維持して後続にパススルー
 // ==============================================================================
+let prevData = {};
+try {
+  prevData = $input.first()?.json || {};
+} catch(e) {
+  try { prevData = $('リンク挿入').first()?.json || {}; } catch(_) {}
+}
+
 return [{
   json: {
+    ...prevData, // 👈 前段（リンク挿入）の記事データ（article, title, country, categories等）を丸ごと維持！
+    ai_cost_jpy: Number(totalCostJpy.toFixed(2)),
+    ai_cost_usd: Number(totalCostUsd.toFixed(4)),
+    ai_cost_summary: summaryText,
     "💰【合計AIコスト】": `${totalCostJpy.toFixed(2)} 円 ($${totalCostUsd.toFixed(4)})`,
     "────────── 種類別内訳 ──────────": "───────────────────────────────",
     "🔍 Perplexity合計": `${totalPerpCostJpy.toFixed(2)} 円 (Web検索 ${totalSearches}回)`,
