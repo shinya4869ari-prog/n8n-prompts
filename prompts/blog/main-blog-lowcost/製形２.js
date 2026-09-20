@@ -1,5 +1,8 @@
 const input = $input.first().json;
-let raw = input?.content?.parts?.[0]?.text || input?.output || input?.text || input?.response || "";
+let raw = input?.writer_draft || input?.content?.parts?.[0]?.text || input?.output || input?.text || input?.response || "";
+if (!raw) {
+  try { raw = $('★執筆即時保存').first()?.json?.writer_draft; } catch(e) {}
+}
 let article = raw;
 try {
   const parsed = JSON.parse(raw);
