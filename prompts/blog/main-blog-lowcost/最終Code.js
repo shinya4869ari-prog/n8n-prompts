@@ -1746,10 +1746,12 @@ return [articleItem].map(item => {
     const broaderRegex = /(?:<p[^>]*>\s*)?(?:■\s*主な出典|主な出典|出典[：:])[\s\S]*$/i;
     const broadMatch = text.match(broaderRegex);
 
-    const rawCite = broadMatch ? broadMatch[0] : "";
-    if (!rawCite) return { cleanedText: text, citeHtml: "" };
+    const cleanCitations = (str) => (str || '').replace(/\[\d+(?:[,\s]+\d+)*\]/g, '');
 
-    const cleanedText = text.replace(broaderRegex, "").trim();
+    const rawCite = broadMatch ? broadMatch[0] : "";
+    if (!rawCite) return { cleanedText: cleanCitations(text), citeHtml: "" };
+
+    const cleanedText = cleanCitations(text.replace(broaderRegex, "")).trim();
 
     // リンク抽出: <a>タグ または Markdownリンク [text](url) または 生URL
     const items = [];
@@ -1860,7 +1862,7 @@ return [articleItem].map(item => {
 
     // 出典ブロックの韓国記事スタイル抽出・分離（HTML・Markdown問わず無駄な余白を完全に除去）
     const formattedCites = formatDeepDiveCitations(deepDiveArticle);
-    let ddBody = formattedCites.cleanedText;
+    let ddBody = (formattedCites.cleanedText || '').replace(/\[\d+(?:[,\s]+\d+)*\]/g, '');
     const citeHtml = formattedCites.citeHtml;
 
     // すでにHTMLタグ（<div class="deep-dive-content" や <h3> や <blockquote> など）で整形されている場合
