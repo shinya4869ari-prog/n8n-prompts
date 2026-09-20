@@ -1450,8 +1450,39 @@ return [articleItem].map(item => {
   article += `<!-- SECTION:doukou:END -->\n`;
 
   // ==============================================================================
-  // 共通映画カード生成ヘルパー（韓国記事のお手本・movie_section_html.jsと100%完全一致・完全汎用版）
+  // 共通映画カード生成ヘルパー（韓国記事のお手本・上流プールデータ自動補完・完全汎用版）
   // ==============================================================================
+  // 上流ノード（sheetData, inputData, 前段ノード）から取得可能な全映画データを汎用収集
+  const movieDataPool = [];
+  function addMoviesToPool(list) {
+    if (!Array.isArray(list)) return;
+    list.forEach(m => {
+      if (m && typeof m === 'object') {
+        const t = (m['タイトル_日本語'] || m.title || m.name || m['タイトル'] || '').trim();
+        if (t && !movieDataPool.some(p => (p['タイトル_日本語'] || p.title || p.name || p['タイトル'] || '').trim() === t)) {
+          movieDataPool.push(m);
+        }
+      }
+    });
+  }
+
+  addMoviesToPool(sheetData.data?.対象国データ_記事?.おすすめ映画);
+  addMoviesToPool(sheetData.data?.対象国データ_記事?.映像作品);
+  addMoviesToPool(sheetData.data?.対象国データ_記事?.おすすめ映画ランキング);
+  addMoviesToPool(sheetData.data?.おすすめ映画);
+  addMoviesToPool(sheetData.data?.映像作品);
+  addMoviesToPool(sheetData.movies);
+  addMoviesToPool(inputData.movies);
+  addMoviesToPool(inputData.recommend_movies);
+  try {
+    const inputs = $input.all();
+    inputs.forEach(i => {
+      if (i.json?.poster_path || i.json?.tmdb_id || i.json?.title) addMoviesToPool([i.json]);
+      if (Array.isArray(i.json?.movies)) addMoviesToPool(i.json.movies);
+      if (Array.isArray(i.json?.recommend_movies)) addMoviesToPool(i.json.recommend_movies);
+    });
+  } catch(e) {}
+
   function renderMovieCard(d, isOsusume) {
     function getVal(v) {
       if (v == null) return '';
@@ -1464,7 +1495,16 @@ return [articleItem].map(item => {
     const cleanTitle = titleJa.replace(/<[^>]+>/g, '').trim();
     const titleOrig = getVal(d['原題']) || getVal(d.origin_title) || getVal(d.original_title) || '';
 
-    const isSerious = d.is_serious === true || d.is_serious === 'true' || d['深刻'] === true || d['深刻'] === 'true';
+    // 上流映画データプール（TMDb等）からのメタデータ自動補完（100%汎用・ハードコードなし）
+    const matchedPool = movieDataPool.find(p => {
+      const pTitleJa = getVal(p['タイトル_日本語']) || getVal(p.title) || getVal(p.name) || getVal(p['タイトル']) || '';
+      const cleanPTitle = pTitleJa.replace(/<[^>]+>/g, '').trim();
+      const pOrig = getVal(p['原題']) || getVal(p.origin_title) || getVal(p.original_title) || '';
+      return (cleanTitle && cleanPTitle && (cleanTitle === cleanPTitle || cleanTitle.includes(cleanPTitle) || cleanPTitle.includes(cleanTitle))) ||
+             (titleOrig && pOrig && (titleOrig === pOrig || titleOrig.includes(pOrig) || pOrig.includes(titleOrig)));
+    });
+
+    const isSerious = d.is_serious === true || d.is_serious === 'true' || d['深刻'] === true || d['深刻'] === 'true' || matchedPool?.is_serious === true || matchedPool?.is_serious === 'true' || matchedPool?.['深刻'] === true || matchedPool?.['深刻'] === 'true';
     const bg = isSerious ? '#fff3f3' : '#ffffff';
     const borderLeftColor = isOsusume ? '#00bcd4' : '#20B2AA';
 
@@ -1472,22 +1512,22 @@ return [articleItem].map(item => {
       ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>`
       : '';
 
-    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || '';
-    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || '';
+    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || getVal(matchedPool?.['director']) || getVal(matchedPool?.director_name) || getVal(matchedPool?.['監督']) || getVal(matchedPool?.director_en) || '';
+    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || getVal(matchedPool?.['cast']) || getVal(matchedPool?.['キャスト']) || getVal(matchedPool?.['出演']) || getVal(matchedPool?.cast_en) || '';
     let cast = '';
     if (rawCast) {
       const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
       cast = castArr.slice(0, 8).join(', ');
     }
 
-    const type = getVal(d['種別']) || getVal(d.genres) || getVal(d.type) || '';
-    const year = getVal(d['公開年']) || getVal(d.year) || getVal(d.release_year) || '';
+    const type = getVal(d['種別']) || getVal(d.genres) || getVal(d.type) || getVal(matchedPool?.['種別']) || getVal(matchedPool?.genres) || getVal(matchedPool?.type) || '';
+    const year = getVal(d['公開年']) || getVal(d.year) || getVal(d.release_year) || getVal(matchedPool?.['公開年']) || getVal(matchedPool?.year) || getVal(matchedPool?.release_year) || '';
 
     const directorStr = director ? ` &nbsp;•&nbsp; 監督：<span class="no-link">${director}</span>` : '';
     const castHtml = cast ? `<div style="font-size:12px;color:#666;margin-bottom:10px;line-height:1.5;">👥 キャスト：<span class="no-link">${cast}</span></div>` : '';
 
-    // ポスター画像URL（TMDB正規化）
-    const posterRaw = getVal(d.poster_path) || getVal(d.poster_url) || getVal(d['ポスター']) || getVal(d.poster) || getVal(d.image) || '';
+    // ポスター画像URL（TMDB正規化 ＆ 上流プールデータ補完）
+    const posterRaw = getVal(d.poster_path) || getVal(d.poster_url) || getVal(d['ポスター']) || getVal(d.poster) || getVal(d.image) || getVal(matchedPool?.poster_path) || getVal(matchedPool?.poster_url) || getVal(matchedPool?.['ポスター']) || getVal(matchedPool?.poster) || getVal(matchedPool?.image) || '';
     let posterUrl = '';
     if (posterRaw) {
       if (posterRaw.startsWith('http')) {
@@ -1502,9 +1542,9 @@ return [articleItem].map(item => {
       : '';
 
     // あらすじ / 概要 / 歴史クロス解説の統合
-    const rawOverview = getVal(d['概要']) || getVal(d.overview) || getVal(d.ai_summary) || getVal(d['あらすじ']) || getVal(d.synopsis) || getVal(d.description) || getVal(d.info) || '';
-    const rawHistory = getVal(d['歴史クロス解説']) || getVal(d.historical_significance) || '';
-    const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || '';
+    const rawOverview = getVal(d['概要']) || getVal(d.overview) || getVal(d.ai_summary) || getVal(d['あらすじ']) || getVal(d.synopsis) || getVal(d.description) || getVal(d.info) || getVal(matchedPool?.['概要']) || getVal(matchedPool?.overview) || getVal(matchedPool?.ai_summary) || getVal(matchedPool?.['あらすじ']) || '';
+    const rawHistory = getVal(d['歴史クロス解説']) || getVal(d.historical_significance) || getVal(matchedPool?.['歴史クロス解説']) || getVal(matchedPool?.historical_significance) || '';
+    const relatedEvent = getVal(d['関連事件']) || getVal(d.related_event) || getVal(matchedPool?.['関連事件']) || getVal(matchedPool?.related_event) || '';
 
     let summaryHtml = '';
     if (rawOverview && rawHistory && rawOverview !== rawHistory) {
@@ -1531,9 +1571,9 @@ return [articleItem].map(item => {
     }
     const searchQuery = titleOrig || cleanTitle;
     const popupTitleStr = titleOrig ? `${cleanTitle} (${titleOrig})` : cleanTitle;
-    const idParam = (d.wikidata_id || d.qid)
-      ? `&qid=${encodeURIComponent(d.wikidata_id || d.qid)}`
-      : (d.tmdb_id ? `&tmdb_id=${encodeURIComponent(d.tmdb_id)}` : '');
+    const idParam = (d.wikidata_id || d.qid || matchedPool?.wikidata_id || matchedPool?.qid)
+      ? `&qid=${encodeURIComponent(d.wikidata_id || d.qid || matchedPool?.wikidata_id || matchedPool?.qid)}`
+      : (d.tmdb_id || matchedPool?.tmdb_id ? `&tmdb_id=${encodeURIComponent(d.tmdb_id || matchedPool?.tmdb_id)}` : '');
     const mapUrl = `https://map.seronworks.dev/?mode=movie${idParam}&q=${encodeURIComponent(searchQuery)}`;
     const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
     const n = encText(popupTitleStr);
@@ -1543,7 +1583,7 @@ return [articleItem].map(item => {
 
     // YouTube予告編ボタン（trailer_url直リンク優先）
     let youtubeBtn = '';
-    const trailerUrl = getVal(d.trailer_url) || getVal(d.trailer) || '';
+    const trailerUrl = getVal(d.trailer_url) || getVal(d.trailer) || getVal(matchedPool?.trailer_url) || getVal(matchedPool?.trailer) || '';
     if (trailerUrl && trailerUrl.startsWith('http')) {
       youtubeBtn = `<a href="${trailerUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#ff0000;color:#fff;border-radius:20px;text-decoration:none;font-size:11px;">▶ YouTube予告編</a>`;
     } else {
@@ -1552,7 +1592,7 @@ return [articleItem].map(item => {
 
     // IMDbボタン（ID直リンク優先）
     let imdbUrl = '';
-    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || '';
+    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || getVal(matchedPool?.imdb_id) || getVal(matchedPool?.imdb_url) || getVal(matchedPool?.imdb) || '';
     if (rawImdb) {
       if (rawImdb.startsWith('http')) {
         imdbUrl = rawImdb;
@@ -1563,7 +1603,7 @@ return [articleItem].map(item => {
     }
     if (!imdbUrl) {
       const isHangul = /[\uac00-\ud7af]/.test(titleOrig);
-      const searchTarget = (!isHangul && titleOrig) ? titleOrig : (getVal(d.title_en) || cleanTitle || titleOrig);
+      const searchTarget = (!isHangul && titleOrig) ? titleOrig : (getVal(d.title_en) || getVal(matchedPool?.title_en) || cleanTitle || titleOrig);
       if (searchTarget) imdbUrl = `https://www.imdb.com/find/?q=${encodeURIComponent(searchTarget)}`;
     }
     const imdbBtn = imdbUrl ? `<a href="${imdbUrl}" target="_blank" style="display:inline-block;padding:4px 14px;background:#f5c518;color:#000;border-radius:20px;text-decoration:none;font-size:11px;font-weight:bold;">▶ IMDb</a>` : '';
@@ -1640,21 +1680,23 @@ return [articleItem].map(item => {
   article += `<h2 id="section-8" style="${h2Style}"><span style="background:#00bcd4;color:#fff;border-radius:6px;padding:2px 10px;font-size:13px;font-weight:500;">⑧</span> 映像で知る${countryName}</h2>\n`;
   
   const rawEizou = parseLines(raw, '映像').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
-  let eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || [];
-  let kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || [];
+  let eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || sheetData.data?.映像作品 || sheetData.映像作品 || [];
+  let kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || sheetData.data?.おすすめ映画 || sheetData.おすすめ映画 || [];
 
-  // 映画リストの配分（単一リストしかない場合は前半を⑧、後半を⑨に汎用分割）
-  let eizouList = [];
-  let kougyouList = [];
+  // 映画リストの配分（完全汎用：上流データとライター出力を統合）
+  let eizouList = buildMovieList(eizouData2, rawEizou);
+  const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
+  let kougyouList = buildMovieList(kougyouData2, rawKougyou);
 
-  if (Array.isArray(eizouData2) && eizouData2.length > 0 && (!kougyouData2 || kougyouData2.length === 0 || kougyouData2 === eizouData2)) {
-    const mid = Math.ceil(eizouData2.length / 2);
-    eizouList = eizouData2.slice(0, mid);
-    kougyouList = eizouData2.slice(mid);
-  } else {
-    eizouList = buildMovieList(eizouData2, rawEizou);
-    const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
-    kougyouList = buildMovieList(kougyouData2, rawKougyou);
+  // もしどちらか一方に映画が偏っている場合（片方が0件など）、均等に前半を⑧、後半を⑨に綺麗に配分（完全汎用）
+  if (eizouList.length === 0 && kougyouList.length > 0) {
+    const mid = Math.ceil(kougyouList.length / 2);
+    eizouList = kougyouList.slice(0, mid);
+    kougyouList = kougyouList.slice(mid);
+  } else if (kougyouList.length === 0 && eizouList.length > 0 && eizouList.length >= 6) {
+    const mid = Math.ceil(eizouList.length / 2);
+    kougyouList = eizouList.slice(mid);
+    eizouList = eizouList.slice(0, mid);
   }
 
   if (eizouList.length > 0) {
@@ -1695,6 +1737,61 @@ return [articleItem].map(item => {
       }
     }
     return '';
+  }
+
+  // Deep Dive出典の韓国記事スタイル整形ヘルパー（100%汎用・無駄な余白・空行・個別リストを完全排除）
+  function formatDeepDiveCitations(text) {
+    const broaderRegex = /(?:<p[^>]*>\s*)?(?:■\s*主な出典|主な出典|出典[：:])[\s\S]*$/i;
+    const broadMatch = text.match(broaderRegex);
+
+    const rawCite = broadMatch ? broadMatch[0] : "";
+    if (!rawCite) return { cleanedText: text, citeHtml: "" };
+
+    const cleanedText = text.replace(broaderRegex, "").trim();
+
+    // リンク抽出: <a>タグ または Markdownリンク [text](url) または 生URL
+    const items = [];
+    const aRegex = /<a\s+[^>]*href=["\x27](https?:[^"\x27]+)["\x27][^>]*>([\s\S]*?)<\/a>/gi;
+    let aMatch;
+    while ((aMatch = aRegex.exec(rawCite)) !== null) {
+      const url = aMatch[1].trim();
+      const title = aMatch[2].replace(/<[^>]+>/g, "").trim();
+      if (url) items.push({ title: title || url, url });
+    }
+
+    if (items.length === 0) {
+      const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+      let mdMatch;
+      while ((mdMatch = mdRegex.exec(rawCite)) !== null) {
+        items.push({ title: mdMatch[1].trim(), url: mdMatch[2].trim() });
+      }
+    }
+
+    if (items.length === 0) {
+      const lines = rawCite.replace(/<[^>]+>/g, "\n").split("\n").map(l => l.replace(/^[-–・*■\s]+/, "").trim()).filter(l => l && !l.includes("主な出典") && !l.includes("出典"));
+      lines.forEach(l => {
+        const urlM = l.match(/https?:\/\/\S+/);
+        if (urlM) {
+          const title = l.replace(urlM[0], "").trim() || urlM[0];
+          items.push({ title, url: urlM[0] });
+        } else {
+          items.push({ title: l, url: "" });
+        }
+      });
+    }
+
+    if (items.length === 0) return { cleanedText, citeHtml: "" };
+
+    const citeLines = items.map(it => {
+      if (it.url) {
+        return `<a href="${it.url}" target="_blank" style="color:#aaa;word-break:break-all;">${it.title}</a>`;
+      }
+      return `<span style="color:#aaa;">${it.title}</span>`;
+    }).join("  <br />");
+
+    const citationStyle = "font-size:12px;color:#aaa;text-align:right;margin-top:4px;margin-bottom:24px;";
+    const citeHtml = `<p class="citation" style="${citationStyle}">出典：<br />${citeLines}</p>\n`;
+    return { cleanedText, citeHtml };
   }
 
   let deepDiveArticle = '';
@@ -1759,12 +1856,17 @@ return [articleItem].map(item => {
   <div style="display:inline-block; background:#1a237e; color:#fff; padding:5px 18px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px;">✦ Deep Dive</div>
 </div>\n`;
 
+    // 出典ブロックの韓国記事スタイル抽出・分離（HTML・Markdown問わず無駄な余白を完全に除去）
+    const formattedCites = formatDeepDiveCitations(deepDiveArticle);
+    let ddBody = formattedCites.cleanedText;
+    const citeHtml = formattedCites.citeHtml;
+
     // すでにHTMLタグ（<div class="deep-dive-content" や <h3> や <blockquote> など）で整形されている場合
-    if (/<(?:div|h2|h3|blockquote|p)\b/i.test(deepDiveArticle)) {
-      article += `<div style="font-size:14px;line-height:1.9;color:#333;">\n${deepDiveArticle}\n</div>\n`;
+    if (/<(?:div|h2|h3|blockquote|p)\b/i.test(ddBody)) {
+      ddBody = ddBody.replace(/<p>&nbsp;<\/p>/gi, '').replace(/\n\s*\n+/g, '\n');
+      article += `<div style="font-size:14px;line-height:1.9;color:#333;">\n${ddBody}\n${citeHtml}</div>\n`;
     } else {
       // Markdown形式で渡された場合の成形（韓国記事スタイル装飾）
-      let ddBody = deepDiveArticle;
       const titleMatch = ddBody.match(/^#+\s*(?:✦\s*文化Deep\s*Dive[：:])?(.*?)$/m);
       if (titleMatch) {
         const ddTitle = titleMatch[1].replace(/（[^）]+）$/, '').trim();
@@ -1786,26 +1888,13 @@ return [articleItem].map(item => {
         return `<h3 style="font-size:14px;font-weight:900;color:#1a237e;border-left:4px solid #5c6bc0;padding:6px 12px;background:#f3f4f9;border-radius:0 6px 6px 0;margin:30px 0 12px;">【${cleanH}】</h3>`;
       });
 
-      // 出典ブロックの韓国記事スタイル変換
-      ddBody = ddBody.replace(/■\s*主な出典([\s\S]*?)$/gi, (match, citeContent) => {
-        const citeHtml = citeContent
-          .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" style="color:#aaa;word-break:break-all;">$1</a>')
-          .replace(/[-–]\s*/g, '')
-          .split('\n')
-          .map(l => l.trim())
-          .filter(Boolean)
-          .join('  <br />');
-        if (!citeHtml) return '';
-        return `<p class="citation" style="${citationStyle}">出典：<br />${citeHtml}</p>\n`;
-      });
-
       // 段落タグ成形
       const paragraphs = ddBody.split(/\n\n+/).filter(Boolean).map(p => {
         if (p.startsWith('<div') || p.startsWith('<blockquote') || p.startsWith('<h3') || p.startsWith('<p class="citation"')) return p;
         return `<p style="font-size:14px;line-height:1.9;color:#333;margin:12px 0;">${p.replace(/\n/g, '<br />')}</p>`;
       }).join('\n');
 
-      article += `<div style="font-size:14px;line-height:1.9;color:#333;">\n${paragraphs}\n</div>\n`;
+      article += `<div style="font-size:14px;line-height:1.9;color:#333;">\n${paragraphs}\n${citeHtml}</div>\n`;
     }
 
     article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.15);color:#1a237e;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
