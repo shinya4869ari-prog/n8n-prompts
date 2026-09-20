@@ -195,15 +195,6 @@ try {
 let mainArticle = '';
 try { mainArticle = $('最終Code').first().json.article ?? ''; } catch (e) {}
 
-// ⚠️ おすすめ映画セクション（section-9）内はリンク挿入禁止
-// あらすじ・役名への不要なポップアップリンクを防ぐため、セクション全体をno-linkラッパーで保護する
-// section-9 の開始タグ（h2またはdiv with id="section-9"）から section-10 の前まで
-mainArticle = mainArticle.replace(
-  /(<(?:h[1-6]|div)[^>]*\bid="section-9"[^>]*>)([\s\S]*?)(?=<(?:h[1-6]|div)[^>]*\bid="section-10"|$)/,
-  (match, openTag, content) => {
-    return openTag + '<div class="no-link">' + content + '</div>';
-  }
-);
 
 let deepDiveRaw = '';
 try { deepDiveRaw = $('最終Code').first().json?.deepDiveArticle ?? $('整形3').first().json?.article ?? ''; } catch (e) {}
@@ -395,40 +386,23 @@ function insertLinks(articleText) {
           insideNoLink = false;
         }
 
-        // ⚠️ おすすめ映画セクション検出: movie-card / movie-section / data-section="movies" 等
-        // これらのブロック内（あらすじ・役名等）へのリンク挿入を完全禁止
+        // ⚠️ おすすめ映画セクション（id="section-9"）の検出
+        // section-9 内では映画タイトル（type=movies）以外のリンクを禁止
+        // → あらすじ・役名・地名などに誤ってポップアップリンクが貼られるのを防ぐ
         const tagLower = token.text.toLowerCase();
-        if (!token.text.startsWith('</')) {
-          if (
-            tagLower.includes('movie-card') ||
-            tagLower.includes('movie-section') ||
-            tagLower.includes('data-section="movie') ||
-            tagLower.includes("data-section='movie") ||
-            tagLower.includes('film-card') ||
-            tagLower.includes('recommend-movie') ||
-            tagLower.includes('おすすめ映画') ||
-            tagLower.includes('tenbin-movie')
-          ) {
-            insideMovieSection = true;
-            movieSectionDepth = 1;
-          } else if (insideMovieSection && tagLower.match(/^<div|^<section|^<article/)) {
-            movieSectionDepth++;
-          }
-        } else {
-          if (insideMovieSection && tagLower.match(/^<\/div|^<\/section|^<\/article/)) {
-            movieSectionDepth--;
-            if (movieSectionDepth <= 0) {
-              insideMovieSection = false;
-              movieSectionDepth = 0;
-            }
-          }
+        if (tagLower.includes('id="section-9"') || tagLower.includes("id='section-9'")) {
+          insideMovieSection = true;
+        } else if (tagLower.includes('id="section-10"') || tagLower.includes("id='section-10'")) {
+          insideMovieSection = false;
         }
 
         newTokens.push(token);
         continue;
       }
 
-      if (replaced || insideNoLink || insideMovieSection || token.text.includes('quickchart.io')) {
+      // 映画セクション内でも movies タイプ（映画タイトル）はリンクを通す
+      const blockByMovieSection = insideMovieSection && cand.entity.type !== 'movies';
+      if (replaced || insideNoLink || blockByMovieSection || token.text.includes('quickchart.io')) {
         newTokens.push(token);
         continue;
       }
