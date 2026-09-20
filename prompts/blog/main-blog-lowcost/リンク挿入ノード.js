@@ -210,14 +210,36 @@ const allEntities = [
   ...crimes.map(p   => ({type: 'crimes',   ...p}))
 ];
 
+// 音楽アーティスト名（歌手名）をリンク対象から除外（曲名リンクから詳細を見るため）
+const musicArtists = new Set();
+try {
+  const mList = $('整形ノード1').first().json?.data?.対象国データ_記事?.おすすめ音楽
+    || $('整形ノード1').first().json?.data?.対象国データ_記事?.recommend_music
+    || $('整形ノード1').first().json?.おすすめ音楽 || [];
+  for (const m of mList) {
+    const a1 = m.artist_name || m['アーティスト'];
+    const a2 = m.artist_name_en || m['アーティスト_英語'];
+    if (a1) {
+      musicArtists.add(String(a1).trim());
+      musicArtists.add(String(a1).replace(/[（\(\[［].*?[）\)］]/g, '').trim());
+    }
+    if (a2) {
+      musicArtists.add(String(a2).trim());
+      musicArtists.add(String(a2).replace(/[（\(\[［].*?[）\)］]/g, '').trim());
+    }
+  }
+} catch (e) {}
+
 for (const entity of allEntities) {
   if (!entity.name) continue;
   if (entity.type !== 'crimes' && entity.type !== 'movies' && !entity.info) continue;
-  entity.name = String(entity.name);
+  entity.name = String(entity.name).trim();
+  if (musicArtists.has(entity.name)) continue;
   entity.info = String(entity.info || '');
   if (/語$/.test(entity.name)) continue;
   const variants = getSearchVariants(entity.name, entity.type);
   for (const pattern of variants) {
+    if (musicArtists.has(pattern)) continue;
     flatPatterns.push({ entity, pattern });
   }
 }
