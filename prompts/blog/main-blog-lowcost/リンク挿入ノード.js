@@ -269,6 +269,8 @@ function insertLinks(articleText) {
     const hasValidId = Boolean(qidParam || tmdbParam);
     const idParam = qidParam ? `&qid=${encodeURIComponent(qidParam)}` : (tmdbParam ? `&tmdb_id=${encodeURIComponent(tmdbParam)}` : '');
 
+    const closeClick = `document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none';`;
+
     let linkButtonHTML;
     if (hasValidId) {
       let mapUrl;
@@ -281,10 +283,10 @@ function insertLinks(articleText) {
       } else {
         mapUrl = `https://map.seronworks.dev/?${idParam ? idParam.slice(1) + '&' : ''}q=${encodeURIComponent(cand.entity.name)}`;
       }
-      linkButtonHTML = `<br><br><a href="${mapUrl}" target="history_gallery" rel="noopener noreferrer" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+      linkButtonHTML = `<br><br><a href="${mapUrl}" target="history_gallery" rel="noopener noreferrer" onclick="${closeClick}" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
     } else {
       const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(cand.entity.name)}`;
-      linkButtonHTML = `<br><br><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 20px;background:#4285f4;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🔍 Googleで検索する</a>`;
+      linkButtonHTML = `<br><br><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" onclick="${closeClick}" style="display:inline-block;padding:10px 20px;background:#4285f4;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🔍 Googleで検索する</a>`;
     }
 
     const infoText = cand.entity.info ? String(cand.entity.info).trim() : '';

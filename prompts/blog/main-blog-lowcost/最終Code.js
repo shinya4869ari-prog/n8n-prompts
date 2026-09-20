@@ -1589,7 +1589,7 @@ return [articleItem].map(item => {
       ? `&qid=${encodeURIComponent(d.wikidata_id || d.qid || matchedPool?.wikidata_id || matchedPool?.qid)}`
       : (d.tmdb_id || matchedPool?.tmdb_id ? `&tmdb_id=${encodeURIComponent(d.tmdb_id || matchedPool?.tmdb_id)}` : '');
     const mapUrl = `https://map.seronworks.dev/?mode=movie${idParam}&q=${encodeURIComponent(searchQuery)}`;
-    const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+    const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" onclick="document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none';" style="display:inline-block;padding:10px 20px;background:#20B2AA;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
     const n = encText(popupTitleStr);
     const i = encText(linkHTML);
     const onclick = `var d=function(s){return decodeURIComponent(escape(atob(s)));};document.getElementById("tenbin-popup-title").textContent=d("${n}");document.getElementById("tenbin-popup-info").innerHTML=d("${i}");document.getElementById("tenbin-popup").style.display="block";document.getElementById("tenbin-overlay").style.display="block";`;
@@ -1974,7 +1974,7 @@ return [articleItem].map(item => {
       const searchQuery = `${artistName} ${trackName}`;
       const idParam = trackId ? `&id=${encodeURIComponent(trackId)}` : '';
       const mapUrl = `https://map.seronworks.dev/?mode=music${idParam}&q=${encodeURIComponent(searchQuery)}`;
-      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" style="display:inline-block;padding:10px 20px;background:#ff4081;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
+      const linkHTML = `<br><br><a href="${mapUrl}" target="history_gallery" onclick="document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none';" style="display:inline-block;padding:10px 20px;background:#ff4081;color:#fff;text-decoration:none;border-radius:25px;font-weight:bold;font-size:13px;">🏛️ 国家の天秤 歴史館で詳しく見る</a>`;
       const popupTitleStr = `${trackName} - ${artistName}`;
       const n = encText(popupTitleStr);
       const i = encText(linkHTML);
