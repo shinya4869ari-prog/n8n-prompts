@@ -326,7 +326,8 @@ try {
         "概要": movie.overview || movie.概要 || movie.ai_summary || "",
         "tmdb_id": movie.tmdb_id || null,
         "poster_path": posterPath,
-        "imdb_id": movie.wikidata_id || movie.imdb_id || movie.imdb_url || "",
+        "wikidata_id": movie.wikidata_id || movie.qid || "",
+        "imdb_id": (movie.imdb_id && !String(movie.imdb_id).startsWith('Q')) ? movie.imdb_id : (movie.imdb_url || ""),
         "related_event": movie.関連事件 || movie.related_event || "",
         "historical_significance": movie.歴史クロス解説 || movie.historical_significance || ""
       };

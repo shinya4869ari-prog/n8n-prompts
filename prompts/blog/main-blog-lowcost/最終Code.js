@@ -1606,13 +1606,16 @@ return [articleItem].map(item => {
 
     // IMDbボタン（ID直リンク優先）
     let imdbUrl = '';
-    const rawImdb = getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || getVal(matchedPool?.imdb_id) || getVal(matchedPool?.imdb_url) || getVal(matchedPool?.imdb) || '';
-    if (rawImdb) {
+    const rawImdb = String(getVal(d.imdb_id) || getVal(d.imdb_url) || getVal(d.imdb) || getVal(matchedPool?.imdb_id) || getVal(matchedPool?.imdb_url) || getVal(matchedPool?.imdb) || '').trim();
+    if (rawImdb && !rawImdb.startsWith('Q')) {
       if (rawImdb.startsWith('http')) {
         imdbUrl = rawImdb;
       } else {
         const cleanId = rawImdb.replace(/.*\/title\//, '').replace(/\/.*/, '').trim();
-        if (cleanId) imdbUrl = `https://www.imdb.com/title/${cleanId}/`;
+        // IMDb IDは必ず 'tt' で始まる形式
+        if (cleanId && cleanId.startsWith('tt')) {
+          imdbUrl = `https://www.imdb.com/title/${cleanId}/`;
+        }
       }
     }
     if (!imdbUrl) {
