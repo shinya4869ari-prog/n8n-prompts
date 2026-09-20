@@ -195,6 +195,16 @@ try {
 let mainArticle = '';
 try { mainArticle = $('最終Code').first().json.article ?? ''; } catch (e) {}
 
+// ⚠️ おすすめ映画セクション（section-9）内はリンク挿入禁止
+// あらすじ・役名への不要なポップアップリンクを防ぐため、セクション全体をno-linkラッパーで保護する
+// section-9 の開始タグ（h2またはdiv with id="section-9"）から section-10 の前まで
+mainArticle = mainArticle.replace(
+  /(<(?:h[1-6]|div)[^>]*\bid="section-9"[^>]*>)([\s\S]*?)(?=<(?:h[1-6]|div)[^>]*\bid="section-10"|$)/,
+  (match, openTag, content) => {
+    return openTag + '<div class="no-link">' + content + '</div>';
+  }
+);
+
 let deepDiveRaw = '';
 try { deepDiveRaw = $('最終Code').first().json?.deepDiveArticle ?? $('整形3').first().json?.article ?? ''; } catch (e) {}
 
@@ -372,20 +382,53 @@ function insertLinks(articleText) {
     let newTokens = [];
     let replaced = false;
     let insideNoLink = false;
+    let insideMovieSection = false;
+    let movieSectionDepth = 0;
 
     for (let idxToken = 0; idxToken < linkTokens.length; idxToken++) {
       const token = linkTokens[idxToken];
       if (token.type === 'tag') {
+        // no-link クラスの検出（既存）
         if (token.text.includes('class="no-link"') || token.text.includes("class='no-link'")) {
           insideNoLink = true;
         } else if (token.text.startsWith('</')) {
           insideNoLink = false;
         }
+
+        // ⚠️ おすすめ映画セクション検出: movie-card / movie-section / data-section="movies" 等
+        // これらのブロック内（あらすじ・役名等）へのリンク挿入を完全禁止
+        const tagLower = token.text.toLowerCase();
+        if (!token.text.startsWith('</')) {
+          if (
+            tagLower.includes('movie-card') ||
+            tagLower.includes('movie-section') ||
+            tagLower.includes('data-section="movie') ||
+            tagLower.includes("data-section='movie") ||
+            tagLower.includes('film-card') ||
+            tagLower.includes('recommend-movie') ||
+            tagLower.includes('おすすめ映画') ||
+            tagLower.includes('tenbin-movie')
+          ) {
+            insideMovieSection = true;
+            movieSectionDepth = 1;
+          } else if (insideMovieSection && tagLower.match(/^<div|^<section|^<article/)) {
+            movieSectionDepth++;
+          }
+        } else {
+          if (insideMovieSection && tagLower.match(/^<\/div|^<\/section|^<\/article/)) {
+            movieSectionDepth--;
+            if (movieSectionDepth <= 0) {
+              insideMovieSection = false;
+              movieSectionDepth = 0;
+            }
+          }
+        }
+
         newTokens.push(token);
         continue;
       }
 
-      if (replaced || insideNoLink || token.text.includes('quickchart.io')) {
+      if (replaced || insideNoLink || insideMovieSection || token.text.includes('quickchart.io')) {
         newTokens.push(token);
         continue;
       }
