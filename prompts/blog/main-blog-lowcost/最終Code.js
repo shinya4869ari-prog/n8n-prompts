@@ -1683,21 +1683,9 @@ return [articleItem].map(item => {
   let eizouData2 = sheetData.data?.対象国データ_記事?.映像作品 || sheetData.data?.映像作品 || sheetData.映像作品 || [];
   let kougyouData2 = sheetData.data?.対象国データ_記事?.おすすめ映画 || sheetData.data?.対象国データ_記事?.おすすめ映画ランキング || sheetData.data?.おすすめ映画 || sheetData.おすすめ映画 || [];
 
-  // 映画リストの配分（完全汎用：上流データとライター出力を統合）
   let eizouList = buildMovieList(eizouData2, rawEizou);
   const rawKougyou = parseLines(raw, 'おすすめ').filter(d => d['タイトル'] && d['タイトル'] !== '欠測');
   let kougyouList = buildMovieList(kougyouData2, rawKougyou);
-
-  // もしどちらか一方に映画が偏っている場合（片方が0件など）、均等に前半を⑧、後半を⑨に綺麗に配分（完全汎用）
-  if (eizouList.length === 0 && kougyouList.length > 0) {
-    const mid = Math.ceil(kougyouList.length / 2);
-    eizouList = kougyouList.slice(0, mid);
-    kougyouList = kougyouList.slice(mid);
-  } else if (kougyouList.length === 0 && eizouList.length > 0 && eizouList.length >= 6) {
-    const mid = Math.ceil(eizouList.length / 2);
-    kougyouList = eizouList.slice(mid);
-    eizouList = eizouList.slice(0, mid);
-  }
 
   if (eizouList.length > 0) {
     eizouList.forEach(item => {
