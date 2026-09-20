@@ -108,8 +108,8 @@ for (const item of items) {
       results.push({
         json: {
           title: title,
-          director: movie.director || movie.監督 || "監督不明",
-          cast: movie.cast || movie.出演 || "出演者不明",
+          director: movie.監督 || movie.director || "監督不明",
+          cast: movie.メインキャスト || movie.cast || movie.キャスト || movie.出演 || "出演者不明",
           origin_title: movie.原題 || movie.origin_title || title,
           poster_url: movie.poster_url || movie.poster_path || "",
           country: movie.country || resolvedCountry,

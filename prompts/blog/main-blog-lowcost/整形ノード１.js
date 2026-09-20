@@ -315,14 +315,14 @@ try {
         "原題": movie.origin_title || movie.原題 || "",
         "種別": movie.type || movie.種別 || "映画",
         "公開年": movie.year || movie.公開年 || "",
-        "director": movie.director || movie.director_name || movie.監督 || "",
-        "cast": movie.cast || movie.キャスト || movie.出演 || "",
+        "director": movie.監督 || movie.director || movie.director_name || "",
+        "cast": movie.メインキャスト || movie.cast || movie.キャスト || movie.出演 || "",
         "概要": movie.overview || movie.概要 || movie.ai_summary || "",
         "tmdb_id": movie.tmdb_id || null,
         "poster_path": posterPath,
         "imdb_id": movie.wikidata_id || movie.imdb_id || movie.imdb_url || "",
-        "related_event": movie.related_event || movie.関連事件 || "",
-        "historical_significance": movie.historical_significance || movie.歴史クロス解説 || ""
+        "related_event": movie.関連事件 || movie.related_event || "",
+        "historical_significance": movie.歴史クロス解説 || movie.historical_significance || ""
       };
     });
   }

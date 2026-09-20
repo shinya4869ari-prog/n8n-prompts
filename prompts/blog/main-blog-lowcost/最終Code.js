@@ -1512,8 +1512,8 @@ return [articleItem].map(item => {
       ? `<span style="font-size:13px;color:#666;font-weight:normal;margin-left:6px;">(${titleOrig})</span>`
       : '';
 
-    const director = getVal(d['director']) || getVal(d.director_name) || getVal(d['監督']) || getVal(d.director_en) || getVal(matchedPool?.['director']) || getVal(matchedPool?.director_name) || getVal(matchedPool?.['監督']) || getVal(matchedPool?.director_en) || '';
-    const rawCast = getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || getVal(matchedPool?.['cast']) || getVal(matchedPool?.['キャスト']) || getVal(matchedPool?.['出演']) || getVal(matchedPool?.cast_en) || '';
+    const director = getVal(d['監督']) || getVal(d['director']) || getVal(d.director_name) || getVal(d.director_en) || getVal(matchedPool?.['監督']) || getVal(matchedPool?.['director']) || getVal(matchedPool?.director_name) || getVal(matchedPool?.director_en) || '';
+    const rawCast = getVal(d['メインキャスト']) || getVal(d['cast']) || getVal(d['キャスト']) || getVal(d['出演']) || getVal(d.cast_en) || getVal(matchedPool?.['メインキャスト']) || getVal(matchedPool?.['cast']) || getVal(matchedPool?.['キャスト']) || getVal(matchedPool?.['出演']) || getVal(matchedPool?.cast_en) || '';
     let cast = '';
     if (rawCast) {
       const castArr = String(rawCast).split(/[,、/，\n]\s*/).map(c => c.trim()).filter(Boolean);
@@ -1554,14 +1554,16 @@ return [articleItem].map(item => {
         ${overviewParagraphs || rawOverview}
       </div>
       <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
-        <strong>🏛️ 歴史的背景とのリンク${relatedEvent ? `（${relatedEvent}）` : ''}：</strong><br>${rawHistory}
+        <strong>🏛️ 歴史クロス解説${relatedEvent ? `（連動事件：${relatedEvent}）` : ''}：</strong><br>${rawHistory}
       </div>`;
-    } else {
-      const singleText = rawOverview || rawHistory;
-      if (singleText) {
-        const paragraphs = singleText.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
-        summaryHtml = `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${paragraphs || singleText}</div>`;
-      }
+    } else if (rawHistory) {
+      summaryHtml = `
+      <div style="background:rgba(0,188,212,0.06);border-left:3px solid #00bcd4;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#006064;">
+        <strong>🏛️ 歴史クロス解説${relatedEvent ? `（連動事件：${relatedEvent}）` : ''}：</strong><br>${rawHistory}
+      </div>`;
+    } else if (rawOverview) {
+      const paragraphs = rawOverview.split(/\n\n+/).filter(Boolean).map(p => `<p style="margin:8px 0;line-height:1.75;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+      summaryHtml = `<div style="font-size:14px;color:#2c3e50;line-height:1.75;margin-bottom:14px;letter-spacing:0.02em;">${paragraphs || rawOverview}</div>`;
     }
 
     // 国家の天秤ポップアップ onclick（base64エンコード）
