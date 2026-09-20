@@ -446,11 +446,9 @@ if (recommendMusic.length === 0 && supabaseMusicRaw) {
 }
 
 if (recommendMusic.length === 0) {
-  if (Array.isArray(r25?.おすすめ音楽) && r25.おすすめ音楽.length > 0) {
-    recommendMusic = r25.おすすめ音楽;
-  } else if (Array.isArray(r2?.おすすめ音楽) && r2.おすすめ音楽.length > 0) {
-    recommendMusic = r2.おすすめ音楽;
-  }
+  // ⚠️ 音楽APIが0件のときにAIが架空URLを出力するフォールバックは廃止
+  // → エラーで即時停止させてワークフローを異常終了させる
+  throw new Error(`❌ 音楽データ取得エラー: iTunes Search API が 0件を返しました（国: ${countryName || '不明'}）。\n音楽検索ワークフローの実行結果を確認してください。\nAIによる架空URL生成（ハルシネーション）を防止するため、この時点で処理を中断します。`);
 }
 
 // 記事生成用のマージデータ

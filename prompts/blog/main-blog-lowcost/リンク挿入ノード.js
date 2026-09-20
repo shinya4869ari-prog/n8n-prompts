@@ -133,6 +133,65 @@ try {
   }
 } catch(e) {}
 
+// ② sheetData から重大犯罪事件・歴史的背景を自動補完（LLMの抽出漏れ・ライター省略の完全防止）
+let sheetData = {};
+try {
+  sheetData = $('整形ノード1').first()?.json 
+           || $('整形ノード１').first()?.json 
+           || $('整形ノード').first()?.json 
+           || {};
+} catch(e) {}
+
+// A. 重大犯罪事件の補完
+try {
+  const rCrimes = sheetData.data?.対象国データ?.重大犯罪事件 
+               || sheetData.data?.対象国データ_記事?.重大犯罪事件 
+               || [];
+  for (const c of rCrimes) {
+    const cName = (c.事件名 || '').trim();
+    if (!cName) continue;
+    const cInfo = c.概要 || c.事件概要 || (c.犯人名 ? `犯人：${c.犯人名}` : '');
+    const exists = crimes.some(item => item.name === cName);
+    if (!exists) {
+      crimes.push({ name: cName, info: cInfo });
+    } else {
+      const target = crimes.find(item => item.name === cName);
+      if (target && !target.info && cInfo) target.info = cInfo;
+    }
+  }
+} catch(e) {}
+
+// B. 歴史的背景（近代100年）の補完
+try {
+  const rHistory = sheetData.data?.対象国データ_記事?.歴史的背景 
+                || sheetData.data?.対象国データ?.歴史的背景 
+                || [];
+  for (const h of rHistory) {
+    const hName = (h.事象名 || h.事件名 || '').trim();
+    if (!hName) continue;
+    const hInfo = h.概要 || '';
+    const exists = keywords.some(item => item.name === hName);
+    if (!exists) {
+      keywords.push({ name: hName, info: hInfo, isHistorical: true });
+    } else {
+      const target = keywords.find(item => item.name === hName);
+      if (target) {
+        target.isHistorical = true;
+        if (!target.info && hInfo) target.info = hInfo;
+      }
+    }
+    
+    // 「AとB」のような複合事象名の場合、主要な事件名単体も拾えるように追加（例：「9月30日事件とスハルト体制の樹立」 -> 「9月30日事件」）
+    const subMatch = hName.match(/^([^と、]+(?:事件|虐殺|クーデター|抗争|暴動|沈没事故|事故|運動|革命|事態))/);
+    if (subMatch && subMatch[1] && subMatch[1] !== hName) {
+      const subName = subMatch[1].trim();
+      if (subName.length >= 3 && !keywords.some(item => item.name === subName)) {
+        keywords.push({ name: subName, info: hInfo, isHistorical: true });
+      }
+    }
+  }
+} catch(e) {}
+
 let mainArticle = '';
 try { mainArticle = $('最終Code').first().json.article ?? ''; } catch (e) {}
 
@@ -163,6 +222,11 @@ function getSearchVariants(name, type) {
   const inside = insideMatch ? insideMatch[1].trim() : '';
   
   let jpn = [base];
+
+  // 事件名の場合、末尾の「事件」を外したパターンも追加（本文中で「〜乱闘」「〜放火殺人」のように書かれていてもマッチさせる）
+  if (base.endsWith('事件') && base.length > 3) {
+    jpn.push(base.replace(/事件$/, ''));
+  }
   
   // 1. 中黒（・）を除去したパターン
   if (base.includes('・')) {
@@ -232,7 +296,7 @@ try {
 
 for (const entity of allEntities) {
   if (!entity.name) continue;
-  if (entity.type !== 'crimes' && entity.type !== 'movies' && !entity.info) continue;
+  if (entity.type !== 'crimes' && entity.type !== 'movies' && !entity.isHistorical && !entity.info) continue;
   entity.name = String(entity.name).trim();
   if (musicArtists.has(entity.name)) continue;
   entity.info = String(entity.info || '');
@@ -271,7 +335,10 @@ function insertLinks(articleText) {
 
     const closeClick = `document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none';`;
     const isPlace = cand.entity.type === 'places';
-    const shouldGoToMap = isPlace || hasValidId;
+    const isCrime = cand.entity.type === 'crimes';
+    const isHistory = cand.entity.type === 'keywords' && (cand.entity.isHistorical || /(?:事件|虐殺|クーデター|抗争|暴動|沈没事故|事故|運動|革命|戦争|条約|協定|危機|政変|事態)$/.test(cand.entity.name));
+    // 地名、重大犯罪事件、歴史的事象、またはQID/TMDB IDを持つものはすべて「国家の天秤 歴史館」へ遷移
+    const shouldGoToMap = isPlace || isCrime || isHistory || hasValidId;
 
     let linkButtonHTML;
     if (shouldGoToMap) {

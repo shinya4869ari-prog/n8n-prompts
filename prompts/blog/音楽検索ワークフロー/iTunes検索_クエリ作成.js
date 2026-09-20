@@ -16,8 +16,8 @@ const marketCode = (countryCode && countryCode.length === 2) ? countryCode.toUpp
 // iTunes検索用クエリの生成
 // 世界各国の音楽ジャンル・時代を超える名曲（クラシック・ヒット）のマッピングテーブル
 const genreMap = {
-  'Korea': 'Korea hits classic',
-  'South Korea': 'Korea hits classic',
+  'Korea': 'K-POP Korean music hits',
+  'South Korea': 'K-POP Korean music hits',
   'Japan': 'J-POP 名曲 ヒット',
   'Jamaica': 'Jamaica reggae classics',
   'Brazil': 'Brazil bossa nova samba classics',
@@ -52,8 +52,10 @@ for (const key in genreMap) {
 }
 
 // iTunes Search API Endpoint
-// ※対象国ストア(countryCode)が小規模で楽曲が少ない国があるため、グローバル最大カタログを持つ'US'ストアをベースに検索
-const searchMarket = (marketCode === 'JP' || marketCode === 'KR' || marketCode === 'US' || marketCode === 'GB') ? marketCode : 'US';
+// ⚠️ 重要: KR・JP・GB等のローカルストアは英語クエリでヒットしない場合があるため、
+//          全国コードで"US"ストア（最大カタログ）を使用する
+// KRストアで英語クエリを叩くと resultCount=0 になり、AIがURLを捏造するバグが発生していた
+const searchMarket = 'US';
 const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=${searchMarket}&media=music&entity=song&limit=40`;
 
 return [{
