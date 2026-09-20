@@ -270,9 +270,11 @@ function insertLinks(articleText) {
     const idParam = qidParam ? `&qid=${encodeURIComponent(qidParam)}` : (tmdbParam ? `&tmdb_id=${encodeURIComponent(tmdbParam)}` : '');
 
     const closeClick = `document.getElementById('tenbin-popup').style.display='none';document.getElementById('tenbin-overlay').style.display='none';`;
+    const isPlace = cand.entity.type === 'places';
+    const shouldGoToMap = isPlace || hasValidId;
 
     let linkButtonHTML;
-    if (hasValidId) {
+    if (shouldGoToMap) {
       let mapUrl;
       if (cand.entity.type === 'keywords' || cand.entity.type === 'crimes') {
         mapUrl = `https://map.seronworks.dev/?mode=incident${idParam}&q=${encodeURIComponent(cand.entity.name)}`;
