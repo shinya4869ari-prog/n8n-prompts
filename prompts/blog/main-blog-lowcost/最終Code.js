@@ -1412,12 +1412,7 @@ return [articleItem].map(item => {
     });
     rekishiHtml += `</tbody></table>`;
     article += rekishiHtml;
-    article += `
-<div style="text-align:right;margin:10px 0 30px;">
-  <a href="#deep-dive" style="display:inline-block;padding:6px 16px;background:rgba(26,35,126,0.35);color:#fff;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;opacity:0.6;">
-    ✦ Deep Dive で深掘りする
-  </a>
-</div>\n`;
+    article += `<div style="text-align:right;margin:10px 0 30px;"><a href="#top" style="display:inline-block;padding:6px 16px;background:rgba(0,188,212,0.15);color:#00bcd4;text-decoration:none;border-radius:20px;font-weight:normal;font-size:11px;">▲ 先頭に戻る</a></div>\n`;
     article += `<!-- SECTION:rekishi:END -->\n`;
   } else {
     article += `<!-- SECTION:rekishi:END -->\n`;
