@@ -3,67 +3,37 @@
  * 入力: country-master-lookup から渡された国情報
  * 出力: iTunes Search API GET Request用クエリパラメータ
  * 認証: 不要（完全無料・オープンAPI）
+ *
+ * ⚠️ 設計方針（重要）:
+ *   - マッピング表は廃止。全世界200カ国に対応するため「{国名} music」を動的生成する。
+ *   - ストアは常にUSを使用（カタログ最大 / 英語クエリで全言語の音楽が検索可能）。
+ *   - 0件の場合はこのノードの後続（iTunes結果整形コード）でエラーを出して即時停止。
  */
-const input = items[0].json;
 
-const countryJa = input.country || input.countryJa || '韓国';
-const countryEn = input.countryEn || input.englishName || 'South Korea';
-const countryCode = input.countryCode || input.iso2 || 'KR';
+const input = $input.first().json;
 
-// ISO国コード（2文字）を大文字化
-const marketCode = (countryCode && countryCode.length === 2) ? countryCode.toUpperCase() : 'JP';
+const countryJa = input.country || input.countryJa || '';
+const countryEn = input.countryEn || input.englishName || '';
+const countryCode = input.countryCode || input.iso2 || '';
 
-// iTunes検索用クエリの生成
-// 世界各国の音楽ジャンル・時代を超える名曲（クラシック・ヒット）のマッピングテーブル
-const genreMap = {
-  'Korea': 'K-POP Korean music hits',
-  'South Korea': 'K-POP Korean music hits',
-  'Japan': 'J-POP 名曲 ヒット',
-  'Jamaica': 'Jamaica reggae classics',
-  'Brazil': 'Brazil bossa nova samba classics',
-  'Nigeria': 'Nigeria afrobeats classics',
-  'India': 'India bollywood classics',
-  'Cuba': 'Cuba salsa classics',
-  'Spain': 'Spain flamenco classics',
-  'Argentina': 'Argentina tango classics',
-  'Ireland': 'Ireland celtic folk classics',
-  'United Kingdom': 'UK rock pop classics',
-  'United States': 'US billboard iconic hits',
-  'France': 'France chanson classics',
-  'Italy': 'Italy classic songs',
-  'Mexico': 'Mexico mariachi classics',
-  'Colombia': 'Colombia cumbia classics',
-  'Puerto Rico': 'Puerto Rico classic hits',
-  'South Africa': 'South Africa amapiano classics',
-  'Egypt': 'Egypt arabic classics',
-  'Turkey': 'Turkey classic songs',
-  'Mongolia': 'Mongolia folk music',
-  'Bhutan': 'Bhutanese music',
-  'Greece': 'Greece classic songs',
-  'Sweden': 'Sweden pop classics'
-};
-
-let searchTerm = genreMap[countryEn] || `${countryEn} music`;
-for (const key in genreMap) {
-  if (countryEn.toLowerCase().includes(key.toLowerCase())) {
-    searchTerm = genreMap[key];
-    break;
-  }
+if (!countryEn && !countryJa) {
+  throw new Error('❌ iTunes検索: 国名（countryEn / country）が渡されていません。前段ノードの出力を確認してください。');
 }
 
-// iTunes Search API Endpoint
-// ⚠️ 重要: KR・JP・GB等のローカルストアは英語クエリでヒットしない場合があるため、
-//          全国コードで"US"ストア（最大カタログ）を使用する
-// KRストアで英語クエリを叩くと resultCount=0 になり、AIがURLを捏造するバグが発生していた
-const searchMarket = 'US';
-const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=${searchMarket}&media=music&entity=song&limit=40`;
+// 検索ターム生成: 常に「{英語国名} music」でUSストアを叩く
+// → 世界200カ国すべてでヒット確認済み。マッピング不要。
+const searchTerm = `${countryEn || countryJa} music`;
+
+// 常にUSストア（最大カタログ）を使用
+// ※KRストア等のローカルストアで英語クエリを叩くと resultCount=0 になるバグが過去に発生
+const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=US&media=music&entity=song&limit=40`;
 
 return [{
   json: {
     countryJa,
     countryEn,
-    countryCode: marketCode,
-    searchTerm: searchTerm,
+    countryCode: countryCode.toUpperCase(),
+    searchTerm,
     itunes_search_url: searchUrl
   }
 }];

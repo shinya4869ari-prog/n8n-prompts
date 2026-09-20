@@ -19,13 +19,9 @@ try {
 } catch (e) {}
 
 if (!Array.isArray(results) || results.length === 0) {
-  return [{
-    json: {
-      countryJa,
-      tracks: [],
-      rawCount: 0
-    }
-  }];
+  let searchTerm = '';
+  try { searchTerm = $('iTunes検索_クエリ作成').first().json.searchTerm; } catch(e) {}
+  throw new Error(`❌ iTunes API 0件エラー: 「${searchTerm}」で検索しましたが結果が0件でした（国: ${countryJa}）。\n検索ワードまたはiTunes APIの状態を確認してください。`);
 }
 
 // 必要な情報のみをコンパクト抽出
