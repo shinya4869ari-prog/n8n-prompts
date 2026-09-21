@@ -1,6 +1,10 @@
 あなたはプロの翻訳・映画紹介ライターです。以下に提供された【TMDb公式あらすじ（韓国語・英語）】の内容**のみ**を忠実に使用し、自然で読みやすい日本語のあらすじ（解説・ストーリー紹介）を作成してください。
 
+成人向け作品、ポルノ作品、露骨な性的描写を主題とする作品の場合は翻訳せず、次の文字列だけを出力してください。
+[SKIP_MOVIE: adult_content]
+
 ルール（厳守事項）：
+
 - **AIによる勝手な推測・創作・情報の付け足しは絶対に禁止**です。提供された「公式あらすじ」に書かれている事実・設定のみを日本語に翻訳・文章化してください。
 - 公開年、制作国、監督名、キャスト名などの基本情報はあらすじの文章中に直接羅列せず、純粋なストーリー紹介文として作成してください。
 - 結末のネタバレは含めないでください。
@@ -20,13 +24,14 @@
 ---
 
 【映画タイトル】
-{{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').first().json; } catch(e){} try { sourceData = $('映画ごとにループ実行').item.json; } catch(e){ sourceData = $input.item?.json || {}; } const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}（原題: {{ (() => { try { return $('TMDb検索').first().json.original_title || ''; } catch(e){ return ''; } })() }}）
+{{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {}; } catch(e){} try { sourceData = $('映画ごとにループ実行').item.json; } catch(e){ sourceData = $input.item?.json || {}; } const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}（原題: {{ (() => { try { const tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {}; return tmdb.original_title || ''; } catch(e){ return ''; } })() }}）
 
 【TMDb公式あらすじ（原語・韓国語版）】
 {{
   (() => {
     try {
-      const trans = $('TMDb検索').first().json.translations?.translations || [];
+      const tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {};
+      const trans = tmdb.translations?.translations || [];
       return trans.find(t => t.iso_639_1 === 'ko')?.data?.overview || '（韓国語あらすじ未登録）';
     } catch(e) { return '（韓国語あらすじ未登録）'; }
   })()
@@ -36,7 +41,7 @@
 {{
   (() => {
     try {
-      const tmdb = $('TMDb検索').first().json;
+      const tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {};
       const trans = tmdb.translations?.translations || [];
       const en = trans.find(t => t.iso_639_1 === 'en')?.data?.overview;
       return en || tmdb.overview || '（英語あらすじ未登録）';
@@ -45,5 +50,5 @@
 }}
 
 【キャスト・監督リスト（元データ）】
-監督: {{ (() => { try { const credits = $('TMDb credits取得').first()?.json; return credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || ''; } catch(e){ return ''; } })() }}
-キャスト: {{ (() => { try { const credits = $('TMDb credits取得').first()?.json; return credits?.cast?.map(c => c.name || c.original_name).join(', ') || ''; } catch(e){ return ''; } })() }}
+監督: {{ (() => { try { const credits = $('TMDb credits取得').item?.json || $('TMDb credits取得').first()?.json || {}; return credits?.crew?.find(c => c.job === 'Director')?.name || credits?.crew?.find(c => c.job === 'Director')?.original_name || ''; } catch(e){ return ''; } })() }}
+キャスト: {{ (() => { try { const credits = $('TMDb credits取得').item?.json || $('TMDb credits取得').first()?.json || {}; return credits?.cast?.map(c => c.name || c.original_name).join(', ') || ''; } catch(e){ return ''; } })() }}

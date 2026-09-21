@@ -1,9 +1,13 @@
 let raw = {};
 try {
-  raw = $('Wikidataから映画リスト取得').first().json.data || $('Wikidataから映画リスト取得').first().json;
+  raw =
+    $("Wikidataから映画リスト取得").first().json.data ||
+    $("Wikidataから映画リスト取得").first().json;
 } catch (e) {
   try {
-    raw = $('TMDb結果変換コード').first().json.data || $('TMDb結果変換コード').first().json;
+    raw =
+      $("TMDb結果変換コード").first().json.data ||
+      $("TMDb結果変換コード").first().json;
   } catch (e2) {
     raw = $input.first().json.data || $input.first().json;
   }
@@ -12,26 +16,31 @@ try {
 let bindings = [];
 let parseError = null;
 try {
-  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
   bindings = parsed?.results?.bindings || [];
-} catch(e) {
+} catch (e) {
   parseError = e.message;
 }
 
-// フォームトリガーノードから設定値を取得
-let formNode = {};
+// フォーム入力またはサブワークフロー呼び出しのパラメータを取得
+let formNode = $input.first()?.json || {};
 try {
-  formNode = $('n8n Form Trigger').first().json;
-} catch(e) {
+  formNode = { ...$("n8n Form Trigger").first().json, ...formNode };
+} catch (e) {
   try {
-    formNode = $('n8n Form Trigger').item.json;
-  } catch(e2) {
+    formNode = { ...$("n8n Form Trigger").item.json, ...formNode };
+  } catch (e2) {
     try {
-      formNode = $('country-master-lookup').first().json;
-    } catch(e3) {
+      formNode = { ...$("country-master-lookup").first().json, ...formNode };
+    } catch (e3) {
       // データベース行（created_atやposter_url等を持つ）の場合は検索条件として使用しない
-      const firstInput = $input.first().json;
-      if (firstInput && !firstInput.created_at && !firstInput.poster_url && !firstInput.overview) {
+      const firstInput = $input.first()?.json;
+      if (
+        firstInput &&
+        !firstInput.created_at &&
+        !firstInput.poster_url &&
+        !firstInput.overview
+      ) {
         formNode = firstInput;
       }
     }
@@ -39,25 +48,46 @@ try {
 }
 
 if (bindings.length === 0) {
-  const country = formNode.country || formNode['国名（日本語）'] || '指定の国';
-  const year = formNode.year || formNode['制作年数'] || '';
-  const message = year ? `${country}の${year}年の映画はありませんでした。` : `${country}の映画は見つかりませんでした。`;
+  const country = formNode.country || formNode["国名（日本語）"] || "指定の国";
+  const year = formNode.year || formNode["制作年数"] || "";
+  const message = year
+    ? `${country}の${year}年の映画はありませんでした。`
+    : `${country}の映画は見つかりませんでした。`;
 
-  return [{ 
-    json: { 
-      skip: true,
-      message: message,
-      debug_reason: "No bindings found",
-      rawType: typeof raw,
-      rawKeys: raw ? Object.keys(raw) : [],
-      parseError: parseError
-    } 
-  }];
+  return [
+    {
+      json: {
+        skip: true,
+        message: message,
+        debug_reason: "No bindings found",
+        rawType: typeof raw,
+        rawKeys: raw ? Object.keys(raw) : [],
+        parseError: parseError,
+      },
+    },
+  ];
 }
 
-const rawLimit = formNode.limit || formNode.number || formNode.limitCount || formNode.count || formNode['リスト件数'];
+const rawLimit =
+  formNode.limit ||
+  formNode.number ||
+  formNode.limitCount ||
+  formNode.count ||
+  formNode["リスト件数"];
 const limit = rawLimit ? parseInt(rawLimit) : 10;
-const directorName = formNode.directorName || formNode.englishName || formNode['監督'] || formNode.director || formNode.director_name || '';
+const sortMap = {
+  人気順: "popularity.desc",
+  高評価順: "vote_average.desc",
+  最新公開順: "primary_release_date.desc",
+};
+const sortBy = String(formNode.sort_by || "").trim();
+const directorName =
+  formNode.directorName ||
+  formNode.englishName ||
+  formNode["監督"] ||
+  formNode.director ||
+  formNode.director_name ||
+  "";
 
 const movieMap = new Map();
 
@@ -67,9 +97,9 @@ const existingWikidataIds = new Set();
 try {
   let dbData = [];
   try {
-    dbData = $('Supabase').all();
+    dbData = $("Supabase").all();
   } catch (err1) {
-    dbData = $('Get many rows').all();
+    dbData = $("Get many rows").all();
   }
   for (const item of dbData) {
     const data = item.json;
@@ -90,23 +120,24 @@ for (const b of bindings) {
   const movieUrl = b.movie?.value;
   const tmdb_id = b.tmdb?.value ? parseInt(b.tmdb.value) : null;
   const title = b.movieLabel?.value;
-  
+
   if (!movieUrl || !tmdb_id) {
-    filteredOut.push({ title, reason: 'Missing URL or TMDb ID' });
+    filteredOut.push({ title, reason: "Missing URL or TMDb ID" });
     continue;
   }
 
-  const wikidata_id = movieUrl.split('/').pop() || null;
+  const wikidata_id = movieUrl.split("/").pop() || null;
 
   // ★おすすめ映画版のため、データベース既存データの重複排除（除外）は行いません
 
   if (!title || /^Q\d+$/.test(title)) {
-    filteredOut.push({ title, reason: 'Missing or Invalid Title (Q-code)' });
+    filteredOut.push({ title, reason: "Missing or Invalid Title (Q-code)" });
     continue;
   }
 
   let movie = movieMap.get(movieUrl);
-  const currentCountryCode = b.countryCode?.value || formNode.country || formNode.countryCode || null;
+  const currentCountryCode =
+    b.countryCode?.value || formNode.country || formNode.countryCode || null;
 
   if (!movie) {
     movie = {
@@ -127,17 +158,17 @@ const targetLimit = limit || 10;
 let selectedMovies = [];
 
 // TMDb Discoverなどソート条件が指定されている場合は、APIが返したランキング順序をそのまま維持
-if (formNode.sort_by) {
+if (sortBy || formNode.sort_by) {
   selectedMovies = movieList.slice(0, targetLimit);
 } else {
   // 指定がない場合（Wikidata等）：公開年が新しい順（降順）にソートして直近年度優先
   movieList.sort((a, b) => (b.year || 0) - (a.year || 0));
 
-  const movies2026 = movieList.filter(m => m.year === 2026);
-  const movies2025 = movieList.filter(m => m.year === 2025);
-  const movies2024 = movieList.filter(m => m.year === 2024);
+  const movies2026 = movieList.filter((m) => m.year === 2026);
+  const movies2025 = movieList.filter((m) => m.year === 2025);
+  const movies2024 = movieList.filter((m) => m.year === 2024);
 
-  const fallbackMode = "fill"; 
+  const fallbackMode = "fill";
 
   if (fallbackMode === "strict") {
     if (movies2026.length > 0) {
@@ -151,26 +182,33 @@ if (formNode.sort_by) {
     }
   } else {
     // "fill": 2026年を優先し、足りない分を2025年、2024年で埋める
-    selectedMovies = [...movies2026, ...movies2025, ...movies2024].slice(0, targetLimit);
+    selectedMovies = [...movies2026, ...movies2025, ...movies2024].slice(
+      0,
+      targetLimit,
+    );
     if (selectedMovies.length === 0) {
       selectedMovies = movieList.slice(0, targetLimit);
     }
   }
 }
 
-const results = selectedMovies.map(movie => ({ json: movie }));
+const results = selectedMovies.map((movie) => ({ json: movie }));
 
-return results.length ? results : [{ 
-  json: { 
-    skip: true, 
-    debug_reason: "All movies filtered out",
-    filtered_details: filteredOut,
-    existingTmdbIds: Array.from(existingTmdbIds),
-    existingWikidataIds: Array.from(existingWikidataIds),
-    wikidataMovies: bindings.map(b => ({
-      title: b.movieLabel?.value,
-      tmdb_id: b.tmdb?.value ? parseInt(b.tmdb.value) : null,
-      wikidata_id: b.movie?.value ? b.movie.value.split('/').pop() : null
-    }))
-  } 
-}];
+return results.length
+  ? results
+  : [
+      {
+        json: {
+          skip: true,
+          debug_reason: "All movies filtered out",
+          filtered_details: filteredOut,
+          existingTmdbIds: Array.from(existingTmdbIds),
+          existingWikidataIds: Array.from(existingWikidataIds),
+          wikidataMovies: bindings.map((b) => ({
+            title: b.movieLabel?.value,
+            tmdb_id: b.tmdb?.value ? parseInt(b.tmdb.value) : null,
+            wikidata_id: b.movie?.value ? b.movie.value.split("/").pop() : null,
+          })),
+        },
+      },
+    ];
