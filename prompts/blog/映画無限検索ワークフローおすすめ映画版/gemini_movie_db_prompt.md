@@ -1,7 +1,15 @@
 あなたはプロの翻訳・映画紹介ライターです。以下に提供された【TMDb公式あらすじ（韓国語・英語）】の内容**のみ**を忠実に使用し、自然で読みやすい日本語のあらすじ（解説・ストーリー紹介）を作成してください。
 
-成人向け作品、ポルノ作品、露骨な性的描写を主題とする作品の場合は翻訳せず、次の文字列だけを出力してください。
+**アダルトコンテンツ判定（厳格）**：
+以下の条件のいずれかに該当する場合のみ、翻訳せず次の文字列だけを出力してください：
 [SKIP_MOVIE: adult_content]
+
+1. TMDbのジャンルに明確に「Adult」または「Erotica」が含まれている
+2. タイトルが明らかにアダルト作品を示唆する（例：ポルノ、アダルト、エロティック、不倫、不倫の末裔、マクチャン、診療室、債務者の妻、母親、ママ友などの明示的な言葉を含む）
+3. あらすじの内容が露骨な性的描写のみで構成されている（性的行為の詳細な描写が主題）
+4. 韓国語タイトルが典型的な韓国VOD成人映画のパターン（例：막장、불륜、수상한、채무자、엄마친구、특별한 치료など）
+
+※ 一般的な映画に含まれる性的シーンやロマンス要素はアダルト判定しません。あくまで作品全体が性的描写を主題とする作品のみを対象とします。
 
 ルール（厳守事項）：
 
@@ -25,6 +33,9 @@
 
 【映画タイトル】
 {{ (() => { let tmdb = {}; let sourceData = {}; try { tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {}; } catch(e){} try { sourceData = $('映画ごとにループ実行').item.json; } catch(e){ sourceData = $input.item?.json || {}; } const resultsList = tmdb.results || tmdb.movie_results || (tmdb.id ? [tmdb] : []); let result = resultsList.length > 0 ? resultsList.find(m => (m.original_language === sourceData.target_lang) || (m.origin_country && m.origin_country.includes(sourceData.target_country))) : null; if (!result && resultsList.length > 0) { result = resultsList[0]; } const officialTitle = result?.title; const inputTitle = sourceData.title; return (/^\d+$/.test(inputTitle || '') ? null : inputTitle) || officialTitle || ''; })() }}（原題: {{ (() => { try { const tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {}; return tmdb.original_title || ''; } catch(e){ return ''; } })() }}）
+
+【TMDbジャンル】
+{{ (() => { try { const tmdb = $('TMDb検索').item?.json || $('TMDb検索').first()?.json || {}; return tmdb.genres?.map(g => g.name).join(', ') || '不明'; } catch(e){ return '不明'; } })() }}
 
 【TMDb公式あらすじ（原語・韓国語版）】
 {{

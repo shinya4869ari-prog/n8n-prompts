@@ -11,16 +11,27 @@ function getNodeData(name) {
   }
 }
 
+// ループ内では現在のアイテムのデータを優先的に取得
 const creditsNode = getNodeData("TMDb credits取得");
 const tmdbNode = getNodeData("TMDb検索");
+
+// sourceDataは$input（現在のループアイテム）から優先的に取得
 let sourceData = {};
 try {
-  sourceData =
-    $("映画ごとにループ実行").item?.json ||
-    $("映画ごとにループ実行").first()?.json ||
-    {};
+  sourceData = $input.item?.json || {};
 } catch (e) {
-  sourceData = $input.item?.json || $input.first()?.json || {};
+  sourceData = {};
+}
+// $inputにデータがない場合のみ、ループノードから取得
+if (!sourceData || Object.keys(sourceData).length === 0) {
+  try {
+    sourceData =
+      $("映画ごとにループ実行").item?.json ||
+      $("映画ごとにループ実行").first()?.json ||
+      {};
+  } catch (e) {
+    sourceData = $input.first()?.json || {};
+  }
 }
 
 const tmdb = tmdbNode;
@@ -196,15 +207,18 @@ if (typeof aiData === "string") {
   rawAiText = aiData;
 }
 
-if (tmdbNode?.adult === true) {
+// アダルト判定（厳格）：TMDbフラグ + AI判定の両方を確認
+const isAdultFromTmdb = tmdbNode?.adult === true;
+const isAdultFromAI =
+  rawAiText && /\[SKIP_MOVIE:\s*adult_content\]/i.test(rawAiText);
+const isAdultContent = isAdultFromTmdb || isAdultFromAI;
+
+// アダルトコンテンツの場合は空配列を返してスキップ
+if (isAdultContent) {
   return [];
 }
 
 if (rawAiText) {
-  if (/\[SKIP_MOVIE:\s*adult_content\]/i.test(rawAiText)) {
-    return [];
-  }
-
   const titleMatch =
     rawAiText.match(/\[TITLE_JA:\s*(.+?)\]/i) ||
     rawAiText.match(/\[TITLE:\s*(.+?)\]/i);
@@ -980,6 +994,21 @@ const finalCastEn = rawFinalCastEn
       .slice(0, 5)
       .join(", ")
   : null;
+
+// アダルトコンテンツの場合はスキップフラグを立てて返す（ループが止まらないように）
+if (isAdultContent) {
+  return [
+    {
+      json: {
+        skip: true,
+        skip_reason: "adult_content",
+        title: cleanStr(finalTitle),
+        origin_title: cleanStr(finalOriginTitle),
+        tmdb_id,
+      },
+    },
+  ];
+}
 
 return [
   {
