@@ -1,9 +1,10 @@
 /**
- * 🎵 02_スクショ検索結果確定.js
- * ノード名: 「02_スクショ検索結果確定」
+ * 🎵 04_手入力検索結果確定.js
+ * ノード名: 「04_手入力検索結果確定」（または 04_ID検索結果確定）
  */
 
 // --- 1. レスポンスのパースと正規化 ---
+// 直前の「ID事前Lookup API」から返ってきたレスポンスを安全に展開する
 let input = $input.first()?.json || {};
 
 if (typeof input.data === 'string') {
@@ -18,20 +19,25 @@ if (typeof input.data === 'string') {
 
 const results = input.results || [];
 
-// 検索結果が0件の場合は停止
+// 検索ヒットが完全0件の場合は停止
 if (results.length === 0) {
-  throw new Error("iTunesの検索結果が0件でした。画像が鮮明か確認してください。");
+  throw new Error("iTunesの検索結果が0件でした。キーワードを変えてお試しください。");
 }
 
-// --- 2. 手前の「01_iTunes検索クエリ生成」からアーティスト名を取得 ---
-// 出力構造（identified.artist）から直接取得
-const queryNode = $('01_iTunes検索クエリ生成')?.first()?.json || {};
-const expectedArtist = String(queryNode.identified?.artist || queryNode.artist || "").trim().toLowerCase();
+// --- 2. 検索元ノードから入力されたアーティスト名を取得 ---
+// 手前のクエリ生成ノードから指定されたアーティスト名を取得（大文字小文字を無視）
+let expectedArtist = "";
+try {
+  expectedArtist = String($('03_手入力検索クエリ生成').first().json.artist || "").trim().toLowerCase();
+} catch (e) {
+  try {
+    expectedArtist = String($('03_通常ID入力確定').first().json.artist || "").trim().toLowerCase();
+  } catch (err) {}
+}
 
-// --- 3. 候補リストから本命楽曲（DAWN）を特定 ---
+// --- 3. 候補リストから本命の楽曲を特定 ---
+// 1番目決め打ち（results[0]）をやめ、指定アーティスト名を含むトラックを優先して探す
 let best = null;
-
-// アーティスト名（DAWN）が含まれるトラックを優先して探す
 if (expectedArtist) {
   best = results.find(item => {
     const isTrack = item.wrapperType === 'track' || item.kind === 'song';
@@ -40,18 +46,21 @@ if (expectedArtist) {
   });
 }
 
-// 一致するものが見つからない場合は先頭の曲を採用（Waitノードで確認するため落とさない）
+// 一致するものがなければトラック形式のもの、または配列の先頭を採用（後続のWaitノードで確認するため）
 if (!best) {
   best = results.find(item => item.wrapperType === 'track' || item.kind === 'song') || results[0];
 }
 
 // --- 4. 画像URLと歌詞検索キーワードの組み立て ---
+// カバー画像を600x600の高画質に変換
 const coverUrl = (best.artworkUrl100 || "").replace("100x100bb", "600x600bb");
+
+// トラック名とアーティスト名を安全に結合（記号混入バグを完全排除）
 const trackNameStr = String(best.trackName || best.collectionName || "").trim();
 const artistNameStr = String(best.artistName || "").trim();
 const searchQuery = trackNameStr + " " + artistNameStr;
 
-// --- 5. 統一フォーマットで出力（Waitノードへ渡す） ---
+// --- 5. 統一フォーマットで出力 ---
 return [{
   json: {
     track_meta: {
@@ -67,6 +76,6 @@ return [{
       genre: best.primaryGenreName || 'K-POP'
     },
     lrclib_search_url: "https://lrclib.net/api/search?q=" + encodeURIComponent(searchQuery),
-    source: 'screenshot'
+    source: 'manual_text'
   }
 }];
