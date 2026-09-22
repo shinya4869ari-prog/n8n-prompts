@@ -1,7 +1,7 @@
 /**
  * 🎵 06_iTunesレスポンス解析_Geminiリクエスト生成.js
  * ノード名: 「06_iTunesレスポンス解析_Geminiリクエスト生成」
- * 
+ *
  * 【役割】
  * - 確定した楽曲メタデータを受け取る
  * - 韓国語学習アプリ「K-Learner」仕様の超高精度プロンプト（歌詞、対訳、カタカナルビ、語彙、文法、解説）を構築
@@ -13,8 +13,10 @@ let input = $input.first()?.json || {};
 let trackMeta = input.track_meta;
 if (!trackMeta) {
   try {
-    trackMeta = $('02_スクショ検索結果確定')?.item?.json?.track_meta ||
-                $('04_ID検索結果確定')?.item?.json?.track_meta || {};
+    trackMeta =
+      $("02_スクショ検索結果確定")?.item?.json?.track_meta ||
+      $("04_ID検索結果確定")?.item?.json?.track_meta ||
+      {};
   } catch (e) {
     trackMeta = {};
   }
@@ -28,10 +30,13 @@ if (Array.isArray(input)) {
 } else if (input.data && Array.isArray(input.data)) {
   lrcList = input.data;
 } else if (Array.isArray($input.all())) {
-  lrcList = $input.all().map(i => i.json);
+  lrcList = $input.all().map((i) => i.json);
 }
 
-const matchedLrc = lrcList.find(item => item && item.plainLyrics && item.plainLyrics.trim().length > 0) || lrcList[0];
+const matchedLrc =
+  lrcList.find(
+    (item) => item && item.plainLyrics && item.plainLyrics.trim().length > 0,
+  ) || lrcList[0];
 if (matchedLrc && matchedLrc.plainLyrics) {
   autoLyrics = matchedLrc.plainLyrics.trim();
 }
@@ -45,7 +50,8 @@ const releaseDate = trackMeta.release_date || "";
 // フォームからの手動歌詞入力があれば取得
 let customLyrics = "";
 try {
-  customLyrics = $('楽曲登録フォーム (スクショ / ID入力)')?.item?.json?.custom_lyrics || "";
+  customLyrics =
+    $("楽曲登録フォーム (スクショ / ID入力)")?.item?.json?.custom_lyrics || "";
 } catch (e) {}
 
 // Gemini システムプロンプト
@@ -63,7 +69,6 @@ const systemInstruction = `あなたは韓国語教育の最高峰エキスパ�
    - 公式歌詞に基づき、1行（1フレーズ）ずつ分解してください。
    - \`ko\`: 公式ハングル歌詞（一言一句正確に。勝手な言い換え禁止）。
    - \`ja\`: 原文のニュアンス・感情・口語表現を忠実に活かした、自然で美しい日本語対訳。
-   - \`rubi\`: 日本人が自然に発音できる正確なカタカナ発音（連音化・濃音化・鼻音化などの音韻変化を反映）。
 
 2. **重要単語 (vocab)**:
    - 歌詞に登場する重要な単語・表現（8〜15個程度）。
@@ -94,7 +99,6 @@ const systemInstruction = `あなたは韓国語教育の最高峰エキスパ�
   "sentences": [
     {
       "ko": "...",
-      "rubi": "...",
       "ja": "..."
     }
   ],
@@ -134,27 +138,29 @@ if (customLyrics && customLyrics.trim().length > 0) {
 }
 
 if (!officialLyrics || officialLyrics.trim().length === 0) {
-  throw new Error(`⚠️ 公式歌詞が取得できませんでした（曲名: ${trackName} / 歌手: ${artistName}）。\nAIによる勝手な作詞・ハルシネーションを防ぐため、処理を即座に停止しました。\n曲名・歌手名の表記を確認するか、少し待って再実行してください。`);
+  throw new Error(
+    `⚠️ 公式歌詞が取得できませんでした（曲名: ${trackName} / 歌手: ${artistName}）。\nAIによる勝手な作詞・ハルシネーションを防ぐため、処理を即座に停止しました。\n曲名・歌手名の表記を確認するか、少し待って再実行してください。`,
+  );
 }
 
 userPrompt += `\n\n【公式フル歌詞テキスト（これを100%忠実に使用してください）】:\n${officialLyrics}\n\n⚠️ 最重要注意事項：上記の公式歌詞を一言一句漏らさず全てsentencesに分解し、対訳・ルビ・語彙・文法を付与して出力してください。AIによる勝手な作詞や言い換え、行の削除・省略は絶対に禁止です。`;
 
-return [{
-  json: {
-    track_meta: trackMeta,
-    gemini_request: {
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: systemInstruction + "\n\n" + userPrompt }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.0,
-        response_mime_type: "application/json"
-      }
-    }
-  }
-}];
+return [
+  {
+    json: {
+      track_meta: trackMeta,
+      gemini_request: {
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: systemInstruction + "\n\n" + userPrompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.0,
+          response_mime_type: "application/json",
+        },
+      },
+    },
+  },
+];
