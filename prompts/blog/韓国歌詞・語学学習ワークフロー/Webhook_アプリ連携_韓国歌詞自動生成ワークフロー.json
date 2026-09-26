@@ -1,0 +1,219 @@
+{
+  "name": "韓国歌詞・語学学習ワークフロー (アプリWebhook直結・完全自動版)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "korean-lyrics-app",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        200
+      ],
+      "id": "node-webhook-trigger",
+      "name": "Webhook (アプリ検索結果受信)",
+      "webhookId": "korean-lyrics-app"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 01_アプリ連携メタデータ確定 & LRCLIB生成.js\n */\nlet input = $input.first()?.json || {};\nif (input.body) input = input.body;\nif (Array.isArray(input)) input = input[0] || {};\nif (typeof input === 'string') {\n  try {\n    input = JSON.parse(input.trim());\n    if (Array.isArray(input)) input = input[0] || {};\n  } catch (e) {}\n}\n\nconst rawTrackId = input.track_id || input.id || \"\";\nlet trackId = String(rawTrackId).trim();\nconst numMatch = trackId.match(/\\d+/);\nif (numMatch) trackId = numMatch[0];\n\nif (!trackId) {\n  throw new Error(\"⚠️ トラックID（track_id または id）が見つかりません。アプリの送信データをご確認ください。\");\n}\n\nconst trackTitle = String(input.title || input.track_name || input.name || \"\").trim();\nconst artistName = String(input.artist || input.artist_name || \"\").trim();\nconst albumName = String(input.album || input.album_name || \"\").trim();\nconst releaseDate = String(input.release_date || \"\").split('T')[0];\nconst previewUrl = String(input.preview_url || \"\").trim();\nconst trackViewUrl = String(input.track_view_url || input.itunes_url || \"\").trim();\n\nlet coverUrl = String(input.artwork_url || input.album_cover || \"\").trim();\nif (coverUrl) {\n  coverUrl = coverUrl.replace(/\\/\\d+x\\d+bb\\./, '/600x600bb.');\n}\n\nlet youtubeId = \"\";\nconst rawYt = input.youtube_id || input.youtube || input.youtube_url || input.mv_url || \"\";\nif (rawYt) {\n  const ytMatch = String(rawYt).match(/(?:v=|\\/|youtu\\.be\\/)([a-zA-Z0-9_-]{11})/);\n  if (ytMatch) {\n    youtubeId = ytMatch[1];\n  } else if (/^[a-zA-Z0-9_-]{11}$/.test(String(rawYt).trim())) {\n    youtubeId = String(rawYt).trim();\n  }\n}\n\nconst wikidataId = String(input.wikidata_id || input.wiki_data_id || \"\").trim();\nconst isrc = String(input.isrc || \"\").trim();\nconst musicbrainzId = String(input.musicbrainz_id || \"\").trim();\nconst releaseYear = String(input.year || releaseDate.split('-')[0] || \"\").trim();\n\nlet queryForLyrics = \"\";\nif (trackTitle && artistName) {\n  queryForLyrics = `${trackTitle} ${artistName}`;\n} else {\n  queryForLyrics = trackTitle || artistName || input.query || \"\";\n}\n\nconst cleanQuery = queryForLyrics.replace(/[()[\\]{}「」『』]/g, ' ').replace(/\\s+/g, ' ').trim();\nconst lrclibUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(cleanQuery)}`;\n\nreturn [{\n  json: {\n    track_meta: {\n      track_id: trackId,\n      track_name: trackTitle,\n      track_name_en: trackTitle,\n      artist_name: artistName,\n      artist_name_en: artistName,\n      album_name: albumName,\n      album_cover: coverUrl,\n      preview_url: previewUrl,\n      itunes_url: trackViewUrl,\n      youtube_id: youtubeId,\n      wikidata_id: wikidataId || null,\n      isrc: isrc || null,\n      musicbrainz_id: musicbrainzId || null,\n      release_date: releaseDate,\n      release_year: releaseYear || null,\n      genre: input.genre || 'K-POP',\n      query: input.query || \"\"\n    },\n    lrclib_search_url: lrclibUrl,\n    model: 'gemini-3.8-flash',\n    source: 'music_search_app'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        200
+      ],
+      "id": "node-app-metadata",
+      "name": "01_アプリ連携メタデータ確定 & LRCLIB生成"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.lrclib_search_url }}",
+        "options": {
+          "neverError": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        200
+      ],
+      "id": "node-http-lrclib",
+      "name": "02_LRCLIB 公式歌詞自動取得 API",
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 03_Geminiリクエスト生成_メタデータ完全保持版.js\n */\nlet input = $input.first()?.json || {};\n\nlet trackMeta = input.track_meta;\nif (!trackMeta || !trackMeta.track_id) {\n  try {\n    trackMeta = $('01_アプリ連携メタデータ確定 & LRCLIB生成')?.first()?.json?.track_meta || {};\n  } catch (e) {\n    trackMeta = {};\n  }\n}\n\nif (!trackMeta.track_id) {\n  try {\n    const rawWebhook = $('Webhook (アプリ検索結果受信)')?.first()?.json || {};\n    const item = rawWebhook.body || rawWebhook;\n    const target = Array.isArray(item) ? item[0] : item;\n    if (target && (target.track_id || target.id)) {\n      trackMeta = {\n        track_id: String(target.track_id || target.id),\n        track_name: target.title || target.track_name || \"\",\n        track_name_en: target.title || target.track_name || \"\",\n        artist_name: target.artist || target.artist_name || \"\",\n        artist_name_en: target.artist || target.artist_name || \"\",\n        album_name: target.album || \"\",\n        album_cover: (target.artwork_url || \"\").replace(/\\/\\d+x\\d+bb\\./, '/600x600bb.'),\n        preview_url: target.preview_url || \"\",\n        itunes_url: target.track_view_url || target.itunes_url || \"\",\n        youtube_id: target.youtube_id || \"\",\n        wikidata_id: target.wikidata_id || target.wiki_data_id || null,\n        isrc: target.isrc || null,\n        musicbrainz_id: target.musicbrainz_id || null,\n        release_date: (target.release_date || \"\").split('T')[0],\n        release_year: target.year || (target.release_date ? target.release_date.split('-')[0] : null),\n        genre: target.genre || 'K-POP'\n      };\n    }\n  } catch (e) {}\n}\n\nlet autoLyrics = \"\";\nlet lrcList = [];\nif (Array.isArray(input)) {\n  lrcList = input;\n} else if (input.data && Array.isArray(input.data)) {\n  lrcList = input.data;\n} else if (Array.isArray($input.all())) {\n  lrcList = $input.all().map(i => i.json);\n}\n\nconst matchedLrc = lrcList.find(item => item && item.plainLyrics && item.plainLyrics.trim().length > 0) || lrcList[0];\nif (matchedLrc && matchedLrc.plainLyrics) {\n  autoLyrics = matchedLrc.plainLyrics.trim();\n}\n\nconst trackName = trackMeta.track_name || \"\";\nconst artistName = trackMeta.artist_name || \"\";\nconst albumName = trackMeta.album_name || \"\";\nconst genre = trackMeta.genre || \"K-POP\";\nconst releaseDate = trackMeta.release_date || \"\";\n\nlet customLyrics = \"\";\ntry {\n  customLyrics = input.custom_lyrics || $('Webhook (アプリ検索結果受信)')?.first()?.json?.custom_lyrics || \"\";\n} catch (e) {}\n\nlet officialLyrics = \"\";\nif (customLyrics && customLyrics.trim().length > 0) {\n  officialLyrics = customLyrics.trim();\n} else if (autoLyrics && autoLyrics.trim().length > 0) {\n  officialLyrics = autoLyrics.trim();\n}\n\nconst hasOfficialLyrics = (officialLyrics && officialLyrics.trim().length > 0);\n\nconst systemInstruction = `あなたは韓国語教育の最高峰エキスパートであり、K-POP・韓国ドラマOSTの歌詞対訳プロフェッショナルです。\\n韓国語学習アプリ「K-Learner」に格納する、超高品質な「公式歌詞・対訳・語彙・文法」JSONデータを生成してください。\\n\\n【⚠️ 最重要：公式歌詞の完全性・正確性】\\n- 本データは【個人利用の語学学習用】です。要約や省略は一切禁止です。\\n${hasOfficialLyrics ? '- 提供された「公式フル歌詞」を一言一句完全に一致させて出力してください。\\n- イントロ、サビ、アウトロまで、公式音源の歌唱順通りにすべてのフレーズを完全収録してください。' : '- 韓国の公式音源サイト（Melon, Genie, Bugs等）に登録されている公式歌詞を正確に特定し、1行も省略せず完全収録してください。'}\\n\\n【出力フォーマット】\\nMarkdown装飾（\\\\`\\\\`\\\\`json）を含めず、必ず完全な純粋JSONオブジェクトのみを返してください。\\n{\\n  \\\"title_ko\\\": \\\"曲名（韓国語ハングル）\\\",\\n  \\\"title_ja\\\": \\\"曲名（日本語・英語副題）\\\",\\n  \\\"artist\\\": \\\"アーティスト名\\\",\\n  \\\"category\\\": \\\"ジャンル・作品名\\\",\\n  \\\"level\\\": \\\"学習目安レベル\\\",\\n  \\\"sentences\\\": [ { \\\"ko\\\": \\\"...\\\", \\\"rubi\\\": \\\"...\\\", \\\"ja\\\": \\\"...\\\" } ],\\n  \\\"vocab\\\": [ { \\\"word\\\": \\\"...\\\", \\\"hanja\\\": \\\"...\\\", \\\"pos\\\": \\\"...\\\", \\\"meaning\\\": \\\"...\\\", \\\"level\\\": \\\"...\\\" } ],\\n  \\\"grammar\\\": [ { \\\"pattern\\\": \\\"...\\\", \\\"meaning\\\": \\\"...\\\", \\\"desc\\\": \\\"...\\\" } ],\\n  \\\"lyrics_notes\\\": [ \\\"💬 \u003cstrong\u003e...:\u003c/strong\u003e ...\\\" ]\\n}`;\n\nlet userPrompt = `対象楽曲情報:\\n- 曲名: ${trackName}\\n- アーティスト: ${artistName}\\n- アルバム: ${albumName}\\n- ジャンル: ${genre}\\n- リリース日: ${releaseDate}`;\\n\\nif (hasOfficialLyrics) {\\n  userPrompt += `\\\\n\\\\n【公式フル歌詞テキスト（これを100%忠実に使用してください）】:\\\\n${officialLyrics}\\\\n\\\\n⚠️ 最重要注意事項：上記の公式歌詞を一言一句漏らさず全てsentencesに分解し、対訳・ルビ・語彙・文法を付与して出力してください。AIによる勝手な作詞や言い換え、行の削除・省略は絶対に禁止です。`;\\n} else {\\n  userPrompt += `\\\\n\\\\n⚠️ 歌詞APIサーバー混雑のため、あなたの膨大な韓国音楽ナレッジベースから該当楽曲の「韓国語公式フル歌詞」を正確に特定し、1行も省略せず全フレーズをsentencesに分解して、対訳・ルビ・語彙・文法を出力してください。`;\\n}\\n\\nconst selectedModel = 'gemini-3.8-flash';\\n\\nreturn [{\\n  json: {\\n    model: selectedModel,\\n    track_meta: trackMeta,\\n    gemini_request: {\\n      contents: [\n        {\n          role: \"user\",\n          parts: [{ text: systemInstruction + \"\\n\\n\" + userPrompt }]\n        }\n      ],\n      generationConfig: {\n        temperature: 0.0,\n        response_mime_type: \"application/json\"\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        200
+      ],
+      "id": "node-prep-gemini-prompt",
+      "name": "03_Gemini 教材生成プロンプト構築"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.gemini_request) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        200
+      ],
+      "id": "node-call-gemini",
+      "name": "04_Google Gemini API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 🎵 05_Supabase整形 & コスト算出.js\n */\nconst geminiResponse = $input.first()?.json || {};\n\nlet trackMeta = {};\ntry {\n  trackMeta = $('03_Gemini 教材生成プロンプト構築')?.first()?.json?.track_meta || {};\n} catch (e) {}\n\nif (!trackMeta.track_id || !trackMeta.preview_url) {\n  try {\n    const meta01 = $('01_アプリ連携メタデータ確定 & LRCLIB生成')?.first()?.json?.track_meta || {};\n    trackMeta = { ...meta01, ...trackMeta };\n  } catch (e) {}\n}\n\nif (!trackMeta.track_id || !trackMeta.preview_url) {\n  try {\n    const webhookData = $('Webhook (アプリ検索結果受信)')?.first()?.json || {};\n    const item = webhookData.body || webhookData;\n    const target = Array.isArray(item) ? item[0] : item;\n    if (target && (target.track_id || target.id)) {\n      trackMeta = {\n        track_id: String(target.track_id || target.id),\n        track_name: target.title || target.track_name || trackMeta.track_name || \"\",\n        track_name_en: target.title || target.track_name || trackMeta.track_name_en || \"\",\n        artist_name: target.artist || target.artist_name || trackMeta.artist_name || \"\",\n        artist_name_en: target.artist || target.artist_name || trackMeta.artist_name_en || \"\",\n        album_name: target.album || trackMeta.album_name || \"\",\n        album_cover: (target.artwork_url || \"\").replace(/\\/\\d+x\\d+bb\\./, '/600x600bb.') || trackMeta.album_cover || \"\",\n        preview_url: target.preview_url || trackMeta.preview_url || \"\",\n        itunes_url: target.track_view_url || target.itunes_url || trackMeta.itunes_url || \"\",\n        youtube_id: target.youtube_id || trackMeta.youtube_id || \"\",\n        wikidata_id: target.wikidata_id || target.wiki_data_id || trackMeta.wikidata_id || null,\n        isrc: target.isrc || trackMeta.isrc || null,\n        musicbrainz_id: target.musicbrainz_id || trackMeta.musicbrainz_id || null,\n        release_date: (target.release_date || \"\").split('T')[0] || trackMeta.release_date || \"\",\n        release_year: target.year || trackMeta.release_year || null,\n        genre: target.genre || trackMeta.genre || 'K-POP'\n      };\n    }\n  } catch (e) {}\n}\n\nlet responseText = \"\";\nlet promptTokens = 0;\nlet completionTokens = 0;\nlet totalTokens = 0;\n\nif (geminiResponse.candidates && geminiResponse.candidates[0]?.content?.parts) {\n  responseText = geminiResponse.candidates[0].content.parts.map(p => p.text).join(\"\\n\");\n  if (geminiResponse.usageMetadata) {\n    promptTokens = geminiResponse.usageMetadata.promptTokenCount || 0;\n    completionTokens = geminiResponse.usageMetadata.candidatesTokenCount || 0;\n    totalTokens = geminiResponse.usageMetadata.totalTokenCount || (promptTokens + completionTokens);\n  }\n} else {\n  responseText = typeof geminiResponse === 'string' ? geminiResponse : JSON.stringify(geminiResponse);\n}\n\nconst USD_TO_JPY = 155.0;\nconst MODEL_NAME = (trackMeta.model || \"gemini-3.8-flash\").toLowerCase();\nlet rates = { input: 0.100, output: 0.400 };\nif (MODEL_NAME.includes(\"pro\")) rates = { input: 1.250, output: 5.000 };\nelse if (MODEL_NAME.includes(\"lite\")) rates = { input: 0.0375, output: 0.150 };\n\nconst costUsdInput = (promptTokens / 1000000) * rates.input;\nconst costUsdOutput = (completionTokens / 1000000) * rates.output;\nconst totalCostUsd = costUsdInput + costUsdOutput;\nconst totalCostJpy = totalCostUsd * USD_TO_JPY;\nconst formattedJpy = totalCostJpy < 0.01 ? `${(totalCostJpy * 100).toFixed(2)} 銭` : `${totalCostJpy.toFixed(3)} 円`;\nconst formattedUsd = `$${totalCostUsd.toFixed(6)}`;\n\nlet lyricsData = {};\ntry {\n  let cleanJsonStr = responseText.trim();\n  cleanJsonStr = cleanJsonStr.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n  lyricsData = JSON.parse(cleanJsonStr);\n} catch (err) {\n  lyricsData = { title_ko: trackMeta.track_name || \"\", sentences: [], vocab: [], grammar: [], lyrics_notes: [] };\n}\n\nconst trackId = String(trackMeta.track_id || \"\");\nconst finalLyricsPayload = {\n  id: `lyrics-${trackId}`,\n  title_ko: lyricsData.title_ko || trackMeta.track_name || \"無題\",\n  title_ja: lyricsData.title_ja || trackMeta.track_name || \"無題\",\n  artist: trackMeta.artist_name || lyricsData.artist || \"アーティスト不明\",\n  category: lyricsData.category || \"K-POP / OST\",\n  level: lyricsData.level || \"日常会話・感情表現\",\n  cat_class: \"cat-music\",\n  source: trackMeta.album_name ? `Album『${trackMeta.album_name}』` : \"Apple Music / 公式音源\",\n  preview_url: trackMeta.preview_url || null,\n  itunes_url: trackMeta.itunes_url || null,\n  album_cover: trackMeta.album_cover || null,\n  youtube_id: trackMeta.youtube_id || null,\n  wikidata_id: trackMeta.wikidata_id || null,\n  isrc: trackMeta.isrc || null,\n  musicbrainz_id: trackMeta.musicbrainz_id || null,\n  release_year: trackMeta.release_year || null,\n  mv_url: trackMeta.youtube_id ? `https://www.youtube.com/watch?v=${trackMeta.youtube_id}` : null,\n  mv_embed_url: trackMeta.youtube_id ? `https://www.youtube-nocookie.com/embed/${trackMeta.youtube_id}` : null,\n  sentences: Array.isArray(lyricsData.sentences) ? lyricsData.sentences : [],\n  vocab: Array.isArray(lyricsData.vocab) ? lyricsData.vocab : [],\n  grammar: Array.isArray(lyricsData.grammar) ? lyricsData.grammar : [],\n  lyrics_notes: Array.isArray(lyricsData.lyrics_notes) ? lyricsData.lyrics_notes : [],\n  generation_cost: {\n    model: MODEL_NAME,\n    prompt_tokens: promptTokens,\n    completion_tokens: completionTokens,\n    total_tokens: totalTokens,\n    cost_usd: formattedUsd,\n    cost_jpy: formattedJpy,\n    generated_at: new Date().toISOString()\n  }\n};\n\nconst supabaseRecord = {\n  track_id: trackId,\n  track_name: finalLyricsPayload.title_ja,\n  track_name_en: finalLyricsPayload.title_ko,\n  artist_name: trackMeta.artist_name || finalLyricsPayload.artist,\n  artist_name_en: trackMeta.artist_name_en || trackMeta.artist_name,\n  country: \"KR\",\n  genre: trackMeta.genre || \"Ballad\",\n  preview_url: finalLyricsPayload.preview_url,\n  itunes_url: finalLyricsPayload.itunes_url,\n  album_cover: finalLyricsPayload.album_cover,\n  youtube_id: trackMeta.youtube_id || null,\n  mv_url: finalLyricsPayload.mv_url,\n  release_year: trackMeta.release_year || null,\n  wikidata_id: trackMeta.wikidata_id || null,\n  isrc: trackMeta.isrc || null,\n  musicbrainz_id: trackMeta.musicbrainz_id || null,\n  description: finalLyricsPayload.title_ja,\n  lyrics: JSON.stringify(finalLyricsPayload)\n};\n\nreturn [{ json: supabaseRecord }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        200
+      ],
+      "id": "node-supabase-format",
+      "name": "05_Supabase整形 & コスト算出"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT.supabase.co' }}/rest/v1/tracks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY || $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY || $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        200
+      ],
+      "id": "node-supabase-upsert",
+      "name": "06_Supabase tracks テーブル Upsert"
+    }
+  ],
+  "connections": {
+    "Webhook (アプリ検索結果受信)": {
+      "main": [
+        [
+          {
+            "node": "01_アプリ連携メタデータ確定 & LRCLIB生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01_アプリ連携メタデータ確定 & LRCLIB生成": {
+      "main": [
+        [
+          {
+            "node": "02_LRCLIB 公式歌詞自動取得 API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02_LRCLIB 公式歌詞自動取得 API": {
+      "main": [
+        [
+          {
+            "node": "03_Gemini 教材生成プロンプト構築",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03_Gemini 教材生成プロンプト構築": {
+      "main": [
+        [
+          {
+            "node": "04_Google Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04_Google Gemini API": {
+      "main": [
+        [
+          {
+            "node": "05_Supabase整形 & コスト算出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05_Supabase整形 & コスト算出": {
+      "main": [
+        [
+          {
+            "node": "06_Supabase tracks テーブル Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
