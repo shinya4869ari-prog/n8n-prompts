@@ -68,11 +68,15 @@ HistoryGallery（映画アーカイブ・人物事典）や KR-Learner（語学�
 | `name` | text | 人物名（日本語） | 『iD教えて』 `name` |
 | `name_en` | text | 原語表記（韓国人の場合はハングル最優先） | 『iD教えて』 `original_name` |
 | `occupation` | text | 職業・公職・肩書 | 『iD教えて』 / Wikidata `occupationLabel` |
-| `country` | text | 国コード（`KR`, `JP` 等） | 『iD教えて』 / Wikidata 国籍 |
+| `country` | text | 2文字ISO国コード（`KR`, `JP` 等、大韓民国等を自動変換） | 『iD教えて』 / Wikidata 国籍 |
 | `profile_url` | text | 高画質顔写真URL | 『iD教えて』ポスターURL / Wikimedia Commons |
 | `wikidata_id` | text | Wikidata Q-ID | 『iD教えて』 `wikidata_id` (`Q...`) |
 | `tmdb_id` | int | TMDb Person ID | 『iD教えて』 `tmdb_id` |
 | `gender` | text | 性別 (`male` / `female`) | Wikidata P21 |
+| `type` | text | 人物区分（`individual` / `group`） | 『iD教えて』 / Wikidata |
+| `group_type` | text | グループ種別（ボーイズグループ / ガールズグループ / バンド等） | 『iD教えて』 / Wikidata（個人でも所属グループの種別を自動セット） |
+| `parent_group` | text | 所属グループ名（例: BIGBANG、NewJeans等） | 『iD教えて』 / Wikidata P463 |
+| `members` | text | メンバー一覧（カンマ区切り名） | 『iD教えて』 / Wikidata P527（個人でも所属グループの全メンバーを自動セット） |
 | `x_id` | text | 公式 X (Twitter) アカウント | Wikidata P2002 |
 | `instagram_id`| text | 公式 Instagram アカウント | Wikidata P2003 |
 | `youtube_id` | text | 公式 YouTube チャンネル | Wikidata P2397 |
@@ -115,10 +119,11 @@ https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?p
 ```text
 あなたは人物データベースの専門ライター・エディターです。
 提供された以下の人物データを元に、対象人物「{{ (() => { 
-  let webhook = {};
-  for (const n of ['Webhook受信トリガー', 'Webhook', 'Webhook Trigger', '人物データベース登録フォーム']) {
-    try { const d = $(n).first()?.json; if (d && d.name) { webhook = d; break; } } catch(e) {}
+  let raw = {};
+  for (const n of ['Webhook受信トリガー', '01_Webhook受信トリガー', 'Webhook']) {
+    try { const d = $(n).first()?.json; if (d) { raw = d; break; } } catch(e) {}
   }
+  const webhook = raw.body || raw;
   return webhook.name || $json.name || '';
 })() }}」のプロフィール紹介文（日本語で150文字〜250文字程度）を作成してください。
 
@@ -126,7 +131,7 @@ https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?p
 - 俳優・映画監督・タレント: 提供された代表作（映画・ドラマ名）を自然に文中に織り交ぜ、演技の特徴や評価、主な活躍を記述してください。
 - 政治家・官僚: 主な公職（大統領、首相、議員等）、所属政党、主要な政策や政治史における役割を記述してください。
 - 歴史上の人物: 活躍した時代区分（朝鮮王朝等）、主な業績や歴史的事件、後世への影響を明記してください。
-- アイドル・歌手: 所属グループ名、ポジション、代表曲やヒット作を記載してください。
+- アイドル・歌手・音楽グループ: 所属グループ名（ボーイズグループ/ガールズグループ等）、メンバー構成、ポジション、代表曲やヒット作を記載してください。グループ自体の場合はグループ種別やメンバー名、個人の場合は所属グループ内での役割やソロ活動を記述してください。
 - 学者・作家・文化人: 専門分野、代表的著作、学術的・文化的な功績を記載してください。
 
 共通ルール：
@@ -136,10 +141,12 @@ https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?p
 
 対象人物データ：
 {{ (() => {
-  let webhook = {};
-  for (const n of ['Webhook受信トリガー', 'Webhook', 'Webhook Trigger', '人物データベース登録フォーム']) {
-    try { const d = $(n).first()?.json; if (d && (d.name || d.query)) { webhook = d; break; } } catch(e) {}
+  let raw = {};
+  for (const n of ['Webhook受信トリガー', '01_Webhook受信トリガー', 'Webhook']) {
+    try { const d = $(n).first()?.json; if (d) { raw = d; break; } } catch(e) {}
   }
+  const webhook = raw.body || raw;
+
   let wikiBindings = {};
   try {
     let p = typeof $json.data === 'string' ? JSON.parse($json.data) : ($json.data || $json);
@@ -149,6 +156,10 @@ https://query.wikidata.org/sparql?query={{ encodeURIComponent(`SELECT ?person ?p
   const mergedInfo = {
     name: webhook.name || wikiBindings.personJaLabel?.value || wikiBindings.personLabel?.value || '',
     original_name: webhook.original_name || wikiBindings.personKoLabel?.value || wikiBindings.personEnLabel?.value || '',
+    type: webhook.type || 'individual',
+    group_type: webhook.group_type || '',
+    parent_group: webhook.parent_group || '',
+    members: webhook.members || '',
     occupation: webhook.occupation || wikiBindings.occupationLabel?.value || wikiBindings.positionLabel?.value || '',
     country: webhook.country || wikiBindings.countryLabel?.value || '',
     birth_date: webhook.birth_date || (wikiBindings.birthDate?.value ? wikiBindings.birthDate.value.split('T')[0] : ''),

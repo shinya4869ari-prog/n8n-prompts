@@ -12,7 +12,7 @@
 - 俳優・映画監督・タレント: 提供された代表作（映画・ドラマ名）を自然に文中に織り交ぜ、演技の特徴や評価、主な活躍を記述してください。
 - 政治家・官僚: 主な公職（大統領、首相、議員等）、所属政党、主要な政策や政治史における役割を記述してください。
 - 歴史上の人物: 活躍した時代区分（朝鮮王朝等）、主な業績や歴史的事件、後世への影響を明記してください。
-- アイドル・歌手: 所属グループ名、ポジション、代表曲やヒット作を記載してください。
+- アイドル・歌手・音楽グループ: 所属グループ名（ボーイズグループ/ガールズグループ等）、メンバー構成、ポジション、代表曲やヒット作を記載してください。グループ自体の場合はグループ種別やメンバー名、個人の場合は所属グループ内での役割やソロ活動を記述してください。
 - 学者・作家・文化人: 専門分野、代表的著作、学術的・文化的な功績を記載してください。
 
 共通ルール：
@@ -37,6 +37,10 @@
   const mergedInfo = {
     name: webhook.name || wikiBindings.personJaLabel?.value || wikiBindings.personLabel?.value || '',
     original_name: webhook.original_name || wikiBindings.personKoLabel?.value || wikiBindings.personEnLabel?.value || '',
+    type: webhook.type || 'individual',
+    group_type: webhook.group_type || '',
+    parent_group: webhook.parent_group || '',
+    members: webhook.members || '',
     occupation: webhook.occupation || wikiBindings.occupationLabel?.value || wikiBindings.positionLabel?.value || '',
     country: webhook.country || wikiBindings.countryLabel?.value || '',
     birth_date: webhook.birth_date || (wikiBindings.birthDate?.value ? wikiBindings.birthDate.value.split('T')[0] : ''),

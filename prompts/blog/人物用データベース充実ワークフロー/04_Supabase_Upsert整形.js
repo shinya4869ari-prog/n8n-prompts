@@ -60,15 +60,33 @@ if (!photoUrl && wikiBindings.image?.value) {
   photoUrl = wikiBindings.image.value;
 }
 
-// 7. 国コードの推論
-let country = webhookData.country || wikiBindings.countryLabel?.value || 'KR';
-if (country.includes('韓国') || country.includes('Korea') || country.includes('大韓') || country.includes('朝鮮')) {
-  country = 'KR';
-} else if (country.includes('日本') || country.includes('Japan')) {
-  country = 'JP';
-} else if (country.includes('アメリカ') || country.includes('USA') || country.includes('米国')) {
-  country = 'US';
+// 7. 国コードの徹底正規化（ISO 2文字コード: KR, JP, US 等）
+function normalizeIsoCountry(val) {
+  if (!val) return 'KR';
+  const s = String(val).trim().toLowerCase();
+  if (s.includes('大韓') || s.includes('韓国') || s.includes('korea') || s.includes('대한민국') || s.includes('한국') || s === 'kr') {
+    return 'KR';
+  }
+  if (s.includes('日本') || s.includes('japan') || s === 'jp') {
+    return 'JP';
+  }
+  if (s.includes('アメリカ') || s.includes('米国') || s.includes('usa') || s.includes('united states') || s === 'us') {
+    return 'US';
+  }
+  if (s.includes('中国') || s.includes('china') || s === 'cn') {
+    return 'CN';
+  }
+  if (s.includes('イギリス') || s.includes('英国') || s.includes('uk') || s.includes('britain') || s === 'gb') {
+    return 'GB';
+  }
+  if (/^[a-z]{2}$/i.test(s)) {
+    return s.toUpperCase();
+  }
+  return 'KR';
 }
+
+const rawCountry = webhookData.country || wikiBindings.countryLabel?.value || 'KR';
+const country = normalizeIsoCountry(rawCountry);
 
 // 8. Supabase Persons レコード作成
 const record = {
@@ -80,6 +98,10 @@ const record = {
   profile_url: photoUrl,
   wikidata_id: webhookData.wikidata_id || (wikiBindings.person?.value ? wikiBindings.person.value.split('/').pop() : null),
   tmdb_id: webhookData.tmdb_id ? parseInt(webhookData.tmdb_id, 10) : (wikiBindings.tmdbId?.value ? parseInt(wikiBindings.tmdbId.value, 10) : null),
+  type: webhookData.type || 'individual',
+  group_type: webhookData.group_type || null,
+  parent_group: webhookData.parent_group || null,
+  members: webhookData.members || null,
   x_id: cleanSocialId(wikiBindings.twitter?.value),
   instagram_id: cleanSocialId(wikiBindings.instagram?.value),
   youtube_id: cleanSocialId(wikiBindings.youtube?.value),
