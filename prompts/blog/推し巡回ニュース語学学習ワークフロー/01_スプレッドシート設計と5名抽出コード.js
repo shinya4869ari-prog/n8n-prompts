@@ -1,40 +1,52 @@
 /**
  * 【n8n用】Googleスプレッドシート「推しリスト」読み込み ＆ 最優先5名選出コード
+ * （Supabase新推し差分自動マージ対応版）
  * 
  * 役割:
- *  1. Google Sheetsノード（推しリスト）から渡された全行データを取得。
- *  2. 有効（is_active !== false）かつ韓国語名（name_ko）が登録されている推しを抽出。
- *  3. 【超重要ソートアルゴリズム】:
+ *  1. Google Sheets「推しリスト」の全行を取得。
+ *  2. 今回新しく検知された新メンバー（差分）があれば、末尾の行番号を自動計算して合流。
+ *  3. 有効（is_active !== false）かつ韓国語名（name_ko）が登録されている推しを抽出。
+ *  4. 【超重要ソートアルゴリズム】:
  *     - 第1優先: last_searched_at が空欄（新しく追加された推し）を最優先で一番上にする。
  *     - 第2優先: last_searched_at が古い順（昇順: 昔に検索した人ほど先頭へ）。
- *     => これにより「新メンバー即時検索」＋「全員終わったら自動で1人目に戻る永久ループ」を実現！
- *  4. 上位5名を切り出し、Google News RSS検索用URL（韓国語名クエリ）を生成して出力。
+ *     => これにより「新推し即日検索」＋「全員終わったら自動で1人目に戻る永久ループ」を実現！
+ *  5. 上位5名を切り出し、Google News RSS検索用URL（韓国語名クエリ）を生成して出力。
  */
 
 // 1日に検索する推しの人数（デフォルト: 5名）
 const BATCH_SIZE = 5;
 
-const allRows = $input.all();
+// 1. スプレッドシート既存行の取得
+let sheetRows = [];
+try {
+  const sheetNode = $('Google Sheets: 推しリスト全行取得') || $('Google Sheets');
+  sheetRows = sheetNode.all();
+} catch (e) {
+  sheetRows = $input.all();
+}
+
+// 2. 新推し差分の取得（もし検知されていれば合流）
+let newMemberRows = [];
+try {
+  const diffNode = $('00_新推し差分自動検知') || $('Code');
+  newMemberRows = diffNode.all();
+} catch (e) {
+  newMemberRows = [];
+}
+
 const validCelebrities = [];
 
-for (let i = 0; i < allRows.length; i++) {
-  const row = allRows[i].json;
-  
-  // n8nのGoogle Sheetsノードは row_number (または rowNumber / 行番号) を提供します
+// 既存シートの行を展開
+for (let i = 0; i < sheetRows.length; i++) {
+  const row = sheetRows[i].json;
   const rowNumber = row.row_number || row.rowNumber || (i + 2); // 1行目がヘッダーの場合のフォールバック
-
-  // 有効フラグ判定（未設定または true/'TRUE' の場合は有効）
   const isActive = row.is_active === undefined || row.is_active === true || String(row.is_active).toUpperCase() === 'TRUE';
   
-  // 韓国語名の取得と検証
   const nameKo = (row.name_ko || '').trim();
   const nameJa = (row.name_ja || nameKo).trim();
 
-  if (!isActive || !nameKo) {
-    continue; // 無効または韓国語名が無い行はスキップ
-  }
+  if (!isActive || !nameKo) continue;
 
-  // 最終検索日時のパース（未検索・空欄チェック）
   let lastSearchedRaw = row.last_searched_at;
   let lastSearchedTime = null;
   let isNew = true;
@@ -58,6 +70,27 @@ for (let i = 0; i < allRows.length; i++) {
   });
 }
 
+// 新メンバーがあれば、シート末尾の行番号を付与して合流
+const baseRowCount = sheetRows.length;
+for (let j = 0; j < newMemberRows.length; j++) {
+  const newRow = newMemberRows[j].json;
+  const newRowNumber = baseRowCount + 2 + j;
+  const nameKo = (newRow.name_ko || '').trim();
+  const nameJa = (newRow.name_ja || nameKo).trim();
+
+  if (!nameKo) continue;
+
+  validCelebrities.push({
+    row_number: newRowNumber,
+    id: newRow.id || null,
+    name_ja: nameJa,
+    name_ko: nameKo,
+    last_searched_at: null,
+    last_searched_time: null,
+    is_new: true // 新メンバーなので即時最優先！
+  });
+}
+
 // -------------------------------------------------------------
 // ソート処理:
 // 1. 新規追加（is_new === true）を最優先（最上位へ）
@@ -77,7 +110,6 @@ const targetCelebrities = validCelebrities.slice(0, BATCH_SIZE);
 
 // 各推しのGoogle News RSS取得用オブジェクトを生成
 const outputItems = targetCelebrities.map(celeb => {
-  // 韓国語名を完全一致フレーズ検索 + 直近7日間
   const searchQuery = `"${celeb.name_ko}" when:7d`;
   const encodedQuery = encodeURIComponent(searchQuery);
   const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=ko&gl=KR&ceid=KR:ko`;
