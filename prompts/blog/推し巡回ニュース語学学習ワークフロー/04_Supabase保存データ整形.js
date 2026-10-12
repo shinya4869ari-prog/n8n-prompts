@@ -1,22 +1,16 @@
 /**
- * 【n8n用】Gemini出力パース ＆ トークン消費・円換算コスト計算 ＆ Supabase整形コード
+ * 【n8n用】Gemini出力パース ＆ Supabase整形コード
  * 
  * 役割:
- *  1. Gemini 3.8 Flash のレスポンスからテキストと使用トークン数（usageMetadata）を完全取得。
- *  2. 入力トークン・出力トークン・為替レート（1ドル=155円）から「ドル＆日本円コスト」を自動計算。
- *  3. n8nの実行ログ（Console）に見やすい美麗なコストレポート枠を出力！
- *  4. 記事JSONをパース・クリーニングし、Supabaseの news テーブル保存用オブジェクト（コスト情報付き）を生成。
+ *  1. Gemini 3.8 Flash のレスポンスから生成されたテキストを抽出。
+ *  2. 記事JSONをパース・クリーニングし、不要なハングル混入を除去。
+ *  3. Supabaseの news テーブル保存用オブジェクト（純粋なカラムのみ）を生成。
  */
 
 const items = $input.all();
 const now = new Date().toISOString();
 const formattedResults = [];
 const seenUrls = new Set();
-
-// 為替レート & 単価テーブル (USD per 1M tokens) - 2026最新 Gemini 3.8 Flash
-const USD_TO_JPY = 155.0;
-const MODEL_NAME = "gemini-3.8-flash";
-const rates = { input: 0.100, output: 0.400 }; // $0.10/1M input, $0.40/1M output
 
 // タイトル日本語訳にハングルが混ざっていた場合の簡易辞書
 const hangulFixMap = {
@@ -42,70 +36,56 @@ function cleanJapaneseText(text) {
   return cleaned.trim();
 }
 
-let batchTotalPromptTokens = 0;
-let batchTotalCompletionTokens = 0;
-let batchTotalTokens = 0;
-let batchTotalCostUsd = 0;
-
 for (let i = 0; i < items.length; i++) {
   const item = items[i];
   const geminiResponse = item.json;
   
-  // 前段ノード（トップ速報記事抽出）のメタデータを取得
+  // 前段ノード（Loop Over Items / 02_トップ速報記事抽出）のメタデータを確実に取得
   let orig = {};
   try {
-    const rssNode = $('トップ速報記事抽出') || $('02_トップ速報記事抽出') || $('02_RSS解析・推し最新記事抽出') || $('Code1');
-    orig = rssNode.all()[i]?.json || {};
+    const loopItem = $('Loop Over Items')?.item?.json;
+    if (loopItem && (loopItem.person_name || loopItem.person_korean_name || loopItem.row_number)) {
+      orig = { ...loopItem };
+    }
+    const rssNode = $('02_トップ速報記事抽出') || $('トップ速報記事抽出') || $('02_RSS解析・推し最新記事抽出') || $('Code1');
+    if (rssNode) {
+      const allRss = rssNode.all().map(r => r.json);
+      const matched = allRss.find(r => (orig.row_number && r.row_number === orig.row_number) || (orig.person_name && r.person_name === orig.person_name));
+      if (matched) {
+        orig = { ...orig, ...matched };
+      } else if (allRss[i]) {
+        orig = { ...allRss[i], ...orig };
+      }
+    }
   } catch (e) {
     orig = item.json;
   }
 
-  // 1. レスポンステキスト & トークン数の抽出
+  // 1. レスポンステキストの抽出（各API形式に対応）
   let rawText = "";
-  let promptTokens = 0;
-  let completionTokens = 0;
-  let totalTokens = 0;
-
   if (geminiResponse.candidates && geminiResponse.candidates[0]?.content?.parts) {
+    // HTTP Request 形式 (Google REST API)
     rawText = geminiResponse.candidates[0].content.parts.map(p => p.text).join("\n");
-    if (geminiResponse.usageMetadata) {
-      promptTokens = geminiResponse.usageMetadata.promptTokenCount || 0;
-      completionTokens = geminiResponse.usageMetadata.candidatesTokenCount || 0;
-      totalTokens = geminiResponse.usageMetadata.totalTokenCount || (promptTokens + completionTokens);
-    }
+  } else if (geminiResponse.content && geminiResponse.content.parts) {
+    // n8n 公式 Google Gemini / AI ノード形式
+    rawText = geminiResponse.content.parts.map(p => p.text).join("\n");
   } else if (geminiResponse.choices && geminiResponse.choices[0]?.message?.content) {
+    // OpenAI / 互換形式
     rawText = geminiResponse.choices[0].message.content;
-    if (geminiResponse.usage) {
-      promptTokens = geminiResponse.usage.prompt_tokens || 0;
-      completionTokens = geminiResponse.usage.completion_tokens || 0;
-      totalTokens = geminiResponse.usage.total_tokens || (promptTokens + completionTokens);
-    }
   } else {
+    // その他汎用テキスト出力
     rawText = item.json.text || item.json.output || item.json.response || '';
     if (typeof rawText === 'object') {
       rawText = JSON.stringify(rawText);
     }
   }
 
-  // 2. コスト計算（単一記事）
-  const costUsdInput = (promptTokens / 1000000) * rates.input;
-  const costUsdOutput = (completionTokens / 1000000) * rates.output;
-  const articleCostUsd = costUsdInput + costUsdOutput;
-  const articleCostJpy = articleCostUsd * USD_TO_JPY;
-
-  batchTotalPromptTokens += promptTokens;
-  batchTotalCompletionTokens += completionTokens;
-  batchTotalTokens += totalTokens;
-  batchTotalCostUsd += articleCostUsd;
-
-  const formattedJpy = articleCostJpy < 0.01 ? `${(articleCostJpy * 100).toFixed(2)} 銭` : `${articleCostJpy.toFixed(3)} 円`;
-  const formattedUsd = `$${articleCostUsd.toFixed(6)}`;
-
-  // マークダウン記法（```json ... ```）の除去
+  // 2. マークダウン記法（```json ... ```）の除去
   if (typeof rawText === 'string') {
     rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
   }
 
+  // 3. JSONパース
   let parsed = null;
   try {
     parsed = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;
@@ -116,11 +96,12 @@ for (let i = 0; i < items.length; i++) {
     }
   }
 
+  // パース失敗時または必須項目欠落時は安全にスキップ（Supabaseに不正データを送らない）
   if (!parsed || typeof parsed !== 'object') continue;
   if (Array.isArray(parsed)) parsed = parsed[0];
   if (!parsed || (!parsed.title_ko && !parsed.title_ja)) continue;
 
-  // 記事URLの決定（重複スキップ）
+  // 4. 記事URLの決定（重複スキップ）
   let sourceUrl = String(orig.source_url || parsed.source_url || '').trim();
   if (sourceUrl.includes('{{') || sourceUrl.includes('$json') || !sourceUrl.startsWith('http')) {
     sourceUrl = String(orig.source_url || '').trim();
@@ -143,7 +124,7 @@ for (let i = 0; i < items.length; i++) {
   const titleKo = String(parsed.title_ko || orig.news_title || '').trim();
   const titleJa = cleanJapaneseText(parsed.title_ja || '');
 
-  // 段落構成
+  // 段落構成の整形
   let paragraphs = Array.isArray(parsed.paragraphs) ? parsed.paragraphs : [];
   if (paragraphs.length === 0 && (parsed.summary_ko || parsed.summary_ja)) {
     paragraphs = [{
@@ -163,6 +144,7 @@ for (let i = 0; i < items.length; i++) {
 
   const vocab = Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [];
 
+  // 5. Supabase news テーブル保存用オブジェクト（テーブルに実在する正規カラムのみ）
   formattedResults.push({
     json: {
       category: 'celeb',
@@ -183,26 +165,5 @@ for (let i = 0; i < items.length; i++) {
     }
   });
 }
-
-// 3. n8nコンソールに見やすいコスト合計レポートを出力
-const batchCostJpy = batchTotalCostUsd * USD_TO_JPY;
-const formattedBatchJpy = batchCostJpy < 0.01 ? `${(batchCostJpy * 100).toFixed(2)} 銭` : `${batchCostJpy.toFixed(3)} 円`;
-
-const report = `
-┌────────────────────────────────────────────────────────┐
-│ ⭐ 推し巡回ニュース生成完了 & コストレポート           │
-├────────────────────────────────────────────────────────┤
-│ 生成記事数: ${formattedResults.length} 件
-│ 使用モデル: ${MODEL_NAME}
-│ 入力トークン: ${batchTotalPromptTokens.toLocaleString()} tokens
-│ 出力トークン: ${batchTotalCompletionTokens.toLocaleString()} tokens
-│ 合計トークン: ${batchTotalTokens.toLocaleString()} tokens
-├────────────────────────────────────────────────────────┤
-│ 💵 合計コスト(USD): $${batchTotalCostUsd.toFixed(6)}
-│ 💴 合計コスト(日本円): 約 ${formattedBatchJpy}（1記事あたり約 ${(batchCostJpy / (formattedResults.length || 1)).toFixed(3)} 円）
-└────────────────────────────────────────────────────────┘
-`.trim();
-
-console.log(report);
 
 return formattedResults;
